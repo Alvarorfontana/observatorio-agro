@@ -1,1 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Observatorio Satelital Agro-Ambiental</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0a1628; color: #e0e6ed; height: 100vh; overflow: hidden; }
+        header { background: linear-gradient(90deg, #1e3a5f, #2d5a87); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+        header h1 { color: #63b3ed; font-size: 20px; font-weight: 600; }
+        .container { display: flex; height: calc(100vh - 60px); }
+        .sidebar { width: 350px; background: #111827; padding: 20px; overflow-y: auto; border-right: 2px solid #1e3a5f; }
+        .sidebar h2 { color: #63b3ed; font-size: 14px; text-transform: uppercase; margin-top: 0; border-bottom: 1px solid #2d5a87; padding-bottom: 10px; }
+        .main-content { flex: 1; position: relative; background: #000; }
+        #map { width: 100%; height: 100%; }
+        .controls { position: absolute; top: 20px; right: 20px; z-index: 1000; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.5); width: 250px; }
+        .controls h3 { margin: 0 0 10px 0; color: #1a202c; font-size: 14px; }
+        .btn { display: block; width: 100%; padding: 10px; margin-bottom: 8px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px; color: white; }
+        .btn-draw { background: #3182ce; }
+        .btn-stop { background: #e53e3e; }
+        .btn-analyze { background: #38a169; }
+        .btn:hover { opacity: 0.9; }
+        .status { font-size: 12px; color: #4a5568; margin-top: 10px; font-style: italic; }
+        .lote-info { display: none; margin-top: 20px; background: #0f1f2e; padding: 15px; border-radius: 6px; }
+        .lote-info h3 { color: #63b3ed; margin-top: 0; font-size: 14px; }
+        .lote-info p { font-size: 12px; color: #cbd5e0; margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Observatorio Satelital Agro-Ambiental</h1>
+    </header>
+    <div class="container">
+        <div class="sidebar">
+            <h2>Panel de Control</h2>
+            <p style="font-size: 13px; color: #a0aec0; line-height: 1.5;">
+                1. Hacé clic en "Iniciar Dibujo".<br>
+                2. Hacé clic en el mapa para marcar las esquinas del lote.<br>
+                3. Hacé clic en "Cerrar y Analizar" para generar el informe.
+            </p>
+            <div id="lote-info" class="lote-info">
+                <h3>Lote Delimitado</h3>
+                <p>Vértices: <span id="num-vertices">0</span></p>
+                <p>Centroide: <span id="centroide">-</span></p>
+            </div>
+        </div>
+        <div class="main-content">
+            <div class="controls">
+                <h3>Herramientas de Lote</h3>
+                <button class="btn btn-draw" id="btn-draw" onclick="startDrawing()">Iniciar Dibujo</button>
+                <button class="btn btn-stop" id="btn-stop" onclick="stopDrawing()" style="display:none;">Cancelar</button>
+                <button class="btn btn-analyze" id="btn-analyze" onclick="analyzeLote()" style="display:none;">Cerrar y Generar PDF</button>
+                <div class="status" id="status-text">Listo para dibujar.</div>
+            </div>
+            <div id="map"></div>
+        </div>
+    </div>
 
+    <script>
+        var map = L.map('map').setView([-34.6037, -58.3816], 5);
+        L.tileLayer('https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/wmts.cgi?layer=MODIS_Terra_CorrectedReflectance_TrueColor&style=default&tilematrixset=250m&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image/png&TileColumn={x}&TileRow={y}&TileMatrix={z}&', {
+            maxZoom: 8, minZoom: 2, attribution: 'NASA GIBS MODIS', tms: true
+        }).addTo(map);
+
+        var isDrawing = false;
+        var puntosLote = [];
+        var marcadores = [];
+        var poligonoLayer = null;
+
+        function startDrawing() {
+            isDrawing = true;
+            puntosLote = [];
+            marcadores.forEach(m => map.removeLayer(m));
+            marcadores = [];
+            if (poligonoLayer) map.removeLayer(poligonoLayer);
+            document.getElementById('btn-draw').style.display = 'none';
+            document.getElementById('btn-stop').style.display = 'block';
+            document.getElementById('btn-analyze').style.display = 'none';
+            document.getElementById('status-text').innerText = "Hacé clic en el mapa para agregar vértices...";
+            document.getElementById('lote-info').style.display = 'none';
+            map.on('click', onMapClick);
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+            map.off('click', onMapClick);
+            document.getElementById('btn-draw').style.display = 'block';
+            document.getElementById('btn-stop').style.display = 'none';
+            document.getElementById('status-text').innerText = "Dibujo cancelado.";
+        }
+
+        function onMapClick(e) {
+            if (!isDrawing) return;
+            puntosLote.push([e.latlng.lat, e.latlng.lng]);
+            var marker = L.circleMarker(e.latlng, {radius: 6, color: '#3182ce', fill: true}).addTo(map);
+            marcadores.push(marker);
+            document.getElementById('num-vertices').innerText = puntosLote.length;
+            document.getElementById('status-text').innerText = "Vértices: " + puntosLote.length + ". (Mínimo 3 para cerrar)";
+            if (puntosLote.length >= 3) {
+                document.getElementById('btn-analyze').style.display = 'block';
+            }
+        }
+
+        function analyzeLote() {
+            if (puntosLote.length < 3) return;
+            isDrawing = false;
+            map.off('click', onMapClick);
+            poligonoLayer = L.polygon(puntosLote, {color: '#38a169', weight: 3, fillOpacity: 0.2}).addTo(map);
+            map.fitBounds(poligonoLayer.getBounds());
+            
+            var latSum = 0, lonSum = 0;
+            puntosLote.forEach(p => { latSum += p[0]; lonSum += p[1]; });
+            var centroideLat = (latSum / puntosLote.length).toFixed(4);
+            var centroideLon = (lonSum / puntosLote.length).toFixed(4);
+            
+            document.getElementById('centroide').innerText = centroideLat + ", " + centroideLon;
+            document.getElementById('lote-info').style.display = 'block';
+            document.getElementById('status-text').innerText = "Generando informe multi-modelo...";
+            document.getElementById('btn-stop').style.display = 'none';
+            document.getElementById('btn-analyze').style.display = 'none';
+
+            fetch('/api/analizar', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ nombre: "Lote_Delimitado", lat: parseFloat(centroideLat), lon: parseFloat(centroideLon), poligono: puntosLote })
+            })
+            .then(response => response.blob())
+            .then(blob => {
+                var url = window.URL.createObjectURL(blob);
+                var a = document.createElement('a');
+                a.href = url;
+                a.download = "informe_agroclimatico.pdf";
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                document.getElementById('status-text').innerText = "¡Informe PDF descargado exitosamente!";
+            })
+            .catch(err => {
+                document.getElementById('status-text').innerText = "Error al generar el informe.";
+                console.error(err);
+            });
+        }
+    </script>
+</body>
+</html>
