@@ -3,7 +3,7 @@ from satellite_data import SatelliteDataEngine
 from report_generator import PremiumReportGenerator, generate_charts
 import os
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='templates')
 engine = SatelliteDataEngine()
 
 @app.route('/', methods=['GET'])
@@ -19,7 +19,7 @@ def analizar():
 
     datos = engine.get_all_data(lat, lon)
     daily = datos['meteo'].get('daily', {})
-    generate_charts(daily, "/tmp/chart") # /tmp es el directorio de escritura en Vercel/Serverless
+    generate_charts(daily, "/tmp/chart")
 
     pdf = PremiumReportGenerator(title="INFORME AGROCLIMATICO PREMIUM", zone_name=nombre, lat=lat, lon=lon)
     pdf.add_page()
