@@ -77,7 +77,7 @@ def generate_charts(daily, filename_prefix):
     ax2.set_ylabel('Radiacion (MJ/m2)', color='#d69e2e')
     ax1.set_xticks(range(len(dates)))
     ax1.set_xticklabels([d[-5:] for d in dates], rotation=45, fontsize=7)
-    plt.title('Pronostico 16 dias - Ensemble Multi-Modelo')
     plt.tight_layout()
     plt.savefig(f"{filename_prefix}_rain_rad.png", dpi=120)
     plt.close()
+    
