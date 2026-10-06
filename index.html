@@ -1,0 +1,63 @@
+import sys
+import os
+
+# Obtener la ruta base (un nivel arriba de /api)
+base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, base_dir)
+
+from flask import Flask, render_template, request, send_file
+from satellite_data import SatelliteDataEngine
+from report_generator import PremiumReportGenerator, generate_charts
+
+# Configurar Flask con la ruta CORRECTA a templates
+app = Flask(
+    __name__, 
+    template_folder=os.path.join(base_dir, 'templates')
+)
+engine = SatelliteDataEngine()
+
+@app.route('/', methods=['GET'])
+def index():
+    try:
+        return render_template('index.html')
+    except Exception as e:
+        return f"Error cargando template: {str(e)}", 500
+
+@app.route('/api/analizar', methods=['POST'])
+def analizar():
+    try:
+        data = request.json
+        lat = data.get('lat')
+        lon = data.get('lon')
+        nombre = data.get('nombre', 'Lote_Delimitado')
+
+        datos = engine.get_all_data(lat, lon)
+        daily = datos['meteo'].get('daily', {})
+        
+        os.makedirs('/tmp', exist_ok=True)
+        generate_charts(daily, "/tmp/chart")
+
+        pdf = PremiumReportGenerator(
+            title="INFORME AGROCLIMATICO PREMIUM", 
+            zone_name=nombre, 
+            lat=lat, 
+            lon=lon
+        )
+        pdf.add_page()
+        
+        pdf.section_title("1. RESUMEN EJECUTIVO")
+        pdf.set_font('Helvetica', '', 9)
+        pdf.multi_cell(0, 5, f"THI: {datos['thi']} ({datos['estado_thi']})")
+        pdf.ln(5)
+
+        pdf.section_title("2. PRONOSTICO 16 DIAS")
+        pdf.add_chart("/tmp/chart_rain_rad.png")
+
+        pdf_path = f"/tmp/informe_{nombre.replace(' ','_')}.pdf"
+        pdf.output(pdf_path)
+        
+        return send_file(pdf_path, as_attachment=True, download_name=f"informe_{nombre}.pdf")
+    except Exception as e:
+        return f"Error: {str(e)}", 500
+
+app = app
