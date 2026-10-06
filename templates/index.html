@@ -1,23 +1,206 @@
+  <!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Observatorio Satelital | GIS Intelligence</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --glass-bg: rgba(15, 23, 42, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --accent-cyan: #06b6d4;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        
+        body { background: #000; color: var(--text-main); height: 100vh; overflow: hidden; position: relative; }
+
+        /* MAPA A PANTALLA COMPLETA */
+        #map { width: 100%; height: 100%; z-index: 1; outline: none; background: #0f172a; }
+        
+        /* LEAFLET DARK OVERRIDE */
+        .leaflet-bar a { background-color: var(--glass-bg) !important; color: white !important; border: 1px solid var(--glass-border) !important; backdrop-filter: blur(10px); }
+        .leaflet-popup-content-wrapper { background: var(--glass-bg); color: white; border-radius: 12px; border: 1px solid var(--glass-border); backdrop-filter: blur(12px); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5); }
+        .leaflet-popup-tip { background: var(--glass-bg); border: 1px solid var(--glass-border); }
+
+        /* UI FLOTANTE (GLASSMORPHISM) */
+        .floating-ui { position: absolute; z-index: 1000; pointer-events: none; }
+        .floating-panel { 
+            background: var(--glass-bg); 
+            backdrop-filter: blur(16px); 
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border); 
+            border-radius: 16px; 
+            padding: 20px; 
+            pointer-events: auto;
+            box-shadow: 0 20px 40px -10px rgba(0,0,0,0.6);
+            transition: all 0.3s ease;
+        }
+
+        /* HEADER FLOTANTE SUPERIOR */
+        .top-bar { top: 24px; left: 24px; right: 24px; display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; }
+        .brand { display: flex; align-items: center; gap: 12px; }
+        .brand-icon { width: 36px; height: 36px; background: linear-gradient(135deg, var(--accent-cyan), #3b82f6); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+        .brand h1 { font-size: 16px; font-weight: 700; letter-spacing: -0.02em; text-transform: uppercase; }
+        .status-badge { 
+            background: rgba(16, 185, 129, 0.15); color: var(--accent-green); 
+            padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 600; 
+            border: 1px solid rgba(16, 185, 129, 0.3); display: flex; align-items: center; gap: 6px;
+        }
+
+        /* SIDEBAR IZQUIERDO FLOTANTE */
+        .left-sidebar { top: 100px; left: 24px; bottom: 24px; width: 380px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; padding-right: 8px; }
+        .left-sidebar::-webkit-scrollbar { width: 4px; }
+        .left-sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+
+        .panel-header { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 12px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .panel-header::before { content: ''; width: 3px; height: 12px; background: var(--accent-cyan); border-radius: 2px; }
+
+        /* GRID DE DATOS GIS */
+        .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+        .data-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 10px; padding: 12px; }
+        .data-label { font-size: 10px; color: var(--text-muted); margin-bottom: 4px; font-weight: 500; }
+        .data-val { font-size: 18px; font-weight: 700; color: white; }
+        .data-unit { font-size: 11px; color: var(--text-muted); font-weight: 400; }
+
+        /* BOTONES OPERATIVOS ESTILO BROKER */
+        .action-btn {
+            width: 100%; padding: 12px; border: none; border-radius: 10px; cursor: pointer;
+            font-size: 12px; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; justify-content: space-between;
+            background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 8px;
+        }
+        .action-btn:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); }
+        .action-btn.primary { background: var(--accent-cyan); color: #0f172a; border: none; box-shadow: 0 0 20px rgba(6, 182, 212, 0.3); }
+        .action-btn.primary:hover { background: #0891b2; box-shadow: 0 0 30px rgba(6, 182, 212, 0.5); }
+        .action-btn.danger { border-color: rgba(239, 68, 68, 0.5); color: var(--accent-red); background: rgba(239, 68, 68, 0.1); }
+
+        /* PANEL DERECHO DE CAPAS */
+        .right-layers { top: 100px; right: 24px; width: 240px; }
+        .layer-item {
+            display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 8px;
+            cursor: pointer; transition: all 0.2s; margin-bottom: 6px; border: 1px solid transparent;
+        }
+        .layer-item:hover { background: rgba(255,255,255,0.05); }
+        .layer-item.active { background: rgba(6, 182, 212, 0.15); border-color: rgba(6, 182, 212, 0.3); }
+        .layer-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); }
+        .layer-item.active .layer-dot { background: var(--accent-cyan); box-shadow: 0 0 8px var(--accent-cyan); }
+        .layer-name { font-size: 12px; font-weight: 500; color: var(--text-muted); }
+        .layer-item.active .layer-name { color: white; font-weight: 600; }
+
+        /* ETIQUETAS DE LOTE SOBRE EL MAPA */
+        .lot-label { background: rgba(15, 23, 42, 0.9); color: white; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; border: 1px solid rgba(255,255,255,0.2); white-space: nowrap; }
+
+        /* LOADING SKELETON */
+        .skel { background: rgba(255,255,255,0.05); border-radius: 4px; height: 18px; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+    </style>
+</head>
+<body>
+
+    <!-- MAPA BASE -->
+    <div id="map"></div>
+
+    <!-- UI FLOTANTE -->
+    <div class="floating-ui top-bar floating-panel">
+        <div class="brand">
+            <div class="brand-icon">🛰️</div>
+            <h1>Observatorio Satelital <span style="color:var(--accent-cyan)">GIS</span></h1>
+        </div>
+        <div class="status-badge">
+            <div style="width:6px;height:6px;background:var(--accent-green);border-radius:50%;"></div>
+            ENSEMBLE ACTIVO | DATOS EN TIEMPO REAL
+        </div>
+    </div>
+
+    <div class="floating-ui left-sidebar">
+        <!-- PANEL 1: MÉTRICAS -->
+        <div class="floating-panel">
+            <div class="panel-header">Condiciones Atmosféricas</div>
+            <div id="metrics-container" class="data-grid">
+                <div class="data-card"><div class="skel"></div></div>
+                <div class="data-card"><div class="skel"></div></div>
+                <div class="data-card"><div class="skel"></div></div>
+                <div class="data-card"><div class="skel"></div></div>
+            </div>
+        </div>
+
+        <!-- PANEL 2: SUELO -->
+        <div class="floating-panel">
+            <div class="panel-header">Edafología & Estrés Hídrico</div>
+            <div id="soil-container" class="data-grid">
+                <div class="data-card"><div class="skel"></div></div>
+                <div class="data-card"><div class="skel"></div></div>
+            </div>
+        </div>
+
+        <!-- PANEL 3: ALERTAS -->
+        <div class="floating-panel">
+            <div class="panel-header">Análisis de Riesgo</div>
+            <div id="alerts-container"><div class="skel" style="height:30px;"></div></div>
+        </div>
+
+        <!-- PANEL 4: OPERACIONES -->
+        <div class="floating-panel" style="margin-top:auto;">
+            <div class="panel-header">Gestión de Lotes</div>
+            <button class="action-btn" id="btn-draw" onclick="startDrawing()">
+                <span>Iniciar Delimitación</span>
+                <span>✏️</span>
+            </button>
+            <button class="action-btn danger" id="btn-stop" onclick="stopDrawing()" style="display:none;">
+                <span>Cancelar</span>
+                <span>✕</span>
+            </button>
+            <button class="action-btn primary" id="btn-analyze" onclick="analyzeLote()" style="display:none;">
+                <span>Generar Informe PDF</span>
+                <span>️</span>
+            </button>
+            
+            <div id="lote-info" style="display:none; margin-top:12px; padding:12px; background:rgba(6,182,212,0.1); border-radius:8px; border:1px solid rgba(6,182,212,0.2);">
+                <div style="font-size:10px;color:var(--accent-cyan);margin-bottom:4px;">CENTROIDE DEL LOTE</div>
+                <div style="font-size:13px;font-weight:600;" id="centroide">--, --</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:4px;" id="num-vertices">Vértices: 0</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PANEL DERECHO DE CAPAS -->
+    <div class="floating-ui right-layers floating-panel">
+        <div class="panel-header">Capas Satelitales</div>
+        <div class="layer-item active" onclick="cambiarCapa('modis', this)">
+            <div class="layer-dot"></div>
+            <div class="layer-name">MODIS TrueColor (250m)</div>
+        </div>
+        <div class="layer-item" onclick="cambiarCapa('viirs', this)">
+            <div class="layer-dot"></div>
+            <div class="layer-name">VIIRS SNPP (500m)</div>
+        </div>
+        <div class="layer-item" onclick="cambiarCapa('sst', this)">
+            <div class="layer-dot"></div>
+            <div class="layer-name">Temp. Superficie Mar</div>
+        </div>
+        <div class="layer-item" onclick="cambiarCapa('thermal', this)">
+            <div class="layer-dot"></div>
+            <div class="layer-name">Focos Térmicos NRT</div>
+        </div>
+    </div>
+
     <script>
-        // --- CONFIGURACIÓN DEL MAPA PREMIUM ---
-        var map = L.map('map', { 
-            zoomControl: false,
-            attributionControl: true
-        }).setView([-34.6037, -58.3816], 5);
-
-        // Agregar controles de zoom en posición estética
-        L.control.zoom({ position: 'bottomleft' }).addTo(map);
-
-        // Capa base de respaldo (siempre visible debajo de las capas NASA)
-        var osmLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; OpenStreetMap &copy; CARTO',
-            subdomains: 'abcd',
-            maxZoom: 19
+        // --- CONFIGURACIÓN MAPA GIS ---
+        var map = L.map('map', { zoomControl: false, attributionControl: false }).setView([-34.6037, -58.3816], 5);
+        
+        // Capa base oscura para resaltar datos (CartoDB Dark Matter)
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            subdomains: 'abcd', maxZoom: 19
         }).addTo(map);
 
         var capaActual = null;
-        
-        // URLs CORREGIDAS para WMTS de NASA GIBS
         var capasGIBS = {
             'modis': "https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/wmts.cgi?layer=MODIS_Terra_CorrectedReflectance_TrueColor&style=default&tilematrixset=250m&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image/png&TileColumn={x}&TileRow={y}&TileMatrix={z}&",
             'viirs': "https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/wmts.cgi?layer=VIIRS_SNPP_CorrectedReflectance_TrueColor&style=default&tilematrixset=500m&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image/png&TileColumn={x}&TileRow={y}&TileMatrix={z}&",
@@ -25,31 +208,15 @@
             'thermal': "https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/wmts.cgi?layer=VIIRS_SNPP_Thermal_Hotspots_and_Fire_Activity_NRT&style=default&tilematrixset=375m&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image/png&TileColumn={x}&TileRow={y}&TileMatrix={z}&"
         };
 
-        function cambiarCapa(tipo, btn) {
-            // Remover capa anterior si existe
-            if (capaActual) {
-                map.removeLayer(capaActual);
-                capaActual = null;
-            }
-            
-            // Crear nueva capa con opciones específicas para WMTS
-            capaActual = L.tileLayer(capasGIBS[tipo], {
-                maxZoom: 9, 
-                minZoom: 2, 
-                attribution: 'NASA GIBS | Datos Satelitales en Tiempo Real', 
-                tms: true, // CRÍTICO: Las capas WMTS de NASA requieren TMS invertido
-                opacity: 0.95
-            }).addTo(map);
-
-            // Actualizar estado visual de botones
-            document.querySelectorAll('.control-group .btn-premium').forEach(b => b.classList.remove('active'));
-            if(btn) btn.classList.add('active');
+        function cambiarCapa(tipo, el) {
+            if (capaActual) map.removeLayer(capaActual);
+            capaActual = L.tileLayer(capasGIBS[tipo], { maxZoom: 9, minZoom: 2, tms: true, opacity: 0.9 }).addTo(map);
+            document.querySelectorAll('.layer-item').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
         }
+        cambiarCapa('modis', document.querySelector('.layer-item'));
 
-        // Cargar MODIS por defecto al iniciar
-        cambiarCapa('modis', document.querySelector('.control-group .btn-premium'));
-
-        // --- LÓGICA DE DIBUJO Y ANÁLISIS ---
+        // --- LÓGICA DE DIBUJO GIS ---
         var isDrawing = false, puntosLote = [], marcadores = [], poligonoLayer = null;
 
         function startDrawing() {
@@ -61,8 +228,6 @@
             document.getElementById('btn-stop').style.display = 'flex';
             document.getElementById('btn-analyze').style.display = 'none';
             document.getElementById('lote-info').style.display = 'none';
-            
-            // Cambiar cursor para indicar modo dibujo
             map.getContainer().style.cursor = 'crosshair';
             map.on('click', onMapClick);
         }
@@ -77,17 +242,9 @@
         function onMapClick(e) {
             if (!isDrawing) return;
             puntosLote.push([e.latlng.lat, e.latlng.lng]);
-            
-            var marker = L.circleMarker(e.latlng, {
-                radius: 6, color: '#3b82f6', fillColor: '#3b82f6', 
-                fillOpacity: 1, weight: 2
-            }).addTo(map);
-            marcadores.push(marker);
-            
-            document.getElementById('num-vertices').innerText = puntosLote.length;
-            if (puntosLote.length >= 3) {
-                document.getElementById('btn-analyze').style.display = 'flex';
-            }
+            marcadores.push(L.circleMarker(e.latlng, {radius: 4, color: '#06b6d4', fillColor: '#06b6d4', fillOpacity: 1, weight: 1}).addTo(map));
+            document.getElementById('num-vertices').innerText = `Vértices: ${puntosLote.length}`;
+            if (puntosLote.length >= 3) document.getElementById('btn-analyze').style.display = 'flex';
         }
 
         function analyzeLote() {
@@ -95,11 +252,18 @@
             isDrawing = false; map.off('click', onMapClick);
             map.getContainer().style.cursor = '';
             
+            // Polígono estilo GIS profesional
             poligonoLayer = L.polygon(puntosLote, {
-                color: '#10b981', weight: 3, fillOpacity: 0.15, 
-                dashArray: '5, 5'
+                color: '#06b6d4', weight: 2, fillOpacity: 0.15, dashArray: '4, 4'
             }).addTo(map);
-            map.fitBounds(poligonoLayer.getBounds(), { padding: [50, 50] });
+            
+            // Etiqueta flotante sobre el lote
+            var center = poligonoLayer.getBounds().getCenter();
+            L.marker(center, {
+                icon: L.divIcon({className: 'lot-label', html: 'LOTE ANALIZADO', iconSize: [100, 24]})
+            }).addTo(map);
+
+            map.fitBounds(poligonoLayer.getBounds(), { padding: [100, 100] });
             
             var latSum = 0, lonSum = 0;
             puntosLote.forEach(p => { latSum += p[0]; lonSum += p[1]; });
@@ -109,104 +273,66 @@
             document.getElementById('centroide').innerText = `${cLat}, ${cLon}`;
             document.getElementById('lote-info').style.display = 'block';
             document.getElementById('btn-stop').style.display = 'none';
-            document.getElementById('btn-analyze').innerHTML = '⏳ Procesando Ensemble...';
+            document.getElementById('btn-analyze').innerHTML = '<span>Procesando...</span><span>⏳</span>';
             document.getElementById('btn-analyze').disabled = true;
 
             fetch('/api/analizar', {
                 method: 'POST', headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ nombre: "Lote_Premium", lat: parseFloat(cLat), lon: parseFloat(cLon), poligono: puntosLote })
+                body: JSON.stringify({ nombre: "Lote_GIS", lat: parseFloat(cLat), lon: parseFloat(cLon), poligono: puntosLote })
             })
-            .then(r => {
-                if (!r.ok) throw new Error('Error en servidor');
-                return r.blob();
-            })
+            .then(r => r.blob())
             .then(blob => {
                 var url = window.URL.createObjectURL(blob);
-                var a = document.createElement('a'); a.href = url; a.download = "informe_premium.pdf";
+                var a = document.createElement('a'); a.href = url; a.download = "informe_gis.pdf";
                 document.body.appendChild(a); a.click(); a.remove();
-                document.getElementById('btn-analyze').innerHTML = '✅ Informe Descargado';
-                
+                document.getElementById('btn-analyze').innerHTML = '<span>Descargado</span><span>✅</span>';
                 setTimeout(() => { 
-                    document.getElementById('btn-analyze').innerHTML = ' Generar Informe PDF'; 
+                    document.getElementById('btn-analyze').innerHTML = '<span>Generar Informe PDF</span><span>⬇️</span>'; 
                     document.getElementById('btn-analyze').disabled = false;
                     document.getElementById('btn-draw').style.display = 'flex'; 
                 }, 3000);
             })
-            .catch(err => { 
-                document.getElementById('btn-analyze').innerHTML = '❌ Error al generar'; 
-                console.error(err); 
-            });
+            .catch(err => { document.getElementById('btn-analyze').innerHTML = '<span>Error</span><span>❌</span>'; });
         }
 
-        // --- CARGA DE VARIABLES EN TIEMPO REAL ---
+        // --- CARGA DE VARIABLES ---
         async function cargarVariables() {
             try {
                 const res = await fetch('/api/variables?lat=-34.6037&lon=-58.3816');
                 const d = await res.json();
                 if(d.error) throw new Error(d.error);
 
-                // Renderizar Métricas Principales
-                const metricsHTML = `
-                    <div class="metrics-grid">
-                        <div class="metric-card">
-                            <div class="metric-label">TEMPERATURA 2M</div>
-                            <div class="metric-value">${d.temp_actual}<span class="metric-unit">°C</span></div>
-                            <div class="metric-trend trend-up">Sensación: ${d.sensacion_termica}°C</div>
-                        </div>
-                        <div class="metric-card">
-                            <div class="metric-label">HUMEDAD RELATIVA</div>
-                            <div class="metric-value">${d.humedad}<span class="metric-unit">%</span></div>
-                            <div class="metric-trend">Déficit VP: ${d.deficit_presion_vapor} kPa</div>
-                        </div>
-                        <div class="metric-card">
-                            <div class="metric-label">VIENTO 10M / RÁFAGAS</div>
-                            <div class="metric-value">${d.viento_10m}<span class="metric-unit">km/h</span></div>
-                            <div class="metric-trend trend-down">Ráfagas: ${d.rafagas} km/h</div>
-                        </div>
-                        <div class="metric-card">
-                            <div class="metric-label">PRESIÓN SUPERFICIE</div>
-                            <div class="metric-value">${d.presion_superficie}<span class="metric-unit">hPa</span></div>
-                            <div class="metric-trend">Nubes: ${d.cobertura_nubes}%</div>
-                        </div>
-                    </div>
+                document.getElementById('metrics-container').innerHTML = `
+                    <div class="data-card"><div class="data-label">TEMPERATURA 2M</div><div class="data-val">${d.temp_actual}<span class="data-unit">°C</span></div></div>
+                    <div class="data-card"><div class="data-label">HUMEDAD REL.</div><div class="data-val">${d.humedad}<span class="data-unit">%</span></div></div>
+                    <div class="data-card"><div class="data-label">VIENTO 10M</div><div class="data-val">${d.viento_10m}<span class="data-unit">KM/H</span></div></div>
+                    <div class="data-card"><div class="data-label">PRESIÓN</div><div class="data-val">${d.presion_superficie}<span class="data-unit">HPA</span></div></div>
                 `;
-                document.getElementById('metrics-container').innerHTML = metricsHTML;
 
-                // Renderizar Suelo
-                const soilHTML = `
-                    <div class="metrics-grid">
-                        <div class="metric-card" style="border-left: 3px solid #06b6d4;">
-                            <div class="metric-label">HUMEDAD SUELO (0-7cm)</div>
-                            <div class="metric-value">${d.humedad_suelo_0_7}<span class="metric-unit">m³/m³</span></div>
-                        </div>
-                        <div class="metric-card" style="border-left: 3px solid #06b6d4;">
-                            <div class="metric-label">EVAPOTRANSPIRACIÓN (ET0)</div>
-                            <div class="metric-value">${d.evapotranspiracion}<span class="metric-unit">mm</span></div>
-                        </div>
-                    </div>
+                document.getElementById('soil-container').innerHTML = `
+                    <div class="data-card"><div class="data-label">H. SUELO (0-7CM)</div><div class="data-val">${d.humedad_suelo_0_7}<span class="data-unit">M³/M³</span></div></div>
+                    <div class="data-card"><div class="data-label">EVAPOTRANSPIRACIÓN</div><div class="data-val">${d.evapotranspiracion}<span class="data-unit">MM</span></div></div>
                 `;
-                document.getElementById('soil-container').innerHTML = soilHTML;
 
-                // Renderizar Alertas
                 let alertsHTML = '';
-                let thiClass = d.thi < 79 ? 'alert-ok' : (d.thi < 89 ? 'alert-warn' : 'alert-crit');
-                alertsHTML += `<div class="alert-banner ${thiClass}"> THI GANADERO: ${d.thi} (${d.estado_thi})</div>`;
+                let thiStatus = d.thi < 79 ? 'NORMAL' : (d.thi < 89 ? 'MODERADO' : 'CRÍTICO');
+                let thiColor = d.thi < 79 ? 'var(--accent-green)' : (d.thi < 89 ? 'var(--accent-yellow)' : 'var(--accent-red)');
+                alertsHTML += `<div style="padding:10px;background:rgba(255,255,255,0.03);border-radius:8px;margin-bottom:8px;border-left:3px solid ${thiColor}"><div style="font-size:10px;color:var(--text-muted)">THI GANADERO</div><div style="font-size:14px;font-weight:700;color:${thiColor}">${d.thi} - ${thiStatus}</div></div>`;
                 
-                let ensoIcon = d.enso_estado.includes('Niño') ? '🔴' : (d.enso_estado.includes('Niña') ? '' : '⚪');
-                alertsHTML += `<div class="alert-banner alert-ok">${ensoIcon} ENSO: ${d.enso_estado} (ONI: ${d.enso_oni})</div>`;
+                alertsHTML += `<div style="padding:10px;background:rgba(255,255,255,0.03);border-radius:8px;margin-bottom:8px;border-left:3px solid var(--accent-cyan)"><div style="font-size:10px;color:var(--text-muted)">ENSO (ONI)</div><div style="font-size:14px;font-weight:700;color:white">${d.enso_estado} (${d.enso_oni})</div></div>`;
                 
                 if(d.cantidad_focos > 0) {
-                    alertsHTML += `<div class="alert-banner alert-crit">🔥 ALERTA: ${d.cantidad_focos} foco(s) térmico(s) activo(s)</div>`;
+                    alertsHTML += `<div style="padding:10px;background:rgba(239,68,68,0.1);border-radius:8px;border:1px solid rgba(239,68,68,0.3)"><div style="font-size:10px;color:var(--accent-red)">ALERTA FOCOS TÉRMICOS</div><div style="font-size:14px;font-weight:700;color:var(--accent-red)">${d.cantidad_focos} DETECTADOS</div></div>`;
                 } else {
-                    alertsHTML += `<div class="alert-banner alert-ok">✅ Sin focos térmicos activos en radio 50km</div>`;
+                    alertsHTML += `<div style="padding:10px;background:rgba(255,255,255,0.03);border-radius:8px;border-left:3px solid var(--accent-green)"><div style="font-size:10px;color:var(--text-muted)">FOCOS TÉRMICOS</div><div style="font-size:14px;font-weight:700;color:var(--accent-green)">SIN ACTIVIDAD</div></div>`;
                 }
                 document.getElementById('alerts-container').innerHTML = alertsHTML;
 
             } catch (e) {
-                document.getElementById('metrics-container').innerHTML = `<div class="alert-banner alert-crit">️ Error de conexión API: ${e.message}</div>`;
+                document.getElementById('metrics-container').innerHTML = `<div style="grid-column:span 2;padding:10px;background:rgba(239,68,68,0.1);border-radius:8px;color:var(--accent-red);font-size:12px;">Error API: ${e.message}</div>`;
             }
         }
-        
-        // Ejecutar carga inicial
         cargarVariables();
     </script>
+</body>
+</html>
