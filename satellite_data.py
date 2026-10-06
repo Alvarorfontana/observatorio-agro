@@ -4,11 +4,11 @@ import io
 
 class SatelliteDataEngine:
     def __init__(self):
-        # Si tenés API Key de NASA FIRMS, pegala acá. Si no, el sistema omite incendios pero funciona igual.
         self.FIRMS_API_KEY = "" 
 
     def get_massive_open_meteo(self, lat, lon):
         current_vars = "temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,rain,showers,snowfall,weather_code,cloud_cover,pressure_msl,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m,temperature_80m,temperature_120m,temperature_180m,wind_speed_80m,wind_speed_120m,wind_speed_180m,soil_temperature_0_to_7cm_mean,soil_temperature_7_to_28cm_mean,soil_temperature_28_to_100cm_mean,soil_moisture_0_to_7cm_mean,soil_moisture_7_to_28cm_mean,soil_moisture_28_to_100cm_mean,soil_moisture_100_to_255cm_mean,vapor_pressure_deficit,et0_fao_evapotranspiration"
+        
         daily_vars = "weather_code,temperature_2m_max,temperature_2m_mean,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_sum,rain_sum,showers_sum,snowfall_sum,precipitation_hours,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant,shortwave_radiation_sum,direct_radiation_sum,diffuse_radiation_sum,direct_normal_irradiance_sum,terrestrial_radiation_sum,sunshine_duration,daylight_duration,uv_index_max,et0_fao_evapotranspiration,soil_moisture_0_to_7cm_mean,soil_moisture_7_to_28cm_mean,soil_moisture_28_to_100cm_mean,soil_moisture_100_to_255cm_mean"
 
         params = {
@@ -67,4 +67,5 @@ class SatelliteDataEngine:
             'hum_actual': current.get('relative_humidity_2m', 0),
             'viento_actual': current.get('wind_speed_10m', 0),
             'presion_actual': current.get('surface_pressure', 0)
+        
         }
