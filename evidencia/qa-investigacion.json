@@ -1,0 +1,79 @@
+[
+  {
+    "name": "aire",
+    "status": "PASS",
+    "records_or_fields": 10,
+    "source_url": "https://air-quality-api.open-meteo.com/v1/air-quality?latitude=-28.507&longitude=-59.043&hourly=pm10%2Cpm2_5%2Ccarbon_monoxide%2Cnitrogen_dioxide%2Csulphur_dioxide%2Cozone%2Cdust%2Caerosol_optical_depth%2Cuv_index%2Cammonia&forecast_days=3&timezone=UTC",
+    "kind": "valores numéricos / informe"
+  },
+  {
+    "name": "elevacion",
+    "status": "PASS",
+    "records_or_fields": 1,
+    "source_url": "https://api.open-meteo.com/v1/elevation?latitude=-28.507&longitude=-59.043",
+    "kind": "valores numéricos / informe"
+  },
+  {
+    "name": "ina-nivel",
+    "status": "PASS",
+    "records_or_fields": 30,
+    "source_url": "https://alerta.ina.gob.ar/pub/datos/datos&timeStart=2026-09-07&timeEnd=2026-10-08&seriesId=22&format=json",
+    "kind": "valores numéricos / informe"
+  },
+  {
+    "name": "ina-temperatura",
+    "status": "PASS",
+    "records_or_fields": 266,
+    "source_url": "https://alerta.ina.gob.ar/pub/datos/datos&timeStart=2026-10-05&timeEnd=2026-10-08&seriesId=37299&format=json",
+    "kind": "valores numéricos / informe"
+  },
+  {
+    "name": "ina-30anios",
+    "status": "PASS",
+    "records_or_fields": 359,
+    "source_url": "https://alerta.ina.gob.ar/pub/datos/datos&timeStart=1996-10-01&timeEnd=2026-10-08&seriesId=25500&format=json",
+    "kind": "valores numéricos / informe"
+  },
+  {
+    "name": "usgs",
+    "status": "PASS",
+    "records_or_fields": 50,
+    "source_url": "https://api.waterdata.usgs.gov/ogcapi/v1/collections/daily/items?f=json&limit=50&datetime=2026-09-07%2F2026-10-07&monitoring_location_id=USGS-06887000",
+    "kind": "valores numéricos / informe"
+  },
+  {
+    "name": "nasa-catalogo",
+    "status": "PASS",
+    "records_or_fields": 3,
+    "source_url": "https://cmr.earthdata.nasa.gov/search/granules.json?short_name=MOD13Q1&version=061&bounding_box=-59.073%2C-28.537000000000003%2C-59.013%2C-28.477&page_size=3&sort_key=-start_date",
+    "kind": "metadatos, no valores del lote"
+  },
+  {
+    "name": "productos-nasa",
+    "status": "PASS",
+    "records_or_fields": 187,
+    "source_url": "https://appeears.earthdatacloud.nasa.gov/api/product",
+    "kind": "metadatos, no valores del lote"
+  },
+  {
+    "name": "landsat",
+    "status": "PASS",
+    "records_or_fields": 3,
+    "source_url": "https://planetarycomputer.microsoft.com/api/stac/v1/search?collections=landsat-c2-l2&bbox=-59.073%2C-28.537000000000003%2C-59.013%2C-28.477&limit=3",
+    "kind": "metadatos, no valores del lote"
+  },
+  {
+    "name": "radar",
+    "status": "PASS",
+    "records_or_fields": 3,
+    "source_url": "https://stac.dataspace.copernicus.eu/v1/search?collections=sentinel-1-grd&bbox=-59.073%2C-28.537000000000003%2C-59.013%2C-28.477&limit=3",
+    "kind": "metadatos, no valores del lote"
+  },
+  {
+    "name": "informe",
+    "status": "PASS",
+    "records_or_fields": 4,
+    "source_url": null,
+    "kind": "valores numéricos / informe"
+  }
+]

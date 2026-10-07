@@ -5,16 +5,20 @@ import os
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, base_dir)
 
-from flask import Flask, render_template, request, send_file, jsonify
+from flask import Flask, render_template, request, send_file, jsonify, send_from_directory
 from satellite_data import SatelliteDataEngine
 from report_generator import PremiumReportGenerator, generate_charts
 
 app = Flask(__name__, template_folder=os.path.join(base_dir, 'templates'))
 engine = SatelliteDataEngine()
 
+# Research adapters; leave the existing UI and endpoints intact.
+from research_routes import research_api
+app.register_blueprint(research_api)
+
 @app.route('/', methods=['GET'])
 def index():
-    return render_template('index.html')
+    return send_from_directory(os.path.join(base_dir,'dist'),'index.html')
 
 @app.route('/api/variables', methods=['GET'])
 def variables():
@@ -107,3 +111,10 @@ def analizar():
         return jsonify({'error': str(e)}), 500
 
 app = app
+
+@app.get('/assets/<path:filename>')
+def assets(filename):return send_from_directory(os.path.join(base_dir,'dist','assets'),filename)
+@app.get('/legacy')
+def legacy():return render_template('index.html')
+@app.get('/<name>.md')
+def docs(name):return send_from_directory(os.path.join(base_dir,'public'),name+'.md')
