@@ -23,6 +23,34 @@ def external(base, params):
         result = json.load(r)
     return {'source_url': url, 'consulted_at': datetime.now(timezone.utc).isoformat(), 'data': result}
 
+
+def text_source(url):
+    """Fetch a public text/HTML source preserving provenance; never turns a failure into a climate value."""
+    with urlopen(Request(url, headers={'User-Agent':'DOTS-Campo/1.2 '+os.environ.get('DOTS_CONTACT_URL','')}), timeout=18) as r:
+        body=r.read(350000).decode('utf-8','ignore')
+    return {'source_url':url,'consulted_at':datetime.now(timezone.utc).isoformat(),'text':body}
+
+def enso_multisource():
+    """Independent ENSO authorities used as a consensus/evidence layer."""
+    sources={
+      'noaa_cpc':'https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso/roni/probabilities.php',
+      'columbia_iri':'https://iri.columbia.edu/our-expertise/climate/forecasts/enso/current/',
+      'wmo':'https://wmo.int/publication-series/el-ninola-nina-updates',
+      'jma':'https://www.data.jma.go.jp/tcc/tcc/products/elnino/outlook.html',
+      'bom_australia':'https://www.bom.gov.au/climate/enso/',
+    }
+    out={}
+    def one(k,u):
+        try:
+            r=text_source(u); low=r['text'].lower()
+            state='El Niño' if 'el niño' in low or 'el nino' in low else ('La Niña' if 'la niña' in low or 'la nina' in low else 'sin clasificación automática')
+            # Presence is evidence; interpretation remains conservative because page structures can change.
+            return k,{'status':'recibido','source_url':u,'consulted_at':r['consulted_at'],'state_hint':state}
+        except Exception as e:return k,{'status':'sin dato','source_url':u,'error':type(e).__name__}
+    with ThreadPoolExecutor(max_workers=len(sources)) as pool:
+        for k,v in pool.map(lambda kv:one(*kv),sources.items()):out[k]=v
+    return {'source_url':'multi-source ENSO','consulted_at':datetime.now(timezone.utc).isoformat(),'data':out}
+
 def variables(lat, lon):
     return external('https://api.open-meteo.com/v1/forecast', {
         'latitude':lat,'longitude':lon,'current':'temperature_2m,relative_humidity_2m,wind_speed_10m,surface_pressure',

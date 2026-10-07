@@ -236,7 +236,7 @@ function crosses(v: Point[]) {
     }
   return false;
 }
-function App() {
+function Observatory({onHome}:{onHome:()=>void}) {
   const [point, setPoint] = useState<Point>([-28.507, -59.043]),
     [coords, setCoords] = useState(["-28.507", "-59.043"]),
     [sources, setSources] = useState<Record<string, Source>>({}),
@@ -254,12 +254,19 @@ function App() {
     [pdfBusy, setPdfBusy] = useState(false),
     [agentPrompt, setAgentPrompt] = useState("Haceme un informe integral de este lote"),
     [agentBusy, setAgentBusy] = useState(false),
-    [agentResult, setAgentResult] = useState<Data | null>(null);
+    [agentResult, setAgentResult] = useState<Data | null>(null),
+    [agentOpen, setAgentOpen] = useState(false),
+    [placeQuery,setPlaceQuery] = useState(""),
+    [placeLabel,setPlaceLabel] = useState("Bella Vista, Corrientes, Argentina"),
+    [placeBusy,setPlaceBusy] = useState(false),
+    [waterAssets,setWaterAssets] = useState<Data[]>([]),
+    [waterType,setWaterType] = useState("bebedero");
   const mapEl = useRef<HTMLDivElement>(null),
     mapRef = useRef<L.Map | null>(null),
     marker = useRef<L.CircleMarker | null>(null),
     poly = useRef<L.Polygon | null>(null),
     line = useRef<L.Polyline | null>(null),
+    vertexMarkers = useRef<L.CircleMarker[]>([]),
     currentPoints = useRef<Point[]>([]),
     drawingRef = useRef(false),
     generation = useRef(0),
@@ -359,11 +366,11 @@ function App() {
     L.control.scale({ imperial: false }).addTo(map);
     map.on("click", (e) => {
       if (!drawingRef.current) return;
-      currentPoints.current = [
-        ...currentPoints.current,
-        [e.latlng.lat, e.latlng.lng],
-      ];
-      setVertices(currentPoints.current);
+      currentPoints.current = [...currentPoints.current,[e.latlng.lat,e.latlng.lng]];
+      setVertices([...currentPoints.current]);
+      const vm=L.circleMarker(e.latlng,{radius:6,color:"#071820",weight:2,fillColor:"#57dce0",fillOpacity:1}).addTo(map);
+      vm.bindTooltip(String(currentPoints.current.length),{permanent:true,direction:"center",className:"vertex-label"});
+      vertexMarkers.current.push(vm);
       line.current?.remove();
       line.current = L.polyline(currentPoints.current, {
         color: "#57dce0",
@@ -408,6 +415,7 @@ function App() {
     poly.current = null;
     line.current?.remove();
     currentPoints.current = [];
+    vertexMarkers.current.forEach(m=>m.remove()); vertexMarkers.current=[];
     setVertices([]);
     setDrawing(true);
     drawingRef.current = true;
@@ -448,18 +456,32 @@ function App() {
       notify((e as Error).message);
     }
   };
+  async function searchPlace() {
+    if (!placeQuery.trim()) return;
+    setPlaceBusy(true);
+    try {
+      const r=await fetch('/api/fuentes/geocode?q='+encodeURIComponent(placeQuery.trim()),{signal:AbortSignal.timeout(20000)});
+      const data=await r.json(); if(!r.ok||!data.results?.length) throw Error(data.error||'No se encontró la localidad');
+      const x=data.results[0], p:[number,number]=[Number(x.lat),Number(x.lon)];
+      setPoint(p); setCoords([String(x.lat),String(x.lon)]); setPlaceLabel(x.display_name||placeQuery);
+      mapRef.current?.setView(p,13); notify('Mapa centrado en '+(x.display_name||placeQuery));
+    } catch(e){notify((e as Error).message)} finally {setPlaceBusy(false)}
+  }
+  const lotAreaHa = (()=>{ if(vertices.length<3)return null; const R=6378137, lat0=vertices.reduce((a,p)=>a+p[0],0)/vertices.length*Math.PI/180; const xy=vertices.map(([la,lo])=>[R*lo*Math.PI/180*Math.cos(lat0),R*la*Math.PI/180]); let a=0; for(let i=0;i<xy.length;i++){const j=(i+1)%xy.length;a+=xy[i][0]*xy[j][1]-xy[j][0]*xy[i][1]} return Math.abs(a)/2/10000; })();
+  const lotPerimeterKm = (()=>{ if(vertices.length<2)return null; const rad=(x:number)=>x*Math.PI/180,R=6371; let d=0; for(let i=0;i<vertices.length;i++){const a=vertices[i],b=vertices[(i+1)%vertices.length],dl=rad(b[0]-a[0]),dn=rad(b[1]-a[1]);const h=Math.sin(dl/2)**2+Math.cos(rad(a[0]))*Math.cos(rad(b[0]))*Math.sin(dn/2)**2;d+=2*R*Math.asin(Math.sqrt(h))}return d; })();
   async function askDots(prompt = agentPrompt) {
     setAgentBusy(true);
     setAgentResult(null);
     try {
       const r = await fetch("/api/fuentes/agentic", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lat: point[0], lon: point[1], prompt, polygon: poly.current ? vertices : null, inaSeries }),
+        body: JSON.stringify({ lat: point[0], lon: point[1], prompt, polygon: poly.current ? vertices : null, inaSeries, waterAssets }),
         signal: AbortSignal.timeout(60000),
       });
       const data = await r.json().catch(() => ({}));
       if (!r.ok) throw Error(data.error || "DOTS Agentic no respondió");
       setAgentResult(data);
+      setAgentOpen(true);
       setAgentPrompt(prompt);
       notify("Análisis Agentic completado con trazabilidad de fuentes.");
     } catch (e) { notify((e as Error).message); } finally { setAgentBusy(false); }
@@ -469,7 +491,7 @@ function App() {
     try {
       const r = await fetch("/api/fuentes/agentic/pdf", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lat: point[0], lon: point[1], prompt: agentPrompt, polygon: poly.current ? vertices : null, inaSeries, nombre: "DOTS / Informe inteligente del lote" }),
+        body: JSON.stringify({ lat: point[0], lon: point[1], prompt: agentPrompt, polygon: poly.current ? vertices : null, inaSeries, waterAssets, nombre: "DOTS / Informe técnico del lote", analysis: agentResult }),
         signal: AbortSignal.timeout(60000),
       });
       if (!r.ok) throw Error("No se pudo generar el informe Agentic");
@@ -538,7 +560,7 @@ function App() {
   return (
     <div className="whole">
       <header className="panel">
-        <div className="brand">
+        <div className="brand" onClick={onHome} style={{cursor:"pointer"}} title="Volver a DOTS">
           <div className="mark">
             <Satellite size={23} />
           </div>
@@ -552,9 +574,7 @@ function App() {
         <div className="breadcrumb">
           <span>ÁREA DE ANÁLISIS</span>
           <b>
-            {point[0] === -28.507
-              ? "BELLA VISTA / CORRIENTES"
-              : "LOTE / PUNTO SELECCIONADO"}
+            {placeLabel.split(',').slice(0,2).join(' / ').toUpperCase()}
           </b>
           <span>WGS84</span>
         </div>
@@ -569,10 +589,8 @@ function App() {
           <section className="panel block">
             <div className="tag">01 / ÁREA E INFORMES</div>
             <h1>Lectura del campo</h1>
-            <p className="small location">
-              Zona rural de Bella Vista, Corrientes. Consultá el punto o
-              delimitá el lote.
-            </p>
+            <p className="small location">{placeLabel}. Buscá cualquier localidad o paraje y luego delimitá el lote.</p>
+            <div className="place-search"><input value={placeQuery} onChange={e=>setPlaceQuery(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();void searchPlace()}}} placeholder="Localidad, paraje, provincia, país"/><button type="button" onClick={()=>void searchPlace()} disabled={placeBusy}>{placeBusy?'Buscando…':'Buscar mapa'}</button></div>
             <form
               className="form"
               onSubmit={(e) => {
@@ -615,9 +633,13 @@ function App() {
               </button>
             </form>
             <div className="status">
-              {poly.current
-                ? vertices.length + " vértices / centroide aproximado"
-                : "Sin lote delimitado"}
+              {poly.current ? `${vertices.length} vértices · ${lotAreaHa?.toFixed(1)} ha · perímetro ${lotPerimeterKm?.toFixed(2)} km` : "Sin lote delimitado"}
+            </div>
+            <div className="water-inventory">
+              <div className="tag">AGUA / INFRAESTRUCTURA</div>
+              <p className="small">Registrá infraestructura conocida. DOTS la separa de futuras detecciones satelitales.</p>
+              <div className="water-add"><select value={waterType} onChange={e=>setWaterType(e.target.value)}><option>bebedero</option><option>tajamar</option><option>represa</option><option>molino</option><option>perforación</option><option>tanque australiano</option><option>bomba</option><option>cañería</option><option>arroyo</option><option>canal</option></select><button type="button" onClick={()=>{const item={type:waterType,lat:point[0],lon:point[1],source:'declarado por usuario'};setWaterAssets(v=>[...v,item]);L.circleMarker(point,{radius:7,color:'#4bd6e5',fillOpacity:.85}).addTo(mapRef.current!).bindTooltip(waterType.toUpperCase(),{permanent:false});notify('Infraestructura registrada: '+waterType)}}>+ En punto actual</button></div>
+              {!!waterAssets.length && <div className="water-list">{waterAssets.map((a,i)=><span key={i}>{i+1}. {a.type}</span>)}</div>}
             </div>
           </section>
           <section className="panel block agentic-box">
@@ -637,15 +659,11 @@ function App() {
             </div>
             <textarea className="agent-input" rows={3} value={agentPrompt} onChange={e=>setAgentPrompt(e.target.value)} placeholder="Ej.: ¿Cómo está este campo y qué debería vigilar esta semana?" />
             <button className="primary" onClick={()=>void askDots()} disabled={agentBusy}>{agentBusy ? "Analizando fuentes…" : "Generar análisis"}</button>
-            {agentResult && <div className="agent-result">
+            {agentResult && <div className="agent-result compact-result">
               <div className="confidence"><strong>{agentResult.confidence?.score}/100</strong><span>CONFIANZA {String(agentResult.confidence?.label||"").toUpperCase()}</span></div>
-              <p>{agentResult.summary}</p>
-              {(agentResult.findings||[]).map((x:Data,i:number)=><div className="agent-finding" key={i}><b>{x.topic}</b><span>{x.text}</span></div>)}
-              <h3>Recomendaciones</h3>
-              {(agentResult.recommendations||[]).map((x:string,i:number)=><p className="small" key={i}>• {x}</p>)}
-              {!!agentResult.warnings?.length && <details><summary className="warning">Límites y advertencias ({agentResult.warnings.length})</summary>{agentResult.warnings.map((x:string,i:number)=><p className="footnote" key={i}>• {x}</p>)}</details>}
-              <details><summary className="small">Ver evidencia y fuentes</summary>{(agentResult.evidence||[]).map((e:Data,i:number)=><div className="evidence-row" key={i}><b>{e.source}</b><span>{e.status}</span><small>{e.consulted_at?.slice(0,19)||"sin fecha"}</small></div>)}</details>
-              <button className="primary" onClick={()=>void agentPdf()} disabled={pdfBusy}><FileText className="icon" />{pdfBusy?"Generando…":"Generar PDF inteligente"}</button>
+              <p className="small">{agentResult.summary}</p>
+              <button type="button" onClick={()=>setAgentOpen(true)}>Abrir informe en pantalla</button>
+              <button className="primary" onClick={()=>void agentPdf()} disabled={pdfBusy}><FileText className="icon" />{pdfBusy?"Generando…":"Descargar PDF técnico"}</button>
             </div>}
           </section>
           <section className="panel block">
@@ -1355,6 +1373,18 @@ function App() {
             : "SIN LÍMITES CATASTRALES"}
         </div>
       </main>
+      {agentOpen && agentResult && <div className="agent-modal-backdrop" onClick={()=>setAgentOpen(false)}>
+        <section className="agent-modal" onClick={e=>e.stopPropagation()}>
+          <header><div><div className="tag">DOTS AGENTIC / INFORME DEL LOTE</div><h2>Diagnóstico multifuente</h2></div><button onClick={()=>setAgentOpen(false)}>Cerrar ×</button></header>
+          <div className="agent-modal-grid"><div className="confidence big"><strong>{agentResult.confidence?.score}/100</strong><span>CONFIANZA {String(agentResult.confidence?.label||"").toUpperCase()}<br/>{agentResult.confidence?.received_sources} FUENTES RECIBIDAS</span></div><div><b>Consulta</b><p>{agentResult.prompt}</p></div></div>
+          <p className="agent-summary">{agentResult.summary}</p>
+          <h3>Hallazgos</h3><div className="modal-findings">{(agentResult.findings||[]).map((x:Data,i:number)=><article key={i}><span>{x.status}</span><h4>{x.topic}</h4><p>{x.text}</p></article>)}</div>
+          <h3>Recomendaciones operativas</h3>{(agentResult.recommendations||[]).map((x:string,i:number)=><p key={i}>• {x}</p>)}
+          {!!agentResult.warnings?.length && <><h3>Límites y advertencias</h3>{agentResult.warnings.map((x:string,i:number)=><p className="warning" key={i}>• {x}</p>)}</>}
+          <h3>Evidencia y APIs</h3><div className="modal-evidence">{(agentResult.evidence||[]).map((e:Data,i:number)=><div key={i}><b>{e.source}</b><span className={e.status==='recibido'?'ok':'miss'}>{e.status}</span><small>{e.consulted_at?.slice(0,19)||'sin fecha'}</small></div>)}</div>
+          <div className="modal-actions"><button className="primary" onClick={()=>void agentPdf()} disabled={pdfBusy}><FileText className="icon" />{pdfBusy?'Generando PDF…':'Descargar informe técnico PDF'}</button><button onClick={()=>setAgentOpen(false)}>Volver al mapa</button></div>
+        </section>
+      </div>}
       {toast && (
         <div className="toast show" role="status" aria-live="polite">
           {toast}
@@ -1362,5 +1392,52 @@ function App() {
       )}
     </div>
   );
+}
+function SiteLink({to,children,className=""}:{to:string;children:React.ReactNode;className?:string}){
+  return <a href={to} className={className} onClick={(e)=>{e.preventDefault();history.pushState({},"",to);window.dispatchEvent(new PopStateEvent("popstate"));window.scrollTo({top:0,behavior:"smooth"});}}>{children}</a>
+}
+const navItems=[["/producto","Producto"],["/soluciones","Soluciones"],["/tecnologia","Tecnología"],["/ganaderia","Ganadería"],["/casos","Casos de uso"],["/precios","Precios"],["/blog","Blog"],["/contacto","Contacto"]];
+function Brand(){return <SiteLink to="/" className="site-brand"><span className="site-mark"><Satellite size={22}/></span><span><b>DOTS</b><small>DATOS · OBSERVACIÓN · TERRITORIO · SATÉLITE</small></span></SiteLink>}
+function PublicHeader({onDemo}:{onDemo:()=>void}){return <header className="site-header"><Brand/><nav>{navItems.map(([to,label])=><SiteLink key={to} to={to}>{label}</SiteLink>)}</nav><div className="site-head-actions"><SiteLink to="/acceso" className="ghost-link">Iniciar sesión</SiteLink><button className="demo-btn" onClick={onDemo}>Ver demostración →</button></div></header>}
+const tech=["CONAE · SAOCOM","Copernicus · Sentinel","NASA","NOAA","ECMWF","SMN Argentina","INMET Brasil","JMA Japón","BOM Australia"];
+function SourceStrip(){return <section className="source-strip"><span>TECNOLOGÍA ARGENTINA<br/>Y FUENTES GLOBALES</span>{tech.map((x,i)=><b key={x} className={i===0?'arg-source':''}>{x}</b>)}</section>}
+function Home({onDemo}:{onDemo:()=>void}){return <div className="public-site"><PublicHeader onDemo={onDemo}/><main>
+  <section className="cover-hero"><img src="/dots-portada.png" alt="Campo ganadero y tecnología satelital DOTS"/><div className="cover-shade"></div><div className="cover-copy"><div className="cover-kicker">TECNOLOGÍA SATELITAL ARGENTINA PARA LA GANADERÍA DEL FUTURO</div><h1>Más datos.<br/>Mejores decisiones.<br/><em>Campos más productivos.</em></h1><p>Integramos imágenes satelitales, clima, suelos, agua, pasturas y ganado para gestionar cada establecimiento con información trazable y útil.</p><div className="cover-actions"><button onClick={onDemo}>Ver demostración →</button><SiteLink to="/producto">Conocer DOTS</SiteLink></div></div></section>
+  <section className="home-intro"><div><span className="section-tag">DOTS / CAMPO</span><h2>Un gemelo digital para entender el establecimiento completo.</h2></div><p>El lote deja de ser un punto en un mapa. DOTS lo relaciona con vegetación, humedad, agua, suelo, clima, ganado, infraestructura, riesgos e historia para transformar información dispersa en decisiones de manejo.</p></section>
+  <section className="cap-grid">{[[MapPinned,"Lotes y potreros","Límites, superficie, evolución y comparación."],[Droplets,"Agua e infraestructura","Bebederos, tajamares, represas, molinos y cobertura."],[Layers,"Pasturas y suelos","NDVI, humedad, textura, carbono y nutrientes disponibles."],[Thermometer,"Clima y ganado","Pronósticos, THI, carga, rotación y bienestar."],[TriangleAlert,"Riesgos","Sequía, focos térmicos, exceso hídrico y alertas."],[FileText,"Informes DOTS","Diagnóstico, evidencia, recomendaciones y trazabilidad."]].map(([Icon,t,d]:any)=><article key={t}><Icon/><h3>{t}</h3><p>{d}</p></article>)}</section>
+  <section className="demo-call"><div><span className="section-tag">DEMOSTRACIÓN INTERACTIVA</span><h2>Del satélite al potrero.</h2><p>Entrá al Observatorio, marcá un punto o delimitá un lote y consultá las fuentes disponibles desde una sola interfaz.</p></div><button onClick={onDemo}>Abrir Observatorio →</button></section>
+  <SourceStrip/>
+</main><SiteFooter/></div>}
+function PageHero({eyebrow,title,lead}:{eyebrow:string;title:string;lead:string}){return <section className="page-hero"><span className="section-tag">{eyebrow}</span><h1>{title}</h1><p>{lead}</p></section>}
+const cards={
+ producto:[["01","Delimitá","Definí el establecimiento y sus potreros directamente sobre el mapa."],["02","Observá","Superponé satélite, clima, suelo, agua, vegetación y riesgo."],["03","Compará","Leé cambios temporales, fuentes y modelos sin perder trazabilidad."],["04","Decidí","DOTS resume hallazgos, límites, recomendaciones e informe técnico."]],
+ soluciones:[["Lotes y potreros","Superficie, perímetro, centroides, historial y análisis por unidad de manejo."],["Pasturas","Sentinel-2, escenas, evolución e índices cuando exista procesamiento raster verificable."],["Agua","Lluvia, balance, ríos y futura gestión de bebederos, tajamares, represas y cañerías."],["Suelos","Humedad, temperatura, relieve y propiedades modeladas con fuente y profundidad declaradas."],["Ganado","THI, carga y rotación cuando el productor incorpora inventario y movimientos."],["Riesgos","FIRMS, sequía, calor, excesos hídricos y alertas con alcance explícito."]],
+ ganaderia:[["Potrero como unidad","Cada análisis parte del lote real y su historia."],["Agua para el rodeo","Distancias, cobertura y estado de infraestructura hídrica."],["Pastura y carga","Cruce de condición forrajera con ocupación y presión de pastoreo."],["Bienestar térmico","THI y condiciones meteorológicas para anticipar estrés por calor."],["Rotación","Entrada, salida, descanso y recuperación de cada potrero."],["Tareas","Del diagnóstico a inspecciones, movimientos y acciones verificables."]]
+};
+function InfoPage({kind,onDemo}:{kind:"producto"|"soluciones"|"ganaderia";onDemo:()=>void}){const cfg:any={producto:["PRODUCTO","El campo, entendido como un sistema.","DOTS conecta territorio, observación satelital y fuentes ambientales para construir una lectura integral del establecimiento."],soluciones:["SOLUCIONES","Una plataforma para cada capa del campo.","Módulos especializados que se cruzan entre sí: el valor no está en una variable aislada, sino en la relación entre todas."],ganaderia:["GANADERÍA","Inteligencia territorial para manejar mejor el rodeo.","Pasturas, agua, clima, carga, rotación y riesgo reunidos alrededor del potrero, la unidad donde ocurre la decisión."]}[kind];return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner"><PageHero eyebrow={cfg[0]} title={cfg[1]} lead={cfg[2]}/><section className="info-grid">{cards[kind].map(([n,t,d])=><article key={t}><span>{n}</span><h2>{t}</h2><p>{d}</p></article>)}</section>{kind==="producto"&&<section className="product-shot"><img src="/evidencia/Preview.png" alt="Vista del Observatorio DOTS"/><div><span className="section-tag">OBSERVATORIO</span><h2>El mapa es el centro operativo.</h2><p>La plataforma actual ya combina mapa satelital, delimitación, fuentes de investigación, gráficos y exportación. La web pública explica el producto; el Observatorio concentra el trabajo técnico.</p><button onClick={onDemo}>Probar demostración</button></div></section>}<SourceStrip/></main><SiteFooter/></div>}
+function Technology({onDemo}:{onDemo:()=>void}){return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner"><PageHero eyebrow="TECNOLOGÍA" title="Argentina primero. El mundo como respaldo." lead="DOTS integra fuentes nacionales e internacionales, conserva procedencia y fecha, y evita presentar como medición aquello que sólo es modelo, catálogo o inferencia."/><section className="tech-grid">{tech.map((t,i)=><article key={t}><span>{String(i+1).padStart(2,'0')}</span><h2>{t}</h2><p>{i===0?'Radar y observación argentina como capa estratégica para suelo y territorio.':'Fuente complementaria dentro de una arquitectura multifuente y auditable.'}</p></article>)}</section><section className="method-banner"><h2>OBSERVADO · MODELADO · CALCULADO · PRONOSTICADO</h2><p>Cada resultado debe indicar qué es, de dónde proviene, cuándo fue consultado y qué limitaciones tiene.</p></section></main><SiteFooter/></div>}
+function Cases({onDemo}:{onDemo:()=>void}){return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner"><PageHero eyebrow="CASOS DE USO" title="Preguntas reales del campo." lead="DOTS está pensado para responder preguntas operativas, no para llenar una pantalla de indicadores."/><section className="case-list">{["¿Qué potrero perdió vigor y desde cuándo?","¿Dónde falta cobertura de agua para el rodeo?","¿La lluvia prevista compensa la evapotranspiración?","¿Hay riesgo térmico para el ganado esta semana?","¿Cómo cambió este lote frente al mismo período del año anterior?","¿Qué fuentes coinciden y cuáles divergen?"].map((x,i)=><article key={x}><b>0{i+1}</b><h2>{x}</h2><p>DOTS cruza las capas disponibles, explicita la calidad de evidencia y conserva los datos faltantes como faltantes.</p></article>)}</section></main><SiteFooter/></div>}
+function Pricing({onDemo}:{onDemo:()=>void}){return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner"><PageHero eyebrow="PLANES" title="Una plataforma que puede crecer con el establecimiento." lead="La arquitectura comercial queda preparada sin simular todavía un cobro que no está conectado."/><section className="pricing-grid"><article><span>DEMO</span><h2>Explorar</h2><p>Recorrido del Observatorio y un establecimiento demostrativo.</p><b>Sin cargo</b><button onClick={onDemo}>Ver demo</button></article><article className="featured"><span>PRODUCTOR</span><h2>Gestión de campo</h2><p>Lotes, fuentes, históricos, alertas, informes y gestión territorial.</p><b>Próximamente</b><SiteLink to="/contacto">Solicitar información</SiteLink></article><article><span>PROFESIONAL</span><h2>Multiestablecimiento</h2><p>Más campos, comparación, equipos técnicos y reportes avanzados.</p><b>Próximamente</b><SiteLink to="/contacto">Contactar</SiteLink></article></section></main><SiteFooter/></div>}
+function Blog({onDemo}:{onDemo:()=>void}){return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner"><PageHero eyebrow="CUADERNO DOTS" title="Territorio, satélites y ganadería explicados con claridad." lead="Espacio editorial para metodología, fuentes, casos, nuevas capas y lectura del contexto agroclimático."/><section className="blog-grid">{[["SATÉLITES","Qué puede observar Sentinel-2 y qué no"],["ARGENTINA","SAOCOM y el valor del radar para el territorio"],["GANADERÍA","THI: cómo leer el estrés térmico sin simplificarlo"],["AGUA","Del milímetro de lluvia a la disponibilidad real"],["SUELOS","Por qué nitrógeno modelado no es análisis de laboratorio"],["METODOLOGÍA","Cómo DOTS diferencia dato, cálculo e interpretación"]].map(([k,t])=><article key={t}><span>{k}</span><h2>{t}</h2><p>Próxima publicación del Cuaderno DOTS.</p></article>)}</section></main><SiteFooter/></div>}
+function Contact({onDemo}:{onDemo:()=>void}){return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner"><PageHero eyebrow="CONTACTO" title="Conversemos sobre tu campo o tu proyecto." lead="La versión pública puede recibir consultas de productores, técnicos, organizaciones y potenciales aliados tecnológicos."/><section className="contact-box"><div><h2>DOTS / Campo</h2><p>Inteligencia territorial para la gestión ganadera.</p><p className="muted">El formulario y el correo definitivo se conectarán cuando definamos el canal público del proyecto.</p></div><div className="contact-form"><label>Nombre<input placeholder="Tu nombre"/></label><label>Correo<input type="email" placeholder="nombre@correo.com"/></label><label>Consulta<textarea placeholder="Contanos qué necesitás"></textarea></label><button type="button">Preparar consulta</button></div></section></main><SiteFooter/></div>}
+function Access({onDemo}:{onDemo:()=>void}){return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner access-page"><PageHero eyebrow="ACCESO" title="Observatorio DOTS" lead="La autenticación real se incorporará junto con los planes y permisos por establecimiento. Mientras tanto, podés entrar a la demostración."/><button className="big-demo" onClick={onDemo}>Entrar a la demostración →</button></main><SiteFooter/></div>}
+function SiteFooter(){return <footer className="site-footer"><Brand/><p>Inteligencia territorial para la gestión ganadera.</p><div><SiteLink to="/tecnologia">Tecnología</SiteLink><SiteLink to="/producto">Producto</SiteLink><SiteLink to="/contacto">Contacto</SiteLink></div></footer>}
+function App(){
+  const [path,setPath]=useState(window.location.pathname);
+  const [inside,setInside]=useState(path==="/observatorio"||path==="/demo");
+  useEffect(()=>{const h=()=>{setPath(window.location.pathname);setInside(window.location.pathname==="/observatorio"||window.location.pathname==="/demo")};addEventListener("popstate",h);return()=>removeEventListener("popstate",h)},[]);
+  const openDemo=()=>{history.pushState({},"","/observatorio");setPath("/observatorio");setInside(true);window.scrollTo(0,0)};
+  const home=()=>{history.pushState({},"","/");setPath("/");setInside(false);window.scrollTo(0,0)};
+  if(inside)return <Observatory onHome={home}/>;
+  if(path==="/producto")return <InfoPage kind="producto" onDemo={openDemo}/>;
+  if(path==="/soluciones")return <InfoPage kind="soluciones" onDemo={openDemo}/>;
+  if(path==="/ganaderia")return <InfoPage kind="ganaderia" onDemo={openDemo}/>;
+  if(path==="/tecnologia")return <Technology onDemo={openDemo}/>;
+  if(path==="/casos")return <Cases onDemo={openDemo}/>;
+  if(path==="/precios")return <Pricing onDemo={openDemo}/>;
+  if(path==="/blog")return <Blog onDemo={openDemo}/>;
+  if(path==="/contacto")return <Contact onDemo={openDemo}/>;
+  if(path==="/acceso")return <Access onDemo={openDemo}/>;
+  return <Home onDemo={openDemo}/>;
 }
 createRoot(document.getElementById("root")!).render(<App />);

@@ -58,12 +58,37 @@ def report():
     except Exception as e:return jsonify({'status':'sin dato','error':'No se pudo generar el informe','type':type(e).__name__}),502
 
 
+
+
+@research_api.get('/geocode')
+def geocode():
+    try:
+        q=(request.args.get('q') or '').strip()
+        if len(q)<2:return jsonify({'error':'Escribí una localidad, paraje o región'}),400
+        data=c.external('https://nominatim.openstreetmap.org/search',{'q':q,'format':'jsonv2','limit':5,'addressdetails':1})
+        rows=data.get('data',[]) if isinstance(data,dict) else []
+        return jsonify({'results':[{'lat':x.get('lat'),'lon':x.get('lon'),'display_name':x.get('display_name'),'type':x.get('type'),'address':x.get('address',{})} for x in rows[:5]],'source':'OpenStreetMap Nominatim'})
+    except Exception as e:return jsonify({'error':'El buscador geográfico no respondió','type':type(e).__name__}),502
+
+@research_api.get('/agentic/status')
+def agentic_status():
+    """Inventario operativo: distingue fuentes sin credencial, públicas y capacidades aún no implementadas."""
+    return jsonify({
+      'engine':'DOTS Agentic', 'version':'0.5',
+      'publicas':['Open-Meteo','Open-Meteo Flood','ERA5/Open-Meteo Archive','SoilGrids','SMN','INMET','DMC','ECCC','NWS','MET Norway','INA','USGS','NASA CMR','Landsat STAC','Sentinel catálogo'],
+      'credenciales':{
+        'NASA FIRMS': 'configurada' if os.environ.get('FIRMS_MAP_KEY') else 'requiere FIRMS_MAP_KEY',
+      },
+      'procesamiento_pendiente':['NDVI/EVI raster Sentinel-2','biomasa/pastura','detección satelital validada de cuerpos de agua','sensores de ganado'], 'enso':['NOAA CPC/RONI','Columbia IRI','WMO','JMA','BOM Australia'],
+      'regla':'Una fuente caída se reporta como faltante y no impide que las demás produzcan el análisis.'
+    })
+
 @research_api.post('/agentic')
 def agentic_analyze():
     try:
         d=request.get_json(silent=True) or {}
         lat,lon=c.coordinates({'lat':[d.get('lat')],'lon':[d.get('lon')]})
-        result=agentic.analyze(lat,lon,str(d.get('prompt','')),d.get('polygon'),d.get('inaSeries'))
+        result=agentic.analyze(lat,lon,str(d.get('prompt','')),d.get('polygon'),d.get('inaSeries'),d.get('waterAssets'))
         # Raw payloads remain available through existing endpoints; keep conversational response compact.
         if not d.get('include_raw'):
             result.pop('raw',None)
@@ -76,7 +101,11 @@ def agentic_pdf():
     try:
         d=request.get_json(silent=True) or {}
         lat,lon=c.coordinates({'lat':[d.get('lat')],'lon':[d.get('lon')]})
-        result=agentic.analyze(lat,lon,str(d.get('prompt','')),d.get('polygon'),d.get('inaSeries'))
+        supplied=d.get('analysis')
+        if isinstance(supplied,dict) and supplied.get('findings') is not None and supplied.get('point'):
+            result=supplied
+        else:
+            result=agentic.analyze(lat,lon,str(d.get('prompt','')),d.get('polygon'),d.get('inaSeries'),d.get('waterAssets'))
         pdf=agentic.pdf_bytes(result,str(d.get('nombre','Lote DOTS')))
         return Response(pdf,mimetype='application/pdf',headers={'Content-Disposition':'attachment; filename=DOTS-informe-agentic.pdf'})
     except ValueError as e:return jsonify({'error':str(e)}),400
