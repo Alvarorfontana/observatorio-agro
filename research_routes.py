@@ -4,6 +4,7 @@ from flask import Blueprint, request, jsonify, Response
 from urllib.parse import urlparse
 from datetime import datetime, timezone
 import research_connectors as c
+from agentic.orchestrator import analyze_point
 
 research_api=Blueprint('research_api',__name__,url_prefix='/api/fuentes')
 
@@ -47,6 +48,15 @@ def research_data(name):
         return jsonify(jobs[name]())
     except ValueError as e:return jsonify({'status':'sin dato','error':str(e)}),400
     except Exception as e:return jsonify({'status':'sin dato','error':'La fuente no respondió válidamente','type':type(e).__name__}),502
+
+@research_api.get('/agentic')
+def agentic_report():
+    try:
+        q={key:[value] for key,value in request.args.items()}
+        lat,lon=c.coordinates(q)
+        return jsonify(analyze_point(lat,lon,request.args.get('inaSeries')))
+    except ValueError as e:return jsonify({'error':str(e)}),400
+    except Exception as e:return jsonify({'status':'sin dato','error':'No se pudo ejecutar DOTS Agentic','type':type(e).__name__}),502
 
 @research_api.post('/analizar')
 def report():
