@@ -4,7 +4,7 @@ from flask import Blueprint, request, jsonify, Response
 from urllib.parse import urlparse
 from datetime import datetime, timezone
 import research_connectors as c
-from agentic.orchestrator import analyze_point
+import agentic_engine as agentic
 
 research_api=Blueprint('research_api',__name__,url_prefix='/api/fuentes')
 
@@ -49,15 +49,6 @@ def research_data(name):
     except ValueError as e:return jsonify({'status':'sin dato','error':str(e)}),400
     except Exception as e:return jsonify({'status':'sin dato','error':'La fuente no respondió válidamente','type':type(e).__name__}),502
 
-@research_api.get('/agentic')
-def agentic_report():
-    try:
-        q={key:[value] for key,value in request.args.items()}
-        lat,lon=c.coordinates(q)
-        return jsonify(analyze_point(lat,lon,request.args.get('inaSeries')))
-    except ValueError as e:return jsonify({'error':str(e)}),400
-    except Exception as e:return jsonify({'status':'sin dato','error':'No se pudo ejecutar DOTS Agentic','type':type(e).__name__}),502
-
 @research_api.post('/analizar')
 def report():
     try:
@@ -65,3 +56,28 @@ def report():
         return Response(c.pdf_report(lat,lon,str(d.get('nombre','Lote')),d.get('inaSeries')),mimetype='application/pdf',headers={'Content-Disposition':'attachment; filename=informe_campo.pdf'})
     except ValueError as e:return jsonify({'error':str(e)}),400
     except Exception as e:return jsonify({'status':'sin dato','error':'No se pudo generar el informe','type':type(e).__name__}),502
+
+
+@research_api.post('/agentic')
+def agentic_analyze():
+    try:
+        d=request.get_json(silent=True) or {}
+        lat,lon=c.coordinates({'lat':[d.get('lat')],'lon':[d.get('lon')]})
+        result=agentic.analyze(lat,lon,str(d.get('prompt','')),d.get('polygon'),d.get('inaSeries'))
+        # Raw payloads remain available through existing endpoints; keep conversational response compact.
+        if not d.get('include_raw'):
+            result.pop('raw',None)
+        return jsonify(result)
+    except ValueError as e:return jsonify({'error':str(e)}),400
+    except Exception as e:return jsonify({'status':'sin dato','error':'No se pudo completar el análisis Agentic','type':type(e).__name__}),502
+
+@research_api.post('/agentic/pdf')
+def agentic_pdf():
+    try:
+        d=request.get_json(silent=True) or {}
+        lat,lon=c.coordinates({'lat':[d.get('lat')],'lon':[d.get('lon')]})
+        result=agentic.analyze(lat,lon,str(d.get('prompt','')),d.get('polygon'),d.get('inaSeries'))
+        pdf=agentic.pdf_bytes(result,str(d.get('nombre','Lote DOTS')))
+        return Response(pdf,mimetype='application/pdf',headers={'Content-Disposition':'attachment; filename=DOTS-informe-agentic.pdf'})
+    except ValueError as e:return jsonify({'error':str(e)}),400
+    except Exception as e:return jsonify({'status':'sin dato','error':'No se pudo generar el informe Agentic','type':type(e).__name__}),502

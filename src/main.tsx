@@ -251,7 +251,10 @@ function App() {
     [toast, setToast] = useState(""),
     [vertices, setVertices] = useState<Point[]>([]),
     [drawing, setDrawing] = useState(false),
-    [pdfBusy, setPdfBusy] = useState(false);
+    [pdfBusy, setPdfBusy] = useState(false),
+    [agentPrompt, setAgentPrompt] = useState("Haceme un informe integral de este lote"),
+    [agentBusy, setAgentBusy] = useState(false),
+    [agentResult, setAgentResult] = useState<Data | null>(null);
   const mapEl = useRef<HTMLDivElement>(null),
     mapRef = useRef<L.Map | null>(null),
     marker = useRef<L.CircleMarker | null>(null),
@@ -445,6 +448,36 @@ function App() {
       notify((e as Error).message);
     }
   };
+  async function askDots(prompt = agentPrompt) {
+    setAgentBusy(true);
+    setAgentResult(null);
+    try {
+      const r = await fetch("/api/fuentes/agentic", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lat: point[0], lon: point[1], prompt, polygon: poly.current ? vertices : null, inaSeries }),
+        signal: AbortSignal.timeout(60000),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw Error(data.error || "DOTS Agentic no respondió");
+      setAgentResult(data);
+      setAgentPrompt(prompt);
+      notify("Análisis Agentic completado con trazabilidad de fuentes.");
+    } catch (e) { notify((e as Error).message); } finally { setAgentBusy(false); }
+  }
+  async function agentPdf() {
+    setPdfBusy(true);
+    try {
+      const r = await fetch("/api/fuentes/agentic/pdf", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lat: point[0], lon: point[1], prompt: agentPrompt, polygon: poly.current ? vertices : null, inaSeries, nombre: "DOTS / Informe inteligente del lote" }),
+        signal: AbortSignal.timeout(60000),
+      });
+      if (!r.ok) throw Error("No se pudo generar el informe Agentic");
+      const blob=await r.blob();
+      if ((await blob.slice(0,5).text()) !== "%PDF-") throw Error("Respuesta PDF inválida");
+      download(blob,"DOTS-informe-agentic.pdf");
+    } catch(e) { notify((e as Error).message); } finally { setPdfBusy(false); }
+  }
   async function pdf() {
     setPdfBusy(true);
     try {
@@ -587,9 +620,37 @@ function App() {
                 : "Sin lote delimitado"}
             </div>
           </section>
+          <section className="panel block agentic-box">
+            <div className="tag">02 / DOTS AGENTIC</div>
+            <h2>Preguntarle a DOTS</h2>
+            <p className="small">El orquestador selecciona las fuentes disponibles, conserva los faltantes y audita lo que puede afirmar.</p>
+            <div className="quick-grid">
+              {[
+                ["Informe integral","Haceme un informe integral de este lote"],
+                ["Pasturas","Evaluá pasturas y vegetación"],
+                ["Agua","Analizá agua, lluvia y disponibilidad hídrica"],
+                ["Ganado","Analizá estrés térmico y entorno del ganado"],
+                ["Sequía","Evaluá riesgo de sequía e incendio"],
+                ["Suelo","Analizá humedad y condición del suelo"],
+                ["Clima","Resumí clima actual y próximos 7 días"],
+              ].map(([label,prompt]) => <button key={label} type="button" onClick={()=>void askDots(prompt)} disabled={agentBusy}>{label}</button>)}
+            </div>
+            <textarea className="agent-input" rows={3} value={agentPrompt} onChange={e=>setAgentPrompt(e.target.value)} placeholder="Ej.: ¿Cómo está este campo y qué debería vigilar esta semana?" />
+            <button className="primary" onClick={()=>void askDots()} disabled={agentBusy}>{agentBusy ? "Analizando fuentes…" : "Generar análisis"}</button>
+            {agentResult && <div className="agent-result">
+              <div className="confidence"><strong>{agentResult.confidence?.score}/100</strong><span>CONFIANZA {String(agentResult.confidence?.label||"").toUpperCase()}</span></div>
+              <p>{agentResult.summary}</p>
+              {(agentResult.findings||[]).map((x:Data,i:number)=><div className="agent-finding" key={i}><b>{x.topic}</b><span>{x.text}</span></div>)}
+              <h3>Recomendaciones</h3>
+              {(agentResult.recommendations||[]).map((x:string,i:number)=><p className="small" key={i}>• {x}</p>)}
+              {!!agentResult.warnings?.length && <details><summary className="warning">Límites y advertencias ({agentResult.warnings.length})</summary>{agentResult.warnings.map((x:string,i:number)=><p className="footnote" key={i}>• {x}</p>)}</details>}
+              <details><summary className="small">Ver evidencia y fuentes</summary>{(agentResult.evidence||[]).map((e:Data,i:number)=><div className="evidence-row" key={i}><b>{e.source}</b><span>{e.status}</span><small>{e.consulted_at?.slice(0,19)||"sin fecha"}</small></div>)}</details>
+              <button className="primary" onClick={()=>void agentPdf()} disabled={pdfBusy}><FileText className="icon" />{pdfBusy?"Generando…":"Generar PDF inteligente"}</button>
+            </div>}
+          </section>
           <section className="panel block">
             <div className="tag" style={{ marginBottom: 10 }}>
-              02 / FUENTES Y VARIABLES
+              03 / FUENTES Y VARIABLES
             </div>
             {SOURCES.filter(([key]) => !NATIONAL.includes(key) && key !== "metnorway" && !RESEARCH.includes(key)).map(([key, label]) => (
               <button
