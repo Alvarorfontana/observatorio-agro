@@ -52,9 +52,11 @@ type Source = {
   payload?: Data;
   error?: string;
 };
-const RESEARCH = ["aire","elevacion","ina","usgs","nasa-catalogo","productos-nasa","landsat","radar","copernicus-stac","cnes-stac","dlr-stac","deafrica-stac","firms","nasa-power-30","enso","era5-cds","sentinel-hub","noaa-cdo","usgs-m2m","nasa-earthdata","copernicus-marine","gee","openaq","gfw","aemet","eumetsat","jaxa","mosdac","kma","fengyun"];
+const RESEARCH = ["plataformas","inta-suelos-wms","aire","elevacion","ina","usgs","nasa-catalogo","productos-nasa","landsat","radar","copernicus-stac","cnes-stac","dlr-stac","deafrica-stac","firms","nasa-power-30","enso","era5-cds","sentinel-hub","noaa-cdo","usgs-m2m","nasa-earthdata","copernicus-marine","gee","openaq","gfw","aemet","eumetsat","jaxa","mosdac","kma","fengyun"];
 const NATIONAL = ["smn", "inmet", "dmc", "eccc", "nws"];
 const SOURCES = [
+  ["plataformas","Matriz de conexiones","REST · STAC · WMS/WMTS · OAuth"],
+  ["inta-suelos-wms","INTA Suelos · WMS","Argentina · conexión OGC"],
   ["aire","Aire · CAMS","Open-Meteo / Copernicus"],
   ["elevacion","Relieve del terreno","Open-Meteo / DEM"],
   ["ina","Río Paraná · Bella Vista","INA / estación elegida"],
@@ -311,7 +313,15 @@ function Observatory({onHome}:{onHome:()=>void}) {
     generation = useRef(0),
     controllers = useRef<Record<string, AbortController>>({}),
     noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null),
-    lotLayers = useRef<Record<string,L.Polygon>>({});
+    lotLayers = useRef<Record<string,L.Polygon>>({}),
+    placingMarkerRef = useRef(false),
+    fieldMarkerLayers = useRef<L.CircleMarker[]>([]),
+    markerTypeRef = useRef("observación");
+  useEffect(()=>{markerTypeRef.current=markerType},[markerType]);
+  useEffect(()=>{
+    try { const saved=localStorage.getItem("dots-field-state"); if(saved){const x=JSON.parse(saved); if(Array.isArray(x.fieldMarkers))setFieldMarkers(x.fieldMarkers); if(Array.isArray(x.waterAssets))setWaterAssets(x.waterAssets);} } catch {}
+  },[]);
+  useEffect(()=>{ try{localStorage.setItem("dots-field-state",JSON.stringify({fieldMarkers,waterAssets}))}catch{} },[fieldMarkers,waterAssets]);
   const notify = (s: string) => {
     setToast(s);
     if (noticeTimer.current) clearTimeout(noticeTimer.current);
@@ -335,6 +345,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
             years: String(y),
             ...(key === "ina" ? {series:station,days:station==="22"?"30":"2"} : {}),
             ...(key === "usgs" && waterSite ? {site:waterSite} : {}),
+            ...(vertices.length >= 3 ? {polygon: JSON.stringify(vertices)} : {}),
           }),
         { signal: controller.signal },
       );
@@ -405,6 +416,13 @@ function Observatory({onHome}:{onHome:()=>void}) {
       .bindTooltip("PUNTO DE CONSULTA", { permanent: true, direction: "top" });
     L.control.scale({ imperial: false }).addTo(map);
     map.on("click", (e) => {
+      if (placingMarkerRef.current) {
+        const type=markerTypeRef.current;
+        const item={id:`m-${Date.now()}`,type,lat:e.latlng.lat,lon:e.latlng.lng,status:type==="agua"?"DECLARADO / CONFIRMAR EN CAMPO":"OBSERVACIÓN MANUAL",source:"usuario",provenance:"DECLARADO",confidence:"usuario",observed_at:new Date().toISOString()};
+        setFieldMarkers(v=>[...v,item]);
+        placingMarkerRef.current=false; setPlacingMarker(false); map.getContainer().style.cursor="";
+        return;
+      }
       if (!drawingRef.current) return;
       currentPoints.current = [...currentPoints.current,[e.latlng.lat,e.latlng.lng]];
       setVertices([...currentPoints.current]);
@@ -447,17 +465,31 @@ function Observatory({onHome}:{onHome:()=>void}) {
     };
   }, [layer, date]);
   const changeView = (key: string) => {
+    // Always refresh: source results are spatial/temporal and must follow the currently selected lot.
+    // Reusing an old payload after changing polygon was a functional bug in earlier versions.
     setView(key);
-    if (!sources[key]) void load(key);
+    void load(key);
   };
   const addFieldMarker = (type = markerType) => {
     if (!mapRef.current) return;
-    const labels:Record<string,string>={"observación":"OBSERVACIÓN","ganado":"GANADO / HIPÓTESIS","incendio":"FOCO / HIPÓTESIS","temperatura":"TEMPERATURA / THI","agua":"AGUA / INFRAESTRUCTURA","vegetación":"VEGETACIÓN / ANOMALÍA"};
-    const item={type,lat:point[0],lon:point[1],status:type==="agua"?"declarado":"hipótesis / revisar"};
-    setFieldMarkers(v=>[...v,item]);
-    L.circleMarker(point,{radius:7,color:"#d8f3eb",weight:2,fillColor:"#19b98a",fillOpacity:.82}).addTo(mapRef.current).bindTooltip(labels[type]||type.toUpperCase());
-    notify(`Punto agregado: ${labels[type]||type}. Queda rotulado como ${item.status}.`);
+    markerTypeRef.current=type; placingMarkerRef.current=true; setPlacingMarker(true);
+    drawingRef.current=false; setDrawing(false);
+    mapRef.current.getContainer().style.cursor="crosshair";
+    notify(`Marcador ${type}: hacé clic en la ubicación exacta dentro del lote.`);
   };
+  useEffect(()=>{
+    fieldMarkerLayers.current.forEach(m=>m.remove()); fieldMarkerLayers.current=[];
+    if(!mapRef.current)return;
+    const labels:Record<string,string>={"observación":"OBSERVACIÓN","ganado":"GANADO / DECLARADO","incendio":"FOCO TÉRMICO","temperatura":"ALTA TEMPERATURA / THI","agua":"AGUA / INFRAESTRUCTURA","vegetación":"VEGETACIÓN / ANOMALÍA"};
+    fieldMarkers.forEach((m:any)=>{
+      const cm=L.circleMarker([m.lat,m.lon],{radius:m.source==="NASA FIRMS"?8:7,color:m.type==="incendio"?"#ffb36b":"#d8f3eb",weight:2,fillColor:m.type==="incendio"?"#e45858":"#19b98a",fillOpacity:.9}).addTo(mapRef.current!);
+      cm.bindPopup(`<b>${labels[m.type]||m.type}</b><br>${m.provenance||"DECLARADO"}<br>${m.status||""}<br>Fuente: ${m.source||""}<br>Confianza: ${m.confidence||"s/d"}`); fieldMarkerLayers.current.push(cm);
+    });
+  },[fieldMarkers]);
+  useEffect(()=>{
+    const det=(sources.firms?.payload as any)?.data?.detections; if(!Array.isArray(det))return;
+    setFieldMarkers(prev=>{const manual=prev.filter((m:any)=>m.source!=="NASA FIRMS"); const auto=det.slice(0,150).map((r:any,i:number)=>({id:`firms-${r.latitude}-${r.longitude}-${i}`,type:"incendio",lat:Number(r.latitude),lon:Number(r.longitude),status:`${r.inside_lot===true?"DENTRO DEL LOTE":"ENTORNO"} · ${r.satellite||r.instrument||"VIIRS"} · ${r.acq_date||""} ${r.acq_time||""} · FRP ${r.frp||"s/d"}`,source:"NASA FIRMS",provenance:"SATELITAL",confidence:r.confidence||"s/d",observed_at:`${r.acq_date||""} ${r.acq_time||""}`})).filter((m:any)=>Number.isFinite(m.lat)&&Number.isFinite(m.lon)); return [...manual,...auto]});
+  },[sources.firms]);
   const startDraw = (mode:"free"|"triangle"|"rectangle"="free") => {
     setDrawMode(mode);
     poly.current = null;
@@ -528,7 +560,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
     try {
       const r = await fetch("/api/fuentes/agentic", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lat: point[0], lon: point[1], prompt, polygon: poly.current ? vertices : null, inaSeries, waterAssets }),
+        body: JSON.stringify({ lat: point[0], lon: point[1], prompt, polygon: poly.current ? vertices : null, inaSeries, waterAssets, fieldMarkers }),
         signal: AbortSignal.timeout(60000),
       });
       const data = await r.json().catch(() => ({}));
@@ -544,7 +576,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
     try {
       const r = await fetch("/api/fuentes/agentic/pdf", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lat: point[0], lon: point[1], prompt: agentPrompt, polygon: poly.current ? vertices : null, inaSeries, waterAssets, nombre: "DOTS / Informe técnico del lote", analysis: agentResult }),
+        body: JSON.stringify({ lat: point[0], lon: point[1], prompt: agentPrompt, polygon: poly.current ? vertices : null, inaSeries, waterAssets, fieldMarkers, nombre: "DOTS / Informe técnico del lote", analysis: agentResult }),
         signal: AbortSignal.timeout(60000),
       });
       if (!r.ok) throw Error("No se pudo generar el informe Agentic");
@@ -567,6 +599,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
           polygon: poly.current ? vertices : null,
           area_ha: lotAreaHa,
           perimeter_km: lotPerimeterKm,
+          fieldMarkers,
         }),
         signal: AbortSignal.timeout(45000),
       });
@@ -1046,7 +1079,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
             <div className="tag">OPERACIONES DEL LOTE</div>
             <div className="draw-chooser"><button onClick={()=>startDraw("triangle")}><Triangle className="icon"/>Triángulo</button><button onClick={()=>startDraw("rectangle")}><Square className="icon"/>Rectángulo</button><button onClick={()=>startDraw("free")}><Layers className="icon"/>Polígono libre</button></div>
             <p className="footnote">Cada informe queda vinculado al polígono cerrado: superficie, perímetro, centroide y límites.</p>
-            <div className="marker-chooser"><select value={markerType} onChange={e=>setMarkerType(e.target.value)}><option value="observación">Observación</option><option value="ganado">Ganado · hipótesis</option><option value="incendio">Incendio · hipótesis</option><option value="temperatura">Temperatura / THI</option><option value="agua">Agua / infraestructura</option><option value="vegetación">Vegetación / anomalía</option></select><button type="button" onClick={()=>addFieldMarker()}>+ Punto en centro</button></div>
+            <div className="marker-chooser"><select value={markerType} onChange={e=>setMarkerType(e.target.value)}><option value="observación">Observación</option><option value="ganado">Ganado · hipótesis</option><option value="incendio">Incendio · hipótesis</option><option value="temperatura">Temperatura / THI</option><option value="agua">Agua / infraestructura</option><option value="vegetación">Vegetación / anomalía</option></select><button type="button" onClick={()=>addFieldMarker()}>{placingMarker?"Clic en el mapa…":"+ Marcar en mapa"}</button></div>
             <div className="actions">
               <button className="advanced-json" title="Exportación técnica / avanzada"
                 onClick={() => {
@@ -1102,15 +1135,11 @@ function Observatory({onHome}:{onHome:()=>void}) {
             Mapa satelital
           </button>
           <button className={layer === "modis" ? "active" : ""} onClick={() => setLayer("modis")} aria-pressed={layer === "modis"}>MODIS · imagen</button>
-          <button onClick={()=>changeView("escenas")}>Sentinel‑2 · imagen/escenas</button>
-          <button onClick={()=>changeView("radar")}>Sentinel‑1 · radar</button>
-          <button onClick={()=>changeView("copernicus-stac")}>Copernicus · S1/S2/S3</button>
-          <button onClick={()=>changeView("landsat")}>Landsat 8/9</button>
-          <button onClick={()=>changeView("nasa-catalogo")}>NASA · MODIS</button>
-          <button onClick={()=>changeView("cnes-stac")}>CNES · Francia</button>
-          <button onClick={()=>changeView("dlr-stac")}>DLR · Alemania</button>
-          <button onClick={()=>changeView("deafrica-stac")}>Digital Earth Africa</button>
-          <button onClick={()=>changeView("firms")}>VIIRS / FIRMS</button>
+          <button onClick={()=>changeView("firms")}>FIRMS · focos térmicos</button>
+          <button onClick={()=>changeView("nasa-power-30")}>NASA POWER · clima</button>
+          <button onClick={()=>changeView("enso")}>ENSO · multifuente</button>
+          <button onClick={()=>changeView("suelo")}>SoilGrids · suelo</button>
+          <button onClick={()=>changeView("gibs")}>NASA GIBS · verificar servicio</button>
           <input
             type="date"
             value={date}

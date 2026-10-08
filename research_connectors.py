@@ -17,6 +17,29 @@ def coordinates(q):
         raise ValueError('Coordenadas inválidas')
     return lat, lon
 
+
+def polygon_bbox(polygon, pad=0.0):
+    """Return minLon,minLat,maxLon,maxLat for a [lat,lon] polygon."""
+    if not polygon or len(polygon) < 3:
+        return None
+    pts=[]
+    for p in polygon:
+        if not isinstance(p,(list,tuple)) or len(p)<2: continue
+        la,lo=float(p[0]),float(p[1])
+        if math.isfinite(la) and math.isfinite(lo): pts.append((la,lo))
+    if len(pts)<3:return None
+    lats=[x[0] for x in pts]; lons=[x[1] for x in pts]
+    return (max(-180,min(lons)-pad),max(-90,min(lats)-pad),min(180,max(lons)+pad),min(90,max(lats)+pad))
+
+def point_in_polygon(lat,lon,polygon):
+    if not polygon or len(polygon)<3:return False
+    inside=False; j=len(polygon)-1
+    for i in range(len(polygon)):
+        yi,xi=float(polygon[i][0]),float(polygon[i][1]); yj,xj=float(polygon[j][0]),float(polygon[j][1])
+        if ((yi>lat)!=(yj>lat)) and lon < (xj-xi)*(lat-yi)/((yj-yi) or 1e-15)+xi: inside=not inside
+        j=i
+    return inside
+
 def external(base, params):
     url = base + ('?' + urlencode(params) if params else '')
     with urlopen(Request(url, headers={'User-Agent': 'DOTS-Campo/1.1 ' + os.environ.get('DOTS_CONTACT_URL','')}), timeout=22) as r:
@@ -131,10 +154,12 @@ def historical(lat, lon):
         'parameters':'T2M,RH2M,PRECTOTCORR','community':'AG','latitude':lat,'longitude':lon,
         'start':start.strftime('%Y%m%d'),'end':end.strftime('%Y%m%d'),'format':'JSON'})
 
-def scenes(lat, lon):
-    # GET search returns newest scenes by default. No unsupported sortby parameter.
-    return external('https://earth-search.aws.element84.com/v1/search', {
-        'collections':'sentinel-2-l2a','bbox':f'{max(-180,lon-.03)},{max(-90,lat-.03)},{min(180,lon+.03)},{min(90,lat+.03)}','limit':5})
+def scenes(lat, lon, polygon=None):
+    # Catalog search intersects the selected lot bbox when a polygon exists.
+    b=polygon_bbox(polygon) or (max(-180,lon-.03),max(-90,lat-.03),min(180,lon+.03),min(90,lat+.03))
+    r=external('https://earth-search.aws.element84.com/v1/search', {'collections':'sentinel-2-l2a','bbox':','.join(map(str,b)),'limit':5})
+    r['scope']='Catálogo Sentinel-2 intersectando la envolvente del lote. No se presenta como NDVI ni estadística raster.'
+    return r
 
 def air_quality(lat,lon):
     return external('https://air-quality-api.open-meteo.com/v1/air-quality',{'latitude':lat,'longitude':lon,'hourly':'pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,sulphur_dioxide,ozone,dust,aerosol_optical_depth,uv_index,ammonia','forecast_days':3,'timezone':'UTC'})
@@ -173,16 +198,22 @@ def satellite_catalogue(lat,lon,radar=False):
     result=external(base,{'collections':'sentinel-1-grd' if radar else 'landsat-c2-l2','bbox':f'{max(-180,lon-.03)},{max(-90,lat-.03)},{min(180,lon+.03)},{min(90,lat+.03)}','limit':3})
     result['scope']='Escenas y enlaces a bandas; valores raster, máscara de calidad y estadísticas del lote aún no procesados.'
     return result
-def firms(lat,lon):
+def firms(lat,lon,polygon=None):
     key=os.environ.get('FIRMS_MAP_KEY','').strip()
     if not key:raise ValueError('FIRMS requiere FIRMS_MAP_KEY: solicitar clave gratuita con tu correo')
-    area=f'{max(-180,lon-.5)},{max(-90,lat-.5)},{min(180,lon+.5)},{min(90,lat+.5)}'
+    b=polygon_bbox(polygon,0.25) or (max(-180,lon-.5),max(-90,lat-.5),min(180,lon+.5),min(90,lat+.5))
+    area=','.join(map(str,b))
     base='https://firms.modaps.eosdis.nasa.gov/api/area/csv/'
     url=base+key+'/VIIRS_SNPP_NRT/'+area+'/3'
     with urlopen(Request(url,headers={'User-Agent':'DOTS-Campo/1.1'}),timeout=22)as r:raw=r.read().decode()
     reader=csv.DictReader(io.StringIO(raw))
     if not reader.fieldnames or 'latitude' not in reader.fieldnames:raise ValueError('Respuesta FIRMS inválida; no interpretar error como cero incendios')
     rows=list(reader)
+    for row in rows:
+        try:
+            row['inside_lot']=point_in_polygon(float(row['latitude']),float(row['longitude']),polygon) if polygon else None
+            row['distance_to_centroid_km']=distance_km(lat,lon,[float(row['longitude']),float(row['latitude'])])
+        except Exception: row['inside_lot']=None
     return {'source_url':base+'[REDACTED]/VIIRS_SNPP_NRT/'+area+'/3','consulted_at':datetime.now(timezone.utc).isoformat(),'data':{'detections':rows,'sensor':'VIIRS_SNPP_NRT','days':3,'bbox':area},'scope':'Detecciones térmicas en ventana, no inventario completo de incendios ni conteo de animales.'}
 
 def nasa_gibs_capabilities():
@@ -295,9 +326,10 @@ def image_bytes(url):
 
 
 
-def stac_search(base, lat, lon, collection=None, limit=5):
+def stac_search(base, lat, lon, collection=None, limit=5, polygon=None):
     """Search an official STAC endpoint around the selected point; returns metadata only."""
-    params={'bbox':f'{max(-180,lon-.03)},{max(-90,lat-.03)},{min(180,lon+.03)},{min(90,lat+.03)}','limit':int(limit)}
+    b=polygon_bbox(polygon) or (max(-180,lon-.03),max(-90,lat-.03),min(180,lon+.03),min(90,lat+.03))
+    params={'bbox':','.join(map(str,b)),'limit':int(limit)}
     if collection: params['collections']=collection
     return external(base.rstrip('/')+'/search', params)
 
@@ -315,3 +347,51 @@ def deafrica_stac(lat,lon):
     if not (-40 <= lat <= 40 and -30 <= lon <= 60):
         raise ValueError('Digital Earth Africa: el punto seleccionado está fuera de la cobertura africana')
     return stac_search('https://explorer.digitalearth.africa/stac',lat,lon,None,5)
+
+# --- DOTS v1.8: registry by integration protocol (REST / STAC / OGC / protected processing) ---
+PLATFORM_REGISTRY = {
+    'nasa-power': {'label':'NASA POWER','protocol':'REST','access':'open','capability':'variables','endpoint':'https://power.larc.nasa.gov/api/temporal/daily/point'},
+    'nasa-gibs': {'label':'NASA GIBS','protocol':'WMS/WMTS','access':'open','capability':'imagery','endpoint':'https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi'},
+    'earth-search-s2': {'label':'Sentinel-2 / Earth Search','protocol':'STAC','access':'open','capability':'catalog','endpoint':'https://earth-search.aws.element84.com/v1'},
+    'copernicus-stac': {'label':'Copernicus Data Space','protocol':'STAC','access':'open','capability':'catalog','endpoint':'https://stac.dataspace.copernicus.eu/v1'},
+    'landsat-pc': {'label':'Landsat / Planetary Computer','protocol':'STAC','access':'open','capability':'catalog','endpoint':'https://planetarycomputer.microsoft.com/api/stac/v1'},
+    'cnes-stac': {'label':'CNES GEODES','protocol':'STAC','access':'open','capability':'catalog','endpoint':'https://geodes.cnes.fr/api/stac'},
+    'dlr-stac': {'label':'DLR EOC','protocol':'STAC','access':'open','capability':'catalog','endpoint':'https://geoservice.dlr.de/eoc/ogc/stac/v1'},
+    'deafrica-stac': {'label':'Digital Earth Africa','protocol':'STAC','access':'open','capability':'catalog','endpoint':'https://explorer.digitalearth.africa/stac'},
+    'inta-suelos-wms': {'label':'INTA Suelos','protocol':'WMS','access':'open','capability':'map','endpoint':'http://suelos.inta.gob.ar/geoserver/wms'},
+    'sentinel-hub': {'label':'Sentinel Hub','protocol':'OAuth2 + Processing/Statistical API','access':'credential','capability':'raster-analysis','env':['CDSE_CLIENT_ID','CDSE_CLIENT_SECRET']},
+    'gee': {'label':'Google Earth Engine','protocol':'OAuth2 / Cloud','access':'credential','capability':'raster-analysis','env':['GOOGLE_CLOUD_PROJECT','GOOGLE_APPLICATION_CREDENTIALS_JSON']},
+    'conae-saocom': {'label':'CONAE / SAOCOM','protocol':'catalog/geoservices','access':'registration-or-public-product','capability':'radar-products','status':'NOT_CERTIFIED','note':'No se declara operativo hasta identificar y probar el servicio/producto oficial concreto.'},
+}
+
+def platform_registry():
+    """Describe HOW every platform connects. Presence in this registry is not an operational claim."""
+    rows=[]
+    for key,meta in PLATFORM_REGISTRY.items():
+        row={'id':key,**meta}
+        if meta.get('access')=='credential':
+            missing=[k for k in meta.get('env',[]) if not os.environ.get(k)]
+            row['status']='REQUIRES_CREDENTIAL' if missing else 'CREDENTIAL_PRESENT_NOT_E2E_CERTIFIED'
+            row['missing_env']=missing
+        elif meta.get('status'):
+            row['status']=meta['status']
+        else:
+            row['status']='CONFIGURED_NOT_LIVE_TESTED'
+        rows.append(row)
+    return {'consulted_at':datetime.now(timezone.utc).isoformat(),'protocol_rule':'REST, STAC, WMS/WMTS, WFS and processing platforms are different adapters; catalog != image != raster analysis.','sources':rows}
+
+def ogc_capabilities(source_id):
+    """Live GetCapabilities check for allow-listed OGC services only."""
+    meta=PLATFORM_REGISTRY.get(source_id)
+    if not meta or meta.get('protocol') not in ('WMS','WMS/WMTS'):
+        raise ValueError('Servicio OGC no habilitado')
+    base=meta['endpoint']
+    params={'service':'WMS','request':'GetCapabilities','version':'1.3.0'}
+    url=base+'?'+urlencode(params)
+    with urlopen(Request(url,headers={'User-Agent':'DOTS-Campo/1.8'}),timeout=22) as r:
+        raw=r.read(2500000).decode('utf-8','ignore')
+    if '<WMS_Capabilities' not in raw and '<WMT_MS_Capabilities' not in raw:
+        raise ValueError('La respuesta no es WMS GetCapabilities válido')
+    import re
+    layers=[x for x in re.findall(r'<Name>([^<]+)</Name>',raw) if x and x!='WMS']
+    return {'source_url':url,'consulted_at':datetime.now(timezone.utc).isoformat(),'data':{'source':meta['label'],'status':'OPERATIVE_WMS','layers_sample':layers[:40],'layer_count_sampled':len(layers)},'scope':'Servicio WMS probado en vivo. Cada capa/fecha debe validarse al solicitar GetMap.'}

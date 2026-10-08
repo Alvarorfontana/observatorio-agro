@@ -10,6 +10,11 @@ research_api=Blueprint('research_api',__name__,url_prefix='/api/fuentes')
 
 @research_api.get('/<name>')
 def research_data(name):
+    if name=='plataformas':
+        return jsonify(c.platform_registry())
+    if name=='inta-suelos-wms':
+        try: return jsonify(c.ogc_capabilities('inta-suelos-wms'))
+        except Exception as e: return jsonify({'status':'sin dato','error':'INTA WMS no respondió válidamente','type':type(e).__name__}),502
     if name=='estado':
         return jsonify({'public_adapters':['smn','inmet','dmc','eccc','nws','metnorway','aire','elevacion','ina','usgs','nasa-catalogo','productos-nasa','landsat','radar','copernicus-stac','cnes-stac','dlr-stac','deafrica-stac'], 'new_open_stac':['Copernicus Data Space','CNES GEODES','DLR EOC','Digital Earth Africa'], 'firms': 'credencial configurada' if os.environ.get('FIRMS_MAP_KEY') else 'pendiente de clave gratuita', 'protocol':'botón → conector → API → dato → procesamiento → visualización → informe', 'scope':'Catálogo, raster y variable procesada se informan como estados distintos; nunca se sustituyen faltantes.'})
     try:
@@ -23,12 +28,17 @@ def research_data(name):
             if p.scheme!='https' or p.netloc!='sentinel-cogs.s3.us-west-2.amazonaws.com' or not p.path.startswith('/sentinel-s2-l2a-cogs/') or not p.path.endswith('/preview.jpg') or p.query:raise ValueError('Fotografía inválida')
             return Response(c.image_bytes(url),mimetype='image/jpeg')
         lat,lon=c.coordinates(q)
+        polygon=None
+        if request.args.get('polygon'):
+            import json
+            try: polygon=json.loads(request.args.get('polygon','null'))
+            except Exception: raise ValueError('Polígono inválido')
         years=int(request.args.get('years','30'))
         if years not in (20,30):raise ValueError('Seleccioná 20 o 30 años')
         endyear=datetime.now(timezone.utc).year-1
         jobs={key:lambda key=key:c.national(key,lat,lon) for key in c.AGENCIES}
         jobs.update({
-          'variables':lambda:c.variables(lat,lon),'historico':lambda:c.historical(lat,lon),'escenas':lambda:c.scenes(lat,lon),
+          'variables':lambda:c.variables(lat,lon),'historico':lambda:c.historical(lat,lon),'escenas':lambda:c.scenes(lat,lon,polygon),
           'modelos':lambda:c.external('https://api.open-meteo.com/v1/forecast',{'latitude':lat,'longitude':lon,'hourly':'temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m','models':'gfs_global,ecmwf_ifs025,icon_global,gem_global,jma_gsm,cma_grapes_global,meteofrance_arpege_world','forecast_days':3,'timezone':'auto'}),
           'rios':lambda:c.external('https://flood-api.open-meteo.com/v1/flood',{'latitude':lat,'longitude':lon,'daily':'river_discharge','forecast_days':7}),
           'suelo':lambda:c.external('https://rest.isric.org/soilgrids/v2.0/properties/query',{'lat':lat,'lon':lon,'property':'nitrogen','depth':'0-5cm','value':'mean'}),
@@ -41,7 +51,7 @@ def research_data(name):
           'nasa-catalogo':lambda:c.nasa_catalogue(lat,lon,request.args.get('product','MOD13Q1')),
           'productos-nasa':lambda:c.external('https://appeears.earthdatacloud.nasa.gov/api/product',{}),
           'landsat':lambda:c.satellite_catalogue(lat,lon),'radar':lambda:c.satellite_catalogue(lat,lon,True),
-          'gibs':lambda:c.nasa_gibs_capabilities(),'copernicus-stac':lambda:c.copernicus_stac(lat,lon),'cnes-stac':lambda:c.cnes_stac(lat,lon),'dlr-stac':lambda:c.dlr_stac(lat,lon),'deafrica-stac':lambda:c.deafrica_stac(lat,lon),'firms':lambda:c.firms(lat,lon),'nasa-power-30':lambda:c.nasa_power_long(lat,lon,years),'enso':lambda:c.enso_multisource(),**{k:(lambda k=k:c.credential_status(k)) for k in ['era5-cds','sentinel-hub','noaa-cdo','usgs-m2m','nasa-earthdata','copernicus-marine','gee','openaq','gfw','aemet','eumetsat','jaxa','mosdac','kma','fengyun']},'informe':lambda:c.research_bundle(lat,lon,request.args.get('inaSeries')),
+          'gibs':lambda:c.nasa_gibs_capabilities(),'copernicus-stac':lambda:c.stac_search('https://stac.dataspace.copernicus.eu/v1',lat,lon,'sentinel-2-l2a',5,polygon),'cnes-stac':lambda:c.cnes_stac(lat,lon),'dlr-stac':lambda:c.dlr_stac(lat,lon),'deafrica-stac':lambda:c.deafrica_stac(lat,lon),'firms':lambda:c.firms(lat,lon,polygon),'nasa-power-30':lambda:c.nasa_power_long(lat,lon,years),'enso':lambda:c.enso_multisource(),**{k:(lambda k=k:c.credential_status(k)) for k in ['era5-cds','sentinel-hub','noaa-cdo','usgs-m2m','nasa-earthdata','copernicus-marine','gee','openaq','gfw','aemet','eumetsat','jaxa','mosdac','kma','fengyun']},'informe':lambda:c.research_bundle(lat,lon,request.args.get('inaSeries')),
         })
         if name not in jobs:return jsonify({'error':'Fuente no habilitada'}),404
         if name=='firms' and not os.environ.get('FIRMS_MAP_KEY'):return jsonify({'status':'pendiente de credencial','error':'Solicitar MAP_KEY gratuita de NASA FIRMS y cargar FIRMS_MAP_KEY en Vercel. No hay conteo disponible.'}),409
@@ -57,7 +67,7 @@ def report():
     try:
         d=request.get_json(silent=True) or {}
         lat,lon=c.coordinates({'lat':[d.get('lat')],'lon':[d.get('lon')]})
-        result=agentic.analyze(lat,lon,str(d.get('prompt','Informe integral del lote')),d.get('polygon'),d.get('inaSeries'),d.get('waterAssets'))
+        result=agentic.analyze(lat,lon,str(d.get('prompt','Informe integral del lote')),d.get('polygon'),d.get('inaSeries'),d.get('waterAssets'),d.get('fieldMarkers'))
         pdf=agentic.pdf_bytes(result,str(d.get('nombre','Lote DOTS')))
         return Response(pdf,mimetype='application/pdf',headers={'Content-Disposition':'attachment; filename=DOTS-informe-territorial.pdf'})
     except ValueError as e:return jsonify({'error':str(e)}),400
@@ -94,7 +104,7 @@ def agentic_analyze():
     try:
         d=request.get_json(silent=True) or {}
         lat,lon=c.coordinates({'lat':[d.get('lat')],'lon':[d.get('lon')]})
-        result=agentic.analyze(lat,lon,str(d.get('prompt','')),d.get('polygon'),d.get('inaSeries'),d.get('waterAssets'))
+        result=agentic.analyze(lat,lon,str(d.get('prompt','')),d.get('polygon'),d.get('inaSeries'),d.get('waterAssets'),d.get('fieldMarkers'))
         # Raw payloads remain available through existing endpoints; keep conversational response compact.
         if not d.get('include_raw'):
             result.pop('raw',None)
@@ -111,7 +121,7 @@ def agentic_pdf():
         if isinstance(supplied,dict) and supplied.get('findings') is not None and supplied.get('point'):
             result=supplied
         else:
-            result=agentic.analyze(lat,lon,str(d.get('prompt','')),d.get('polygon'),d.get('inaSeries'),d.get('waterAssets'))
+            result=agentic.analyze(lat,lon,str(d.get('prompt','')),d.get('polygon'),d.get('inaSeries'),d.get('waterAssets'),d.get('fieldMarkers'))
         pdf=agentic.pdf_bytes(result,str(d.get('nombre','Lote DOTS')))
         return Response(pdf,mimetype='application/pdf',headers={'Content-Disposition':'attachment; filename=DOTS-informe-agentic.pdf'})
     except ValueError as e:return jsonify({'error':str(e)}),400

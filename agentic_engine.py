@@ -1,7 +1,7 @@
 """DOTS Agentic v0.2: deterministic orchestration over verified project connectors.
 No LLM is required. Missing measurements remain explicitly unavailable.
 """
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import io, math
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import research_connectors as c
@@ -42,7 +42,7 @@ def _quality(source_count, warnings):
     score=min(95, 48+source_count*9-max(0,len(warnings)-1)*4)
     return max(20,score)
 
-def analyze(lat,lon,prompt='',polygon=None,ina_id=None,water_assets=None):
+def analyze(lat,lon,prompt='',polygon=None,ina_id=None,water_assets=None,field_markers=None):
     intent=_intent(prompt)
     # Bundle is the verified common base. Add domain connectors only when useful.
     bundle=c.research_bundle(lat,lon,ina_id)
@@ -50,8 +50,8 @@ def analyze(lat,lon,prompt='',polygon=None,ina_id=None,water_assets=None):
     jobs=[]
     if intent in ('integral','agua','sequia'): jobs.append(('rios',lambda:c.external('https://flood-api.open-meteo.com/v1/flood',{'latitude':lat,'longitude':lon,'daily':'river_discharge','forecast_days':7})))
     if intent in ('integral','suelo'): jobs.append(('suelo_nitrogeno',lambda:c.external('https://rest.isric.org/soilgrids/v2.0/properties/query',{'lat':lat,'lon':lon,'property':'nitrogen','depth':'0-5cm','value':'mean'})))
-    if intent in ('integral','pasturas'): jobs.append(('escenas_sentinel',lambda:c.scenes(lat,lon)))
-    if intent in ('integral','sequia'): jobs.append(('nasa_firms',lambda:c.firms(lat,lon)))
+    if intent in ('integral','pasturas'): jobs.append(('escenas_sentinel',lambda:c.scenes(lat,lon,polygon)))
+    if intent in ('integral','sequia'): jobs.append(('nasa_firms',lambda:c.firms(lat,lon,polygon)))
     if intent in ('integral','clima'): jobs.append(('enso_global',lambda:c.enso_multisource()))
     # Consultas de dominio en paralelo: una API lenta no debe bloquear todo el informe.
     if jobs:
@@ -73,6 +73,7 @@ def analyze(lat,lon,prompt='',polygon=None,ina_id=None,water_assets=None):
     soil=next((_num(v) for v in soilvals if _num(v) is not None),None)
     findings=[]; warnings=[]; recommendations=[]
     water_assets=water_assets or []
+    field_markers=field_markers or []
     if water_assets:
         kinds={}
         for a in water_assets:kinds[a.get('type','otro')]=kinds.get(a.get('type','otro'),0)+1
@@ -159,7 +160,7 @@ def analyze(lat,lon,prompt='',polygon=None,ina_id=None,water_assets=None):
     if not recommendations: recommendations.append('Mantener seguimiento; no surge una recomendación operativa fuerte con las variables verificadas disponibles.')
     return {
       'version':'DOTS Agentic 0.6','generated_at':datetime.now(timezone.utc).isoformat(),'point':[lat,lon],
-      'polygon':polygon or None,'prompt':prompt or QUICK['integral'],'intent':intent,
+      'polygon':polygon or None,'field_markers':field_markers,'prompt':prompt or QUICK['integral'],'intent':intent,
       'confidence':{'score':score,'label':'alta' if score>=80 else 'media' if score>=60 else 'limitada','received_sources':received,'failed_sources':len(failed)},
       'summary':f'Análisis {intent} construido con {received} fuentes recibidas. Confianza {score}/100.',
       'findings':findings,'metrics':metrics,'recommendations':recommendations,'warnings':warnings,
@@ -167,8 +168,37 @@ def analyze(lat,lon,prompt='',polygon=None,ina_id=None,water_assets=None):
       'raw':sources
     }
 
+def _satellite_snapshot(result):
+    """Build a real NASA GIBS MODIS image for the lot and overlay polygon/markers. Returns PNG bytes or None."""
+    poly=result.get('polygon') or []
+    if len(poly)<3:return None
+    try:
+        from urllib.parse import urlencode
+        from urllib.request import Request, urlopen
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        import matplotlib.image as mpimg
+        xs=[float(x[1]) for x in poly]; ys=[float(x[0]) for x in poly]
+        dx=max(max(xs)-min(xs),0.002); dy=max(max(ys)-min(ys),0.002); padx=dx*.18; pady=dy*.18
+        bbox=(min(xs)-padx,min(ys)-pady,max(xs)+padx,max(ys)+pady)
+        day=(datetime.now(timezone.utc).date()-timedelta(days=2)).isoformat()
+        params={'SERVICE':'WMS','REQUEST':'GetMap','VERSION':'1.1.1','LAYERS':'MODIS_Terra_CorrectedReflectance_TrueColor','STYLES':'','FORMAT':'image/jpeg','TRANSPARENT':'FALSE','SRS':'EPSG:4326','BBOX':','.join(map(str,bbox)),'WIDTH':'1200','HEIGHT':'800','TIME':day}
+        url='https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?'+urlencode(params)
+        with urlopen(Request(url,headers={'User-Agent':'DOTS-Campo/1.7'}),timeout=20) as r: raw=r.read(6_000_000)
+        if not raw.startswith((b'\xff\xd8',b'\x89PNG')):return None
+        img=mpimg.imread(io.BytesIO(raw),format='jpg' if raw.startswith(b'\xff\xd8') else 'png')
+        fig,ax=plt.subplots(figsize=(9,6),dpi=150); ax.imshow(img,extent=bbox,origin='upper')
+        ring=poly+[poly[0]]; ax.plot([x[1] for x in ring],[x[0] for x in ring],linewidth=2.2)
+        for m in result.get('field_markers',[]):
+            try: ax.scatter([float(m['lon'])],[float(m['lat'])],s=28,marker='o'); ax.annotate(str(m.get('type','marca'))[:18],(float(m['lon']),float(m['lat'])),fontsize=6,xytext=(3,3),textcoords='offset points')
+            except Exception: pass
+        ax.set_xlim(bbox[0],bbox[2]);ax.set_ylim(bbox[1],bbox[3]);ax.set_xlabel('Longitud');ax.set_ylabel('Latitud');ax.set_title('NASA GIBS / MODIS Terra · '+day+' · lote y marcas DOTS',fontsize=9)
+        out=io.BytesIO();fig.tight_layout();fig.savefig(out,format='png',bbox_inches='tight');plt.close(fig);out.seek(0);return out.getvalue()
+    except Exception:return None
+
 def pdf_bytes(result,name='Lote'):
-    from reportlab.platypus import SimpleDocTemplate,Paragraph,Spacer,Table,TableStyle,PageBreak,KeepTogether
+    from reportlab.platypus import SimpleDocTemplate,Paragraph,Spacer,Table,TableStyle,PageBreak,KeepTogether,Image
     from reportlab.lib.pagesizes import A4
     from reportlab.lib.styles import getSampleStyleSheet,ParagraphStyle
     from reportlab.lib import colors
@@ -198,11 +228,23 @@ def pdf_bytes(result,name='Lote'):
         meta.append(['Lote delimitado',f'{len(poly)} vértices · {area:.1f} ha · perímetro {per:.2f} km'])
     t=Table(meta,colWidths=[48*mm,120*mm]);t.setStyle(TableStyle([('BACKGROUND',(0,0),(0,-1),colors.HexColor('#e8f4f5')),('TEXTCOLOR',(0,0),(0,-1),navy),('FONTNAME',(0,0),(0,-1),'Helvetica-Bold'),('FONTSIZE',(0,0),(-1,-1),9),('GRID',(0,0),(-1,-1),.25,colors.HexColor('#b9c9ce')),('VALIGN',(0,0),(-1,-1),'TOP'),('PADDING',(0,0),(-1,-1),5)]));story+=[t,Spacer(1,10)]
     if poly:
+        snap=_satellite_snapshot(result)
+        if snap:
+            story += [Paragraph('Imagen satelital del lote',st['Section']),Image(io.BytesIO(snap),width=165*mm,height=110*mm),Paragraph('NASA GIBS / MODIS Terra. Polígono y marcas DOTS superpuestos. La resolución de MODIS no permite identificar animales ni infraestructura pequeña.',st['Small2']),Spacer(1,7)]
+        else:
+            story += [Paragraph('Imagen satelital del lote',st['Section']),Paragraph('NASA GIBS no devolvió una imagen válida durante la generación. El informe conserva el polígono y las marcas sin sustituir la imagen por datos ficticios.',st['Small2']),Spacer(1,5)]
         xs=[x[1] for x in poly];ys=[x[0] for x in poly]; minx,maxx=min(xs),max(xs);miny,maxy=min(ys),max(ys); w,h=155*mm,60*mm; d=Drawing(w,h);d.add(Rect(0,0,w,h,fillColor=colors.HexColor('#f4f8f8'),strokeColor=colors.HexColor('#cbdadd')))
         pts=[]
         for la,lo in poly:
             px=8*mm+(lo-minx)/(maxx-minx or 1)*(w-16*mm); py=8*mm+(la-miny)/(maxy-miny or 1)*(h-16*mm);pts.extend([px,py])
-        pts.extend(pts[:2]);d.add(PolyLine(pts,strokeColor=cyan,strokeWidth=2));d.add(String(5*mm,h-6*mm,'Esquema del polígono delimitado · no sustituye plano catastral',fontSize=7,fillColor=muted));story+=[d,Spacer(1,8)]
+        pts.extend(pts[:2]);d.add(PolyLine(pts,strokeColor=cyan,strokeWidth=2))
+        for m in result.get('field_markers',[]):
+            try:
+                la,lo=float(m.get('lat')),float(m.get('lon')); px=8*mm+(lo-minx)/(maxx-minx or 1)*(w-16*mm); py=8*mm+(la-miny)/(maxy-miny or 1)*(h-16*mm)
+                if 0<=px<=w and 0<=py<=h:
+                    col=colors.HexColor('#d9534f') if m.get('type')=='incendio' else colors.HexColor('#159a78'); d.add(Rect(px-1.5*mm,py-1.5*mm,3*mm,3*mm,fillColor=col,strokeColor=colors.white))
+            except (TypeError,ValueError): pass
+        d.add(String(5*mm,h-6*mm,'Polígono DOTS · marcas territoriales incluidas · no sustituye plano catastral',fontSize=7,fillColor=muted));story+=[d,Spacer(1,8)]
     story += [Paragraph('Resumen ejecutivo',st['Section']),Paragraph(result.get('summary',''),st['BodyText']),Paragraph(f"<b>Confianza {result['confidence']['score']}/100:</b> indicador operativo de disponibilidad de fuentes; no equivale a certeza estadística.",st['Small2']),Spacer(1,6)]
     story.append(Paragraph('Indicadores, rangos de referencia e interpretación',st['Section']))
     mrows=[['Variable','Valor','Rango / referencia','Lectura']]
