@@ -11,7 +11,7 @@ research_api=Blueprint('research_api',__name__,url_prefix='/api/fuentes')
 @research_api.get('/<name>')
 def research_data(name):
     if name=='estado':
-        return jsonify({'public_adapters':['smn','inmet','dmc','eccc','nws','metnorway','aire','elevacion','ina','usgs','nasa-catalogo','productos-nasa','landsat','radar','copernicus-stac','cnes-stac','dlr-stac','deafrica-stac'], 'new_open_stac':['Copernicus Data Space','CNES GEODES','DLR EOC','Digital Earth Africa'], 'firms': 'credencial configurada, validar consulta' if os.environ.get('FIRMS_MAP_KEY') else 'pendiente de clave gratuita', 'scope':'Catálogos satelitales no son valores raster extraídos. Las restantes fuentes de la matriz siguen pendientes.'})
+        return jsonify({'public_adapters':['smn','inmet','dmc','eccc','nws','metnorway','aire','elevacion','ina','usgs','nasa-catalogo','productos-nasa','landsat','radar','copernicus-stac','cnes-stac','dlr-stac','deafrica-stac'], 'new_open_stac':['Copernicus Data Space','CNES GEODES','DLR EOC','Digital Earth Africa'], 'firms': 'credencial configurada' if os.environ.get('FIRMS_MAP_KEY') else 'pendiente de clave gratuita', 'protocol':'botón → conector → API → dato → procesamiento → visualización → informe', 'scope':'Catálogo, raster y variable procesada se informan como estados distintos; nunca se sustituyen faltantes.'})
     try:
         q={key:[value] for key,value in request.args.items()}
         if name=='tile':
@@ -41,7 +41,7 @@ def research_data(name):
           'nasa-catalogo':lambda:c.nasa_catalogue(lat,lon,request.args.get('product','MOD13Q1')),
           'productos-nasa':lambda:c.external('https://appeears.earthdatacloud.nasa.gov/api/product',{}),
           'landsat':lambda:c.satellite_catalogue(lat,lon),'radar':lambda:c.satellite_catalogue(lat,lon,True),
-          'copernicus-stac':lambda:c.copernicus_stac(lat,lon),'cnes-stac':lambda:c.cnes_stac(lat,lon),'dlr-stac':lambda:c.dlr_stac(lat,lon),'deafrica-stac':lambda:c.deafrica_stac(lat,lon),'firms':lambda:c.firms(lat,lon),'informe':lambda:c.research_bundle(lat,lon,request.args.get('inaSeries')),
+          'gibs':lambda:c.nasa_gibs_capabilities(),'copernicus-stac':lambda:c.copernicus_stac(lat,lon),'cnes-stac':lambda:c.cnes_stac(lat,lon),'dlr-stac':lambda:c.dlr_stac(lat,lon),'deafrica-stac':lambda:c.deafrica_stac(lat,lon),'firms':lambda:c.firms(lat,lon),'nasa-power-30':lambda:c.nasa_power_long(lat,lon,years),'enso':lambda:c.enso_multisource(),**{k:(lambda k=k:c.credential_status(k)) for k in ['era5-cds','sentinel-hub','noaa-cdo','usgs-m2m','nasa-earthdata','copernicus-marine','gee','openaq','gfw','aemet','eumetsat','jaxa','mosdac','kma','fengyun']},'informe':lambda:c.research_bundle(lat,lon,request.args.get('inaSeries')),
         })
         if name not in jobs:return jsonify({'error':'Fuente no habilitada'}),404
         if name=='firms' and not os.environ.get('FIRMS_MAP_KEY'):return jsonify({'status':'pendiente de credencial','error':'Solicitar MAP_KEY gratuita de NASA FIRMS y cargar FIRMS_MAP_KEY en Vercel. No hay conteo disponible.'}),409

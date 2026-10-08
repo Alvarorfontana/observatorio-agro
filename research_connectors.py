@@ -184,6 +184,53 @@ def firms(lat,lon):
     if not reader.fieldnames or 'latitude' not in reader.fieldnames:raise ValueError('Respuesta FIRMS inválida; no interpretar error como cero incendios')
     rows=list(reader)
     return {'source_url':base+'[REDACTED]/VIIRS_SNPP_NRT/'+area+'/3','consulted_at':datetime.now(timezone.utc).isoformat(),'data':{'detections':rows,'sensor':'VIIRS_SNPP_NRT','days':3,'bbox':area},'scope':'Detecciones térmicas en ventana, no inventario completo de incendios ni conteo de animales.'}
+
+def nasa_gibs_capabilities():
+    """Validate NASA GIBS WMS and expose a small audited layer sample; no API key required."""
+    import re
+    url='https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?service=WMS&request=GetCapabilities&version=1.3.0'
+    with urlopen(Request(url,headers={'User-Agent':'DOTS-Campo/1.4'}),timeout=22) as r:
+        body=r.read(2500000).decode('utf-8','ignore')
+    names=re.findall(r'<Name>([^<]+)</Name>',body)
+    layers=[x for x in names if x not in ('WMS','')][:80]
+    if not layers: raise ValueError('NASA GIBS no devolvió capas WMS')
+    return {'source_url':url,'consulted_at':datetime.now(timezone.utc).isoformat(),'data':{'status':'operativa','service':'NASA GIBS WMS','layer_count_sampled':len(layers),'sample_layers':layers[:25]},'scope':'GetCapabilities confirma el servicio y nombres de capas. La disponibilidad temporal se valida al solicitar cada capa/fecha.'}
+
+def nasa_power_long(lat, lon, years=30):
+    """Long daily agroclimate series from NASA POWER; public REST endpoint."""
+    years=max(1,min(int(years),40))
+    end=datetime.now(timezone.utc).date()-timedelta(days=2)
+    start=end.replace(year=max(1981,end.year-years))
+    return external('https://power.larc.nasa.gov/api/temporal/daily/point', {
+        'parameters':'T2M,T2M_MAX,T2M_MIN,RH2M,PRECTOTCORR,ALLSKY_SFC_SW_DWN,WS2M',
+        'community':'AG','latitude':lat,'longitude':lon,'start':start.strftime('%Y%m%d'),
+        'end':end.strftime('%Y%m%d'),'format':'JSON'})
+
+def credential_status(source):
+    """Never pretends a protected API is connected: reports the exact Vercel env vars required."""
+    registry={
+      'era5-cds':('Copernicus CDS / ERA5',['CDS_API_KEY']),
+      'sentinel-hub':('Copernicus Sentinel Hub',['CDSE_CLIENT_ID','CDSE_CLIENT_SECRET']),
+      'noaa-cdo':('NOAA NCEI / CDO',['NOAA_CDO_TOKEN']),
+      'usgs-m2m':('USGS EarthExplorer / M2M',['USGS_USERNAME','USGS_TOKEN']),
+      'nasa-earthdata':('NASA Earthdata',['EARTHDATA_TOKEN']),
+      'copernicus-marine':('Copernicus Marine',['COPERNICUS_MARINE_USERNAME','COPERNICUS_MARINE_PASSWORD']),
+      'gee':('Google Earth Engine',['GOOGLE_CLOUD_PROJECT','GOOGLE_APPLICATION_CREDENTIALS_JSON']),
+      'openaq':('OpenAQ v3',['OPENAQ_API_KEY']),
+      'gfw':('Global Forest Watch',['GFW_API_KEY']),
+      'aemet':('AEMET OpenData',['AEMET_API_KEY']),
+      'eumetsat':('EUMETSAT Data Store',['EUMETSAT_CONSUMER_KEY','EUMETSAT_CONSUMER_SECRET']),
+      'jaxa':('JAXA G-Portal',['JAXA_USERNAME','JAXA_PASSWORD']),
+      'mosdac':('ISRO MOSDAC',['MOSDAC_USERNAME','MOSDAC_PASSWORD']),
+      'kma':('KMA Open Data',['KMA_AUTH_KEY']),
+      'fengyun':('CMA / NSMC FengYun',['FENGYUN_USERNAME','FENGYUN_PASSWORD']),
+    }
+    if source not in registry: raise ValueError('Fuente protegida no registrada')
+    label,keys=registry[source]; missing=[k for k in keys if not os.environ.get(k)]
+    return {'source_url':'config://'+source,'consulted_at':datetime.now(timezone.utc).isoformat(),
+      'data':{'source':label,'status':'requiere credencial' if missing else 'credencial configurada','required_env':keys,'missing_env':missing},
+      'scope':'Este botón verifica configuración. No declara datos operativos hasta completar una consulta autenticada end-to-end.'}
+
 def research_bundle(lat,lon,ina_id=None):
     jobs={'clima':lambda:variables(lat,lon),'aire':lambda:air_quality(lat,lon),'elevacion':lambda:elevation(lat,lon)}
     if ina_id:jobs['ina']=lambda:ina_series(ina_id,days=2)
@@ -258,7 +305,8 @@ def copernicus_stac(lat,lon):
     return stac_search('https://stac.dataspace.copernicus.eu/v1',lat,lon,'sentinel-2-l2a',5)
 
 def cnes_stac(lat,lon):
-    return stac_search('https://geodes-portal.cnes.fr/api/stac',lat,lon,None,5)
+    # GEODES documents /items for product searches rather than a generic /search endpoint.
+    return external('https://geodes-portal.cnes.fr/api/stac/items',{'bbox':f'{max(-180,lon-.03)},{max(-90,lat-.03)},{min(180,lon+.03)},{min(90,lat+.03)}','limit':5})
 
 def dlr_stac(lat,lon):
     return stac_search('https://geoservice.dlr.de/eoc/ogc/stac/v1',lat,lon,None,5)

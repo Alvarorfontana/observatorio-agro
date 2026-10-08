@@ -52,7 +52,7 @@ type Source = {
   payload?: Data;
   error?: string;
 };
-const RESEARCH = ["aire","elevacion","ina","usgs","nasa-catalogo","productos-nasa","landsat","radar","copernicus-stac","cnes-stac","dlr-stac","deafrica-stac","firms"];
+const RESEARCH = ["aire","elevacion","ina","usgs","nasa-catalogo","productos-nasa","landsat","radar","copernicus-stac","cnes-stac","dlr-stac","deafrica-stac","firms","nasa-power-30","enso","era5-cds","sentinel-hub","noaa-cdo","usgs-m2m","nasa-earthdata","copernicus-marine","gee","openaq","gfw","aemet","eumetsat","jaxa","mosdac","kma","fengyun"];
 const NATIONAL = ["smn", "inmet", "dmc", "eccc", "nws"];
 const SOURCES = [
   ["aire","Aire · CAMS","Open-Meteo / Copernicus"],
@@ -67,7 +67,24 @@ const SOURCES = [
   ["cnes-stac","CNES GEODES · Francia","STAC oficial"],
   ["dlr-stac","DLR EOC · Alemania","STAC oficial"],
   ["deafrica-stac","Digital Earth Africa","STAC/COG · cobertura África"],
-  ["firms","Incendios · FIRMS","NASA / requiere clave"],
+  ["firms","Incendios · FIRMS","NASA / clave Vercel"],
+  ["nasa-power-30","NASA POWER · 30 años","NASA / REST abierto"],
+  ["enso","ENSO · consenso mundial","NOAA · IRI · WMO · JMA · BOM"],
+  ["era5-cds","ERA5 / CDS","ECMWF · requiere CDS_API_KEY"],
+  ["sentinel-hub","Sentinel Hub · proceso","Copernicus · OAuth2 requerido"],
+  ["noaa-cdo","NOAA CDO histórico","NOAA · token requerido"],
+  ["usgs-m2m","USGS M2M / Landsat","USGS · cuenta/token"],
+  ["nasa-earthdata","NASA Earthdata","NASA · token"],
+  ["copernicus-marine","Copernicus Marine","SST/corrientes · cuenta"],
+  ["gee","Google Earth Engine","procesamiento · proyecto Cloud"],
+  ["openaq","OpenAQ v3","calidad de aire · API key"],
+  ["gfw","Global Forest Watch","cambio de cobertura · API key"],
+  ["aemet","AEMET OpenData","España · API key"],
+  ["eumetsat","EUMETSAT","Meteosat · credencial"],
+  ["jaxa","JAXA G-Portal","Japón · cuenta"],
+  ["mosdac","ISRO MOSDAC","India · cuenta"],
+  ["kma","KMA / GK2A","Corea · auth key"],
+  ["fengyun","FengYun / CMA","China · cuenta"],
   ["variables", "Clima y suelo", "Open-Meteo"],
   ["modelos", "Comparar modelos globales", "Open-Meteo / 7 proveedores"],
   ["escenas", "Escenas satelitales", "Earth Search / Sentinel-2"],
@@ -280,7 +297,9 @@ function Observatory({onHome}:{onHome:()=>void}) {
     [waterType,setWaterType] = useState("bebedero"),
     [drawMode,setDrawMode] = useState<"free"|"triangle"|"rectangle">("free"),
     [fieldMarkers,setFieldMarkers] = useState<Data[]>([]),
-    [markerType,setMarkerType] = useState("observación");
+    [markerType,setMarkerType] = useState("observación"),
+    [lots,setLots] = useState<Array<{id:string;name:string;vertices:Point[];center:Point;areaHa:number;perimeterKm:number}>>([]),
+    [selectedLotId,setSelectedLotId] = useState<string | null>(null);
   const mapEl = useRef<HTMLDivElement>(null),
     mapRef = useRef<L.Map | null>(null),
     marker = useRef<L.CircleMarker | null>(null),
@@ -291,7 +310,8 @@ function Observatory({onHome}:{onHome:()=>void}) {
     drawingRef = useRef(false),
     generation = useRef(0),
     controllers = useRef<Record<string, AbortController>>({}),
-    noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null),
+    lotLayers = useRef<Record<string,L.Polygon>>({});
   const notify = (s: string) => {
     setToast(s);
     if (noticeTimer.current) clearTimeout(noticeTimer.current);
@@ -440,8 +460,8 @@ function Observatory({onHome}:{onHome:()=>void}) {
   };
   const startDraw = (mode:"free"|"triangle"|"rectangle"="free") => {
     setDrawMode(mode);
-    poly.current?.remove();
     poly.current = null;
+    setSelectedLotId(null);
     line.current?.remove();
     currentPoints.current = [];
     vertexMarkers.current.forEach(m=>m.remove()); vertexMarkers.current=[];
@@ -472,19 +492,19 @@ function Observatory({onHome}:{onHome:()=>void}) {
           "Hay lados cruzados o vértices repetidos. Cancelá y delimitá nuevamente.",
         );
       const center = centroid(points);
-      poly.current = L.polygon(points, {
-        color: "#57dce0",
-        fillOpacity: 0.12,
-        dashArray: "5,5",
-      })
-        .addTo(mapRef.current!)
-        .bindTooltip("LOTE EN ANÁLISIS", {
-          permanent: true,
-          direction: "center",
-        });
+      const areaHa = (()=>{ const R=6378137,lat0=points.reduce((a,p)=>a+p[0],0)/points.length*Math.PI/180,xy=points.map(([la,lo])=>[R*lo*Math.PI/180*Math.cos(lat0),R*la*Math.PI/180]);let a=0;for(let i=0;i<xy.length;i++){const j=(i+1)%xy.length;a+=xy[i][0]*xy[j][1]-xy[j][0]*xy[i][1]}return Math.abs(a)/2/10000;})();
+      const perimeterKm = (()=>{const rad=(x:number)=>x*Math.PI/180,R=6371;let d=0;for(let i=0;i<points.length;i++){const a=points[i],b=points[(i+1)%points.length],dl=rad(b[0]-a[0]),dn=rad(b[1]-a[1]);const h=Math.sin(dl/2)**2+Math.cos(rad(a[0]))*Math.cos(rad(b[0]))*Math.sin(dn/2)**2;d+=2*R*Math.asin(Math.sqrt(h))}return d;})();
+      const id=`lote-${Date.now()}`;
+      const name=`Lote ${lots.length+1}`;
+      const layer=L.polygon(points,{color:"#57dce0",fillOpacity:.12,weight:2}).addTo(mapRef.current!).bindTooltip(name,{permanent:true,direction:"center"});
+      layer.on("click",()=>{ setSelectedLotId(id); setVertices(points); currentPoints.current=points; poly.current=layer; setPoint(center); setCoords(center.map(v=>v.toFixed(6))); mapRef.current?.fitBounds(layer.getBounds(),{padding:[40,40]}); });
+      lotLayers.current[id]=layer; poly.current=layer;
+      setLots(prev=>[...prev,{id,name,vertices:[...points],center,areaHa,perimeterKm}]);
+      setSelectedLotId(id);
       stopDraw();
       setCoords(center.map((v) => v.toFixed(6)));
       setPoint(center);
+      notify(`${name} guardado · ${areaHa.toFixed(2)} ha · ${perimeterKm.toFixed(2)} km de perímetro.`);
     } catch (e) {
       notify((e as Error).message);
     }
@@ -732,7 +752,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
               </button>
             ))}
             <details style={{marginTop:12}}><summary className="small">Agencias directas · 6 conexiones</summary><div style={{marginTop:10}}>{SOURCES.filter(([key])=>NATIONAL.includes(key)||key==="metnorway").map(([key,label])=><button key={key} className={"data-button "+(view===key?"active":"")} onClick={()=>changeView(key)} aria-pressed={view===key}>{label}<span>{sources[key]?.status.toUpperCase()||"CONSULTAR"}</span></button>)}</div></details>
-            <details style={{marginTop:12}}><summary className="small">Agua, aire y nuevas misiones · 9 servicios</summary><div style={{marginTop:10}}>{SOURCES.filter(([key])=>RESEARCH.includes(key)).map(([key,label])=><button key={key} className={"data-button "+(view===key?"active":"")} onClick={()=>changeView(key)}>{label}<span>{sources[key]?.status.toUpperCase()||"CONSULTAR"}</span></button>)}</div></details>
+            <details style={{marginTop:12}}><summary className="small">Conectores globales · abiertos y con credencial</summary><div style={{marginTop:10}}>{SOURCES.filter(([key])=>RESEARCH.includes(key)).map(([key,label])=><button key={key} className={"data-button "+(view===key?"active":"")} onClick={()=>changeView(key)}>{label}<span>{sources[key]?.status.toUpperCase()||"CONSULTAR"}</span></button>)}</div></details>
             <a className="small" href="/CONEXIONES-INVESTIGACION.md" target="_blank" rel="noreferrer">Matriz de 20 servicios y activación</a>
             <div style={{ marginTop: 18 }}>
               {sources[view]?.status === "consultando" && (
@@ -748,7 +768,8 @@ function Observatory({onHome}:{onHome:()=>void}) {
                 {view==="aire" && <><p className="footnote">Pronóstico CAMS en grilla. NO₂ y amoníaco atmosféricos no son nitrógeno del suelo.</p>{Object.keys(payload?.hourly||{}).filter(k=>k!=="time").map(k=><div className="soil" key={k}><span>{k.replaceAll("_"," ")}</span><strong>{fmt(payload.hourly[k]?.[0])} <small>{payload?.hourly_units?.[k]}</small></strong></div>)}<p className="footnote">Hora mostrada: {payload?.hourly?.time?.[0]||"Sin fecha"}. Valores ausentes se conservan.</p></>}
                 {view==="elevacion" && <div className="key"><span>Elevación estimada DEM</span><strong>{fmt(payload?.elevation?.[0])} m</strong></div>}
                 {view==="ina" && <><label className="small">Serie de estación · Bella Vista<select style={{width:"100%",marginTop:8}} value={inaSeries} onChange={e=>{setInaSeries(e.target.value);void load("ina",point,years,e.target.value)}}><option value="22">Altura Paraná · 30 días</option><option value="25500">Altura mensual · 30 años</option><option value="37299">Temperatura RMA08 · 2 días</option></select></label><p className="footnote">Estación Bella Vista · serie {inaSeries} · unidad y procedimiento de la fuente. No cambia de estación al mover el mapa.</p><div className="key"><span>Último registro · {payload?.data?.at(-1)?.timestart||"Sin fecha"}</span><strong>{fmt(payload?.data?.at(-1)?.valor)} {payload?.responseHeader?.seriesmetadata?.unit_abrev||""}</strong></div><p className="footnote">{payload?.data?.length||0} registros recibidos · exportables en JSON.</p></>}
-                {["nasa-catalogo","productos-nasa","landsat","radar"].includes(view) && <><p className="footnote">Catálogo y metadatos. Todavía no se extraen valores de NDVI, temperatura de superficie ni píxeles de radar.</p>{(payload?.features||payload?.feed?.entry||Object.values(payload||{})).slice(0,5).map((item:any,i:number)=><div className="soil" key={i}><span style={{overflowWrap:"anywhere"}}>{item?.id||item?.title||item?.long_name||item?.short_name||"Producto NASA"}<small style={{display:"block"}}>{item?.properties?.datetime||item?.time_start||"Metadatos de catálogo"}</small></span></div>)}</>}
+                {["nasa-catalogo","productos-nasa","landsat","radar","copernicus-stac","cnes-stac","dlr-stac","deafrica-stac"].includes(view) && <><p className="footnote">Catálogo y metadatos. Todavía no se extraen valores de NDVI, temperatura de superficie ni píxeles de radar.</p>{(payload?.features||payload?.feed?.entry||Object.values(payload||{})).slice(0,5).map((item:any,i:number)=><div className="soil" key={i}><span style={{overflowWrap:"anywhere"}}>{item?.id||item?.title||item?.long_name||item?.short_name||"Producto NASA"}<small style={{display:"block"}}>{item?.properties?.datetime||item?.time_start||"Metadatos de catálogo"}</small></span></div>)}</>}
+                {["era5-cds","sentinel-hub","noaa-cdo","usgs-m2m","nasa-earthdata","copernicus-marine","gee","openaq","gfw","aemet","eumetsat","jaxa","mosdac","kma","fengyun"].includes(view) && <><div className="metric-card"><span className="muted">ESTADO DE INTEGRACIÓN</span><strong>{payload?.status || "Sin verificar"}</strong><p>{payload?.missing_env?.length ? "Faltan en Vercel: "+payload.missing_env.join(", ") : "Credenciales detectadas. Falta validar consulta end-to-end antes de marcar OPERATIVA."}</p></div></>}
                 {view==="usgs" && <><label className="small">Estación opcional (ej. USGS-06887000)<input style={{width:"100%",marginTop:8}} value={usgsSite} onChange={e=>setUsgsSite(e.target.value)} placeholder="Vacío: región del mapa"/></label><p className="footnote">Muestra de hasta 50 registros dentro de la región consultada. Sin cobertura USGS fuera de EE.UU.</p><p className="small">{payload?.features?.length||0} registros recibidos. JSON incluye códigos, unidades y fechas originales.</p></>}
               </>}
               {NATIONAL.includes(view) && (
@@ -1015,6 +1036,12 @@ function Observatory({onHome}:{onHome:()=>void}) {
               Ver registro de fuentes y acceso ↗
             </a>
           </section>
+          <section className="panel block lot-manager">
+            <div className="section-title">LOTES DEL ESTABLECIMIENTO</div>
+            <p className="footnote">Cada polígono conserva límites, superficie y contexto de análisis. Seleccioná un lote para consultar todas las fuentes sobre ese territorio.</p>
+            <div className="lot-list">{lots.length===0?<span className="small">Todavía no hay lotes delimitados.</span>:lots.map(l=><button key={l.id} className={selectedLotId===l.id?"active":""} onClick={()=>{setSelectedLotId(l.id);setVertices(l.vertices);currentPoints.current=l.vertices;poly.current=lotLayers.current[l.id];setPoint(l.center);setCoords(l.center.map(v=>v.toFixed(6)));mapRef.current?.fitBounds(lotLayers.current[l.id].getBounds(),{padding:[40,40]})}}><strong>{l.name}</strong><span>{l.areaHa.toFixed(2)} ha</span></button>)}</div>
+            {selectedLotId&&<button className="primary" style={{width:"100%",marginTop:10}} onClick={()=>void askDots("Analizá integralmente el lote seleccionado: clima, agua, suelo, vegetación, riesgos, ENSO y trazabilidad. No inventes variables faltantes.")}>{agentBusy?"Analizando fuentes…":"Analizar lote seleccionado"}</button>}
+          </section>
           <section className="panel block operations">
             <div className="tag">OPERACIONES DEL LOTE</div>
             <div className="draw-chooser"><button onClick={()=>startDraw("triangle")}><Triangle className="icon"/>Triángulo</button><button onClick={()=>startDraw("rectangle")}><Square className="icon"/>Rectángulo</button><button onClick={()=>startDraw("free")}><Layers className="icon"/>Polígono libre</button></div>
@@ -1055,7 +1082,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
                 disabled={pdfBusy}
               >
                 <FileText className="icon" />
-                {pdfBusy ? "Generando…" : "Informe de clima PDF"}
+                {pdfBusy ? "Generando…" : "Informe Territorial DOTS · PDF"}
               </button>
               <button
                 style={{ gridColumn: "1/-1" }}
@@ -1075,9 +1102,14 @@ function Observatory({onHome}:{onHome:()=>void}) {
             Mapa satelital
           </button>
           <button className={layer === "modis" ? "active" : ""} onClick={() => setLayer("modis")} aria-pressed={layer === "modis"}>MODIS · imagen</button>
-          <button onClick={()=>changeView("escenas")}>Sentinel‑2 · escenas</button>
+          <button onClick={()=>changeView("escenas")}>Sentinel‑2 · imagen/escenas</button>
           <button onClick={()=>changeView("radar")}>Sentinel‑1 · radar</button>
-          <button onClick={()=>changeView("landsat")}>Landsat</button>
+          <button onClick={()=>changeView("copernicus-stac")}>Copernicus · S1/S2/S3</button>
+          <button onClick={()=>changeView("landsat")}>Landsat 8/9</button>
+          <button onClick={()=>changeView("nasa-catalogo")}>NASA · MODIS</button>
+          <button onClick={()=>changeView("cnes-stac")}>CNES · Francia</button>
+          <button onClick={()=>changeView("dlr-stac")}>DLR · Alemania</button>
+          <button onClick={()=>changeView("deafrica-stac")}>Digital Earth Africa</button>
           <button onClick={()=>changeView("firms")}>VIIRS / FIRMS</button>
           <input
             type="date"
@@ -1443,8 +1475,8 @@ function Observatory({onHome}:{onHome:()=>void}) {
 function SiteLink({to,children,className=""}:{to:string;children:React.ReactNode;className?:string}){
   return <a href={to} className={className} onClick={(e)=>{e.preventDefault();history.pushState({},"",to);window.dispatchEvent(new PopStateEvent("popstate"));window.scrollTo({top:0,behavior:"smooth"});}}>{children}</a>
 }
-function Brand(){return <SiteLink to="/" className="site-brand"><span className="site-mark integrated-logo"><i></i><i></i><i></i><i></i></span><span><b>DOTS <em>CAMPO</em></b><small>DATOS · OBSERVACIÓN · TERRITORIO · SATÉLITE</small></span></SiteLink>}
-function PublicHeader({onDemo}:{onDemo:()=>void}){return <header className="site-header"><Brand/><nav><SiteLink to="/producto">Cómo funciona</SiteLink><SiteLink to="/tecnologia">Fuentes y datos</SiteLink><button className="nav-demo" onClick={onDemo}>Demo</button></nav><div className="site-head-actions"><SiteLink to="/acceso" className="ghost-link">Ingresar</SiteLink><button className="demo-btn" onClick={onDemo}>Abrir Observatorio →</button></div></header>}
+function Brand(){return <SiteLink to="/" className="site-brand"><img className="brand-logo" src="/dots-logo.svg" alt="DOTS Campo"/><span><b>DOTS <em>CAMPO</em></b><small>DATOS · OBSERVACIÓN · TERRITORIO · SATÉLITE</small></span></SiteLink>}
+function PublicHeader({onDemo}:{onDemo:()=>void}){return <header className="site-header"><Brand/><nav><SiteLink to="/producto">Cómo funciona</SiteLink><SiteLink to="/tecnologia">Fuentes y datos</SiteLink><SiteLink to="/conexiones">APIs y accesos</SiteLink><button className="nav-demo" onClick={onDemo}>Demo</button></nav><div className="site-head-actions"><SiteLink to="/acceso" className="ghost-link">Ingresar</SiteLink><button className="demo-btn" onClick={onDemo}>Abrir Observatorio →</button></div></header>}
 const sourceGroups=[
  ["ARGENTINA",["CONAE · SAOCOM","SMN","INA"]],
  ["EUROPA",["Copernicus · Sentinel","ECMWF · C3S","EUMETSAT","DLR · Alemania","CNES · Francia"]],
@@ -1465,14 +1497,60 @@ function Home({onDemo}:{onDemo:()=>void}){return <div className="public-site"><P
  </main><SiteFooter/></div>}
 function PageHero({eyebrow,title,lead}:{eyebrow:string;title:string;lead:string}){return <section className="page-hero"><span className="section-tag">{eyebrow}</span><h1>{title}</h1><p>{lead}</p></section>}
 const cards={producto:[["01","Territorio primero","Todo análisis comienza en el polígono real del lote o potrero."],["02","Observación multifuente","Satélites, estaciones, modelos y bases territoriales se consultan por lugar y fecha."],["03","Interpretación trazable","Cada variable indica fuente, unidad, fecha, método, estado y alcance."],["04","Decisión y seguimiento","DOTS reúne hallazgos, recomendaciones, tareas e informe en una sola lectura."]],soluciones:[["Lotes y potreros","Superficie, perímetro, centroides, historial y análisis por unidad de manejo."],["Pasturas","Escenas y evolución espectral cuando existe procesamiento raster verificable."],["Agua","Lluvia, balance, ríos e infraestructura hídrica declarada o detectada con su nivel de evidencia."],["Suelos","Humedad, temperatura, relieve y propiedades modeladas con profundidad y fuente declaradas."],["Ganado","THI, carga y rotación cuando existe inventario o dato aportado por el productor."],["Riesgos","FIRMS, calor, sequía y exceso hídrico sin convertir ausencia de detección en ausencia de riesgo."]],ganaderia:[["Potrero como unidad","Cada lectura parte de un límite territorial y su historia."],["Agua para el rodeo","Cobertura, distancias y estado de la infraestructura hídrica."],["Pastura y carga","Condición vegetal cruzada con ocupación y presión de pastoreo cuando hay datos."],["Bienestar térmico","THI y meteorología para anticipar condiciones de estrés por calor."],["Rotación","Entrada, salida, descanso y recuperación del potrero."],["Tareas","Del diagnóstico a inspecciones, movimientos y acciones verificables."]]};
-function InfoPage({kind,onDemo}:{kind:"producto"|"soluciones"|"ganaderia";onDemo:()=>void}){const cfg:any={producto:["CÓMO FUNCIONA","Un sistema territorial, no una colección de indicadores.","DOTS organiza la información alrededor del establecimiento y de cada potrero: primero territorio, después evidencia, interpretación y decisión."],soluciones:["CAPACIDADES","Las capas del campo, conectadas.","El valor aparece cuando agua, suelo, vegetación, clima, ganado, riesgo e historia se leen sobre el mismo polígono."],ganaderia:["GANADERÍA","El potrero es la unidad de decisión.","DOTS está diseñado para el manejo ganadero: pastura, agua, carga, rotación, bienestar térmico, riesgo y tareas en contexto."]}[kind];return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner"><PageHero eyebrow={cfg[0]} title={cfg[1]} lead={cfg[2]}/><section className="info-grid">{cards[kind].map(([n,t,d])=><article key={t}><span>{n}</span><h2>{t}</h2><p>{d}</p></article>)}</section>{kind==="producto"&&<><section className="workflow-band"><div><b>CAMPO</b><span>→</span><b>POLÍGONO</b><span>→</span><b>FUENTES</b><span>→</span><b>DOTS</b><span>→</span><b>DECISIÓN</b></div><p>La procedencia del dato nunca se pierde durante el proceso.</p></section><section className="product-shot"><div className="mock-map"><div className="mock-poly"></div><span>Potrero seleccionado</span><small>satélite · clima · suelo · agua · riesgo</small></div><div><span className="section-tag">OBSERVATORIO</span><h2>El mapa permanece. Las capas cambian.</h2><p>Resumen, lotes, imágenes, vegetación, agua, suelos, ganado, clima, riesgos, ENOS, alertas e informes trabajan sobre el mismo territorio seleccionado.</p><button onClick={onDemo}>Probar demostración</button></div></section></>}<SourceStrip/></main><SiteFooter/></div>}
-function Technology({onDemo}:{onDemo:()=>void}){return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner"><PageHero eyebrow="FUENTES Y DATOS" title="Una red mundial, con procedencia visible." lead="DOTS diferencia una API operativa de una fuente pendiente, una credencial requerida de un servicio abierto y un catálogo de una medición procesada."/><section className="source-world">{sourceGroups.map(([region,items]:any)=><article key={region}><span>{region}</span>{items.map((x:string)=><div className="source-line" key={x}><i></i><b>{x}</b></div>)}</article>)}</section><section className="method-banner"><h2>OBSERVADO · SATELITAL · MODELADO · CALCULADO · PRONOSTICADO · INTERPRETACIÓN DOTS</h2><p>Fuente, producto o sensor, fecha, polígono, variable, unidad, método, estado y confianza acompañan cada resultado.</p></section><section className="status-explainer"><div><i className="ok"></i><b>Operativa</b><p>La consulta obtuvo una respuesta válida.</p></div><div><i className="key"></i><b>Requiere credencial</b><p>La integración está preparada pero necesita acceso autorizado.</p></div><div><i className="pending"></i><b>Pendiente</b><p>No se presenta como conectada hasta comprobarla.</p></div></section></main><SiteFooter/></div>}
+function InstitutionalDepth({kind}:{kind:"producto"|"soluciones"|"ganaderia"}){
+ const copy:any={
+ producto:["Qué es DOTS","DOTS Campo es una plataforma de inteligencia territorial para la gestión ganadera. Integra cartografía, observación satelital, meteorología, suelo, agua, infraestructura, riesgos e historia en torno a una unidad concreta: el establecimiento, el lote o el potrero.","Qué es el Observatorio profesional","Es el espacio operativo donde el productor o el técnico delimita el territorio, selecciona fuentes, compara fechas y transforma datos dispersos en una lectura única. El mapa permanece como referencia; cada módulo aporta una capa distinta sin perder el polígono analizado.","Cómo trabajan los gestores","Los gestores de DOTS organizan las consultas por dominio: territorio, satélites, clima, vegetación, agua, suelo, ganado, riesgos y contexto climático global. Un orquestador reúne las respuestas, un control de calidad conserva faltantes y advertencias, y el informe final muestra la procedencia de cada resultado."],
+ soluciones:["Una plataforma para gestionar, no sólo mirar","El Observatorio convierte el mapa en una mesa de trabajo. Permite delimitar potreros, registrar infraestructura, revisar escenas recientes, contrastar pronósticos, seguir el balance hídrico y reunir alertas en un mismo contexto territorial.","De la variable a la decisión","Una cifra aislada no alcanza. DOTS presenta valor, unidad, referencia, estado, fecha, fuente y método. Cuando una variable no está disponible, se declara como faltante; cuando es una inferencia, se identifica como interpretación.","Seguimiento en el tiempo","El objetivo es que cada potrero pueda compararse consigo mismo: vegetación, lluvia, evapotranspiración, humedad, ocupación, agua, riesgos e intervenciones. Así el sistema construye memoria territorial y no una fotografía aislada."],
+ ganaderia:["Pensado desde la lógica del campo","DOTS parte de potreros, aguadas, recorridas, carga, rotación y condición de las pasturas. La tecnología satelital se incorpora como evidencia adicional para responder preguntas de manejo, no como un fin en sí mismo.","Agua, pastura y rodeo en una misma lectura","El sistema vincula disponibilidad hídrica, distancia a fuentes de agua, condición vegetal, meteorología y estrés térmico. Los datos declarados por el productor se distinguen de las observaciones satelitales y de los cálculos del sistema.","Un gemelo digital ganadero","Con el tiempo, cada establecimiento puede reunir límites, potreros, suelos, pasturas, agua, infraestructura, ganado, clima, satélite, riesgos, historial y tareas. Esa estructura permite documentar decisiones y producir informes comparables." ]};
+ const a=copy[kind]; return <section className="institutional-depth"><article><span>01</span><h2>{a[0]}</h2><p>{a[1]}</p></article><article><span>02</span><h2>{a[2]}</h2><p>{a[3]}</p></article><article><span>03</span><h2>{a[4]}</h2><p>{a[5]}</p></article></section>;
+}
+function InfoPage({kind,onDemo}:{kind:"producto"|"soluciones"|"ganaderia";onDemo:()=>void}){const cfg:any={producto:["CÓMO FUNCIONA","Un sistema territorial, no una colección de indicadores.","DOTS organiza la información alrededor del establecimiento y de cada potrero: primero territorio, después evidencia, interpretación y decisión."],soluciones:["CAPACIDADES","Las capas del campo, conectadas.","El valor aparece cuando agua, suelo, vegetación, clima, ganado, riesgo e historia se leen sobre el mismo polígono."],ganaderia:["GANADERÍA","El potrero es la unidad de decisión.","DOTS está diseñado para el manejo ganadero: pastura, agua, carga, rotación, bienestar térmico, riesgo y tareas en contexto."]}[kind];return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner"><PageHero eyebrow={cfg[0]} title={cfg[1]} lead={cfg[2]}/><section className="info-grid">{cards[kind].map(([n,t,d])=><article key={t}><span>{n}</span><h2>{t}</h2><p>{d}</p></article>)}</section><InstitutionalDepth kind={kind}/>{kind==="producto"&&<><section className="workflow-band"><div><b>CAMPO</b><span>→</span><b>POLÍGONO</b><span>→</span><b>FUENTES</b><span>→</span><b>DOTS</b><span>→</span><b>DECISIÓN</b></div><p>La procedencia del dato nunca se pierde durante el proceso.</p></section><section className="product-shot"><div className="mock-map"><div className="mock-poly"></div><span>Potrero seleccionado</span><small>satélite · clima · suelo · agua · riesgo</small></div><div><span className="section-tag">OBSERVATORIO</span><h2>El mapa permanece. Las capas cambian.</h2><p>Resumen, lotes, imágenes, vegetación, agua, suelos, ganado, clima, riesgos, ENOS, alertas e informes trabajan sobre el mismo territorio seleccionado.</p><button onClick={onDemo}>Probar demostración</button></div></section></>}<SourceStrip/></main><SiteFooter/></div>}
+function Technology({onDemo}:{onDemo:()=>void}){return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner"><PageHero eyebrow="FUENTES Y DATOS" title="Una red mundial, con procedencia visible." lead="DOTS integra servicios oficiales y abiertos cuando existe una interfaz programática verificable. Catálogo, imagen, modelo y medición no son lo mismo: el sistema los identifica por separado."/><section className="institutional-depth"><article><span>RED</span><h2>Por qué integramos múltiples fuentes</h2><p>Ningún satélite ni modelo describe por sí solo un establecimiento. Radar, óptico, meteorología, suelo, hidrología y clima global responden preguntas diferentes. DOTS los consulta por ubicación y fecha y conserva la fuente original.</p></article><article><span>API</span><h2>Qué significa “conectada”</h2><p>Una fuente sólo figura como operativa cuando el backend puede realizar una consulta válida. Las que requieren registro o clave quedan marcadas como credencial pendiente. Una API de catálogo confirma productos disponibles; no se presenta como índice o medición raster procesada.</p></article><article><span>QA</span><h2>Control y trazabilidad</h2><p>Cada resultado debe conservar fuente, producto o sensor, fecha, geometría consultada, variable, unidad, método y estado. Si una fuente falla, DOTS conserva el faltante y continúa con las demás, sin reemplazarlo por cero ni por un valor inventado.</p></article></section><section className="source-world">{sourceGroups.map(([region,items]:any)=><article key={region}><span>{region}</span>{items.map((x:string)=><div className="source-line" key={x}><i></i><b>{x}</b></div>)}</article>)}</section><section className="method-banner"><h2>OBSERVADO · SATELITAL · MODELADO · CALCULADO · PRONOSTICADO · INTERPRETACIÓN DOTS</h2><p>Fuente, producto o sensor, fecha, polígono, variable, unidad, método, estado y confianza acompañan cada resultado.</p></section><section className="status-explainer"><div><i className="ok"></i><b>Operativa</b><p>La consulta obtuvo una respuesta válida.</p></div><div><i className="key"></i><b>Requiere credencial</b><p>La integración está preparada pero necesita acceso autorizado.</p></div><div><i className="pending"></i><b>Pendiente</b><p>No se presenta como conectada hasta comprobarla.</p></div></section><section className="demo-call"><div><span className="section-tag">OBSERVATORIO</span><h2>Las fuentes se prueban desde el lote.</h2><p>Dentro del Observatorio podés seleccionar Copernicus, Sentinel-1/2, Landsat, NASA MODIS, CNES, DLR, Digital Earth Africa y FIRMS. El panel muestra la respuesta o el motivo por el que la fuente no está disponible.</p></div><button onClick={onDemo}>Probar fuentes →</button></section></main><SiteFooter/></div>}
+
+
+type ApiSource={id:string;name:string;org:string;country:string;domain:string;manage:string;test?:string;access:string;use:string;variables:string;priority:number};
+const apiSources:ApiSource[]=[
+ {id:"sentinel-hub",name:"Sentinel Hub",org:"Copernicus Data Space",country:"UE · Global",domain:"dataspace.copernicus.eu",manage:"https://www.sentinel-hub.com/develop/",test:"sentinel-hub",access:"OAuth 2.0 · requiere Client ID/Secret",use:"Procesamiento Sentinel-1/2 y estadísticas por polígono.",variables:"RGB · NDVI · NDMI/NDWI · EVI · radar · series",priority:1},
+ {id:"era5-cds",name:"ERA5 / CDS",org:"ECMWF · Copernicus",country:"UE · Global",domain:"cds.climate.copernicus.eu",manage:"https://cds.climate.copernicus.eu/api-how-to",test:"era5-cds",access:"Registro gratuito · CDS API",use:"Reanálisis climático histórico de largo plazo.",variables:"Temperatura · lluvia · humedad · viento · radiación",priority:1},
+ {id:"nasa-earthdata",name:"NASA Earthdata",org:"NASA",country:"EE.UU. · Global",domain:"earthdata.nasa.gov",manage:"https://urs.earthdata.nasa.gov/",test:"nasa-earthdata",access:"Cuenta + token",use:"Acceso autenticado a productos de observación de la Tierra.",variables:"MODIS · VIIRS · GPM · SMAP · productos terrestres",priority:1},
+ {id:"usgs-m2m",name:"USGS M2M / EarthExplorer",org:"USGS",country:"EE.UU. · Global",domain:"usgs.gov",manage:"https://m2m.cr.usgs.gov/",test:"usgs-m2m",access:"Cuenta + acceso M2M",use:"Archivo histórico Landsat y evolución territorial.",variables:"Landsat · reflectancia · térmico · histórico",priority:1},
+ {id:"noaa-cdo",name:"NOAA NCEI / CDO",org:"NOAA",country:"EE.UU. · Global",domain:"noaa.gov",manage:"https://www.ncdc.noaa.gov/cdo-web/token",test:"noaa-cdo",access:"Token gratuito",use:"Series históricas de estaciones y climatología.",variables:"Temperatura · precipitación · viento · estaciones",priority:1},
+ {id:"copernicus-marine",name:"Copernicus Marine",org:"Copernicus Marine Service",country:"UE · Global",domain:"marine.copernicus.eu",manage:"https://data.marine.copernicus.eu/",test:"copernicus-marine",access:"Cuenta / credenciales",use:"Contexto oceánico para clima y ENSO.",variables:"SST · salinidad · corrientes · nivel del mar",priority:1},
+ {id:"gee",name:"Google Earth Engine",org:"Google Earth Engine",country:"Global",domain:"earthengine.google.com",manage:"https://developers.google.com/earth-engine/",test:"gee",access:"Proyecto Cloud + Earth Engine",use:"Procesamiento pesado de series raster históricas.",variables:"CHIRPS · Landsat · Sentinel · ERA5 · colecciones GEE",priority:1},
+ {id:"nasa-power",name:"NASA POWER",org:"NASA",country:"Global",domain:"power.larc.nasa.gov",manage:"https://power.larc.nasa.gov/api/",test:"nasa-power-30",access:"Abierta · sin registro",use:"Agrometeorología histórica del punto/lote.",variables:"T° · humedad · precipitación · radiación · viento",priority:0},
+ {id:"nasa-gibs",name:"NASA GIBS",org:"NASA Earthdata",country:"Global",domain:"earthdata.nasa.gov",manage:"https://nasa-gibs.github.io/gibs-api-docs/",test:"gibs",access:"WMS/WMTS abierto · sin API key",use:"Capas satelitales reales directamente sobre el mapa.",variables:"MODIS · VIIRS · SMAP · GPM · SST · nubes · aerosoles",priority:0},
+ {id:"soilgrids",name:"SoilGrids",org:"ISRIC",country:"Global",domain:"isric.org",manage:"https://rest.isric.org/soilgrids/",test:"suelo",access:"Abierta · servicio sujeto a disponibilidad",use:"Propiedades edáficas modeladas; nunca sustituye laboratorio.",variables:"N total · carbono · pH · arcilla · arena · densidad",priority:0},
+ {id:"copernicus-stac",name:"Copernicus STAC",org:"Copernicus Data Space",country:"UE · Global",domain:"dataspace.copernicus.eu",manage:"https://documentation.dataspace.copernicus.eu/APIs/STAC.html",test:"copernicus-stac",access:"Catálogo abierto",use:"Localización de escenas por fecha y territorio.",variables:"Sentinel-1 · Sentinel-2 · Sentinel-3 · metadatos",priority:0},
+ {id:"firms",name:"NASA FIRMS",org:"NASA",country:"Global",domain:"firms.modaps.eosdis.nasa.gov",manage:"https://firms.modaps.eosdis.nasa.gov/api/map_key/",test:"firms",access:"MAP_KEY · ya prevista en Vercel",use:"Detecciones térmicas e incendios cercanos al lote.",variables:"VIIRS · MODIS · focos · fecha · confianza",priority:0},
+ {id:"openaq",name:"OpenAQ v3",org:"OpenAQ",country:"Global",domain:"openaq.org",manage:"https://docs.openaq.org/",test:"openaq",access:"API key",use:"Calidad del aire y humo como contexto ambiental.",variables:"PM2.5 · PM10 · O3 · NO2 · SO2 · CO",priority:2},
+ {id:"gfw",name:"Global Forest Watch",org:"WRI",country:"Global",domain:"globalforestwatch.org",manage:"https://data.globalforestwatch.org/",test:"gfw",access:"API key / token según servicio",use:"Cambio de cobertura y alertas forestales.",variables:"Cobertura · pérdida forestal · alertas · uso del suelo",priority:2},
+ {id:"aemet",name:"AEMET OpenData",org:"AEMET",country:"España",domain:"aemet.es",manage:"https://opendata.aemet.es/centrodedescargas/altaUsuario",test:"aemet",access:"API key gratuita",use:"Meteorología oficial española cuando el lote esté en cobertura.",variables:"Observaciones · pronóstico · avisos · climatología",priority:2},
+ {id:"eumetsat",name:"EUMETSAT",org:"EUMETSAT Data Store",country:"Europa · África",domain:"eumetsat.int",manage:"https://data.eumetsat.int/",test:"eumetsat",access:"Cuenta + credenciales",use:"Meteorología satelital y Meteosat.",variables:"Nubes · temperatura · humedad · productos Meteosat",priority:2},
+ {id:"jaxa",name:"JAXA G-Portal",org:"JAXA",country:"Japón · Global",domain:"jaxa.jp",manage:"https://gportal.jaxa.jp/gpr/",test:"jaxa",access:"Registro para descargas",use:"Productos japoneses de observación terrestre.",variables:"ALOS · GCOM · GPM · AMSR2",priority:2},
+ {id:"mosdac",name:"ISRO MOSDAC",org:"ISRO",country:"India",domain:"mosdac.gov.in",manage:"https://www.mosdac.gov.in/",test:"mosdac",access:"Cuenta / credenciales",use:"Satélites meteorológicos y oceánicos de India.",variables:"INSAT · precipitación · océano · atmósfera",priority:2},
+ {id:"kma",name:"KMA / GK2A",org:"Korea Meteorological Administration",country:"Corea del Sur",domain:"data.kma.go.kr",manage:"https://data.kma.go.kr/",test:"kma",access:"Auth key según servicio",use:"Meteorología y observación geoestacionaria asiática.",variables:"Canales GK2A · nubes · IR · vapor de agua",priority:2},
+ {id:"fengyun",name:"FengYun / CMA-NSMC",org:"China Meteorological Administration",country:"China",domain:"cma.gov.cn",manage:"https://satellite.nsmc.org.cn/PortalSite/Default.aspx",test:"fengyun",access:"Registro / autorización",use:"Observación meteorológica satelital china.",variables:"FY-3 · FY-4 · nubes · humedad · temperatura",priority:2},
+ {id:"waqi",name:"WAQI",org:"World Air Quality Index",country:"Global",domain:"aqicn.org",manage:"https://aqicn.org/data-platform/token/",access:"Token gratuito",use:"Fuente complementaria de calidad del aire.",variables:"AQI · PM2.5 · PM10 · O3 · NO2 · SO2",priority:3},
+ {id:"airnow",name:"AirNow",org:"US EPA",country:"EE.UU. / Norteamérica",domain:"airnow.gov",manage:"https://docs.airnowapi.org/",access:"API key gratuita",use:"Calidad del aire de referencia en Norteamérica.",variables:"AQI · partículas · ozono",priority:3},
+ {id:"usda-nass",name:"USDA NASS QuickStats",org:"USDA",country:"EE.UU.",domain:"usda.gov",manage:"https://quickstats.nass.usda.gov/api",access:"API key gratuita",use:"Contexto estadístico agropecuario y ganadero.",variables:"Ganado · producción · rendimiento · tierras",priority:3}
+];
+function sourceLogo(domain:string){return `https://www.google.com/s2/favicons?sz=128&domain_url=https://${domain}`}
+function ApiConnections({onDemo}:{onDemo:()=>void}){
+ const [results,setResults]=useState<Record<string,{state:string;detail:string}>>({});
+ const [busy,setBusy]=useState<string>("");
+ const test=async(s:ApiSource)=>{if(!s.test)return;setBusy(s.id);setResults(r=>({...r,[s.id]:{state:"checking",detail:"Comprobando…"}}));try{const extra=s.test==="nasa-power-30"?"&years=30":"";const res=await fetch(`/api/fuentes/${s.test}?lat=-28.507&lon=-59.043${extra}`,{signal:AbortSignal.timeout(25000)});const data=await res.json();const state=res.ok?((data?.data?.status||data?.status)==="requiere credencial"?"key":"ok"):(res.status===409?"key":"fail");const detail=data?.data?.status||data?.status||data?.error||(res.ok?"Respuesta válida":"Sin respuesta válida");setResults(r=>({...r,[s.id]:{state,detail:String(detail)}}))}catch(e){setResults(r=>({...r,[s.id]:{state:"fail",detail:"No se obtuvo respuesta válida"}}))}finally{setBusy("")}};
+ return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner"><PageHero eyebrow="APIs Y CONEXIONES" title="Cada botón tiene una fuente detrás." lead="Directorio operativo de accesos DOTS. Los servicios abiertos pueden probarse desde el sitio; los protegidos verifican si la credencial está configurada. Ningún logo equivale por sí solo a una conexión."/>
+ <section className="api-intro"><article><b>1 · GESTIONAR</b><h2>Acceso oficial</h2><p>El botón abre la dirección de registro o documentación del proveedor. Las contraseñas no se guardan en esta página.</p></article><article><b>2 · PROBAR</b><h2>Conector DOTS</h2><p>El segundo botón llama al backend. Verde significa respuesta válida; ámbar indica credencial pendiente; rojo, fuente sin respuesta válida.</p></article><article><b>3 · USAR</b><h2>Territorio y variables</h2><p>La fuente se aplica al lote/potrero y conserva procedencia, fecha, variable, unidad, método y estado.</p></article></section>
+ {[0,1,2,3].map(level=>{const group=apiSources.filter(x=>x.priority===level);if(!group.length)return null;return <section className="api-section" key={level}><div className="api-section-head"><span>{level===0?"ABIERTAS / YA DISPONIBLES":level===1?"GESTIÓN PRIORITARIA":level===2?"SEGUNDA ETAPA":"COMPLEMENTARIAS"}</span><h2>{level===0?"Podemos avanzar sin esperar credenciales":level===1?"Estas son las cuentas que conviene gestionar primero":level===2?"Amplían la cobertura internacional":"Se incorporan cuando aporten valor al territorio"}</h2></div><div className="api-grid">{group.map(s=>{const r=results[s.id];return <article className="api-card" key={s.id}><div className="api-card-top"><img src={sourceLogo(s.domain)} alt={`Identificador web de ${s.org}`} loading="lazy"/><div><span>{s.country}</span><h3>{s.name}</h3><small>{s.org}</small></div></div><p>{s.use}</p><div className="api-vars">{s.variables}</div><div className="api-access"><b>Acceso</b><span>{s.access}</span></div>{r&&<div className={`api-result ${r.state}`}><i></i>{r.detail}</div>}<div className="api-actions"><a href={s.manage} target="_blank" rel="noreferrer">Gestión / documentación ↗</a>{s.test?<button onClick={()=>void test(s)} disabled={busy===s.id}>{busy===s.id?"Probando…":"Probar conexión"}</button>:<button disabled>Conector pendiente</button>}</div></article>})}</div></section>})}
+ <section className="method-banner"><h2>BOTÓN → CONECTOR → API → DATO → PROCESAMIENTO → MAPA/GRÁFICO → INFORME</h2><p>Si una etapa no está disponible, DOTS la muestra como pendiente. No se reemplazan faltantes con valores inventados.</p></section><section className="demo-call"><div><span className="section-tag">OBSERVATORIO</span><h2>La prueba definitiva se hace sobre un lote.</h2><p>Una conexión sólo se considera productiva cuando devuelve datos válidos para la geometría, fecha y variable solicitadas.</p></div><button onClick={onDemo}>Abrir Observatorio →</button></section></main><SiteFooter/></div>
+}
+
 function Cases({onDemo}:{onDemo:()=>void}){return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner"><PageHero eyebrow="CASOS DE USO" title="Preguntas reales del campo." lead="El sistema debe responder una pregunta de manejo y mostrar la evidencia utilizada, no llenar una pantalla de cifras."/><section className="case-list">{["¿Qué potrero perdió vigor y desde cuándo?","¿Dónde falta cobertura de agua para el rodeo?","¿La lluvia prevista compensa la evapotranspiración?","¿Hay condiciones de estrés térmico esta semana?","¿Cómo cambió este lote frente al mismo período anterior?","¿Qué fuentes coinciden y cuáles divergen?"].map((x,i)=><article key={x}><b>0{i+1}</b><h2>{x}</h2><p>DOTS cruza sólo las capas disponibles y conserva los datos faltantes como faltantes.</p></article>)}</section></main><SiteFooter/></div>}
 function Pricing({onDemo}:{onDemo:()=>void}){return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner"><PageHero eyebrow="ACCESO" title="DOTS puede crecer con cada establecimiento." lead="La demostración permanece abierta; los planes comerciales se publicarán únicamente cuando autenticación, permisos y cobro estén realmente conectados."/><section className="pricing-grid"><article><span>DEMO</span><h2>Explorar</h2><p>Recorrido del Observatorio y establecimiento demostrativo.</p><b>Sin cargo</b><button onClick={onDemo}>Ver demo</button></article><article className="featured"><span>PRODUCTOR</span><h2>Gestión territorial</h2><p>Lotes, fuentes, históricos, alertas e informes.</p><b>En preparación</b></article><article><span>PROFESIONAL</span><h2>Multiestablecimiento</h2><p>Comparación, equipos técnicos y reportes avanzados.</p><b>En preparación</b></article></section></main><SiteFooter/></div>}
 function Blog({onDemo}:{onDemo:()=>void}){return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner"><PageHero eyebrow="CUADERNO DOTS" title="Método antes que promesas." lead="Notas sobre observación de la Tierra, ganadería, clima y límites de interpretación."/><section className="blog-grid">{[["SATÉLITES","Qué puede observar Sentinel-2 y qué no"],["ARGENTINA","SAOCOM y el radar de banda L"],["CLIMA","ENOS: cómo comparar NOAA, IRI, JMA y BOM"],["AGUA","Del milímetro de lluvia a la disponibilidad real"],["SUELOS","Por qué nitrógeno modelado no es laboratorio"],["MÉTODO","Dato, cálculo, pronóstico e interpretación"]].map(([k,t])=><article key={t}><span>{k}</span><h2>{t}</h2><p>Contenido técnico DOTS.</p></article>)}</section></main><SiteFooter/></div>}
 function Contact({onDemo}:{onDemo:()=>void}){return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner"><PageHero eyebrow="CONTACTO" title="DOTS / Campo" lead="El canal comercial se habilitará cuando esté conectado a un destino real. No simulamos envíos."/><section className="contact-box"><div><h2>Inteligencia territorial para la gestión ganadera.</h2><p>Productores, técnicos, organizaciones y aliados tecnológicos.</p></div><div className="contact-form"><label>Nombre<input placeholder="Tu nombre"/></label><label>Correo<input type="email" placeholder="nombre@correo.com"/></label><label>Consulta<textarea placeholder="Contanos qué necesitás"></textarea></label><button type="button" disabled>Canal en preparación</button></div></section></main><SiteFooter/></div>}
 function Access({onDemo}:{onDemo:()=>void}){return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner access-page"><PageHero eyebrow="ACCESO" title="Observatorio DOTS" lead="La autenticación real se incorporará con permisos por establecimiento. La demostración no simula una cuenta de usuario."/><button className="big-demo" onClick={onDemo}>Entrar a la demostración →</button></main><SiteFooter/></div>}
-function SiteFooter(){return <footer className="site-footer"><Brand/><p>Inteligencia territorial para la gestión ganadera.</p><div><SiteLink to="/producto">Cómo funciona</SiteLink><SiteLink to="/tecnologia">Fuentes</SiteLink><SiteLink to="/demo">Demo</SiteLink></div></footer>}
+function SiteFooter(){return <footer className="site-footer"><Brand/><p>Inteligencia territorial para la gestión ganadera.</p><div><SiteLink to="/producto">Cómo funciona</SiteLink><SiteLink to="/tecnologia">Fuentes</SiteLink><SiteLink to="/conexiones">APIs</SiteLink><SiteLink to="/demo">Demo</SiteLink></div></footer>}
 
 function App(){
   const [path,setPath]=useState(window.location.pathname);
@@ -1485,6 +1563,7 @@ function App(){
   if(path==="/soluciones")return <InfoPage kind="soluciones" onDemo={openDemo}/>;
   if(path==="/ganaderia")return <InfoPage kind="ganaderia" onDemo={openDemo}/>;
   if(path==="/tecnologia")return <Technology onDemo={openDemo}/>;
+  if(path==="/conexiones")return <ApiConnections onDemo={openDemo}/>;
   if(path==="/casos")return <Cases onDemo={openDemo}/>;
   if(path==="/precios")return <Pricing onDemo={openDemo}/>;
   if(path==="/blog")return <Blog onDemo={openDemo}/>;
