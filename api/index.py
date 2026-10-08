@@ -1,47 +1,18 @@
-"""Entrypoint mínimo para Vercel - sin imports externos"""
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from datetime import datetime, timezone
+"""Entrada única para Vercel (Flask). Registra el Blueprint /api/fuentes."""
+import os, sys
 
-app = FastAPI(
-    title="DOTS Campo API",
-    version="1.5",
-    description="Observatorio Territorial Agroambiental"
-)
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+from flask import Flask, jsonify
+from research_routes import research_api   # si algo falla acá, falla fuerte (no se esconde)
 
-@app.get("/")
-async def root():
-    return {
-        "name": "DOTS Campo API",
-        "version": "1.5",
-        "status": "operativa",
-        "timestamp": datetime.now(timezone.utc).isoformat()
-    }
+app = Flask(__name__)
+app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024
+app.register_blueprint(research_api)
 
-@app.get("/api/fuentes/agentic/status")
-async def status():
-    """Endpoint de status básico - sin dependencias externas"""
-    return {
-        "status": "ok",
-        "tested_at": datetime.now(timezone.utc).isoformat(),
-        "sources": {
-            "clima": {"status": "pendiente", "note": "requiere research_connectors.py"}
-        }
-    }
 
-@app.get("/api/fuentes/conexiones")
-async def conexiones():
-    """Directorio de APIs - versión básica"""
-    return {
-        "status": "ok",
-        "total_apis": 20,
-        "note": "Versión básica. Conectores completos pendientes."
-    }
+@app.get('/api/health')
+def health():
+    return jsonify({'status': 'ok', 'app': 'DOTS Campo API'})

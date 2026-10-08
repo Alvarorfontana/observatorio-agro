@@ -48,7 +48,7 @@ def _quality(source_count, warnings):
     score = min(95, 48 + source_count * 9 - max(0, len(warnings) - 1) * 4)
     return max(20, score)
 
-def analyze(lat, lon, prompt='', polygon=None, ina_id=None, water_assets=None):
+def analyze(lat, lon, prompt='', polygon=None, ina_id=None, water_assets=None, field_markers=None):
     intent = _intent(prompt)
     bundle = c.research_bundle(lat, lon, ina_id)
     extra = {}
@@ -77,9 +77,13 @@ def analyze(lat, lon, prompt='', polygon=None, ina_id=None, water_assets=None):
             for future in as_completed(futures):
                 key = futures[future]
                 try:
-                    extra[key] = {'status': 'recibido', 'payload': future.result()}
+                    res = future.result()
+                    if isinstance(res, dict) and res.get('status') not in (None, 'recibido'):
+                        extra[key] = {'status': 'sin dato', 'error': res.get('error') or res.get('status')}
+                    else:
+                        extra[key] = {'status': 'recibido', 'payload': res}
                 except Exception as e:
-                    extra[key] = {'status': 'sin dato', 'error': type(e).__name__}
+                    extra[key] = {'status': 'sin dato', 'error': f'{type(e).__name__}: {str(e)[:120]}'}
 
     sources = {**bundle['sources'], **extra}
     clima = sources.get('clima', {}).get('payload', {}).get('data', {})
@@ -110,6 +114,19 @@ def analyze(lat, lon, prompt='', polygon=None, ina_id=None, water_assets=None):
             'text': f'{len(water_assets)} elementos registrados en el lote: '
                     + ', '.join(f'{v} {k}' for k, v in kinds.items())
                     + '. Se consideran infraestructura declarada, no detección satelital.'
+        })
+
+    declared = [m for m in (field_markers or []) if m.get('source') != 'NASA FIRMS']
+    if declared:
+        kinds = {}
+        for m in declared:
+            kinds[m.get('type', 'otro')] = kinds.get(m.get('type', 'otro'), 0) + 1
+        findings.append({
+            'topic': 'Observaciones de campo',
+            'status': 'inventario declarado',
+            'text': f'{len(declared)} observaciones marcadas por el usuario: '
+                    + ', '.join(f'{v} {k}' for k, v in kinds.items())
+                    + '. Son registros declarados, no detección satelital.'
         })
 
     if t is not None:
