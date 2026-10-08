@@ -300,6 +300,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
     [drawMode,setDrawMode] = useState<"free"|"triangle"|"rectangle">("free"),
     [fieldMarkers,setFieldMarkers] = useState<Data[]>([]),
     [markerType,setMarkerType] = useState("observación"),
+    [placingMarker,setPlacingMarker] = useState(false),
     [lots,setLots] = useState<Array<{id:string;name:string;vertices:Point[];center:Point;areaHa:number;perimeterKm:number}>>([]),
     [selectedLotId,setSelectedLotId] = useState<string | null>(null);
   const mapEl = useRef<HTMLDivElement>(null),
