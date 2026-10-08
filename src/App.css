@@ -1,322 +1,74 @@
-* { margin: 0; padding: 0; box-sizing: border-box; }
+import React, { useState } from 'react';
+import Map from './components/Map';
+import Dashboard from './components/Dashboard';
+import ResultPanel from './components/ResultPanel';
+import ScenesPanel from './components/ScenesPanel';
+import SearchBar from './components/SearchBar';
+import './App.css';
 
-body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: #0a0e1a;
-    color: #e4e7eb;
-    line-height: 1.5;
+function App() {
+    const [loteSeleccionado, setLoteSeleccionado] = useState(null);
+    const [resultado, setResultado] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [escenas, setEscenas] = useState([]);
+
+    return (
+        <div className="app">
+            <header className="app-header">
+                <div className="logo">
+                    <img src="/logo.svg" alt="DOTS Campo" />
+                    <div>
+                        <h1>DOTS Campo</h1>
+                        <span>Observatorio Territorial</span>
+                    </div>
+                </div>
+            </header>
+
+            <div className="app-layout">
+                <aside className="sidebar">
+                    <SearchBar />
+                    <h2>Preguntarle a DOTS</h2>
+                    <Dashboard
+                        loteSeleccionado={loteSeleccionado}
+                        onResultado={setResultado}
+                        loading={loading}
+                        setLoading={setLoading}
+                    />
+                    <h2>Lotes delimitados</h2>
+                    <div id="lotes-lista">
+                        {loteSeleccionado ? (
+                            <div className="lote-item">
+                                <strong>{loteSeleccionado.nombre}</strong>
+                                <p>{loteSeleccionado.area_ha} ha</p>
+                            </div>
+                        ) : (
+                            <p style={{fontSize: '12px', color: '#666'}}>
+                                Delimitá un lote en el mapa
+                            </p>
+                        )}
+                    </div>
+                    {escenas.length > 0 && (
+                        <>
+                            <h2>Escenas Sentinel-2</h2>
+                            <ScenesPanel escenas={escenas} />
+                        </>
+                    )}
+                </aside>
+
+                <Map
+                    onLoteSeleccionado={setLoteSeleccionado}
+                    onEscenasCargadas={setEscenas}
+                />
+            </div>
+
+            {resultado && (
+                <ResultPanel
+                    resultado={resultado}
+                    onClose={() => setResultado(null)}
+                />
+            )}
+        </div>
+    );
 }
 
-.app-header {
-    background: linear-gradient(135deg, #0f1729 0%, #1a2332 100%);
-    border-bottom: 1px solid #2a3547;
-    padding: 16px 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-}
-
-.app-header .logo {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.app-header .logo img { height: 40px; width: auto; }
-
-.app-header .logo h1 {
-    font-size: 20px;
-    font-weight: 700;
-    color: #00d4aa;
-    letter-spacing: 0.5px;
-}
-
-.app-header .logo span {
-    font-size: 12px;
-    color: #8892a6;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-}
-
-.app-layout {
-    display: grid;
-    grid-template-columns: 320px 1fr;
-    height: calc(100vh - 73px);
-}
-
-.sidebar {
-    background: #0f1729;
-    border-right: 1px solid #2a3547;
-    padding: 20px;
-    overflow-y: auto;
-}
-
-.sidebar h2 {
-    font-size: 13px;
-    color: #8892a6;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    margin-bottom: 12px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid #2a3547;
-}
-
-.dashboard {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    margin-bottom: 20px;
-}
-
-.btn-dashboard {
-    background: #1a2332;
-    border: 1px solid #2a3547;
-    color: #e4e7eb;
-    padding: 12px 10px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: 500;
-    transition: all 0.2s;
-    text-align: left;
-}
-
-.btn-dashboard:hover {
-    background: #243044;
-    border-color: #00d4aa;
-    transform: translateY(-1px);
-}
-
-.btn-dashboard.btn-pdf {
-    grid-column: 1 / -1;
-    background: linear-gradient(135deg, #00d4aa 0%, #00a88a 100%);
-    color: #0a0e1a;
-    font-weight: 700;
-    text-align: center;
-}
-
-.btn-dashboard.btn-pdf:hover { filter: brightness(1.1); }
-
-#map { width: 100%; height: 100%; background: #0a0e1a; }
-
-#resultado-panel {
-    position: fixed;
-    right: 20px;
-    bottom: 20px;
-    width: 480px;
-    max-height: 70vh;
-    background: #0f1729;
-    border: 1px solid #2a3547;
-    border-radius: 12px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-    overflow-y: auto;
-    z-index: 1000;
-}
-
-#resultado-panel.hidden { display: none; }
-
-.resultado-header {
-    padding: 20px;
-    background: linear-gradient(135deg, #1a2332 0%, #0f1729 100%);
-    border-bottom: 1px solid #2a3547;
-    border-radius: 12px 12px 0 0;
-}
-
-.resultado-header h2 { font-size: 15px; color: #e4e7eb; margin-bottom: 8px; }
-
-.confianza-badge {
-    display: inline-block;
-    padding: 4px 12px;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-.confianza-alta { background: #00d4aa; color: #0a0e1a; }
-.confianza-media { background: #f39c12; color: #0a0e1a; }
-.confianza-limitada { background: #e74c3c; color: white; }
-
-.metricas-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    padding: 16px;
-}
-
-.metrica-card {
-    background: #1a2332;
-    border: 1px solid #2a3547;
-    border-radius: 8px;
-    padding: 12px;
-}
-
-.metrica-label {
-    font-size: 10px;
-    color: #8892a6;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 4px;
-}
-
-.metrica-valor {
-    font-size: 22px;
-    font-weight: 700;
-    color: #00d4aa;
-    margin-bottom: 4px;
-}
-
-.metrica-lectura { font-size: 11px; color: #e4e7eb; }
-
-.metrica-tipo {
-    font-size: 9px;
-    color: #5a6578;
-    margin-top: 6px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-.hallazgos { padding: 16px; }
-
-.hallazgo {
-    background: #1a2332;
-    border-left: 3px solid #00d4aa;
-    padding: 12px;
-    margin-bottom: 8px;
-    border-radius: 0 6px 6px 0;
-}
-
-.hallazgo .topic {
-    display: inline-block;
-    background: #00d4aa;
-    color: #0a0e1a;
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-size: 10px;
-    font-weight: 700;
-    margin-right: 6px;
-}
-
-.hallazgo .status { font-size: 10px; color: #8892a6; font-style: italic; }
-
-.hallazgo p { margin-top: 8px; font-size: 13px; color: #c4c9d2; }
-
-h3 {
-    padding: 12px 16px 8px;
-    font-size: 13px;
-    color: #00d4aa;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-}
-
-ul { padding: 0 16px 16px; list-style: none; }
-
-ul li {
-    padding: 8px 12px;
-    background: #1a2332;
-    border-radius: 6px;
-    margin-bottom: 6px;
-    font-size: 13px;
-    color: #c4c9d2;
-}
-
-ul.warnings li { border-left: 3px solid #f39c12; }
-
-.escenas-lista { padding: 16px; }
-
-.escena-card {
-    display: flex;
-    gap: 12px;
-    background: #1a2332;
-    border: 1px solid #2a3547;
-    border-radius: 8px;
-    padding: 12px;
-    margin-bottom: 8px;
-}
-
-.escena-info { flex: 1; font-size: 12px; }
-.escena-info strong { display: block; color: #e4e7eb; margin-bottom: 4px; }
-
-.escena-info .nubes {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-size: 10px;
-    font-weight: 700;
-    margin-bottom: 6px;
-}
-
-.nubes.buena { background: #00d4aa; color: #0a0e1a; }
-.nubes.media { background: #f39c12; color: #0a0e1a; }
-.nubes.mala { background: #e74c3c; color: white; }
-
-.escena-info a {
-    display: inline-block;
-    margin-right: 8px;
-    font-size: 11px;
-    color: #00d4aa;
-    text-decoration: none;
-}
-
-.escena-info .aviso-fuente {
-    font-size: 10px;
-    color: #5a6578;
-    margin-top: 6px;
-    font-style: italic;
-}
-
-.loading { padding: 40px; text-align: center; }
-
-.spinner {
-    width: 40px;
-    height: 40px;
-    border: 3px solid #2a3547;
-    border-top-color: #00d4aa;
-    border-radius: 50%;
-    margin: 0 auto 16px;
-    animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin { to { transform: rotate(360deg); } }
-
-.error {
-    padding: 20px;
-    background: #3a1a1a;
-    color: #ff6b6b;
-    border-radius: 8px;
-    margin: 16px;
-}
-
-.search-bar {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 16px;
-}
-
-.search-bar input {
-    flex: 1;
-    padding: 10px;
-    background: #1a2332;
-    border: 1px solid #2a3547;
-    border-radius: 6px;
-    color: #e4e7eb;
-    font-size: 13px;
-}
-
-.search-bar button {
-    padding: 10px 16px;
-    background: #00d4aa;
-    border: none;
-    border-radius: 6px;
-    color: #0a0e1a;
-    font-weight: 700;
-    cursor: pointer;
-}
-
-@media (max-width: 768px) {
-    .app-layout { grid-template-columns: 1fr; }
-    .sidebar { display: none; }
-    #resultado-panel { width: calc(100% - 40px); }
-}
+export default App;
