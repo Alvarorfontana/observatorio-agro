@@ -188,7 +188,14 @@ def pdf_bytes(result,name='Lote'):
         lat0=sum(x[0] for x in poly)/len(poly)*math.pi/180; R=6378137
         xy=[(R*x[1]*math.pi/180*math.cos(lat0),R*x[0]*math.pi/180) for x in poly]
         area=abs(sum(xy[i][0]*xy[(i+1)%len(xy)][1]-xy[(i+1)%len(xy)][0]*xy[i][1] for i in range(len(xy)))/2)/10000
-        meta.append(['Lote delimitado',f'{len(poly)} vértices · {area:.1f} ha'])
+        
+        per=0.0
+        for i in range(len(poly)):
+            a,b=poly[i],poly[(i+1)%len(poly)]
+            p1,p2=math.radians(a[0]),math.radians(b[0]); dp=math.radians(b[0]-a[0]); dl=math.radians(b[1]-a[1])
+            hv=math.sin(dp/2)**2+math.cos(p1)*math.cos(p2)*math.sin(dl/2)**2
+            per += 2*6371*math.asin(min(1,math.sqrt(hv)))
+        meta.append(['Lote delimitado',f'{len(poly)} vértices · {area:.1f} ha · perímetro {per:.2f} km'])
     t=Table(meta,colWidths=[48*mm,120*mm]);t.setStyle(TableStyle([('BACKGROUND',(0,0),(0,-1),colors.HexColor('#e8f4f5')),('TEXTCOLOR',(0,0),(0,-1),navy),('FONTNAME',(0,0),(0,-1),'Helvetica-Bold'),('FONTSIZE',(0,0),(-1,-1),9),('GRID',(0,0),(-1,-1),.25,colors.HexColor('#b9c9ce')),('VALIGN',(0,0),(-1,-1),'TOP'),('PADDING',(0,0),(-1,-1),5)]));story+=[t,Spacer(1,10)]
     if poly:
         xs=[x[1] for x in poly];ys=[x[0] for x in poly]; minx,maxx=min(xs),max(xs);miny,maxy=min(ys),max(ys); w,h=155*mm,60*mm; d=Drawing(w,h);d.add(Rect(0,0,w,h,fillColor=colors.HexColor('#f4f8f8'),strokeColor=colors.HexColor('#cbdadd')))

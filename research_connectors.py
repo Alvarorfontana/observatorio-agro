@@ -246,3 +246,24 @@ def image_bytes(url):
         if len(data)>3_000_000:raise ValueError('Imagen demasiado grande')
         return data
 
+
+
+def stac_search(base, lat, lon, collection=None, limit=5):
+    """Search an official STAC endpoint around the selected point; returns metadata only."""
+    params={'bbox':f'{max(-180,lon-.03)},{max(-90,lat-.03)},{min(180,lon+.03)},{min(90,lat+.03)}','limit':int(limit)}
+    if collection: params['collections']=collection
+    return external(base.rstrip('/')+'/search', params)
+
+def copernicus_stac(lat,lon):
+    return stac_search('https://stac.dataspace.copernicus.eu/v1',lat,lon,'sentinel-2-l2a',5)
+
+def cnes_stac(lat,lon):
+    return stac_search('https://geodes-portal.cnes.fr/api/stac',lat,lon,None,5)
+
+def dlr_stac(lat,lon):
+    return stac_search('https://geoservice.dlr.de/eoc/ogc/stac/v1',lat,lon,None,5)
+
+def deafrica_stac(lat,lon):
+    if not (-40 <= lat <= 40 and -30 <= lon <= 60):
+        raise ValueError('Digital Earth Africa: el punto seleccionado está fuera de la cobertura africana')
+    return stac_search('https://explorer.digitalearth.africa/stac',lat,lon,None,5)

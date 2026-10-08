@@ -11,7 +11,7 @@ research_api=Blueprint('research_api',__name__,url_prefix='/api/fuentes')
 @research_api.get('/<name>')
 def research_data(name):
     if name=='estado':
-        return jsonify({'public_adapters':['smn','inmet','dmc','eccc','nws','metnorway','aire','elevacion','ina','usgs','nasa-catalogo','productos-nasa','landsat','radar'], 'firms': 'credencial configurada, validar consulta' if os.environ.get('FIRMS_MAP_KEY') else 'pendiente de clave gratuita', 'scope':'Catálogos satelitales no son valores raster extraídos. Las restantes fuentes de la matriz siguen pendientes.'})
+        return jsonify({'public_adapters':['smn','inmet','dmc','eccc','nws','metnorway','aire','elevacion','ina','usgs','nasa-catalogo','productos-nasa','landsat','radar','copernicus-stac','cnes-stac','dlr-stac','deafrica-stac'], 'new_open_stac':['Copernicus Data Space','CNES GEODES','DLR EOC','Digital Earth Africa'], 'firms': 'credencial configurada, validar consulta' if os.environ.get('FIRMS_MAP_KEY') else 'pendiente de clave gratuita', 'scope':'Catálogos satelitales no son valores raster extraídos. Las restantes fuentes de la matriz siguen pendientes.'})
     try:
         q={key:[value] for key,value in request.args.items()}
         if name=='tile':
@@ -41,7 +41,7 @@ def research_data(name):
           'nasa-catalogo':lambda:c.nasa_catalogue(lat,lon,request.args.get('product','MOD13Q1')),
           'productos-nasa':lambda:c.external('https://appeears.earthdatacloud.nasa.gov/api/product',{}),
           'landsat':lambda:c.satellite_catalogue(lat,lon),'radar':lambda:c.satellite_catalogue(lat,lon,True),
-          'firms':lambda:c.firms(lat,lon),'informe':lambda:c.research_bundle(lat,lon,request.args.get('inaSeries')),
+          'copernicus-stac':lambda:c.copernicus_stac(lat,lon),'cnes-stac':lambda:c.cnes_stac(lat,lon),'dlr-stac':lambda:c.dlr_stac(lat,lon),'deafrica-stac':lambda:c.deafrica_stac(lat,lon),'firms':lambda:c.firms(lat,lon),'informe':lambda:c.research_bundle(lat,lon,request.args.get('inaSeries')),
         })
         if name not in jobs:return jsonify({'error':'Fuente no habilitada'}),404
         if name=='firms' and not os.environ.get('FIRMS_MAP_KEY'):return jsonify({'status':'pendiente de credencial','error':'Solicitar MAP_KEY gratuita de NASA FIRMS y cargar FIRMS_MAP_KEY en Vercel. No hay conteo disponible.'}),409
@@ -51,11 +51,17 @@ def research_data(name):
 
 @research_api.post('/analizar')
 def report():
+    """Único informe DOTS. Mantiene la ruta histórica, pero usa el mismo motor Agentic/PDF.
+    Así la interfaz no puede generar dos informes con criterios diferentes.
+    """
     try:
-        d=request.get_json();lat,lon=c.coordinates({'lat':[d.get('lat')],'lon':[d.get('lon')]})
-        return Response(c.pdf_report(lat,lon,str(d.get('nombre','Lote')),d.get('inaSeries')),mimetype='application/pdf',headers={'Content-Disposition':'attachment; filename=informe_campo.pdf'})
+        d=request.get_json(silent=True) or {}
+        lat,lon=c.coordinates({'lat':[d.get('lat')],'lon':[d.get('lon')]})
+        result=agentic.analyze(lat,lon,str(d.get('prompt','Informe integral del lote')),d.get('polygon'),d.get('inaSeries'),d.get('waterAssets'))
+        pdf=agentic.pdf_bytes(result,str(d.get('nombre','Lote DOTS')))
+        return Response(pdf,mimetype='application/pdf',headers={'Content-Disposition':'attachment; filename=DOTS-informe-territorial.pdf'})
     except ValueError as e:return jsonify({'error':str(e)}),400
-    except Exception as e:return jsonify({'status':'sin dato','error':'No se pudo generar el informe','type':type(e).__name__}),502
+    except Exception as e:return jsonify({'status':'sin dato','error':'No se pudo generar el informe DOTS','type':type(e).__name__}),502
 
 
 
