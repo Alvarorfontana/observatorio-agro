@@ -868,3 +868,13 @@
 .ta-shell .wx-grid span { font-size: 10.5px; color: var(--ta-text-3); }
 .ta-shell .wx-grid b { font-size: 15px; }
 .ta-shell .wx-grid small { font-size: 10px; color: var(--ta-text-2); font-weight: 500; }
+.ta-shell .verdict { border: 1px solid var(--ta-border); border-radius: 12px; padding: 12px; display: grid; gap: 4px; }
+.ta-shell .verdict span { font-size: 11px; color: var(--ta-text-3); text-transform: uppercase; letter-spacing: .06em; }
+.ta-shell .verdict b { font-size: 15px; }
+.ta-shell .verdict small { font-size: 11.5px; color: var(--ta-text-2); }
+.ta-shell .verdict.ok { border-color: rgba(50,213,131,.5); background: rgba(50,213,131,.06); }
+.ta-shell .verdict.ok b { color: var(--ta-ok); }
+.ta-shell .verdict.warn { border-color: rgba(253,176,34,.5); background: rgba(253,176,34,.06); }
+.ta-shell .verdict.warn b { color: var(--ta-warn); }
+.ta-shell .row input[type=number] { flex: 1; min-width: 0; width: 100%; }
+.ta-shell .row input[type=number] + button { flex: 0 0 auto; }

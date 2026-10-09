@@ -118,6 +118,7 @@ const SOURCES = [
   ["lluvia", "Lluvia observada y sequía", "CHIRPS · satélite + estaciones · SPI"],
   ["estadistica", "Probabilidades y tendencias", "Conjuntos ECMWF/GFS · ERA5 · SEAS5"],
   ["alertas", "Alertas del lote", "Reglas declaradas sobre fuentes verificadas"],
+  ["sustentabilidad", "Deforestación y carbono", "Impact Observatory · ESA WorldCover · SoilGrids · IPCC"],
   ["teleconexiones", "El Niño y teleconexiones", "NOAA PSL · ENSO, SOI, AAO, TSA, PDO"],
   ["rios", "Ríos y caudales", "GloFAS / Open-Meteo"],
   ["suelo", "Nitrógeno del suelo", "ISRIC SoilGrids"],
@@ -379,6 +380,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
             years: String(y),
             ...(key === "ina" ? {series:station,days:station==="22"?"30":"2"} : {}),
             ...(key === "usgs" && waterSite ? {site:waterSite} : {}),
+            ...(key === "sustentabilidad" ? {heads:String(herdHeads||0)} : {}),
             ...(vertices.length >= 3 ? {polygon: JSON.stringify(vertices)} : {}),
           }),
         { signal: controller.signal },
@@ -545,6 +547,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
   const [navCollapsed, setNavCollapsed] = useState(() => typeof window !== "undefined" && window.innerWidth < 1800);
   const [navOpen, setNavOpen] = useState(false);
   const [ftwMode, setFtwMode] = useState(false);
+  const [herdHeads, setHerdHeads] = useState<number>(() => { try { return Number(localStorage.getItem("dots-heads") || 0); } catch { return 0; } });
   const [ftwBusy, setFtwBusy] = useState(false);
   const ndviOverlay = useRef<L.ImageOverlay | null>(null);
   useEffect(() => {
@@ -966,6 +969,24 @@ function Observatory({onHome}:{onHome:()=>void}) {
                   <p className="footnote">Se muestran hasta 35 valores; exportá JSON para ver toda la respuesta. La antigüedad y la distancia de cada registro importan.</p>
                 </>
               )}
+              {view==="sustentabilidad" && <>
+                <label className="small" style={{display:"block",marginBottom:8}}>Cabezas en el lote (para emisiones)<div className="row" style={{marginTop:6}}><input type="number" min={0} value={herdHeads||""} placeholder="ej. 250" onChange={e=>{const v=Math.max(0,Number(e.target.value)||0);setHerdHeads(v);try{localStorage.setItem("dots-heads",String(v))}catch{}}}/><button onClick={()=>void load("sustentabilidad")}>Calcular</button></div></label>
+                {payload?.deforestation && (()=>{const d=payload.deforestation;const ok=String(d.verdict).startsWith("sin pérdida");return <div className={"verdict "+(ok?"ok":d.verdict==="sin dato"?"":"warn")}><span>Libre de deforestación · corte {d.cutoff}</span><b>{d.verdict}</b><small>Árboles en el lote: {d.baseline_year} {fmt((d.series.find((r:Data)=>r.year===d.baseline_year)?.trees??0)*100,1)} % → {d.last_year} {fmt((d.series.find((r:Data)=>r.year===d.last_year)?.trees??0)*100,1)} % · pérdida estimada {fmt(d.tree_loss_ha,1)} ha</small></div>})()}
+                {payload?.deforestation?.worldcover_tree_2020!=null && <p className="footnote">Control con ESA WorldCover: árboles {fmt(payload.deforestation.worldcover_tree_2020*100,1)} % (2020) y {fmt((payload.deforestation.worldcover_tree_2021??0)*100,1)} % (2021).</p>}
+                {payload?.carbon && <>
+                  <div className="lot-vars-title" style={{marginTop:10}}>Carbono del suelo · 0–30 cm</div>
+                  <div className="wx-grid">
+                    <div><span>Stock por hectárea</span><b>{fmt(payload.carbon.soc_t_ha,1)}<small> t C/ha</small></b></div>
+                    {payload.carbon.soc_t_ha_range?.[0]!=null && <div><span>Rango probable</span><b>{fmt(payload.carbon.soc_t_ha_range[0],0)}–{fmt(payload.carbon.soc_t_ha_range[1],0)}<small> t C/ha</small></b></div>}
+                    {payload.carbon.soc_total_t!=null && <div><span>Total del lote</span><b>{fmt(payload.carbon.soc_total_t,0)}<small> t C</small></b></div>}
+                    {payload.carbon.soc_total_tco2e!=null && <div><span>Equivalente CO₂</span><b>{fmt(payload.carbon.soc_total_tco2e,0)}<small> t CO₂e</small></b></div>}
+                  </div>
+                  {payload.carbon.herd && <><div className="lot-vars-title" style={{marginTop:10}}>Emisiones del rodeo · {payload.carbon.herd.heads} cabezas</div><div className="wx-grid"><div><span>Metano por año</span><b>{fmt(payload.carbon.herd.ch4_t_year,1)}<small> t CH₄</small></b></div><div><span>CO₂ equivalente</span><b>{fmt(payload.carbon.herd.co2e_t_year,0)}<small> t CO₂e/año</small></b></div></div><p className="footnote">{payload.carbon.herd.method}.</p></>}
+                  <p className="footnote">{payload.carbon.scope}</p>
+                </>}
+                {payload?.deforestation?.scope && <p className="footnote">{payload.deforestation.scope}</p>}
+                {payload?.errors && Object.keys(payload.errors).length>0 && <p className="error">{Object.entries(payload.errors).map(([k,v]:any)=>`${k}: ${v}`).join(" · ")}</p>}
+              </>}
               {view==="alertas" && <>
                 <div className="row" style={{marginBottom:8}}><p className="footnote" style={{margin:0}}>{alertsBusy?"Evaluando reglas…":alertsData?.summary||"Sin evaluar"}</p><button onClick={()=>void loadAlerts()} disabled={alertsBusy}>Actualizar</button></div>
                 {(alertsData?.alerts||[]).map((a:Data,i:number)=><article className={"alert-card lvl-"+a.level} key={i}><header><b>{a.title}</b><span>{a.level}</span></header><p>{a.detail}</p><p className="alert-action">→ {a.action}</p><small>{a.source}</small></article>)}
@@ -1508,7 +1529,9 @@ function Observatory({onHome}:{onHome:()=>void}) {
           </section>
         </aside>
         <section className="charts">
-          {view==="estadistica" && payload?.climatology ? <>
+          {view==="sustentabilidad" && payload?.deforestation?.series?.length ? <>
+            <section className="panel chart"><h2>Cobertura del lote por año</h2><p className="small">Impact Observatory 10 m · % del lote · árboles, pastizal y cultivo · corte EUDR 2020</p><Chart dates={payload.deforestation.series.map((r:Data)=>String(r.year))} unit="%" series={[{name:"Árboles",values:payload.deforestation.series.map((r:Data)=>r.trees!=null?r.trees*100:null),color:"#22c55e"},{name:"Pastizal",values:payload.deforestation.series.map((r:Data)=>r.rangeland!=null?r.rangeland*100:null),color:"#e9bd72"},{name:"Cultivo",values:payload.deforestation.series.map((r:Data)=>r.crops!=null?r.crops*100:null),color:"#a7a5ff"}]}/></section>
+          </> : view==="estadistica" && payload?.climatology ? <>
             <section className="panel chart"><h2>Probabilidad de helada y calor por mes</h2><p className="small">ERA5 1991–{new Date().getFullYear()-1} · % de años con al menos una helada · días con máxima ≥ 35 °C</p><Chart dates={payload.climatology.map((m:Data)=>m.label)} unit="%" series={[{name:"Prob. de helada",values:payload.climatology.map((m:Data)=>m.p_frost),type:"bar",color:"#93c5fd"},{name:"Días ≥ 35 °C",values:payload.climatology.map((m:Data)=>m.heat_days),color:"#fd9c91"}]}/></section>
             <section className="panel chart"><h2>Lluvia mensual típica</h2><p className="small">Terciles 1991–hoy · seco por debajo, lluvioso por encima · mm</p><Chart dates={payload.climatology.map((m:Data)=>m.label)} unit="mm" series={[{name:"Tercil seco",values:payload.climatology.map((m:Data)=>m.rain_p33),color:"#e9bd72"},{name:"Mediana",values:payload.climatology.map((m:Data)=>m.rain_med),type:"bar",color:"#06b6d4"},{name:"Tercil lluvioso",values:payload.climatology.map((m:Data)=>m.rain_p67),color:"#a7a5ff"}]}/></section>
           </> : view==="lluvia" && payload?.recent ? <>

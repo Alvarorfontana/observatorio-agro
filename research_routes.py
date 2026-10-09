@@ -12,6 +12,7 @@ import rainfall as rain
 import forecast_stats as fst
 import contact
 import alerts as alr
+import sustainability as sus
 
 research_api=Blueprint('research_api',__name__,url_prefix='/api/fuentes')
 
@@ -78,6 +79,23 @@ def research_data(name):
             if request.args.get('job'):
                 return jsonify(rain.result(request.args.get('job','')))
             return jsonify(rain.start(polygon if polygon else [[lat-0.01,lon-0.01],[lat-0.01,lon+0.01],[lat+0.01,lon+0.01],[lat+0.01,lon-0.01]]))
+        if name=='sustentabilidad':
+            heads=_int(request.args,'heads',0,0,200000)
+            def _both():
+                out={'deforestation':None,'carbon':None,'errors':{}}
+                from concurrent.futures import ThreadPoolExecutor
+                with ThreadPoolExecutor(max_workers=2) as pool:
+                    fd=pool.submit(sus.deforestation,polygon) if polygon else None
+                    fc=pool.submit(sus.carbon,lat,lon,veg.area_ha(polygon) if polygon else None,heads or None)
+                    try: out['carbon']=fc.result()['data']
+                    except Exception as e: out['errors']['carbono']=type(e).__name__
+                    if fd:
+                        try: out['deforestation']=fd.result()['data']
+                        except Exception as e: out['errors']['deforestación']=type(e).__name__
+                    else: out['errors']['deforestación']='Dibujá un lote para verificar cobertura arbórea'
+                ok=out['carbon'] or out['deforestation']
+                return c.envelope(out,'multi','deforestación, carbono y emisiones','Impact Observatory · ESA · ISRIC · IPCC','recibido' if ok else 'sin dato',None if ok else 'Sin datos')
+            return jsonify(_both())
         if name in VEGETATION:
             if name=='ndvi-imagen':
                 png,bounds=veg.ndvi_png(request.args.get('item',''),polygon,request.args.get('baseline'))
