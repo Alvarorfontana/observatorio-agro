@@ -41,6 +41,7 @@ import "./styles.css";
 import "./dashboard.css";
 import "./site.css";
 import { ObsSidebar, MetricCards, buildNav } from "./dashboard/Shell";
+import { MARKER_KINDS, markerIcon, kindOf, MarkerLegend } from "./dashboard/markers";
 import { fieldAt, fieldsAround, compactness, FTW_ATTRIBUTION, FTW_RELIABLE } from "./dashboard/fields";
 echarts.use([
   LineChart,
@@ -59,12 +60,16 @@ type Source = {
 };
 const RESEARCH = ["plataformas","sentinel-hub-ndvi","openeo-ndvi","gee-ndvi","inta-suelos-wms","aire","elevacion","ina","usgs","nasa-catalogo","productos-nasa","landsat","radar","copernicus-stac","cnes-stac","dlr-stac","deafrica-stac","firms","nasa-power-30","enso","era5-cds","sentinel-hub","noaa-cdo","usgs-m2m","nasa-earthdata","copernicus-marine","gee","openaq","gfw","aemet","eumetsat","jaxa","mosdac","kma","fengyun"];
 const NDVI_VIEWS = ["ndvi","sentinel-hub-ndvi","openeo-ndvi","gee-ndvi"];
-const GIBS_LAYERS: [string,string,string][] = [
-  ["","Capas NASA · ninguna",""],
+const GIBS_WMS = "https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi";
+const WORLDCOVER = "esa-worldcover-map-10m-2021-v2_map";
+const WORLDCOVER_CLASSES: [string,string][] = [["#006400","Árboles / monte"],["#ffbb22","Arbustal"],["#ffff4c","Pastizal"],["#f096ff","Cultivo"],["#fa0000","Construido"],["#b4b4b4","Suelo desnudo"],["#0064c8","Agua"],["#0096a0","Humedal herbáceo"]];
+const GIBS_LAYERS: [string,string,string,string?][] = [
+  ["","Capas · ninguna",""],
   ["MODIS_Terra_NDVI_8Day","NDVI MODIS · 8 días · 250 m","Vegetación regional. Para el lote usar NDVI Sentinel-2 (10 m)."],
   ["MODIS_Terra_Land_Surface_Temp_Day","Temperatura de superficie · día · 1 km","Temperatura del suelo/canopeo, no del aire."],
   ["SMAP_L4_Analyzed_Surface_Soil_Moisture","Humedad de suelo SMAP · 9 km","Modelo asimilado, 0–5 cm. Escala regional."],
   ["IMERG_Precipitation_Rate","Lluvia GPM IMERG · 30 min","Tasa de lluvia satelital estimada, no pluviómetro."],
+  [WORLDCOVER,"Cobertura ESA WorldCover · 10 m","Árboles, pastizal, cultivo, agua y humedales (2021). Fuente: ESA / VITO Terrascope, CC-BY 4.0.","https://titiler.terrascope.be/wms"],
 ];
 const NATIONAL = ["smn", "inmet", "dmc", "eccc", "nws"];
 const SOURCES = [
@@ -339,7 +344,8 @@ function Observatory({onHome}:{onHome:()=>void}) {
     ftwPickRef = useRef<((lat:number,lon:number)=>void)|null>(null),
     ftwLayer = useRef<L.LayerGroup|null>(null),
     ftwMoveRef = useRef<(()=>void)|null>(null),
-    fieldMarkerLayers = useRef<L.CircleMarker[]>([]),
+    fieldMarkerLayers = useRef<L.Marker[]>([]),
+    waterLayers = useRef<L.Marker[]>([]),
     markerTypeRef = useRef("observación");
   useEffect(()=>{markerTypeRef.current=markerType},[markerType]);
   useEffect(()=>{
@@ -493,16 +499,18 @@ function Observatory({onHome}:{onHome:()=>void}) {
   useEffect(() => {
     if (!gibsLayer || !mapRef.current) return;
     // WMS sin TIME: GIBS devuelve la última fecha disponible de cada capa.
-    const wms = L.tileLayer.wms("https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi", {
-      layers: gibsLayer, format: "image/png", transparent: true, opacity: .7,
-      attribution: "NASA GIBS / EOSDIS",
+    const cfg = GIBS_LAYERS.find(([k])=>k===gibsLayer);
+    const isWC = gibsLayer === WORLDCOVER;
+    const wms = L.tileLayer.wms(cfg?.[3] || GIBS_WMS, {
+      layers: gibsLayer, format: "image/png", transparent: true, opacity: isWC ? .6 : .7,
+      attribution: isWC ? "ESA WorldCover 2021 / VITO Terrascope (CC-BY 4.0)" : "NASA GIBS / EOSDIS",
     } as L.WMSOptions).addTo(mapRef.current);
     let warned = false;
-    wms.on("tileerror", () => { if (!warned) { warned = true; notify("NASA GIBS no devolvió esta capa ahora. Probá más tarde u otra capa."); } });
+    wms.on("tileerror", () => { if (!warned) { warned = true; notify(gibsLayer===WORLDCOVER?"Terrascope no devolvió la capa WorldCover. Probá más tarde.":"NASA GIBS no devolvió esta capa ahora. Probá más tarde u otra capa."); } });
     return () => { wms.remove(); };
   }, [gibsLayer]);
   const [showNdvi, setShowNdvi] = useState(true);
-  const [navCollapsed, setNavCollapsed] = useState(false);
+  const [navCollapsed, setNavCollapsed] = useState(() => typeof window !== "undefined" && window.innerWidth < 1800);
   const [navOpen, setNavOpen] = useState(false);
   const [ftwMode, setFtwMode] = useState(false);
   const [ftwBusy, setFtwBusy] = useState(false);
@@ -536,12 +544,19 @@ function Observatory({onHome}:{onHome:()=>void}) {
   useEffect(()=>{
     fieldMarkerLayers.current.forEach(m=>m.remove()); fieldMarkerLayers.current=[];
     if(!mapRef.current)return;
-    const labels:Record<string,string>={"observación":"OBSERVACIÓN","ganado":"GANADO / DECLARADO","incendio":"FOCO TÉRMICO","temperatura":"ALTA TEMPERATURA / THI","agua":"AGUA / INFRAESTRUCTURA","vegetación":"VEGETACIÓN / ANOMALÍA"};
     fieldMarkers.forEach((m:any)=>{
-      const cm=L.circleMarker([m.lat,m.lon],{radius:m.source==="NASA FIRMS"?8:7,color:m.type==="incendio"?"#ffb36b":"#d8f3eb",weight:2,fillColor:m.type==="incendio"?"#e45858":"#19b98a",fillOpacity:.9}).addTo(mapRef.current!);
-      cm.bindPopup(`<b>${labels[m.type]||m.type}</b><br>${m.provenance||"DECLARADO"}<br>${m.status||""}<br>Fuente: ${m.source||""}<br>Confianza: ${m.confidence||"s/d"}`); fieldMarkerLayers.current.push(cm);
+      const k=kindOf(m.type);
+      const cm=L.marker([m.lat,m.lon],{icon:markerIcon(m.type,{satellite:m.source==="NASA FIRMS"}),riseOnHover:true}).addTo(mapRef.current!);
+      cm.bindPopup(`<b>${k.label}</b><br>${m.provenance||"DECLARADO"}<br>${m.status||""}<br>Fuente: ${m.source||""}<br>Confianza: ${m.confidence||"s/d"}`); fieldMarkerLayers.current.push(cm);
     });
   },[fieldMarkers]);
+  useEffect(()=>{
+    waterLayers.current.forEach(m=>m.remove()); waterLayers.current=[];
+    if(!mapRef.current)return;
+    waterAssets.forEach((a:any)=>{ if(a.lat==null||a.lon==null)return;
+      const mk=L.marker([a.lat,a.lon],{icon:markerIcon(a.type),riseOnHover:true}).addTo(mapRef.current!);
+      mk.bindTooltip(`${kindOf(a.type).label} · ${a.type}`,{direction:"top"}); waterLayers.current.push(mk); });
+  },[waterAssets]);
   useEffect(()=>{
     const det=(sources.firms?.payload as any)?.data?.detections; if(!Array.isArray(det))return;
     setFieldMarkers(prev=>{const manual=prev.filter((m:any)=>m.source!=="NASA FIRMS"); const auto=det.slice(0,150).map((r:any,i:number)=>({id:`firms-${r.latitude}-${r.longitude}-${i}`,type:"incendio",lat:Number(r.latitude),lon:Number(r.longitude),status:`${r.inside_lot===true?"DENTRO DEL LOTE":"ENTORNO"} · ${r.satellite||r.instrument||"VIIRS"} · ${r.acq_date||""} ${r.acq_time||""} · FRP ${r.frp||"s/d"}`,source:"NASA FIRMS",provenance:"SATELITAL",confidence:r.confidence||"s/d",observed_at:`${r.acq_date||""} ${r.acq_time||""}`})).filter((m:any)=>Number.isFinite(m.lat)&&Number.isFinite(m.lon)); return [...manual,...auto]});
@@ -844,7 +859,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
             <div className="water-inventory">
               <div className="tag">AGUA / INFRAESTRUCTURA</div>
               <p className="small">Registrá infraestructura conocida. DOTS la separa de futuras detecciones satelitales.</p>
-              <div className="water-add"><select value={waterType} onChange={e=>setWaterType(e.target.value)}><option>bebedero</option><option>tajamar</option><option>represa</option><option>molino</option><option>perforación</option><option>tanque australiano</option><option>bomba</option><option>cañería</option><option>arroyo</option><option>canal</option></select><button type="button" onClick={()=>{const item={type:waterType,lat:point[0],lon:point[1],source:'declarado por usuario'};setWaterAssets(v=>[...v,item]);L.circleMarker(point,{radius:7,color:'#4bd6e5',fillOpacity:.85}).addTo(mapRef.current!).bindTooltip(waterType.toUpperCase(),{permanent:false});notify('Infraestructura registrada: '+waterType)}}>+ En punto actual</button></div>
+              <div className="water-add"><select value={waterType} onChange={e=>setWaterType(e.target.value)}><option>bebedero</option><option>tajamar</option><option>represa</option><option>molino</option><option>perforación</option><option>tanque australiano</option><option>bomba</option><option>cañería</option><option>arroyo</option><option>canal</option></select><button type="button" onClick={()=>{const item={type:waterType,lat:point[0],lon:point[1],source:'declarado por usuario'};setWaterAssets(v=>[...v,item]);notify('Infraestructura registrada: '+waterType)}}>+ En punto actual</button></div>
               {!!waterAssets.length && <div className="water-list">{waterAssets.map((a,i)=><span key={i}>{i+1}. {a.type}</span>)}</div>}
             </div>
           </section>
@@ -1224,7 +1239,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
             <div className="tag">OPERACIONES DEL LOTE</div>
             <div className="draw-chooser"><button onClick={()=>startDraw("triangle")}><Triangle className="icon"/>Triángulo</button><button onClick={()=>startDraw("rectangle")}><Square className="icon"/>Rectángulo</button><button onClick={()=>startDraw("free")}><Layers className="icon"/>Polígono libre</button><button className="ftw-btn" onClick={startFtw} title="Lote automático desde el mapa global Fields of the World (gratis)"><Sprout className="icon"/>Automático · FTW</button></div>
             <p className="footnote">Cada informe queda vinculado al polígono cerrado: superficie, perímetro, centroide y límites.</p>
-            <div className="marker-chooser"><select value={markerType} onChange={e=>setMarkerType(e.target.value)}><option value="observación">Observación</option><option value="ganado">Ganado · hipótesis</option><option value="incendio">Incendio · hipótesis</option><option value="temperatura">Temperatura / THI</option><option value="agua">Agua / infraestructura</option><option value="vegetación">Vegetación / anomalía</option></select><button type="button" onClick={()=>addFieldMarker()}>{placingMarker?"Clic en el mapa…":"+ Marcar en mapa"}</button></div>
+            <div className="marker-chooser"><select value={markerType} onChange={e=>setMarkerType(e.target.value)}>{["General","Rodeo","Agua","Vegetación","Infraestructura","Riesgo"].map(g=><optgroup key={g} label={g}>{MARKER_KINDS.filter(k=>k.group===g).map(k=><option key={k.key} value={k.key}>{k.label}</option>)}</optgroup>)}</select><button type="button" onClick={()=>addFieldMarker()}>{placingMarker?"Clic en el mapa…":"+ Marcar en mapa"}</button></div>
             <div className="actions">
               <button className="advanced-json" title="Exportación técnica / avanzada"
                 onClick={() => {
@@ -1282,7 +1297,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
             Mapa satelital
           </button>
           <button className={layer === "modis" ? "active" : ""} onClick={() => setLayer("modis")} aria-pressed={layer === "modis"}>MODIS · imagen</button>
-          <select value={gibsLayer} onChange={e=>{setGibsLayer(e.target.value); const d=GIBS_LAYERS.find(([k])=>k===e.target.value)?.[2]; if(d) notify(d);}} aria-label="Capa NASA GIBS">{GIBS_LAYERS.map(([k,l])=><option key={k} value={k}>{l}</option>)}</select>
+          <select value={gibsLayer} onChange={e=>{setGibsLayer(e.target.value); const d=GIBS_LAYERS.find(([k])=>k===e.target.value)?.[2]; if(d) notify(d);}} aria-label="Capas de NASA y cobertura del suelo">{GIBS_LAYERS.map(([k,l])=><option key={k} value={k}>{l}</option>)}</select>
           <button onClick={()=>changeView("firms")}>FIRMS · focos térmicos</button>
           <button onClick={()=>changeView("nasa-power-30")}>NASA POWER · clima</button>
           <button onClick={()=>changeView("enso")}>ENSO · multifuente</button>
@@ -1347,6 +1362,8 @@ function Observatory({onHome}:{onHome:()=>void}) {
             ? "LÍMITE DELIMITADO POR EL USUARIO"
             : "SIN LÍMITES CATASTRALES"}
         </div>
+        {gibsLayer===WORLDCOVER && <div className="dots-legend wc-legend" aria-label="Leyenda WorldCover">{WORLDCOVER_CLASSES.map(([c,l])=><span key={l}><i style={{background:c}}/>{l}</span>)}</div>}
+        <MarkerLegend types={[...fieldMarkers.map((m:any)=>m.type),...waterAssets.map((a:any)=>a.type)]}/>
         </section>
         <aside className="inspector">
           <section className="panel block">
