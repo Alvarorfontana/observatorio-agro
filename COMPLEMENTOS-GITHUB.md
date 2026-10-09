@@ -89,3 +89,16 @@ Son imagen (capacidad IMAGE), no estadística del lote. Los identificadores se t
 python scripts/validate_sources.py > source-audit.json
 ```
 o desde la interfaz: dibujar un lote → botón Vegetación.
+
+## Delimitación automática gratuita (v2.1)
+
+Botón **Automático · FTW** en Operaciones del lote. Lee en el navegador el mapa global de lotes 2025 de Fields of the World:
+
+- Archivo: `https://data.source.coop/ftw/global-field-boundaries/pmtiles/ftw-global-fields-2025.pmtiles`, capa `fields`, zoom 9–13 (sin simplificar en z13). Propiedades: `confidence` (0–100) y `metrics:area` (m²).
+- Se pide por rangos HTTP a través del reenvío `/ftw/*` de `vercel.json` (mismo dominio, sin CORS). En desarrollo lo hace el proxy de Vite; `FTW_PROXY_TARGET` permite apuntar a un archivo de prueba.
+- Al tocar dentro de un contorno se reconstruye el lote uniendo las partes de las teselas vecinas (`polygon-clipping`), se simplifica a menos de 500 vértices y se guarda como cualquier lote dibujado.
+- Verde: confianza ≥ 69 (umbral recomendado por FTW). Ámbar: revisar el borde.
+- Sin servidor propio, sin clave, sin costo. Licencia de datos CC-BY-4.0: la atribución se muestra en pantalla.
+- Límite: FTW mapea cultivos anuales; en pasturas puede no haber contorno. Ahí sigue el dibujo manual.
+
+Librerías nuevas en el frontend: `pmtiles` (BSD-3), `@mapbox/vector-tile` (BSD-3), `pbf` (BSD-3), `polygon-clipping` (MIT).

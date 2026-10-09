@@ -40,6 +40,7 @@ import {
 import "./styles.css";
 import "./dashboard.css";
 import { ObsSidebar, MetricCards, buildNav } from "./dashboard/Shell";
+import { fieldAt, fieldsAround, FTW_ATTRIBUTION, FTW_RELIABLE } from "./dashboard/fields";
 echarts.use([
   LineChart,
   BarChart,
@@ -332,6 +333,9 @@ function Observatory({onHome}:{onHome:()=>void}) {
     noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null),
     lotLayers = useRef<Record<string,L.Polygon>>({}),
     placingMarkerRef = useRef(false),
+    ftwPickRef = useRef<((lat:number,lon:number)=>void)|null>(null),
+    ftwLayer = useRef<L.LayerGroup|null>(null),
+    ftwMoveRef = useRef<(()=>void)|null>(null),
     fieldMarkerLayers = useRef<L.CircleMarker[]>([]),
     markerTypeRef = useRef("observación");
   useEffect(()=>{markerTypeRef.current=markerType},[markerType]);
@@ -407,6 +411,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
     if (!mapEl.current) return;
     const map = L.map(mapEl.current, { zoomControl: false }).setView(point, 13);
     mapRef.current = map;
+    if ((import.meta as any).env?.DEV) (window as any).__dotsMap = map; // sólo pruebas locales
     const base = L.tileLayer("/api/fuentes/tile?z={z}&y={y}&x={x}", {
       maxNativeZoom: 19,
       tileSize: 512,
@@ -433,6 +438,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
       .bindTooltip("PUNTO DE CONSULTA", { permanent: true, direction: "top" });
     L.control.scale({ imperial: false }).addTo(map);
     map.on("click", (e) => {
+      if (ftwPickRef.current) { ftwPickRef.current(e.latlng.lat, e.latlng.lng); return; }
       if (placingMarkerRef.current) {
         const type=markerTypeRef.current;
         const item={id:`m-${Date.now()}`,type,lat:e.latlng.lat,lon:e.latlng.lng,status:type==="agua"?"DECLARADO / CONFIRMAR EN CAMPO":"OBSERVACIÓN MANUAL",source:"usuario",provenance:"DECLARADO",confidence:"usuario",observed_at:new Date().toISOString()};
@@ -495,6 +501,8 @@ function Observatory({onHome}:{onHome:()=>void}) {
   const [showNdvi, setShowNdvi] = useState(true);
   const [navCollapsed, setNavCollapsed] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
+  const [ftwMode, setFtwMode] = useState(false);
+  const [ftwBusy, setFtwBusy] = useState(false);
   const ndviOverlay = useRef<L.ImageOverlay | null>(null);
   useEffect(() => {
     ndviOverlay.current?.remove(); ndviOverlay.current = null;
@@ -553,12 +561,12 @@ function Observatory({onHome}:{onHome:()=>void}) {
     line.current = null;
     if (mapRef.current) mapRef.current.getContainer().style.cursor = "";
   };
-  const finish = () => {
+  const finish = (given?: Point[], origin?: string) => {
     try {
-      let points = currentPoints.current;
-      if(drawMode==="triangle" && points.length!==3) throw Error("Triángulo: marcá exactamente 3 vértices.");
-      if(drawMode==="rectangle" && points.length!==2 && points.length!==4) throw Error("Rectángulo: marcá 2 esquinas opuestas o 4 vértices.");
-      if(drawMode==="rectangle" && points.length===2){const a=points[0],b=points[1];points=[a,[a[0],b[1]],b,[b[0],a[1]]];currentPoints.current=points;setVertices(points);}
+      let points = given ?? currentPoints.current;
+      if(!given && drawMode==="triangle" && points.length!==3) throw Error("Triángulo: marcá exactamente 3 vértices.");
+      if(!given && drawMode==="rectangle" && points.length!==2 && points.length!==4) throw Error("Rectángulo: marcá 2 esquinas opuestas o 4 vértices.");
+      if(!given && drawMode==="rectangle" && points.length===2){const a=points[0],b=points[1];points=[a,[a[0],b[1]],b,[b[0],a[1]]];currentPoints.current=points;setVertices(points);}
       if(points.length<3) throw Error("Marcá al menos 3 vértices para cerrar el lote.");
       if (
         crosses(points) ||
@@ -571,10 +579,12 @@ function Observatory({onHome}:{onHome:()=>void}) {
       const areaHa = (()=>{ const R=6378137,lat0=points.reduce((a,p)=>a+p[0],0)/points.length*Math.PI/180,xy=points.map(([la,lo])=>[R*lo*Math.PI/180*Math.cos(lat0),R*la*Math.PI/180]);let a=0;for(let i=0;i<xy.length;i++){const j=(i+1)%xy.length;a+=xy[i][0]*xy[j][1]-xy[j][0]*xy[i][1]}return Math.abs(a)/2/10000;})();
       const perimeterKm = (()=>{const rad=(x:number)=>x*Math.PI/180,R=6371;let d=0;for(let i=0;i<points.length;i++){const a=points[i],b=points[(i+1)%points.length],dl=rad(b[0]-a[0]),dn=rad(b[1]-a[1]);const h=Math.sin(dl/2)**2+Math.cos(rad(a[0]))*Math.cos(rad(b[0]))*Math.sin(dn/2)**2;d+=2*R*Math.asin(Math.sqrt(h))}return d;})();
       const id=`lote-${Date.now()}`;
-      const name=`Lote ${lots.length+1}`;
+      const name=`Lote ${lots.length+1}${origin?" · "+origin:""}`;
+      if(given){currentPoints.current=points;setVertices(points);}
       const layer=L.polygon(points,{color:"#57dce0",fillOpacity:.12,weight:2}).addTo(mapRef.current!).bindTooltip(name,{permanent:true,direction:"center"});
       layer.on("click",()=>{ setSelectedLotId(id); setVertices(points); currentPoints.current=points; poly.current=layer; setPoint(center); setCoords(center.map(v=>v.toFixed(6))); mapRef.current?.fitBounds(layer.getBounds(),{padding:[40,40]}); });
       lotLayers.current[id]=layer; poly.current=layer;
+      if(given) mapRef.current?.fitBounds(layer.getBounds(),{padding:[60,60],maxZoom:16});
       setLots(prev=>[...prev,{id,name,vertices:[...points],center,areaHa,perimeterKm}]);
       setSelectedLotId(id);
       stopDraw();
@@ -584,6 +594,51 @@ function Observatory({onHome}:{onHome:()=>void}) {
     } catch (e) {
       notify((e as Error).message);
     }
+  };
+  const clearFtw = () => { ftwLayer.current?.remove(); ftwLayer.current = null; };
+  const showFtwAround = async (lat:number, lon:number) => {
+    if (!mapRef.current || mapRef.current.getZoom() < 12) { clearFtw(); return; }
+    try {
+      const feats = await fieldsAround(lat, lon);
+      clearFtw();
+      if (!ftwPickRef.current || !mapRef.current) return;
+      const g = L.layerGroup();
+      feats.forEach(f => f.geom.forEach(poly => {
+        const conf = f.props.confidence == null ? null : Number(f.props.confidence);
+        L.polygon(poly.map(r => r.map(([x, y]) => [y, x] as [number, number])), {
+          color: conf != null && conf >= FTW_RELIABLE ? "#32d583" : "#fdb022", weight: 1.2, fillOpacity: .08, dashArray: "4,3", interactive: false,
+        }).addTo(g);
+      }));
+      ftwLayer.current = g.addTo(mapRef.current);
+      if (!feats.length) notify("Fields of the World no tiene lotes en esta zona. Suele faltar en pasturas: dibujalo a mano.");
+    } catch { notify("No se pudo leer el mapa de lotes de Fields of the World. Revisá la conexión e intentá de nuevo."); }
+  };
+  const stopFtw = () => {
+    ftwPickRef.current = null; setFtwMode(false); clearFtw();
+    if (ftwMoveRef.current) mapRef.current?.off("moveend", ftwMoveRef.current);
+    ftwMoveRef.current = null;
+    if (mapRef.current) mapRef.current.getContainer().style.cursor = "";
+  };
+  const startFtw = () => {
+    if (!mapRef.current) return;
+    stopDraw(); setFtwMode(true);
+    const map = mapRef.current;
+    if (map.getZoom() < 13) map.setZoom(14);
+    map.getContainer().style.cursor = "crosshair";
+    ftwPickRef.current = async (lat, lon) => {
+      setFtwBusy(true);
+      try {
+        const f = await fieldAt(lat, lon);
+        if (!f) { notify("No hay un lote de Fields of the World en ese punto. Tocá dentro de un contorno sugerido o dibujalo a mano."); return; }
+        stopFtw();
+        finish(f.polygon as Point[], "FTW");
+        notify(`Lote tomado de Fields of the World · ${f.areaHa!=null?f.areaHa.toFixed(1)+" ha":""} · confianza ${f.confidence!=null?Math.round(f.confidence):"sin dato"}${f.reliable?"":" (baja: revisá el borde)"}. Podés redibujarlo si no coincide.`);
+      } catch { notify("No se pudo leer el mapa de lotes. Intentá de nuevo o dibujalo a mano."); }
+      finally { setFtwBusy(false); }
+    };
+    const onMove = () => { const c = map.getCenter(); void showFtwAround(c.lat, c.lng); };
+    ftwMoveRef.current = onMove; map.on("moveend", onMove);
+    onMove();
   };
   async function searchPlace() {
     if (!placeQuery.trim()) return;
@@ -1124,7 +1179,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
           </section>
           <section className="panel block operations">
             <div className="tag">OPERACIONES DEL LOTE</div>
-            <div className="draw-chooser"><button onClick={()=>startDraw("triangle")}><Triangle className="icon"/>Triángulo</button><button onClick={()=>startDraw("rectangle")}><Square className="icon"/>Rectángulo</button><button onClick={()=>startDraw("free")}><Layers className="icon"/>Polígono libre</button></div>
+            <div className="draw-chooser"><button onClick={()=>startDraw("triangle")}><Triangle className="icon"/>Triángulo</button><button onClick={()=>startDraw("rectangle")}><Square className="icon"/>Rectángulo</button><button onClick={()=>startDraw("free")}><Layers className="icon"/>Polígono libre</button><button className="ftw-btn" onClick={startFtw} title="Lote automático desde el mapa global Fields of the World (gratis)"><Sprout className="icon"/>Automático · FTW</button></div>
             <p className="footnote">Cada informe queda vinculado al polígono cerrado: superficie, perímetro, centroide y límites.</p>
             <div className="marker-chooser"><select value={markerType} onChange={e=>setMarkerType(e.target.value)}><option value="observación">Observación</option><option value="ganado">Ganado · hipótesis</option><option value="incendio">Incendio · hipótesis</option><option value="temperatura">Temperatura / THI</option><option value="agua">Agua / infraestructura</option><option value="vegetación">Vegetación / anomalía</option></select><button type="button" onClick={()=>addFieldMarker()}>{placingMarker?"Clic en el mapa…":"+ Marcar en mapa"}</button></div>
             <div className="actions">
@@ -1221,6 +1276,13 @@ function Observatory({onHome}:{onHome:()=>void}) {
             <Focus size={16} />
           </button>
         </div>
+        {ftwMode && (
+          <div className="panel message show ftw-message">
+            <p><b>Lote automático</b><br/>{ftwBusy?"Reconstruyendo el lote…":"Tocá dentro de un contorno. Verde: confianza alta. Ámbar: revisar borde."}</p>
+            <p className="small">Fields of the World mapea cultivos anuales; en pasturas puede no haber contorno. {FTW_ATTRIBUTION}.</p>
+            <div className="row"><button onClick={stopFtw}>Cancelar</button></div>
+          </div>
+        )}
         {drawing && (
           <div className="panel message show">
             <p>{vertices.length} vértices. {drawMode==="rectangle"?"Marcá 2 esquinas opuestas o 4 vértices.":"Marcá al menos tres puntos."}</p>
@@ -1228,7 +1290,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
               <button
                 className="primary"
                 disabled={drawMode==="rectangle" ? !(vertices.length===2||vertices.length===4) : vertices.length < 3}
-                onClick={finish}
+                onClick={()=>finish()}
               >
                 Finalizar
               </button>
