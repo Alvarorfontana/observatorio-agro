@@ -31,7 +31,50 @@ export type SuggestedField = {
   areaHa: number | null;
   reliable: boolean;
   parts: number;               // teselas que aportaron partes
+  neighborhood: Neighborhood;
 };
+
+export type Neighborhood = {
+  radiusKm: number;
+  count: number;        // lotes FTW con centro dentro del radio
+  meanHa: number | null;
+  medianHa: number | null;
+  coverPct: number;     // % del círculo ocupado por lotes agrícolas detectados
+  reliablePct: number | null; // % de esos lotes con confianza >= 69
+};
+
+/** Índice de compacidad (Polsby-Popper): 1 = círculo; < 0,4 lote alargado o irregular. */
+export function compactness(areaHa: number, perimeterKm: number) {
+  if (!areaHa || !perimeterKm) return null;
+  return Math.round((4 * Math.PI * areaHa * 10000) / ((perimeterKm * 1000) ** 2) * 100) / 100;
+}
+
+/** Estadística del entorno a partir de las partes FTW ya leídas (se deduplican por área+confianza). */
+export function neighborhood(all: { geom: Multi; props: Record<string, unknown> }[], lat: number, lon: number, radiusKm = 2): Neighborhood {
+  const seen = new Set<string>();
+  const areas: number[] = []; let reliable = 0, withConf = 0;
+  const kx = 111.32 * Math.cos(lat * Math.PI / 180), ky = 110.54;
+  for (const f of all) {
+    const a = f.props["metrics:area"];
+    const key = `${a}|${f.props.confidence}`;
+    if (a == null || seen.has(key)) continue;
+    const [x0, y0, x1, y1] = bbox(f.geom);
+    const dx = ((x0 + x1) / 2 - lon) * kx, dy = ((y0 + y1) / 2 - lat) * ky;
+    if (Math.hypot(dx, dy) > radiusKm) continue;
+    seen.add(key); areas.push(Number(a) / 10000);
+    if (f.props.confidence != null) { withConf++; if (Number(f.props.confidence) >= FTW_RELIABLE) reliable++; }
+  }
+  const sorted = areas.slice().sort((p, q) => p - q);
+  const sum = areas.reduce((p, q) => p + q, 0);
+  const circleHa = Math.PI * radiusKm * radiusKm * 100;
+  return {
+    radiusKm, count: areas.length,
+    meanHa: areas.length ? Math.round(sum / areas.length * 10) / 10 : null,
+    medianHa: areas.length ? Math.round(sorted[Math.floor(sorted.length / 2)] * 10) / 10 : null,
+    coverPct: Math.min(100, Math.round(sum / circleHa * 1000) / 10),
+    reliablePct: withConf ? Math.round(reliable / withConf * 100) : null,
+  };
+}
 
 let archive: PMTiles | null = null;
 let triedProxy = false;
@@ -182,5 +225,6 @@ export async function fieldAt(lat: number, lon: number, signal?: AbortSignal): P
     areaHa: area != null ? Number(area) / 10000 : ringAreaHa(outer),
     reliable: confidence != null && confidence >= FTW_RELIABLE,
     parts,
+    neighborhood: neighborhood(all, lat, lon),
   };
 }

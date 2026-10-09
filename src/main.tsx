@@ -40,7 +40,7 @@ import {
 import "./styles.css";
 import "./dashboard.css";
 import { ObsSidebar, MetricCards, buildNav } from "./dashboard/Shell";
-import { fieldAt, fieldsAround, FTW_ATTRIBUTION, FTW_RELIABLE } from "./dashboard/fields";
+import { fieldAt, fieldsAround, compactness, FTW_ATTRIBUTION, FTW_RELIABLE } from "./dashboard/fields";
 echarts.use([
   LineChart,
   BarChart,
@@ -320,7 +320,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
     [fieldMarkers,setFieldMarkers] = useState<Data[]>([]),
     [markerType,setMarkerType] = useState("observación"),
     [placingMarker,setPlacingMarker] = useState(false),
-    [lots,setLots] = useState<Array<{id:string;name:string;vertices:Point[];center:Point;areaHa:number;perimeterKm:number}>>([]),
+    [lots,setLots] = useState<Array<{id:string;name:string;vertices:Point[];center:Point;areaHa:number;perimeterKm:number;compactness?:number|null;ftw?:any}>>([]),
     [selectedLotId,setSelectedLotId] = useState<string | null>(null);
   const mapEl = useRef<HTMLDivElement>(null),
     mapRef = useRef<L.Map | null>(null),
@@ -564,7 +564,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
     line.current = null;
     if (mapRef.current) mapRef.current.getContainer().style.cursor = "";
   };
-  const finish = (given?: Point[], origin?: string) => {
+  const finish = (given?: Point[], origin?: string, ftw?: any) => {
     try {
       let points = given ?? currentPoints.current;
       if(!given && drawMode==="triangle" && points.length!==3) throw Error("Triángulo: marcá exactamente 3 vértices.");
@@ -588,7 +588,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
       layer.on("click",()=>{ setSelectedLotId(id); setVertices(points); currentPoints.current=points; poly.current=layer; setPoint(center); setCoords(center.map(v=>v.toFixed(6))); mapRef.current?.fitBounds(layer.getBounds(),{padding:[40,40]}); });
       lotLayers.current[id]=layer; poly.current=layer;
       if(given) mapRef.current?.fitBounds(layer.getBounds(),{padding:[60,60],maxZoom:16});
-      setLots(prev=>[...prev,{id,name,vertices:[...points],center,areaHa,perimeterKm}]);
+      setLots(prev=>[...prev,{id,name,vertices:[...points],center,areaHa,perimeterKm,compactness:compactness(areaHa,perimeterKm),ftw}]);
       setSelectedLotId(id);
       stopDraw();
       setCoords(center.map((v) => v.toFixed(6)));
@@ -634,7 +634,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
         const f = await fieldAt(lat, lon);
         if (!f) { notify("No hay un lote de Fields of the World en ese punto. Tocá dentro de un contorno sugerido o dibujalo a mano."); return; }
         stopFtw();
-        finish(f.polygon as Point[], "FTW");
+        finish(f.polygon as Point[], "FTW", {confidence:f.confidence, reliable:f.reliable, areaHa:f.areaHa, neighborhood:f.neighborhood, source:"Fields of the World 2025"});
         notify(`Lote tomado de Fields of the World · ${f.areaHa!=null?f.areaHa.toFixed(1)+" ha":""} · confianza ${f.confidence!=null?Math.round(f.confidence):"sin dato"}${f.reliable?"":" (baja: revisá el borde)"}. Podés redibujarlo si no coincide.`);
       } catch { notify("No se pudo leer el mapa de lotes. Intentá de nuevo o dibujalo a mano."); }
       finally { setFtwBusy(false); }
@@ -1191,6 +1191,22 @@ function Observatory({onHome}:{onHome:()=>void}) {
             <div className="section-title">LOTES DEL ESTABLECIMIENTO</div>
             <p className="footnote">Cada polígono conserva límites, superficie y contexto de análisis. Seleccioná un lote para consultar todas las fuentes sobre ese territorio.</p>
             <div className="lot-list">{lots.length===0?<span className="small">Todavía no hay lotes delimitados.</span>:lots.map(l=><button key={l.id} className={selectedLotId===l.id?"active":""} onClick={()=>{setSelectedLotId(l.id);setVertices(l.vertices);currentPoints.current=l.vertices;poly.current=lotLayers.current[l.id];setPoint(l.center);setCoords(l.center.map(v=>v.toFixed(6)));mapRef.current?.fitBounds(lotLayers.current[l.id].getBounds(),{padding:[40,40]})}}><strong>{l.name}</strong><span>{l.areaHa.toFixed(2)} ha</span></button>)}</div>
+            {(()=>{const l=lots.find(x=>x.id===selectedLotId); if(!l) return null; const c=l.compactness; const nb=l.ftw?.neighborhood; return <div className="lot-vars">
+              <div className="lot-vars-title">Variables del lote</div>
+              <div className="lot-var"><span>Superficie</span><b>{fmt(l.areaHa,1)} ha</b></div>
+              <div className="lot-var"><span>Perímetro</span><b>{fmt(l.perimeterKm,2)} km</b></div>
+              <div className="lot-var" title="Polsby-Popper: 1 es un círculo. Bajo 0,4 el lote es alargado o irregular: más alambrado por hectárea y aguadas más lejanas."><span>Compacidad</span><b>{c!=null?`${fmt(c,2)} · ${c>=0.6?"compacto":c>=0.4?"intermedio":"alargado"}`:"—"}</b></div>
+              <div className="lot-var"><span>Origen del límite</span><b>{l.ftw?"FTW automático":"Dibujado"}</b></div>
+              {l.ftw && <div className="lot-var"><span>Confianza FTW</span><b className={l.ftw.reliable?"ok":"warn"}>{l.ftw.confidence!=null?Math.round(l.ftw.confidence):"sin dato"}{l.ftw.reliable?"":" · revisar"}</b></div>}
+              {nb && <>
+                <div className="lot-vars-title">Entorno · radio {nb.radiusKm} km</div>
+                <div className="lot-var"><span>Lotes agrícolas detectados</span><b>{nb.count}</b></div>
+                <div className="lot-var"><span>Tamaño medio · mediana</span><b>{nb.meanHa!=null?`${fmt(nb.meanHa,1)} · ${fmt(nb.medianHa,1)} ha`:"—"}</b></div>
+                <div className="lot-var"><span>Superficie agrícola</span><b>{fmt(nb.coverPct,1)} %</b></div>
+                {nb.reliablePct!=null && <div className="lot-var"><span>Con confianza alta</span><b>{nb.reliablePct} %</b></div>}
+                <p className="footnote">Fields of the World detecta cultivos anuales: un valor bajo en zona ganadera indica predominio de pasturas o monte, no ausencia de producción.</p>
+              </>}
+            </div>})()}
             {selectedLotId&&<button className="primary" style={{width:"100%",marginTop:10}} onClick={()=>void askDots("Analizá integralmente el lote seleccionado: clima, agua, suelo, vegetación, riesgos, ENSO y trazabilidad. No inventes variables faltantes.")}>{agentBusy?"Analizando fuentes…":"Analizar lote seleccionado"}</button>}
           </section>
           <section className="panel block operations">
