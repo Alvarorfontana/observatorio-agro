@@ -69,6 +69,7 @@ const GIBS_LAYERS: [string,string,string,string?][] = [
   ["MODIS_Terra_Land_Surface_Temp_Day","Temperatura de superficie · día · 1 km","Temperatura del suelo/canopeo, no del aire."],
   ["SMAP_L4_Analyzed_Surface_Soil_Moisture","Humedad de suelo SMAP · 9 km","Modelo asimilado, 0–5 cm. Escala regional."],
   ["IMERG_Precipitation_Rate","Lluvia GPM IMERG · 30 min","Tasa de lluvia satelital estimada, no pluviómetro."],
+  ["GOES-East_ABI_Band13_Clean_Infrared","Nubes GOES-East · infrarrojo · 10 min","Satélite meteorológico geoestacionario: topes nubosos fríos = tormentas. Última imagen disponible."],
   [WORLDCOVER,"Cobertura ESA WorldCover · 10 m","Árboles, pastizal, cultivo, agua y humedales (2021). Fuente: ESA / VITO Terrascope, CC-BY 4.0.","https://titiler.terrascope.be/wms"],
 ];
 const NATIONAL = ["smn", "inmet", "dmc", "eccc", "nws"];
