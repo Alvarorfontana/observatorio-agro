@@ -673,12 +673,21 @@ function Observatory({onHome}:{onHome:()=>void}) {
       notify("Análisis Agentic completado con trazabilidad de fuentes.");
     } catch (e) { notify((e as Error).message); } finally { setAgentBusy(false); }
   }
+  const reportExtras = () => {
+    const l = lots.find(x => x.id === selectedLotId);
+    const data = (k: string) => (sources[k]?.payload as any)?.data;
+    return {
+      lot: l ? { name: l.name, areaHa: l.areaHa, perimeterKm: l.perimeterKm, compactness: l.compactness, ftw: l.ftw, vertices: l.vertices } : null,
+      ndvi: data("ndvi"), indices: data("indices"), telecon: data("teleconexiones"), clima: data("variables"),
+      place: placeLabel,
+    };
+  };
   async function agentPdf() {
     setPdfBusy(true);
     try {
       const r = await fetch("/api/fuentes/agentic/pdf", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lat: point[0], lon: point[1], prompt: agentPrompt, polygon: poly.current ? vertices : null, inaSeries, waterAssets, fieldMarkers, nombre: "DOTS / Informe técnico del lote", analysis: agentResult }),
+        body: JSON.stringify({ lat: point[0], lon: point[1], prompt: agentPrompt, polygon: poly.current ? vertices : null, inaSeries, waterAssets, fieldMarkers, nombre: lots.find(x=>x.id===selectedLotId)?.name || "Lote DOTS", analysis: agentResult, extras: reportExtras() }),
         signal: AbortSignal.timeout(60000),
       });
       if (!r.ok) throw Error("No se pudo generar el informe Agentic");
@@ -695,13 +704,14 @@ function Observatory({onHome}:{onHome:()=>void}) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           inaSeries: view === "ina" ? inaSeries : undefined,
-          nombre: "DOTS / Informe territorial del lote",
+          nombre: lots.find(x=>x.id===selectedLotId)?.name || "Lote DOTS",
           lat: point[0],
           lon: point[1],
           polygon: poly.current ? vertices : null,
           area_ha: lotAreaHa,
           perimeter_km: lotPerimeterKm,
           fieldMarkers,
+          extras: reportExtras(),
         }),
         signal: AbortSignal.timeout(45000),
       });

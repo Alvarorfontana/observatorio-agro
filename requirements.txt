@@ -2,3 +2,4 @@ flask>=3.0,<4
 requests>=2.32
 reportlab>=4.2
 google-auth>=2.30
+typst>=0.13

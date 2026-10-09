@@ -7,6 +7,7 @@ import research_connectors as c
 import agentic_engine as agentic
 import vegetation as veg
 import climate_indices as ci
+import report_typst as rt
 
 research_api=Blueprint('research_api',__name__,url_prefix='/api/fuentes')
 
@@ -90,8 +91,8 @@ def report():
         d=request.get_json(silent=True) or {}
         lat,lon=c.coordinates({'lat':[d.get('lat')],'lon':[d.get('lon')]})
         result=agentic.analyze(lat,lon,str(d.get('prompt','Informe integral del lote')),d.get('polygon'),d.get('inaSeries'),d.get('waterAssets'),d.get('fieldMarkers'))
-        pdf=agentic.pdf_bytes(result,str(d.get('nombre','Lote DOTS')))
-        return Response(pdf,mimetype='application/pdf',headers={'Content-Disposition':'attachment; filename=DOTS-informe-territorial.pdf'})
+        pdf,engine=rt.pdf(result,str(d.get('nombre','Lote DOTS')),d.get('extras') if isinstance(d.get('extras'),dict) else None)
+        return Response(pdf,mimetype='application/pdf',headers={'Content-Disposition':'attachment; filename=DOTS-informe-territorial.pdf','X-DOTS-Report-Engine':engine})
     except ValueError as e:return jsonify({'error':str(e)}),400
     except Exception as e:return jsonify({'status':'sin dato','error':'No se pudo generar el informe DOTS','type':type(e).__name__}),502
 
@@ -145,7 +146,7 @@ def agentic_pdf():
             result=supplied
         else:
             result=agentic.analyze(lat,lon,str(d.get('prompt','')),d.get('polygon'),d.get('inaSeries'),d.get('waterAssets'),d.get('fieldMarkers'))
-        pdf=agentic.pdf_bytes(result,str(d.get('nombre','Lote DOTS')))
-        return Response(pdf,mimetype='application/pdf',headers={'Content-Disposition':'attachment; filename=DOTS-informe-agentic.pdf'})
+        pdf,engine=rt.pdf(result,str(d.get('nombre','Lote DOTS')),d.get('extras') if isinstance(d.get('extras'),dict) else None)
+        return Response(pdf,mimetype='application/pdf',headers={'Content-Disposition':'attachment; filename=DOTS-informe-agentic.pdf','X-DOTS-Report-Engine':engine})
     except ValueError as e:return jsonify({'error':str(e)}),400
     except Exception as e:return jsonify({'status':'sin dato','error':'No se pudo generar el informe Agentic','type':type(e).__name__}),502
