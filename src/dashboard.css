@@ -1,0 +1,653 @@
+/*
+ * DOTS v2.0 · Panel con el modelo de TailAdmin (MIT, © 2023 TailAdmin)
+ * https://github.com/TailAdmin/free-react-tailwind-admin-dashboard
+ * Se portan sus tokens oscuros (gray-900/800, tarjetas white/3, radios 16 px,
+ * menú lateral 290/90 px) a CSS plano. Todo va bajo .ta-shell para no tocar
+ * el sitio público ni depender de Tailwind.
+ */
+.ta-shell {
+  --ta-bg: #0c111d;          /* gray-950 */
+  --ta-surface: #101828;     /* gray-900 */
+  --ta-card: rgba(255, 255, 255, 0.03);
+  --ta-card-solid: #121a2a;
+  --ta-border: #1d2939;      /* gray-800 */
+  --ta-border-strong: #344054;
+  --ta-text: rgba(255, 255, 255, 0.9);
+  --ta-text-2: #98a2b3;      /* gray-400 */
+  --ta-text-3: #667085;      /* gray-500 */
+  --ta-brand: #57dce0;       /* acento DOTS en lugar del azul de TailAdmin */
+  --ta-brand-soft: rgba(87, 220, 224, 0.12);
+  --ta-ok: #32d583;
+  --ta-warn: #fdb022;
+  --ta-risk: #f97066;
+  --ta-radius: 16px;
+  --ta-side: 290px;
+  --ta-side-min: 90px;
+  --ta-gap: 20px;
+  --edge: var(--ta-border);
+  --panel: var(--ta-card-solid);
+  --muted: var(--ta-text-2);
+  --cyan: var(--ta-brand);
+  font-family: Outfit, Inter, system-ui, sans-serif;
+  background: var(--ta-bg);
+  color: var(--ta-text);
+  min-height: 100dvh;
+}
+.ta-shell button,
+.ta-shell input,
+.ta-shell select {
+  border-radius: 8px;
+  border-color: var(--ta-border-strong);
+  background: var(--ta-surface);
+}
+.ta-shell button:hover:not(:disabled) {
+  background: #1d2939;
+}
+
+/* ───────── menú lateral ───────── */
+.ta-sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 1200;
+  width: var(--ta-side);
+  display: flex;
+  flex-direction: column;
+  padding: 0 20px 16px;
+  background: var(--ta-surface);
+  border-right: 1px solid var(--ta-border);
+  transition: width 0.25s ease, transform 0.25s ease;
+  overflow: hidden;
+}
+.ta-logo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 26px 0 22px;
+}
+.ta-shell .ta-logo-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  min-height: 0;
+  text-align: left;
+  color: inherit;
+}
+.ta-shell .ta-logo-btn:hover {
+  background: transparent;
+}
+.ta-logo-mark {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--ta-brand-soft);
+  color: var(--ta-brand);
+}
+.ta-logo-mark svg {
+  width: 22px;
+  height: 22px;
+}
+.ta-logo-text b {
+  display: block;
+  font-size: 19px;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+.ta-logo-text em {
+  font-style: normal;
+  color: var(--ta-brand);
+}
+.ta-logo-text small {
+  display: block;
+  font-size: 11px;
+  color: var(--ta-text-3);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.ta-nav {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.ta-nav-group + .ta-nav-group {
+  margin-top: 20px;
+}
+.ta-nav-title {
+  margin: 0 0 10px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ta-text-3);
+  white-space: nowrap;
+}
+.ta-nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+.ta-shell .ta-menu-item {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 42px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #d0d5dd;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  white-space: nowrap;
+}
+.ta-shell .ta-menu-item:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.05);
+}
+.ta-shell .ta-menu-item.is-active {
+  background: var(--ta-brand-soft);
+  color: var(--ta-brand);
+}
+.ta-shell .ta-menu-item:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.ta-menu-icon {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  display: grid;
+  place-items: center;
+  color: var(--ta-text-2);
+}
+.is-active .ta-menu-icon {
+  color: var(--ta-brand);
+}
+.ta-menu-icon svg {
+  width: 20px;
+  height: 20px;
+}
+.ta-badge {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(253, 176, 34, 0.12);
+  color: var(--ta-warn);
+}
+.ta-shell .ta-collapse {
+  margin-top: 12px;
+  border-top: 1px solid var(--ta-border);
+  border-radius: 0 0 8px 8px;
+  padding-top: 14px;
+}
+.ta-collapse .ta-menu-icon svg {
+  transition: transform 0.25s;
+}
+.ta-close {
+  display: none !important;
+}
+
+/* colapsado (escritorio) — sólo íconos, se expande al pasar el mouse */
+.nav-collapsed .ta-sidebar:not(:hover) {
+  width: var(--ta-side-min);
+}
+.nav-collapsed .ta-sidebar:not(:hover) .ta-logo-text,
+.nav-collapsed .ta-sidebar:not(:hover) .ta-menu-text,
+.nav-collapsed .ta-sidebar:not(:hover) .ta-badge,
+.nav-collapsed .ta-sidebar:not(:hover) .ta-nav-title span {
+  display: none;
+}
+.nav-collapsed .ta-sidebar:not(:hover) .ta-nav-title {
+  height: 1px;
+  margin: 0 12px 10px;
+  background: var(--ta-border);
+}
+.nav-collapsed .ta-sidebar:not(:hover) .ta-logo,
+.nav-collapsed .ta-sidebar:not(:hover) .ta-menu-item {
+  justify-content: center;
+}
+.nav-collapsed .ta-collapse .ta-menu-icon svg {
+  transform: rotate(180deg);
+}
+
+/* ───────── columna principal ───────── */
+.ta-main {
+  margin-left: var(--ta-side);
+  min-width: 0;
+  transition: margin-left 0.25s ease;
+}
+.nav-collapsed .ta-main {
+  margin-left: var(--ta-side-min);
+}
+.ta-shell header.ta-header {
+  position: sticky;
+  top: 0;
+  left: auto;
+  right: auto;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 16px;
+  padding: 14px 24px;
+  border: 0;
+  border-bottom: 1px solid var(--ta-border);
+  border-radius: 0;
+  background: rgba(16, 24, 40, 0.92);
+  backdrop-filter: blur(12px);
+  box-shadow: none;
+}
+.ta-shell .ta-icon-btn {
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--ta-border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ta-text-2);
+}
+.ta-shell .ta-icon-btn svg {
+  width: 20px;
+  height: 20px;
+}
+.ta-shell .ta-header .breadcrumb {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  font-family: Outfit, Inter, sans-serif;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+}
+.ta-shell .ta-header .breadcrumb b {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--ta-text);
+  font-weight: 500;
+}
+.ta-shell .ta-header .live {
+  margin-left: auto;
+  border: 0;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font: 600 12px Outfit, Inter, sans-serif;
+  background: var(--ta-brand-soft);
+  color: var(--ta-brand);
+  white-space: nowrap;
+}
+
+/* ───────── grilla de contenido ───────── */
+.ta-shell .app.ta-content {
+  position: relative;
+  height: auto;
+  min-height: 0;
+  overflow: visible;
+  padding: 24px;
+  display: grid;
+  gap: var(--ta-gap);
+  grid-template-columns: 330px minmax(0, 1fr) 300px;
+  grid-template-areas:
+    "metrics metrics metrics"
+    "side    map     insp"
+    "side    charts  charts";
+  align-items: start;
+  max-width: 1800px;
+}
+.ta-shell .ta-metrics { grid-area: metrics; }
+.ta-shell .ta-map-card { grid-area: map; }
+.ta-shell .app > .sidebar { grid-area: side; }
+.ta-shell .app > .inspector { grid-area: insp; }
+.ta-shell .app > .charts { grid-area: charts; }
+
+/* tarjetas */
+.ta-shell .panel {
+  background: var(--ta-card);
+  border: 1px solid var(--ta-border);
+  border-radius: var(--ta-radius);
+  box-shadow: none;
+  backdrop-filter: none;
+}
+.ta-shell .block {
+  padding: 20px;
+}
+
+/* tarjetas de métricas */
+.ta-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--ta-gap);
+}
+.ta-shell .ta-metric {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  min-height: 0;
+  padding: 20px 22px;
+  text-align: left;
+  border: 1px solid var(--ta-border);
+  border-radius: var(--ta-radius);
+  background: var(--ta-card);
+  color: inherit;
+}
+.ta-shell .ta-metric:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--ta-border-strong);
+}
+.ta-metric-icon {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: #1d2939;
+  color: #fff;
+}
+.ta-metric-icon svg {
+  width: 24px;
+  height: 24px;
+}
+.tone-ok .ta-metric-icon { background: rgba(50, 213, 131, 0.12); color: var(--ta-ok); }
+.tone-warn .ta-metric-icon { background: rgba(253, 176, 34, 0.12); color: var(--ta-warn); }
+.tone-risk .ta-metric-icon { background: rgba(249, 112, 102, 0.12); color: var(--ta-risk); }
+.ta-metric-body {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.ta-metric-label {
+  font-size: 14px;
+  color: var(--ta-text-2);
+}
+.ta-metric-value {
+  font-size: 30px;
+  line-height: 38px;
+  font-weight: 700;
+  color: var(--ta-text);
+}
+.ta-metric-value small {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ta-text-2);
+}
+.ta-metric-hint {
+  font-size: 12px;
+  color: var(--ta-text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* mapa como tarjeta */
+.ta-shell .ta-map-card {
+  position: relative;
+  height: clamp(460px, 64vh, 760px);
+  border: 1px solid var(--ta-border);
+  border-radius: var(--ta-radius);
+  overflow: hidden;
+  background: #101f29;
+}
+.ta-shell .ta-map-card #map {
+  position: absolute;
+  inset: 0;
+  height: auto;
+  margin: 0;
+}
+.ta-shell .ta-map-card .toolbar {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  width: auto;
+  max-width: none;
+  z-index: 850;
+  border-radius: 12px;
+  background: rgba(16, 24, 40, 0.88);
+  backdrop-filter: blur(10px);
+}
+.ta-shell .ta-map-card .toolbar button.active {
+  background: var(--ta-brand-soft);
+  border-color: transparent;
+  color: var(--ta-brand);
+}
+.ta-shell .ta-map-card .map-meta {
+  left: 12px;
+  top: 74px;
+  max-width: calc(100% - 90px);
+  border-radius: 0 8px 8px 0;
+}
+.ta-shell .ta-map-card .tools {
+  right: 12px;
+  top: 74px;
+}
+.ta-shell .ta-map-card .message {
+  left: 12px;
+  top: auto;
+  bottom: 44px;
+  max-width: 320px;
+}
+.ta-shell .ta-map-card .map-bottom {
+  left: 12px;
+  right: auto;
+  top: auto;
+  bottom: 10px;
+  border-radius: 6px;
+}
+.ta-shell .leaflet-control-scale {
+  margin: 0 0 44px 12px !important;
+}
+
+/* columna de lote y fuentes */
+.ta-shell .app > .sidebar {
+  position: sticky !important;
+  top: 92px;
+  left: auto !important;
+  bottom: auto;
+  width: auto;
+  max-height: calc(100dvh - 116px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ta-gap);
+}
+.ta-shell .sidebar h1 {
+  font-size: 22px;
+  font-weight: 600;
+}
+
+/* inspector */
+.ta-shell .app > .inspector {
+  position: static;
+  width: auto;
+  display: grid;
+  gap: var(--ta-gap);
+}
+
+/* gráficos */
+.ta-shell .app > .charts {
+  position: static;
+  background: transparent;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ta-gap);
+}
+.ta-shell .chart {
+  height: 300px;
+  padding: 20px 22px;
+}
+.ta-shell .chart h2 {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+/* tipografía y detalles internos */
+.ta-shell .data-button {
+  border-radius: 8px;
+}
+.ta-shell .data-button.active {
+  background: var(--ta-brand-soft);
+  border-color: transparent;
+}
+.ta-shell .primary {
+  background: var(--ta-brand);
+  color: #07202b;
+  border-color: transparent;
+}
+.ta-shell .primary:hover:not(:disabled) {
+  background: #8cf0ee;
+}
+.ta-shell .toast {
+  border-radius: 12px;
+  background: #1d2939;
+  border-color: var(--ta-border-strong);
+}
+
+/* ───────── responsive ───────── */
+@media (max-width: 1500px) {
+  .ta-shell .app.ta-content {
+    grid-template-columns: 320px minmax(0, 1fr);
+    grid-template-areas:
+      "metrics metrics"
+      "side    map"
+      "side    insp"
+      "side    charts";
+  }
+  .ta-shell .app > .inspector {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 1279px) {
+  .ta-sidebar {
+    transform: translateX(-100%);
+    width: var(--ta-side) !important;
+  }
+  .ta-sidebar.is-open {
+    transform: translateX(0);
+  }
+  .ta-sidebar .ta-logo-text,
+  .ta-sidebar .ta-menu-text,
+  .ta-sidebar .ta-nav-title span {
+    display: initial !important;
+  }
+  .ta-close {
+    display: grid !important;
+  }
+  .ta-collapse {
+    display: none !important;
+  }
+  .ta-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1150;
+    background: rgba(12, 17, 29, 0.6);
+    backdrop-filter: blur(2px);
+  }
+  .ta-main,
+  .nav-collapsed .ta-main {
+    margin-left: 0;
+  }
+  .ta-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 960px) {
+  .ta-shell .app.ta-content {
+    padding: 16px;
+    gap: 16px;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "metrics" "map" "insp" "charts" "side";
+  }
+  .ta-shell .app > .sidebar {
+    position: static !important;
+    max-height: none;
+    overflow: visible;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ta-shell .app > .charts,
+  .ta-shell .app > .inspector {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ta-shell .ta-header .breadcrumb span {
+    display: none;
+  }
+}
+@media (max-width: 560px) {
+  .ta-metrics {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ta-shell header.ta-header {
+    padding: 12px 16px;
+  }
+  .ta-shell .ta-map-card {
+    height: 420px;
+  }
+}
+@media print {
+  .ta-sidebar,
+  .ta-header {
+    display: none !important;
+  }
+  .ta-main {
+    margin: 0 !important;
+  }
+}
+
+/* ajustes finos */
+.ta-shell .ta-map-card .toolbar select {
+  flex: 0 0 auto;
+  width: auto;
+  max-width: 240px;
+  min-height: 36px;
+  padding: 6px 10px;
+  font-size: 13px;
+}
+@media (max-width: 560px) {
+  .ta-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .ta-shell .ta-metric {
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px;
+  }
+  .ta-metric-icon {
+    width: 36px;
+    height: 36px;
+    flex-basis: 36px;
+  }
+  .ta-metric-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+  .ta-metric-label {
+    font-size: 12px;
+  }
+  .ta-metric-value {
+    font-size: 24px;
+    line-height: 30px;
+  }
+  .ta-metric-hint {
+    white-space: normal;
+  }
+  .ta-logo-text small {
+    display: none;
+  }
+}

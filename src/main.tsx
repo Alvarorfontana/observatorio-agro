@@ -35,8 +35,11 @@ import {
   Focus,
   Plus,
   Minus,
+  Menu,
 } from "lucide-react";
 import "./styles.css";
+import "./dashboard.css";
+import { ObsSidebar, MetricCards, buildNav } from "./dashboard/Shell";
 echarts.use([
   LineChart,
   BarChart,
@@ -490,6 +493,8 @@ function Observatory({onHome}:{onHome:()=>void}) {
     return () => { wms.remove(); };
   }, [gibsLayer]);
   const [showNdvi, setShowNdvi] = useState(true);
+  const [navCollapsed, setNavCollapsed] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);
   const ndviOverlay = useRef<L.ImageOverlay | null>(null);
   useEffect(() => {
     ndviOverlay.current?.remove(); ndviOverlay.current = null;
@@ -686,17 +691,11 @@ function Observatory({onHome}:{onHome:()=>void}) {
     ),
     depth = nitrogen?.depths?.[0];
   return (
-    <div className="whole">
-      <header className="panel">
-        <div className="brand" onClick={onHome} style={{cursor:"pointer"}} title="Volver a DOTS">
-          <div className="mark dots-integrated-mark" aria-label="DOTS territorio integrado"><span></span><span></span><span></span><span></span></div>
-          <div>
-            <strong>
-              DOTS<span style={{ color: "var(--cyan)" }}> / CAMPO</span>
-            </strong>
-            <small>OBSERVATORIO GANADERO · GIS OPERATIVO</small>
-          </div>
-        </div>
+    <div className={"whole ta-shell"+(navCollapsed?" nav-collapsed":"")}>
+      <ObsSidebar groups={buildNav(changeView,()=>startDraw("free"),()=>void agentPdf())} active={view} collapsed={navCollapsed} mobileOpen={navOpen} onCollapse={()=>setNavCollapsed(c=>!c)} onCloseMobile={()=>setNavOpen(false)} onHome={onHome}/>
+      <div className="ta-main">
+      <header className="panel ta-header">
+        <button className="ta-icon-btn ta-hamburger" onClick={()=>{ if (window.matchMedia("(max-width: 1279px)").matches) setNavOpen(true); else setNavCollapsed(c=>!c); }} aria-label="Menú"><Menu/></button>
         <div className="breadcrumb">
           <span>ÁREA DE ANÁLISIS</span>
           <b>
@@ -709,24 +708,20 @@ function Observatory({onHome}:{onHome:()=>void}) {
           FUENTES RECIBIDAS
         </span>
       </header>
-      <main className="app">
-        <nav className="module-rail" aria-label="Módulos DOTS">
-          <button className="rail-home" onClick={onHome} title="DOTS"><Hexagon/></button>
-          <button title="Resumen"><LayoutDashboard/></button>
-          <button title="Lotes y potreros" onClick={()=>startDraw("free")}><Layers/></button>
-          <button title="Satélites" onClick={()=>changeView("escenas")}><Satellite/></button>
-          <button title="Vegetación y pasturas · NDVI del lote" onClick={()=>changeView("ndvi")}><Sprout/></button>
-          <button title="Agua" onClick={()=>changeView("rios")}><Waves/></button>
-          <button title="Suelos" onClick={()=>changeView("suelo")}><CircleDot/></button>
-          <button title="Ganado"><Beef/></button>
-          <button title="Clima" onClick={()=>changeView("modelos")}><CloudSun/></button>
-          <button title="Riesgos" onClick={()=>changeView("firms")}><Flame/></button>
-          <button title="ENSO / clima global" onClick={()=>changeView("historico")}><Gauge/></button>
-          <button title="Informes" onClick={()=>void agentPdf()}><FileText/></button>
-          <span className="rail-spacer"/>
-          <button title="Ayuda"><HelpCircle/></button><button title="Configuración"><Settings/></button>
-        </nav>
-        <div id="map" ref={mapEl} />
+      <main className="app ta-content">
+        {(()=>{
+          const nl:any = (sources.ndvi?.payload as any)?.data?.latest;
+          const rain = (daily.precipitation_sum||[]).reduce((a:number,b:number)=>a+(Number(b)||0),0);
+          const et0 = (daily.et0_fao_evapotranspiration||[]).reduce((a:number,b:number)=>a+(Number(b)||0),0);
+          const det:any[] = (sources.firms?.payload as any)?.data?.detections || [];
+          const inside = det.filter(d=>d.inside_lot===true).length;
+          return <MetricCards items={[
+            {key:"ndvi",label:"NDVI del lote",value:nl?fmt(nl.ndvi_mean,2):"—",hint:nl?`Sentinel-2 · ${String(nl.datetime||"").slice(0,10)}`:(vertices.length>=3?"Tocá para calcular":"Dibujá un lote"),icon:<Sprout/>,tone:nl?(nl.ndvi_mean>=0.5?"ok":nl.ndvi_mean>=0.2?"warn":"risk"):"idle",onClick:()=>changeView("ndvi")},
+            {key:"temp",label:"Temperatura actual",value:cur.temperature_2m!=null?fmt(cur.temperature_2m):"—",unit:"°C",hint:cur.relative_humidity_2m!=null?`Humedad ${fmt(cur.relative_humidity_2m,0)} % · Open-Meteo`:"Open-Meteo · modelo",icon:<Thermometer/>,tone:cur.temperature_2m>=35?"risk":cur.temperature_2m!=null?"ok":"idle",onClick:()=>changeView("variables")},
+            {key:"agua",label:"Lluvia próximos 7 días",value:daily.precipitation_sum?fmt(rain):"—",unit:"mm",hint:daily.et0_fao_evapotranspiration?`ET₀ ${fmt(et0)} mm · balance ${fmt(rain-et0)} mm`:"Pronóstico Open-Meteo",icon:<Droplets/>,tone:daily.precipitation_sum?(rain-et0<-15?"warn":"ok"):"idle",onClick:()=>changeView("variables")},
+            {key:"focos",label:"Focos térmicos",value:sources.firms?.status==="recibido"?String(inside):"—",unit:sources.firms?.status==="recibido"?"en el lote":undefined,hint:sources.firms?.status==="recibido"?`${det.length} en el entorno · NASA FIRMS 3 días`:"Tocá para consultar FIRMS",icon:<Flame/>,tone:sources.firms?.status==="recibido"?(inside>0?"risk":"ok"):"idle",onClick:()=>changeView("firms")},
+          ]}/>;
+        })()}
         <aside className="sidebar">
           <section className="panel block">
             <div className="tag">01 / ÁREA E INFORMES</div>
@@ -1178,6 +1173,8 @@ function Observatory({onHome}:{onHome:()=>void}) {
             </div>
           </section>
         </aside>
+        <section className="ta-map-card">
+        <div id="map" ref={mapEl} />
         <div className="panel toolbar">
           <button
             className={layer === "base" ? "active" : ""}
@@ -1239,6 +1236,13 @@ function Observatory({onHome}:{onHome:()=>void}) {
             </div>
           </div>
         )}
+        <div className="map-bottom">
+          WGS84 · {fmt(point[0], 5)} / {fmt(point[1], 5)} ·{" "}
+          {poly.current
+            ? "LÍMITE DELIMITADO POR EL USUARIO"
+            : "SIN LÍMITES CATASTRALES"}
+        </div>
+        </section>
         <aside className="inspector">
           <section className="panel block">
             <div className="row">
@@ -1528,13 +1532,8 @@ function Observatory({onHome}:{onHome:()=>void}) {
             </>
           )}
         </section>
-        <div className="map-bottom">
-          WGS84 · {fmt(point[0], 5)} / {fmt(point[1], 5)} ·{" "}
-          {poly.current
-            ? "LÍMITE DELIMITADO POR EL USUARIO"
-            : "SIN LÍMITES CATASTRALES"}
-        </div>
       </main>
+      </div>
       {agentOpen && agentResult && <div className="agent-modal-backdrop" onClick={()=>setAgentOpen(false)}>
         <section className="agent-modal" onClick={e=>e.stopPropagation()}>
           <header><div><div className="tag">DOTS AGENTIC / INFORME DEL LOTE</div><h2>Diagnóstico multifuente</h2></div><button onClick={()=>setAgentOpen(false)}>Cerrar ×</button></header>
