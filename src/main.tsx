@@ -39,6 +39,7 @@ import {
 } from "lucide-react";
 import "./styles.css";
 import "./dashboard.css";
+import "./site.css";
 import { ObsSidebar, MetricCards, buildNav } from "./dashboard/Shell";
 import { fieldAt, fieldsAround, compactness, FTW_ATTRIBUTION, FTW_RELIABLE } from "./dashboard/fields";
 echarts.use([
@@ -1667,7 +1668,7 @@ function SiteLink({to,children,className=""}:{to:string;children:React.ReactNode
   return <a href={to} className={className} onClick={(e)=>{e.preventDefault();history.pushState({},"",to);window.dispatchEvent(new PopStateEvent("popstate"));window.scrollTo({top:0,behavior:"smooth"});}}>{children}</a>
 }
 function Brand(){return <SiteLink to="/" className="site-brand"><img className="brand-logo" src="/dots-logo.svg" alt="DOTS Campo"/><span><b>DOTS <em>CAMPO</em></b><small>DATOS · OBSERVACIÓN · TERRITORIO · SATÉLITE</small></span></SiteLink>}
-function PublicHeader({onDemo}:{onDemo:()=>void}){return <header className="site-header"><Brand/><nav><SiteLink to="/producto">Cómo funciona</SiteLink><SiteLink to="/tecnologia">Fuentes y datos</SiteLink><SiteLink to="/conexiones">APIs y accesos</SiteLink><button className="nav-demo" onClick={onDemo}>Demo</button></nav><div className="site-head-actions"><SiteLink to="/acceso" className="ghost-link">Ingresar</SiteLink><button className="demo-btn" onClick={onDemo}>Abrir Observatorio →</button></div></header>}
+function PublicHeader({onDemo}:{onDemo:()=>void}){return <header className="site-header"><Brand/><nav><SiteLink to="/producto">Cómo funciona</SiteLink><SiteLink to="/modulos">Módulos</SiteLink><SiteLink to="/panel">Panel regional</SiteLink><SiteLink to="/tecnologia">Fuentes y datos</SiteLink><SiteLink to="/conexiones">APIs y accesos</SiteLink><button className="nav-demo" onClick={onDemo}>Demo</button></nav><div className="site-head-actions"><SiteLink to="/acceso" className="ghost-link">Ingresar</SiteLink><button className="demo-btn" onClick={onDemo}>Abrir Observatorio →</button></div></header>}
 const sourceGroups=[
  ["ARGENTINA",["CONAE · SAOCOM","SMN","INA"]],
  ["EUROPA",["Copernicus · Sentinel","ECMWF · C3S","EUMETSAT","DLR · Alemania","CNES · Francia"]],
@@ -1678,14 +1679,97 @@ const sourceGroups=[
 const tech=sourceGroups.flatMap(([,xs])=>xs);
 function SourceStrip(){return <section className="source-strip"><span>FUENTES OFICIALES<br/>Y TRAZABLES</span>{["CONAE · SAOCOM","Copernicus · Sentinel","NASA · NOAA","USGS · Landsat","INPE · Brasil","JAXA · Japón","FengYun · China","IRI · Columbia","FAO · WaPOR"].map((x,i)=><b key={x} className={i===0?'arg-source':''}>{x}</b>)}</section>}
 function Home({onDemo}:{onDemo:()=>void}){return <div className="public-site"><PublicHeader onDemo={onDemo}/><main>
- <section className="cover-hero"><img src="/dots-portada.png" alt="Campo ganadero y observación satelital DOTS"/><div className="cover-shade"></div><div className="cover-copy"><div className="cover-kicker">INTELIGENCIA TERRITORIAL PARA LA GESTIÓN GANADERA</div><h1>Conocé tu campo<br/><em>como nunca antes.</em></h1><p>Unificamos el lote real con observación satelital, clima, suelo, agua, pasturas, riesgos e historia. Cada dato conserva su fuente, fecha y alcance.</p><div className="cover-actions"><button onClick={onDemo}>Ver demostración →</button><SiteLink to="/producto">Cómo funciona DOTS</SiteLink></div><div className="truth-row"><span>DATOS REALES</span><span>POLÍGONOS REALES</span><span>FUENTES TRAZABLES</span></div></div></section>
+ <section className="cover-hero"><img src="/dots-hero.jpg" alt="Satélite observando lotes de un campo ganadero con índice de vegetación"/><div className="cover-shade"></div><div className="cover-copy"><div className="cover-kicker">INTELIGENCIA TERRITORIAL PARA LA GESTIÓN GANADERA</div><h1>Conocé tu campo<br/><em>como nunca antes.</em></h1><p>Unificamos el lote real con observación satelital, clima, suelo, agua, pasturas, riesgos e historia. Cada dato conserva su fuente, fecha y alcance.</p><div className="cover-actions"><button onClick={onDemo}>Ver demostración →</button><SiteLink to="/producto">Cómo funciona DOTS</SiteLink></div><div className="truth-row"><span>DATOS REALES</span><span>POLÍGONOS REALES</span><span>FUENTES TRAZABLES</span></div></div></section>
  <SourceStrip/>
  <section className="home-intro editorial"><div><span className="section-tag">UN CAMPO · UNA LECTURA</span><h2>Del límite del potrero a la decisión.</h2></div><p>DOTS no reemplaza la recorrida ni el análisis profesional. Ordena información dispersa alrededor de una unidad territorial concreta y muestra qué fue observado, modelado, calculado o pronosticado.</p></section>
  <section className="journey"><article><b>01</b><h3>Delimitá</h3><p>Triángulo, rectángulo o polígono libre. Superficie, perímetro y centroide.</p></article><article><b>02</b><h3>Observá</h3><p>Escenas, clima, agua, suelo, vegetación y riesgos sobre el mismo territorio.</p></article><article><b>03</b><h3>Compará</h3><p>Fechas, modelos y fuentes sin perder procedencia ni calidad.</p></article><article><b>04</b><h3>Decidí</h3><p>Hallazgos, alertas, tareas e Informe Territorial DOTS unificado.</p></article></section>
- <section className="field-story"><div className="field-visual"><img src="/dots-portada.png" alt="Establecimiento ganadero analizado por DOTS"/></div><div><span className="section-tag">GEMELO DIGITAL GANADERO</span><h2>Cada potrero tiene contexto.</h2><p>Límites, pasturas, agua, infraestructura, ganado, clima, suelo, satélite, riesgos e historial se leen juntos. El mapa permanece como centro operativo mientras cambian las capas de análisis.</p><button onClick={onDemo}>Explorar el Observatorio</button></div></section>
- <section className="cap-grid">{[[MapPinned,"Lotes y potreros","Geometría, hectáreas, perímetro, historial y comparación."],[Droplets,"Agua e infraestructura","Fuentes de agua, cobertura, balance hídrico e inspecciones."],[Layers,"Pasturas y suelos","Vegetación, humedad y propiedades del suelo con método declarado."],[Thermometer,"Clima y ganado","Pronósticos, THI y contexto térmico para el rodeo."],[TriangleAlert,"Riesgos","Fuego, sequía, exceso hídrico y anomalías con evidencia."],[FileText,"Informe territorial","Un único PDF con mapa, gráficos, interpretación y trazabilidad."]].map(([Icon,t,d]:any)=><article key={t}><Icon/><h3>{t}</h3><p>{d}</p></article>)}</section>
+ <section className="field-story"><div className="field-visual"><img src="/dots-hero.jpg" alt="Lotes de un establecimiento con índice de vegetación por sector"/></div><div><span className="section-tag">GEMELO DIGITAL GANADERO</span><h2>Cada potrero tiene contexto.</h2><p>Límites, pasturas, agua, infraestructura, ganado, clima, suelo, satélite, riesgos e historial se leen juntos. El mapa permanece como centro operativo mientras cambian las capas de análisis.</p><button onClick={onDemo}>Explorar el Observatorio</button></div></section>
+ <section className="cap-grid">{[[MapPinned,"Lotes y potreros","Geometría, hectáreas, perímetro, historial y comparación."],[Droplets,"Agua e infraestructura","Fuentes de agua, cobertura, balance hídrico e inspecciones."],[Layers,"Pasturas y suelos","Vegetación, humedad y propiedades del suelo con método declarado."],[Thermometer,"Clima y ganado","Pronósticos, THI y contexto térmico para el rodeo."],[TriangleAlert,"Riesgos","Fuego, sequía, exceso hídrico y anomalías con evidencia."],[FileText,"Informe territorial","Un único PDF con mapa, gráficos, interpretación y trazabilidad."]].map(([Icon,t,d]:any)=><article key={t}><Icon/><h3>{t}</h3><p>{d}</p><SiteLink to="/modulos" className="cap-more">Cómo funciona →</SiteLink></article>)}</section>
  <section className="demo-call"><div><span className="section-tag">DEMOSTRACIÓN</span><h2>El mapa es el centro. Los datos explican el territorio.</h2><p>Delimitá un lote y consultá las fuentes disponibles. Si una fuente no responde o una variable no está medida, DOTS lo declara.</p></div><button onClick={onDemo}>Abrir Observatorio →</button></section>
  </main><SiteFooter/></div>}
+
+const MODULES:[string,string,string,any,{mide:string;fuente:string;como:string;limite:string}][]=[
+ ["lotes","Delimitación de lotes","Dibujado a mano o automático con un clic.",MapPinned,{
+  mide:"Superficie, perímetro, centroide y compacidad del lote (índice de Polsby-Popper: 1 es un círculo; menos de 0,4 indica un potrero alargado, con más alambrado por hectárea y aguadas más lejanas).",
+  fuente:"Dibujo del usuario (triángulo, rectángulo o polígono libre) o el mapa global de lotes Fields of the World 2025, publicado con licencia CC-BY-4.0.",
+  como:"En modo automático DOTS lee el mapa de lotes por partes, directo desde el navegador, sin costo. Al tocar dentro de un contorno lo reconstruye aunque esté cortado entre sectores del mapa. Verde indica confianza alta (69 o más sobre 100); ámbar, revisar el borde. Además calcula el entorno en 2 km: cuántos lotes agrícolas hay, su tamaño y qué porcentaje del territorio ocupan.",
+  limite:"Fields of the World mapea cultivos anuales: en pasturas y monte puede no haber contorno. No es un plano catastral."}],
+ ["ndvi","Vegetación · NDVI","Vigor de la pastura medido dentro del lote.",Sprout,{
+  mide:"NDVI medio, mediana y rango (percentiles 2 y 98) dentro del polígono, en cada pasada de Sentinel-2 de los últimos meses, y la serie en el tiempo.",
+  fuente:"Sentinel-2 L2A de la ESA a 10 m, procesado en Microsoft Planetary Computer. Opcionales con credencial: Sentinel Hub y openEO de Copernicus, y la serie MODIS de 20 años en Google Earth Engine.",
+  como:"Para cada fecha se mide primero qué parte del lote está despejada usando la clasificación de escena (SCL). Si menos del 60 % del lote se ve limpio, esa fecha se marca nublada y no se interpreta. Se corrige el desplazamiento de reflectancia de las imágenes procesadas desde 2022.",
+  limite:"Un lote chico tiene pocos píxeles de 10 m. El NDVI no distingue especies ni mide biomasa por sí solo."}],
+ ["clima","Clima e índices agroclimáticos","Heladas, calor, sequía y lluvias intensas, año por año.",Thermometer,{
+  mide:"16 índices por año con definiciones internacionales (xclim / ETCCDI): días con helada, primera y última helada, días de calor de 30 y 35 °C, olas de calor, noches tropicales, grados día, lluvia anual, días de lluvia intensa, máxima lluvia en 1 y 5 días, rachas secas y húmedas. Se compara el último año con el promedio del período.",
+  fuente:"Reanálisis ERA5 de Copernicus a escala diaria, vía Open-Meteo; pronóstico de 7 modelos globales; NASA POWER.",
+  como:"Se descargan hasta 30 años de datos diarios en el punto del lote y se calculan los índices en el servidor, sin estimar valores faltantes: un año con datos incompletos se excluye.",
+  limite:"La grilla de ERA5 es de unos 25 km: describe el clima de la zona, no el microclima del bajo o la loma."}],
+ ["enso","El Niño y teleconexiones","Lo que pasa en el océano y anticipa la campaña.",Gauge,{
+  mide:"Niño 3.4, ONI, MEI v2 y Niño 1+2 para El Niño; SOI; Modo Anular del Sur (AAO); Atlántico Sur tropical (TSA) y PDO. DOTS muestra el consenso entre los índices del Pacífico.",
+  fuente:"NOAA Physical Sciences Laboratory y NOAA CPC; disponibilidad de BOM Australia e IRI Columbia.",
+  como:"Se leen las series mensuales oficiales y se toma el último mes publicado. ±0,5 en Niño 3.4, ONI o MEI marca fase Niño o Niña.",
+  limite:"Un índice no es un pronóstico de lluvia para el lote: se interpreta junto al pronóstico estacional del SMN."}],
+ ["agua","Agua y suelo","Balance de agua, ríos y propiedades del suelo.",Droplets,{
+  mide:"Lluvia y evapotranspiración de referencia (ET₀) a 7 días, humedad del suelo superficial, caudal de ríos, altura del Paraná en Bella Vista, y nitrógeno, carbono, pH y textura del suelo por profundidad.",
+  fuente:"Open-Meteo y GloFAS, INA, ISRIC SoilGrids; capas de NASA (humedad SMAP, lluvia GPM) para ver en el mapa.",
+  como:"El balance lluvia − ET₀ indica si el aporte de agua cubre la demanda de la atmósfera. Los bebederos y tajamares cargados por el usuario se guardan como infraestructura declarada.",
+  limite:"SoilGrids es un modelo global: no reemplaza un análisis de laboratorio."}],
+ ["riesgos","Riesgos y estrés térmico","Fuego y calor para el rodeo.",Flame,{
+  mide:"Focos térmicos de los últimos 3 días dentro y alrededor del lote, e índice temperatura-humedad (THI) para bovinos.",
+  fuente:"NASA FIRMS (sensor VIIRS) y Open-Meteo.",
+  como:"Cada foco conserva fecha, hora, potencia radiativa y confianza, y se marca si cae dentro del polígono. El THI se clasifica en confort, atención, alto y severo.",
+  limite:"Un foco térmico no confirma un incendio: puede ser una quema o una superficie caliente."}],
+ ["informe","Informe territorial en PDF","Todo lo anterior, en un documento para compartir.",FileText,{
+  mide:"Portada con el lote dibujado, indicadores, ficha del lote, hallazgos, gráficos de clima, NDVI y lluvia anual, índices, El Niño y la trazabilidad completa de las fuentes.",
+  fuente:"Los mismos datos del observatorio, en el momento de la consulta.",
+  como:"El documento se compone con Typst, un motor de diseño editorial abierto, con tipografía IBM Plex. Cada fuente figura con su estado y hora de consulta.",
+  limite:"El informe ordena evidencia; no reemplaza la recorrida ni el criterio profesional."}],
+];
+function Modules({onDemo}:{onDemo:()=>void}){
+  return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner modules-page">
+    <PageHero eyebrow="MÓDULOS" title="Qué hace DOTS, por dentro." lead="Cada módulo explica qué mide, de dónde sale el dato, cómo se calcula y qué no puede afirmar. Así se lee un informe DOTS."/>
+    <nav className="module-index">{MODULES.map(([id,t,,Icon])=><a key={id} href={"#"+id}><Icon/>{t}</a>)}</nav>
+    {MODULES.map(([id,t,lead,Icon,x],i)=><section className="module-block" id={id} key={id}>
+      <div className="module-head"><span className="module-num">{String(i+1).padStart(2,"0")}</span><div className="module-icon"><Icon/></div><div><h2>{t}</h2><p>{lead}</p></div></div>
+      <div className="module-grid">
+        <article><span>Qué mide</span><p>{x.mide}</p></article>
+        <article><span>De dónde sale el dato</span><p>{x.fuente}</p></article>
+        <article><span>Cómo se calcula</span><p>{x.como}</p></article>
+        <article className="limit"><span>Qué no afirma</span><p>{x.limite}</p></article>
+      </div>
+    </section>)}
+    <section className="demo-call"><div><span className="section-tag">PROBALO</span><h2>Dibujá un lote y mirá cada módulo funcionando.</h2><p>Los datos son reales y se consultan en el momento. Si una fuente no responde, DOTS lo dice.</p></div><button onClick={onDemo}>Abrir Observatorio →</button></section>
+  </main><SiteFooter/></div>;
+}
+const REGIONS:[string,string,number,number][]=[["bellavista","Bella Vista · Corrientes",-28.507,-59.043],["mercedes","Mercedes · Corrientes",-29.18,-58.08],["reconquista","Reconquista · Santa Fe",-29.15,-59.65],["resistencia","Resistencia · Chaco",-27.45,-58.99],["pergamino","Pergamino · Buenos Aires",-33.89,-60.57]];
+function RegionalPanel({onDemo}:{onDemo:()=>void}){
+  const [reg,setReg]=useState(REGIONS[0]);
+  const [tele,setTele]=useState<any>(null),[idx,setIdx]=useState<any>(null),[err,setErr]=useState("");
+  useEffect(()=>{let live=true;setErr("");setTele(null);
+    fetch(`/api/fuentes/teleconexiones?lat=${reg[2]}&lon=${reg[3]}`).then(r=>r.json()).then(j=>{if(live)setTele(j.data)}).catch(()=>live&&setErr("NOAA no respondió."));
+    return()=>{live=false}},[]);
+  useEffect(()=>{let live=true;setIdx(null);
+    fetch(`/api/fuentes/indices?lat=${reg[2]}&lon=${reg[3]}&index_years=10`).then(r=>r.json()).then(j=>{if(live)setIdx(j.status==="recibido"?j.data:null);if(j.status!=="recibido"&&live)setErr(j.error||"ERA5 no respondió.")}).catch(()=>live&&setErr("ERA5 no respondió."));
+    return()=>{live=false}},[reg]);
+  const last=idx?.years?.slice(-1)[0];
+  const card=(label:string,key:string,unit:string,dec=0)=>{const v=last?.[key],a=idx?.anomaly_last_year?.[key];return <article className="rp-card" key={key}><span>{label}</span><b>{v!=null?fmt(v,dec):"—"}<small> {unit}</small></b><em className={a>0?"up":a<0?"down":""}>{a!=null?`${a>0?"+":""}${fmt(a,dec)} vs. promedio`:"cargando…"}</em></article>};
+  return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner regional-panel">
+    <PageHero eyebrow="PANEL REGIONAL" title="El clima de la zona, abierto a todos." lead="El Niño, heladas, calor y lluvia de los últimos diez años para las principales zonas ganaderas. Datos oficiales consultados en el momento."/>
+    <div className="rp-tabs">{REGIONS.map(r=><button key={r[0]} className={r[0]===reg[0]?"active":""} onClick={()=>setReg(r)}>{r[1]}</button>)}</div>
+    {err && <p className="rp-error">{err} No se muestran valores supuestos.</p>}
+    <section className="rp-enso">
+      <div><span className="section-tag">EL NIÑO · NOAA</span><h2>{tele?.enso_consensus?`Fase ${tele.enso_consensus}`:"Consultando…"}</h2><p>{tele?.enso_agreement?`${tele.enso_agreement} índices del Pacífico coinciden. Último dato: ${tele?.indices?.nino34?.data?.period||""}.`:"Niño 3.4, ONI y MEI v2."}</p></div>
+      <div className="rp-telegrid">{Object.entries(tele?.indices||{}).filter(([,e]:any)=>e?.status==="recibido").slice(0,6).map(([k,e]:any)=><article key={k}><span>{e.data.name}</span><b>{fmt(e.data.value,2)}</b><em>{e.data.phase}</em></article>)}</div>
+    </section>
+    <section className="rp-cards">{card("Lluvia "+(last?.year||""),"prcptot","mm")}{card("Días con helada","frost_days","días")}{card("Días con máxima ≥ 35 °C","tx35","días")}{card("Racha seca más larga","cdd","días")}</section>
+    {idx?.years && <section className="rp-charts">
+      <div className="rp-chart"><h3>Lluvia anual · {idx.period?.[0]}–{idx.period?.[1]}</h3><Chart dates={idx.years.map((r:Data)=>String(r.year))} unit="mm" series={[{name:"Lluvia",values:idx.years.map((r:Data)=>r.prcptot),type:"bar",color:"#19b98a"}]}/></div>
+      <div className="rp-chart"><h3>Heladas y calor extremo</h3><Chart dates={idx.years.map((r:Data)=>String(r.year))} unit="días" series={[{name:"Heladas",values:idx.years.map((r:Data)=>r.frost_days),color:"#93c5fd"},{name:"Máx ≥ 35 °C",values:idx.years.map((r:Data)=>r.tx35),color:"#fd9c91"}]}/></div>
+    </section>}
+    <p className="rp-note">ERA5 (Copernicus) vía Open-Meteo, grilla de ~25 km; índices con definiciones xclim/ETCCDI. Teleconexiones: NOAA PSL. Para un lote puntual, usá el Observatorio.</p>
+    <section className="demo-call"><div><span className="section-tag">TU CAMPO</span><h2>Bajá del panel regional a tu potrero.</h2><p>En el Observatorio los mismos datos se calculan para el lote que dibujes, con NDVI y focos térmicos.</p></div><button onClick={onDemo}>Abrir Observatorio →</button></section>
+  </main><SiteFooter/></div>;
+}
 function PageHero({eyebrow,title,lead}:{eyebrow:string;title:string;lead:string}){return <section className="page-hero"><span className="section-tag">{eyebrow}</span><h1>{title}</h1><p>{lead}</p></section>}
 const cards={producto:[["01","Territorio primero","Todo análisis comienza en el polígono real del lote o potrero."],["02","Observación multifuente","Satélites, estaciones, modelos y bases territoriales se consultan por lugar y fecha."],["03","Interpretación trazable","Cada variable indica fuente, unidad, fecha, método, estado y alcance."],["04","Decisión y seguimiento","DOTS reúne hallazgos, recomendaciones, tareas e informe en una sola lectura."]],soluciones:[["Lotes y potreros","Superficie, perímetro, centroides, historial y análisis por unidad de manejo."],["Pasturas","Escenas y evolución espectral cuando existe procesamiento raster verificable."],["Agua","Lluvia, balance, ríos e infraestructura hídrica declarada o detectada con su nivel de evidencia."],["Suelos","Humedad, temperatura, relieve y propiedades modeladas con profundidad y fuente declaradas."],["Ganado","THI, carga y rotación cuando existe inventario o dato aportado por el productor."],["Riesgos","FIRMS, calor, sequía y exceso hídrico sin convertir ausencia de detección en ausencia de riesgo."]],ganaderia:[["Potrero como unidad","Cada lectura parte de un límite territorial y su historia."],["Agua para el rodeo","Cobertura, distancias y estado de la infraestructura hídrica."],["Pastura y carga","Condición vegetal cruzada con ocupación y presión de pastoreo cuando hay datos."],["Bienestar térmico","THI y meteorología para anticipar condiciones de estrés por calor."],["Rotación","Entrada, salida, descanso y recuperación del potrero."],["Tareas","Del diagnóstico a inspecciones, movimientos y acciones verificables."]]};
 function InstitutionalDepth({kind}:{kind:"producto"|"soluciones"|"ganaderia"}){
@@ -1753,6 +1837,8 @@ function App(){
   if(path==="/producto")return <InfoPage kind="producto" onDemo={openDemo}/>;
   if(path==="/soluciones")return <InfoPage kind="soluciones" onDemo={openDemo}/>;
   if(path==="/ganaderia")return <InfoPage kind="ganaderia" onDemo={openDemo}/>;
+  if(path==="/modulos")return <Modules onDemo={openDemo}/>;
+  if(path==="/panel")return <RegionalPanel onDemo={openDemo}/>;
   if(path==="/tecnologia")return <Technology onDemo={openDemo}/>;
   if(path==="/conexiones")return <ApiConnections onDemo={openDemo}/>;
   if(path==="/casos")return <Cases onDemo={openDemo}/>;
