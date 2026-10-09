@@ -1,0 +1,10 @@
+{
+  "weather": "real recibido",
+  "INA": "real recibido",
+  "CAMS": "real recibido, ammonia null preservado",
+  "pdf": 200,
+  "credentialMissing": 409,
+  "invalidCoordinates": 400,
+  "errors": [],
+  "mobileOverflow": false
+}

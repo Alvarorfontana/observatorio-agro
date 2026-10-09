@@ -1,0 +1,74 @@
+import React, { useState } from 'react';
+import Map from './components/Map';
+import Dashboard from './components/Dashboard';
+import ResultPanel from './components/ResultPanel';
+import ScenesPanel from './components/ScenesPanel';
+import SearchBar from './components/SearchBar';
+import './App.css';
+
+function App() {
+    const [loteSeleccionado, setLoteSeleccionado] = useState(null);
+    const [resultado, setResultado] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [escenas, setEscenas] = useState([]);
+
+    return (
+        <div className="app">
+            <header className="app-header">
+                <div className="logo">
+                    <img src="/logo.svg" alt="DOTS Campo" />
+                    <div>
+                        <h1>DOTS Campo</h1>
+                        <span>Observatorio Territorial</span>
+                    </div>
+                </div>
+            </header>
+
+            <div className="app-layout">
+                <aside className="sidebar">
+                    <SearchBar />
+                    <h2>Preguntarle a DOTS</h2>
+                    <Dashboard
+                        loteSeleccionado={loteSeleccionado}
+                        onResultado={setResultado}
+                        loading={loading}
+                        setLoading={setLoading}
+                    />
+                    <h2>Lotes delimitados</h2>
+                    <div id="lotes-lista">
+                        {loteSeleccionado ? (
+                            <div className="lote-item">
+                                <strong>{loteSeleccionado.nombre}</strong>
+                                <p>{loteSeleccionado.area_ha} ha</p>
+                            </div>
+                        ) : (
+                            <p style={{fontSize: '12px', color: '#666'}}>
+                                Delimitá un lote en el mapa
+                            </p>
+                        )}
+                    </div>
+                    {escenas.length > 0 && (
+                        <>
+                            <h2>Escenas Sentinel-2</h2>
+                            <ScenesPanel escenas={escenas} />
+                        </>
+                    )}
+                </aside>
+
+                <Map
+                    onLoteSeleccionado={setLoteSeleccionado}
+                    onEscenasCargadas={setEscenas}
+                />
+            </div>
+
+            {resultado && (
+                <ResultPanel
+                    resultado={resultado}
+                    onClose={() => setResultado(null)}
+                />
+            )}
+        </div>
+    );
+}
+
+export default App;
