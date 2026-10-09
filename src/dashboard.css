@@ -845,3 +845,26 @@
 .ta-shell .alert-card.lvl-media header span { color: var(--ta-warn); }
 .ta-shell .alert-card.lvl-baja { border-left-color: #7cd4fd; }
 .ta-shell .alert-card.lvl-baja header span { color: #7cd4fd; }
+
+/* suelo completo, índices de vegetación y clima ampliado */
+.ta-shell .soil-table { display: grid; margin-top: 8px; border: 1px solid var(--ta-border); border-radius: 12px; overflow: hidden; }
+.ta-shell .soil-head, .ta-shell .soil-row { display: grid; grid-template-columns: minmax(0, 1.6fr) repeat(4, minmax(0, .7fr)); gap: 4px; padding: 6px 8px; font-size: 11.5px; align-items: center; }
+.ta-shell .soil-head { background: rgba(255,255,255,.04); color: var(--ta-text-3); font-size: 10px; text-transform: uppercase; }
+.ta-shell .soil-row + .soil-row { border-top: 1px solid var(--ta-border); }
+.ta-shell .soil-row small { display: block; font-size: 9.5px; color: var(--ta-text-3); }
+.ta-shell .soil-row b, .ta-shell .soil-head span:not(:first-child) { text-align: right; }
+.ta-shell .idx-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0; }
+.ta-shell .idx-card { border: 1px solid var(--ta-border); border-radius: 10px; padding: 8px 10px; display: grid; gap: 2px; }
+.ta-shell .idx-card span { font-size: 11px; color: var(--ta-text-3); font-weight: 600; }
+.ta-shell .idx-card b { font-size: 18px; }
+.ta-shell .idx-card small { font-size: 10px; color: var(--ta-text-3); line-height: 1.35; }
+.ta-shell .wx-extra { margin-top: 10px; }
+.ta-shell .wx-bars { display: grid; gap: 6px; margin-bottom: 8px; }
+.ta-shell .wx-bars > div { display: grid; grid-template-columns: 62px 1fr 44px; gap: 8px; align-items: center; font-size: 11.5px; }
+.ta-shell .wx-bars i { display: block; height: 8px; border-radius: 4px; background: linear-gradient(90deg, #22d3ee, #3b82f6); }
+.ta-shell .wx-bars b { text-align: right; }
+.ta-shell .wx-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.ta-shell .wx-grid > div { border: 1px solid var(--ta-border); border-radius: 10px; padding: 7px 9px; display: grid; }
+.ta-shell .wx-grid span { font-size: 10.5px; color: var(--ta-text-3); }
+.ta-shell .wx-grid b { font-size: 15px; }
+.ta-shell .wx-grid small { font-size: 10px; color: var(--ta-text-2); font-weight: 500; }

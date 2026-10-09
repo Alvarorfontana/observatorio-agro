@@ -81,8 +81,12 @@ def test_ndvi_open_masks_cloudy_lot(pc):
     assert by['2026-10-01']['status'] == 'nublada' and 'ndvi_mean' not in by['2026-10-01']
     assert by['2026-10-08']['ndvi_mean'] == 0.71 and d['latest']['datetime'].startswith('2026-10-08')
     assert d['valid_scenes'] == 2
-    # la escena nublada no pide NDVI: 3 máscaras + 2 NDVI
-    assert sum(1 for u, *_ in CALLS if u.endswith('/item/statistics')) == 5
+    # la escena nublada no pide NDVI: 3 máscaras + 2 NDVI + 4 índices y 1 fracción de agua de la última escena
+    assert sum(1 for u, *_ in CALLS if u.endswith('/item/statistics')) == 10
+    ix = d['latest']['indices']
+    assert set(ix) >= {'evi', 'savi', 'ndmi', 'ndwi', 'water_fraction'} and ix['evi']['mean'] is not None
+    evi = next(p['expression'] for u, p, _ in CALLS if p and p['expression'].startswith('2.5*'))
+    assert '-1000)/10000' in evi   # baseline 05.10 corrige el offset
 
 
 def test_ndvi_png_validates_item(pc):

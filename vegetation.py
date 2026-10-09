@@ -124,6 +124,55 @@ def _r(v):
     return None if v is None else round(float(v), 4)
 
 
+def _refl(band, offset):
+    """Reflectancia 0-1 a partir del DN de Sentinel-2 L2A (escala 10000, offset -1000 desde baseline 04.00)."""
+    return f'(({band}-1000)/10000)' if offset else f'({band}/10000)'
+
+
+def index_expressions(item):
+    pb = str((item.get('properties') or {}).get('s2:processing_baseline') or '0')
+    try:
+        off = float(pb) >= 4.0
+    except ValueError:
+        off = False
+    B2, B3, B4, B8, B11 = (_refl(b, off) for b in ('B02', 'B03', 'B04', 'B08', 'B11'))
+    return {
+        'evi': f'2.5*({B8}-{B4})/({B8}+6*{B4}-7.5*{B2}+1)',
+        'savi': f'1.5*({B8}-{B4})/({B8}+{B4}+0.5)',
+        'ndmi': f'({B8}-{B11})/({B8}+{B11})',
+        'ndwi': f'({B3}-{B8})/({B3}+{B8})',
+    }
+
+
+INDEX_INFO = {
+    'evi': ('EVI', 'Vigor en pasturas densas; no se satura como el NDVI.'),
+    'savi': ('SAVI', 'Vigor corrigiendo el suelo desnudo; útil con pasto ralo.'),
+    'ndmi': ('NDMI', 'Humedad del follaje: valores bajos anticipan estrés hídrico.'),
+    'ndwi': ('NDWI', 'Agua en superficie: positivo indica agua libre o anegamiento.'),
+}
+
+
+def extra_indices(item, feature):
+    exprs = index_expressions(item)
+    out = {}
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        futs = {k: pool.submit(_pc_stats, item['id'], feature, e) for k, e in exprs.items()}
+        for k, f in futs.items():
+            try:
+                st = f.result()
+                out[k] = {'name': INDEX_INFO[k][0], 'mean': _r(st.get('mean')), 'p2': _r(st.get('percentile_2')),
+                          'p98': _r(st.get('percentile_98')), 'meaning': INDEX_INFO[k][1]}
+            except Exception as e:
+                out[k] = {'name': INDEX_INFO[k][0], 'mean': None, 'error': type(e).__name__, 'meaning': INDEX_INFO[k][1]}
+    # superficie con agua libre estimada: fracción de píxeles con NDWI > 0
+    try:
+        w = _pc_stats(item['id'], feature, f"where({exprs['ndwi']}>0,1,0)")
+        out['water_fraction'] = _r(w.get('mean'))
+    except Exception:
+        out['water_fraction'] = None
+    return out
+
+
 def ndvi_open(polygon, days=120, scenes=6):
     pts = require_polygon(polygon)
     feature = {'type': 'Feature', 'properties': {}, 'geometry': geojson_polygon(pts)}
@@ -142,6 +191,12 @@ def ndvi_open(polygon, days=120, scenes=6):
     rows.sort(key=lambda r: r.get('datetime') or '')
     valid = [r for r in rows if r.get('status') == 'válida']
     latest = valid[-1] if valid else None
+    if latest:
+        try:
+            item = next(it for it in items if it['id'] == latest['item'])
+            latest['indices'] = extra_indices(item, feature)
+        except Exception:
+            latest['indices'] = None
     return c.envelope({
         'capability': 'ANALYSIS', 'index': 'NDVI', 'sensor': 'Sentinel-2 L2A (10 m)',
         'area_ha': area_ha(pts), 'min_clear_fraction': MIN_CLEAR,

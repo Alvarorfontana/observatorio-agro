@@ -1007,12 +1007,22 @@ function Observatory({onHome}:{onHome:()=>void}) {
                   <div className="key"><span>Rango p2–p98</span><strong>{payload.latest.ndvi_p2!=null?`${fmt(payload.latest.ndvi_p2,2)} – ${fmt(payload.latest.ndvi_p98,2)}`:"s/d"}</strong></div>
                   <div className="key"><span>Lote despejado</span><strong>{payload.latest.clear_fraction_lot!=null?Math.round(payload.latest.clear_fraction_lot*100)+" %":"s/d"}</strong></div>
                 </div>}
+                {payload?.latest?.indices && <div className="idx-cards">{["evi","savi","ndmi","ndwi"].map(k=>{const x=payload.latest.indices[k];return x?<div className="idx-card" key={k} title={x.meaning}><span>{x.name}</span><b>{fmt(x.mean,2)}</b><small>{x.meaning}</small></div>:null})}{payload.latest.indices.water_fraction!=null&&<div className="idx-card" title="Fracción de píxeles con NDWI positivo"><span>Agua en superficie</span><b>{fmt(payload.latest.indices.water_fraction*100,1)} %</b><small>del lote con agua libre o anegado</small></div>}</div>}
                 {payload?.latest && <p className="footnote">Última escena válida: {(payload.latest.datetime||payload.latest.from||"").slice(0,10)} · {payload.area_ha} ha · {payload.latest.pixels??"s/d"} píxeles · {payload.sensor}</p>}
                 {(payload?.series||[]).slice().reverse().map((r:Data,i:number)=><div className="soil" key={i}><span>{(r.datetime||r.from||"").slice(0,10)}<small style={{display:"block"}}>{r.status}{r.clear_fraction_lot!=null?` · ${Math.round(r.clear_fraction_lot*100)} % despejado`:""}</small></span><strong>{r.status==="válida"?fmt(r.ndvi_mean,2):"—"}</strong></div>,2)}
                 {view==="ndvi" && payload?.latest && <label className="small" style={{display:"block",marginTop:10}}><input type="checkbox" checked={showNdvi} onChange={e=>setShowNdvi(e.target.checked)}/> Ver NDVI sobre el mapa (recortado al lote)</label>}
                 <p className="footnote">Escala: menos de 0,2 suelo desnudo o agua · 0,2–0,5 vegetación rala o pastura seca · más de 0,5 vegetación activa. No reemplaza la recorrida a campo.</p>
               </>}
               {view === "metnorway" && <><p className="footnote">MET Norway · conexión directa · pronóstico modelado. Actualizado: {payload?.properties?.meta?.updated_at || "Sin fecha"}</p>{Object.entries(payload?.properties?.timeseries?.[0]?.data?.instant?.details || {}).map(([key,value])=><div className="soil" key={key}><span style={{fontSize:10,maxWidth:"65%"}}>{key.replaceAll("_"," ")}</span><strong style={{fontSize:12}}>{fmt(value)} <small>{payload?.properties?.meta?.units?.[key]}</small></strong></div>)}<p className="footnote">Hora válida: {payload?.properties?.timeseries?.[0]?.time || "Sin fecha"}. Datos MET Norway, CC BY 4.0.</p></>}
+              {view === "variables" && weather?.hourly && (()=>{const h=weather.hourly, i=Math.max(0,soilIndex), dd=weather.daily||{};const sm=[["0–1 cm","soil_moisture_0_to_1cm"],["1–3 cm","soil_moisture_1_to_3cm"],["3–9 cm","soil_moisture_3_to_9cm"],["9–27 cm","soil_moisture_9_to_27cm"],["27–81 cm","soil_moisture_27_to_81cm"]];return <div className="wx-extra">
+                <div className="lot-vars-title">Humedad del suelo por profundidad · m³/m³</div>
+                <div className="wx-bars">{sm.map(([l,k])=>{const v=h[k]?.[i];return <div key={k}><span>{l}</span><i style={{width:`${Math.min(100,(v||0)/0.5*100)}%`}}/><b>{v!=null?fmt(v,2):"—"}</b></div>})}</div>
+                <div className="lot-vars-title">Hoy</div>
+                <div className="wx-grid">
+                  {[["Rocío",cur.dew_point_2m,"°C",1],["Nubosidad",cur.cloud_cover,"%",0],["Ráfagas",cur.wind_gusts_10m,"km/h",0],["VPD",h.vapour_pressure_deficit?.[i],"kPa",2],["Suelo 6 cm",h.soil_temperature_6cm?.[i],"°C",1],["Suelo 18 cm",h.soil_temperature_18cm?.[i],"°C",1],["Radiación",dd.shortwave_radiation_sum?.[0],"MJ/m²",1],["Horas de sol",dd.sunshine_duration?.[0]!=null?dd.sunshine_duration[0]/3600:null,"h",1],["UV máx.",dd.uv_index_max?.[0],"",1],["Prob. lluvia",dd.precipitation_probability_max?.[0],"%",0]].map(([l,v,u,d]:any)=><div key={l}><span>{l}</span><b>{v!=null?fmt(v,d):"—"}<small> {u}</small></b></div>)}
+                </div>
+                <p className="footnote">VPD alto (más de 1,5 kPa) indica aire seco: el pasto cierra estomas y crece menos. Modelos de Open-Meteo en la grilla del lote.</p>
+              </div>})()}
               {view === "variables" && (
                 <>
                   <div className="keygrid">
@@ -1177,6 +1187,13 @@ function Observatory({onHome}:{onHome:()=>void}) {
                   corresponder a una celda que no representa el Paraná.
                 </p>
               )}
+              {view === "suelo" && payload?.dots_summary && <>
+                {payload.dots_summary.available_water_mm_0_60!=null && <div className="key"><span>Agua útil del suelo · 0–60 cm</span><strong>{fmt(payload.dots_summary.available_water_mm_0_60,0)} mm</strong><small className="small">lo que el suelo puede guardar para el pasto entre capacidad de campo y marchitez</small></div>}
+                <div className="soil-table"><div className="soil-head"><span>Propiedad</span>{payload.dots_summary.depths.map((d:string)=><span key={d}>{d.replace("cm"," cm")}</span>)}</div>
+                  {payload.dots_summary.rows.map((r:Data)=><div className="soil-row" key={r.key}><span>{r.label}<small>{r.unit}</small></span>{payload.dots_summary.depths.map((d:string)=><b key={d}>{r.by_depth?.[d]!=null?fmt(r.by_depth[d],r.key==="nitrogen"||r.key==="bdod"?2:1):"—"}</b>)}</div>)}
+                </div>
+                <p className="footnote">{payload.dots_summary.note}</p>
+              </>}
               {view === "suelo" && (
                 <div className="metric-card">
                   <span className="muted">
@@ -1243,12 +1260,12 @@ function Observatory({onHome}:{onHome:()=>void}) {
                   </a>
                 </p>
               )}
-              <button
+              {view!=="alertas" && <button
                 style={{ width: "100%", marginTop: 13 }}
                 onClick={() => void load(view)}
               >
                 Reintentar / Actualizar fuente
-              </button>
+              </button>}
             </div>
           </section>
           <section className="panel block">
