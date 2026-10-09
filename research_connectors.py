@@ -122,10 +122,55 @@ def variables(lat, lon):
     url = 'https://api.open-meteo.com/v1/forecast'
     return external(url, {
         'latitude': lat, 'longitude': lon, 'timezone': 'auto', 'forecast_days': 7,
-        'current': 'temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,wind_speed_10m,wind_gusts_10m,weather_code',
-        'hourly': 'soil_moisture_0_to_1cm,soil_moisture_1_to_3cm,soil_temperature_0cm',
-        'daily': 'precipitation_sum,et0_fao_evapotranspiration,temperature_2m_max,temperature_2m_min'},
-        scope='clima + ET0 + humedad de suelo + viento', organism='Open-Meteo')
+        'current': 'temperature_2m,relative_humidity_2m,apparent_temperature,dew_point_2m,precipitation,cloud_cover,'
+                   'surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m,weather_code',
+        'hourly': 'soil_moisture_0_to_1cm,soil_moisture_1_to_3cm,soil_moisture_3_to_9cm,soil_moisture_9_to_27cm,'
+                  'soil_moisture_27_to_81cm,soil_temperature_0cm,soil_temperature_6cm,soil_temperature_18cm,'
+                  'vapour_pressure_deficit,dew_point_2m',
+        'daily': 'precipitation_sum,precipitation_hours,precipitation_probability_max,et0_fao_evapotranspiration,'
+                 'temperature_2m_max,temperature_2m_min,shortwave_radiation_sum,sunshine_duration,'
+                 'wind_gusts_10m_max,uv_index_max'},
+        scope='clima, suelo por profundidad, radiación, VPD y ET₀', organism='Open-Meteo')
+
+
+SOIL_PROPS = ['nitrogen', 'soc', 'phh2o', 'clay', 'sand', 'silt', 'bdod', 'cec', 'cfvo', 'ocd', 'wv0033', 'wv1500']
+SOIL_DEPTHS = ['0-5cm', '5-15cm', '15-30cm', '30-60cm']
+SOIL_LABELS = {'nitrogen': 'Nitrógeno total', 'soc': 'Carbono orgánico', 'phh2o': 'pH (agua)', 'clay': 'Arcilla',
+               'sand': 'Arena', 'silt': 'Limo', 'bdod': 'Densidad aparente', 'cec': 'Capacidad de intercambio (CIC)',
+               'cfvo': 'Fragmentos gruesos', 'ocd': 'Densidad de carbono', 'wv0033': 'Agua a capacidad de campo',
+               'wv1500': 'Agua en punto de marchitez'}
+
+
+def soil_full(lat, lon):
+    env = external('https://rest.isric.org/soilgrids/v2.0/properties/query',
+                   {'lat': lat, 'lon': lon, 'property': SOIL_PROPS, 'depth': SOIL_DEPTHS, 'value': 'mean'},
+                   scope='suelo modelado 0-60 cm (no sustituye laboratorio)', organism='ISRIC SoilGrids')
+    rows, by = [], {}
+    for layer in ((env['data'] or {}).get('properties') or {}).get('layers') or []:
+        name = layer.get('name'); um = layer.get('unit_measure') or {}
+        f = um.get('d_factor') or 1; unit = um.get('target_units') or ''
+        vals = {}
+        for d in layer.get('depths') or []:
+            v = (d.get('values') or {}).get('mean')
+            vals[d.get('label')] = None if v is None else round(v / f, 3 if f >= 100 else 2)
+        by[name] = vals
+        rows.append({'key': name, 'label': SOIL_LABELS.get(name, name), 'unit': unit, 'by_depth': vals})
+    # agua útil = capacidad de campo − marchitez, por espesor de cada capa (unidades volumétricas)
+    awc = None
+    fc, wp = by.get('wv0033') or {}, by.get('wv1500') or {}
+    thick = {'0-5cm': 50, '5-15cm': 100, '15-30cm': 150, '30-60cm': 300}
+    parts = []
+    for dpt, mm in thick.items():
+        a, b = fc.get(dpt), wp.get(dpt)
+        if a is None or b is None:
+            parts = None; break
+        frac = (a - b) / (100 if max(a, b) > 1.5 else 1)   # admite % o fracción
+        parts.append(max(frac, 0) * mm)
+    if parts:
+        awc = round(sum(parts), 1)
+    env['data']['dots_summary'] = {'rows': rows, 'depths': SOIL_DEPTHS, 'available_water_mm_0_60': awc,
+                                   'note': 'SoilGrids 250 m, modelo global. Agua útil = (capacidad de campo − marchitez) × espesor, 0–60 cm.'}
+    return env
 
 
 def historical(lat, lon, days=60):
