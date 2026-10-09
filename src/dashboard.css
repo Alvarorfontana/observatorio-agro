@@ -878,3 +878,10 @@
 .ta-shell .verdict.warn b { color: var(--ta-warn); }
 .ta-shell .row input[type=number] { flex: 1; min-width: 0; width: 100%; }
 .ta-shell .row input[type=number] + button { flex: 0 0 auto; }
+.ta-shell .overlay-switch { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 10px; }
+.ta-shell .overlay-switch span { width: 100%; font-size: 11px; color: var(--ta-text-3); }
+.ta-shell .overlay-switch button { min-height: 32px; padding: 4px 12px; font-size: 12px; }
+.ta-shell .overlay-switch button.active { background: var(--ta-brand-soft); color: var(--ta-brand); border-color: transparent; }
+.ta-shell .forage-form { display: grid; gap: 8px; margin-bottom: 10px; }
+.ta-shell .forage-form label { display: grid; gap: 4px; font-size: 12px; color: var(--ta-text-2); }
+.ta-shell .forage-form input[type=range] { padding: 0; min-height: 24px; }

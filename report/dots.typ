@@ -303,6 +303,29 @@
   ]
 ]
 
+#if d.at("forage", default: ()).len() > 0 [
+  #section("05d", "Pasto y carga")
+  #grid(columns: (1fr, 1fr, 1fr, 1fr), gutter: 6pt, ..d.forage.map(k => card[
+    #text(size: 7pt, fill: muted)[#k.label]
+    #linebreak()#text(size: 14pt, weight: "bold")[#k.value]#text(size: 7.5pt, fill: muted)[ #k.unit]
+  ]))
+  #v(3pt)
+  #text(size: 7.5pt, fill: muted)[#d.forage_note]
+]
+
+#if d.at("sust", default: ()).len() > 0 [
+  #section("05e", "Sustentabilidad")
+  #for s in d.sust [
+    #block(width: 100%, inset: (left: 9pt, rest: 7pt), radius: 6pt, fill: tone(s.tone).transparentize(93%), stroke: (left: 3pt + tone(s.tone)))[
+      #text(size: 7.5pt, fill: muted)[#s.label]
+      #linebreak()#text(weight: "semibold", fill: tone(s.tone))[#s.value]
+      #linebreak()#text(size: 8pt)[#s.detail]
+    ]
+    #v(3pt)
+  ]
+  #text(size: 7pt, fill: muted)[La verificación de cobertura por satélite no es una certificación legal; la debida diligencia de la Unión Europea exige además documentación y trazabilidad.]
+]
+
 #if d.telecon.len() > 0 [
   #section("06", "El Niño y teleconexiones")
   #if d.enso_text != "" [#card(fill: brand-soft, stroke: none)[#d.enso_text] #v(4pt)]

@@ -200,6 +200,33 @@ def build_data(result, name='Lote DOTS', extras=None):
                     'tone': 'risk' if a['level'] == 'alta' else 'warn' if a['level'] == 'media' else 'idle', 'level': a['level']}
                    for a in (al.get('alerts') or [])]
     alerts_note = al.get('summary', '') if al else ''
+    fo = extras.get('forraje') or {}
+    forage_cards = []
+    if fo.get('growth_rate_30d') is not None:
+        forage_cards = [{'label': 'Crecimiento 30 días', 'value': num(fo['growth_rate_30d'], 0), 'unit': 'kg MS/ha/día'},
+                        {'label': 'Carga que sostiene', 'value': num(fo.get('ev_ha'), 2), 'unit': 'EV/ha'},
+                        {'label': 'En todo el lote', 'value': num(fo.get('ev_lot'), 0), 'unit': 'EV'},
+                        {'label': f"Acumulado {fo.get('accumulated_days', '')} días", 'value': num(fo.get('accumulated'), 0), 'unit': 'kg MS/ha'}]
+        if fo.get('daily'):
+            charts.append({'kind': 'line', 'title': 'Crecimiento diario del pasto', 'subtitle': f"{fo.get('kind_label', '')} · kg MS/ha/día",
+                           'unit': '', 'labels': [x['date'][8:10] + '/' + x['date'][5:7] for x in fo['daily']],
+                           'series': [{'name': 'Crecimiento', 'values': [_f(x['ppna']) for x in fo['daily']]}]})
+    forage_note = (' · '.join((fo.get('assumptions') or {}).values()) + '. ' + fo.get('note', '')
+                   + (f" Carga actual {num(fo.get('current_load_ev_ha'), 2)} EV/ha: {fo.get('load_balance')}." if fo.get('current_load_ev_ha') is not None else '')) if forage_cards else ''
+    su = extras.get('sustentabilidad') or {}
+    de = su.get('deforestation') or {}; cb = su.get('carbon') or {}
+    sust = []
+    if de.get('verdict'):
+        sust.append({'label': f"Libre de deforestación (corte {de.get('cutoff')})", 'value': de['verdict'],
+                     'detail': f"Pérdida estimada {num(de.get('tree_loss_ha'), 1)} ha · cambio {num(de.get('tree_change_pp'), 1)} puntos de cobertura arbórea ({de.get('baseline_year')}→{de.get('last_year')})",
+                     'tone': 'ok' if str(de['verdict']).startswith('sin pérdida') else 'warn'})
+    if cb.get('soc_t_ha') is not None:
+        sust.append({'label': 'Carbono orgánico del suelo 0-30 cm', 'value': f"{num(cb['soc_t_ha'], 1)} t C/ha",
+                     'detail': (f"Total del lote {num(cb.get('soc_total_t'), 0)} t C ({num(cb.get('soc_total_tco2e'), 0)} t CO₂e)" if cb.get('soc_total_t') else 'SoilGrids, modelo global 250 m'), 'tone': 'idle'})
+    if cb.get('herd'):
+        h = cb['herd']
+        sust.append({'label': f"Emisiones del rodeo · {h['heads']} cabezas", 'value': f"{num(h['co2e_t_year'], 0)} t CO₂e/año",
+                     'detail': f"{num(h['ch4_t_year'], 1)} t CH₄/año · {h['method']}", 'tone': 'idle'})
     ev = result.get('evidence') or []
     ok = sum(1 for e in ev if e.get('status') == 'recibido')
     return {
@@ -224,6 +251,7 @@ def build_data(result, name='Lote DOTS', extras=None):
                          'Definiciones xclim / ETCCDI. Grilla de ~25 km: describe la zona, no microclimas.') if irows else '',
         'telecon': tl,
         'spi': spi_rows,
+        'forage': forage_cards, 'forage_note': forage_note, 'sust': sust,
         'alerts': alerts_rows, 'alerts_note': alerts_note,
         'prob': prob, 'seasonal': seas, 'trends': trd, 'stat_note': stat_note,
         'spi_note': (f"CHIRPS v2 (~5 km), promedio sobre el lote. Último mes completo: {lluvia.get('last_month', '')}. Normal: mediana 1991-2020. SPI menor a −1 indica sequía.") if spi_rows else '',
@@ -235,6 +263,7 @@ def build_data(result, name='Lote DOTS', extras=None):
         'evidence_note': f'{len(ev)} fuentes consultadas · {ok} con respuesta válida · {len(ev) - ok} sin dato. Ningún faltante se reemplaza por valores supuestos.',
         'attributions': ('Datos: Open-Meteo / ERA5 (Copernicus), NASA POWER, ISRIC SoilGrids, ESA Sentinel-2 vía Microsoft Planetary Computer, '
                          'NOAA PSL y CPC, NASA FIRMS, conjuntos ECMWF IFS y GFS y ECMWF SEAS5 vía Open-Meteo, CHIRPS (Climate Hazards Center, UCSB) vía ClimateSERV'
+                         + ('; cobertura: Impact Observatory y ESA WorldCover vía Microsoft Planetary Computer (CC-BY 4.0)' if sust else '')
                          + ('; límites de lote: Fields of the World / PRUE (Robinson et al. 2026), CC-BY-4.0' if ftw else '')
                          + '. Tipografía IBM Plex (SIL OFL). Documento compuesto con Typst.'),
     }

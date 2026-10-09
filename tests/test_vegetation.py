@@ -159,3 +159,9 @@ def test_routes(monkeypatch, pc):
     img = cl.get('/api/fuentes/ndvi-imagen' + q + '&item=S2B_MSIL2A_20261008_1&baseline=05.10')
     assert img.status_code == 200 and img.mimetype == 'image/png'
     assert cl.get('/api/fuentes/ndvi' + q + '&days=9999').status_code == 400
+
+
+def test_rgb_overlay_uses_visual_asset(pc):
+    png, bounds = veg.ndvi_png('S2B_MSIL2A_20261008_1', LOT, '05.10', mode='rgb')
+    url, params, _ = CALLS[-1]
+    assert url.endswith('/item/feature.png') and params['assets'] == 'visual' and 'expression' not in params

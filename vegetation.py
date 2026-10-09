@@ -208,19 +208,21 @@ def ndvi_open(polygon, days=120, scenes=6):
         None if valid else 'Ninguna escena con el lote suficientemente despejado')
 
 
-def ndvi_png(item_id, polygon, processing_baseline=None):
-    """Devuelve (png_bytes, bounds) con el NDVI recortado al lote."""
+def ndvi_png(item_id, polygon, processing_baseline=None, mode='ndvi'):
+    """Devuelve (png_bytes, bounds) con el NDVI o el color real (TCI) recortado al lote."""
     pts = require_polygon(polygon)
     if not isinstance(item_id, str) or not item_id.startswith('S2') or len(item_id) > 80 \
             or not all(ch.isalnum() or ch in '_.' for ch in item_id):
         raise ValueError('Escena inválida')
-    expr = ndvi_expression({'properties': {'s2:processing_baseline': processing_baseline}})
     feature = {'type': 'Feature', 'properties': {}, 'geometry': geojson_polygon(pts)}
-    r = c.SESSION.post(f'{PC_DATA}/item/feature.png',
-                       params={'collection': 'sentinel-2-l2a', 'item': item_id, 'expression': expr,
-                               'asset_as_band': 'true', 'rescale': NDVI_RESCALE,
-                               'colormap_name': 'rdylgn', 'max_size': 512},
-                       json=feature, timeout=40)
+    if mode == 'rgb':   # imagen en color real de Sentinel-2 (asset TCI 'visual', 8 bits)
+        params = {'collection': 'sentinel-2-l2a', 'item': item_id, 'assets': 'visual',
+                  'asset_bidx': 'visual|1,2,3', 'nodata': 0, 'max_size': 768}
+    else:
+        expr = ndvi_expression({'properties': {'s2:processing_baseline': processing_baseline}})
+        params = {'collection': 'sentinel-2-l2a', 'item': item_id, 'expression': expr,
+                  'asset_as_band': 'true', 'rescale': NDVI_RESCALE, 'colormap_name': 'rdylgn', 'max_size': 512}
+    r = c.SESSION.post(f'{PC_DATA}/item/feature.png', params=params, json=feature, timeout=40)
     r.raise_for_status()
     if not r.headers.get('Content-Type', '').startswith('image/png'):
         raise ValueError('La API raster no devolvió PNG')

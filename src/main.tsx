@@ -118,6 +118,7 @@ const SOURCES = [
   ["lluvia", "Lluvia observada y sequía", "CHIRPS · satélite + estaciones · SPI"],
   ["estadistica", "Probabilidades y tendencias", "Conjuntos ECMWF/GFS · ERA5 · SEAS5"],
   ["alertas", "Alertas del lote", "Reglas declaradas sobre fuentes verificadas"],
+  ["forraje", "Pasto y carga", "Sentinel-2 + radiación · modelo de Monteith"],
   ["sustentabilidad", "Deforestación y carbono", "Impact Observatory · ESA WorldCover · SoilGrids · IPCC"],
   ["teleconexiones", "El Niño y teleconexiones", "NOAA PSL · ENSO, SOI, AAO, TSA, PDO"],
   ["rios", "Ríos y caudales", "GloFAS / Open-Meteo"],
@@ -536,14 +537,29 @@ function Observatory({onHome}:{onHome:()=>void}) {
       const data = (k: string) => (sources[k]?.payload as any)?.data;
       const r = await fetch("/api/fuentes/alertas", { method: "POST", headers: { "Content-Type": "application/json" }, signal: AbortSignal.timeout(55000),
         body: JSON.stringify({ lat: point[0], lon: point[1], polygon: vertices.length >= 3 ? vertices : null,
-          known: { estadistica: data("estadistica"), alertas: alertsData, lluvia: data("lluvia")?.spi ? data("lluvia") : null, ndvi: data("ndvi"), firms: data("firms") ?? null } }) });
+          known: { estadistica: data("estadistica"), alertas: alertsData, forraje: data("forraje")?.growth_rate_30d!=null ? data("forraje") : null, sustentabilidad: data("sustentabilidad"), lluvia: data("lluvia")?.spi ? data("lluvia") : null, ndvi: data("ndvi"), firms: data("firms") ?? null } }) });
       const j = await r.json();
       if (!r.ok) throw Error(j.error || "No se pudieron evaluar las alertas");
       setAlertsData(j.data);
     } catch (e) { notify((e as Error).message); } finally { setAlertsBusy(false); }
   };
   useEffect(() => { void loadAlerts(); }, [point[0], point[1], vertices.length]);
+  const [forageKind, setForageKind] = useState("pastizal");
+  const [forageUse, setForageUse] = useState(0.5);
+  const loadForage = async () => {
+    if (vertices.length < 3) { setSources(p => ({ ...p, forraje: { status: "sin dato", error: "Dibujá un lote para estimar el pasto" } })); return; }
+    setSources(p => ({ ...p, forraje: { status: "consultando" } }));
+    try {
+      const r = await fetch("/api/fuentes/forraje", { method: "POST", headers: { "Content-Type": "application/json" }, signal: AbortSignal.timeout(58000),
+        body: JSON.stringify({ lat: point[0], lon: point[1], polygon: vertices, kind: forageKind, use: forageUse, heads: herdHeads || null,
+          ndvi: (sources.ndvi?.payload as any)?.data?.series ? (sources.ndvi?.payload as any).data : null }) });
+      const j = await r.json();
+      if (!r.ok) throw Error(j.error || "No se pudo estimar");
+      setSources(p => ({ ...p, forraje: { status: "recibido", payload: j } }));
+    } catch (e) { setSources(p => ({ ...p, forraje: { status: "sin dato", error: (e as Error).message } })); }
+  };
   const [showNdvi, setShowNdvi] = useState(true);
+  const [overlayMode, setOverlayMode] = useState<"ndvi"|"rgb">("ndvi");
   const [navCollapsed, setNavCollapsed] = useState(() => typeof window !== "undefined" && window.innerWidth < 1800);
   const [navOpen, setNavOpen] = useState(false);
   const [ftwMode, setFtwMode] = useState(false);
@@ -556,17 +572,17 @@ function Observatory({onHome}:{onHome:()=>void}) {
     if (!mapRef.current || !showNdvi || view !== "ndvi" || !latest?.item || vertices.length < 3) return;
     const lats = vertices.map(v=>v[0]), lons = vertices.map(v=>v[1]);
     const bounds: L.LatLngBoundsExpression = [[Math.min(...lats), Math.min(...lons)], [Math.max(...lats), Math.max(...lons)]];
-    const url = "/api/fuentes/ndvi-imagen?" + new URLSearchParams({lat:String(point[0]),lon:String(point[1]),item:latest.item,baseline:String(latest.processing_baseline||""),polygon:JSON.stringify(vertices)});
+    const url = "/api/fuentes/ndvi-imagen?" + new URLSearchParams({lat:String(point[0]),lon:String(point[1]),item:latest.item,baseline:String(latest.processing_baseline||""),mode:overlayMode,polygon:JSON.stringify(vertices)});
     const ov = L.imageOverlay(url, bounds, {opacity: .85, interactive: false}).addTo(mapRef.current);
     ov.on("error", () => notify("La imagen NDVI no se pudo recortar al lote. Los valores del panel siguen siendo válidos."));
     ndviOverlay.current = ov;
     return () => { ov.remove(); };
-  }, [sources.ndvi, showNdvi, view, vertices]);
+  }, [sources.ndvi, showNdvi, view, vertices, overlayMode]);
   const changeView = (key: string) => {
     // Always refresh: source results are spatial/temporal and must follow the currently selected lot.
     // Reusing an old payload after changing polygon was a functional bug in earlier versions.
     setView(key);
-    if (key === "alertas") { void loadAlerts(); } else void load(key);
+    if (key === "alertas") { void loadAlerts(); } else if (key === "forraje") { void loadForage(); } else void load(key);
     requestAnimationFrame(() => { const el = document.getElementById("dots-detail"); const side = el?.closest(".sidebar") as HTMLElement | null; if (el && side) side.scrollTo({ top: Math.max(0, el.offsetTop - side.offsetTop - 16), behavior: "smooth" }); });
   };
   const addFieldMarker = (type = markerType) => {
@@ -969,6 +985,24 @@ function Observatory({onHome}:{onHome:()=>void}) {
                   <p className="footnote">Se muestran hasta 35 valores; exportá JSON para ver toda la respuesta. La antigüedad y la distancia de cada registro importan.</p>
                 </>
               )}
+              {view==="forraje" && <>
+                <div className="forage-form">
+                  <label>Tipo de recurso<select value={forageKind} onChange={e=>setForageKind(e.target.value)}><option value="pastizal">Pastizal natural</option><option value="templada">Pastura templada</option><option value="megatermica">Pastura megatérmica</option><option value="verdeo">Verdeo de invierno</option></select></label>
+                  <label>Uso del pasto · {Math.round(forageUse*100)} %<input type="range" min={0.3} max={0.7} step={0.05} value={forageUse} onChange={e=>setForageUse(Number(e.target.value))}/></label>
+                  <label>Cabezas en el lote<input type="number" min={0} value={herdHeads||""} placeholder="opcional" onChange={e=>{const v=Math.max(0,Number(e.target.value)||0);setHerdHeads(v);try{localStorage.setItem("dots-heads",String(v))}catch{}}}/></label>
+                  <button className="primary" onClick={()=>void loadForage()}>Estimar pasto y carga</button>
+                </div>
+                {payload?.growth_rate_30d!=null && <>
+                  <div className="keygrid">
+                    <div className="key"><span>Crecimiento · últimos 30 días</span><strong>{fmt(payload.growth_rate_30d,0)} <small>kg MS/ha/día</small></strong></div>
+                    <div className="key"><span>Carga que sostiene</span><strong>{fmt(payload.ev_ha,2)} <small>EV/ha</small></strong></div>
+                    {payload.ev_lot!=null && <div className="key"><span>En todo el lote</span><strong>{fmt(payload.ev_lot,0)} <small>EV</small></strong></div>}
+                    <div className="key"><span>Acumulado {payload.accumulated_days} días</span><strong>{fmt(payload.accumulated,0)} <small>kg MS/ha</small></strong></div>
+                  </div>
+                  {payload.current_load_ev_ha!=null && <div className={"verdict "+(String(payload.load_balance).includes("encima")?"warn":"ok")}><span>Carga actual {fmt(payload.current_load_ev_ha,2)} EV/ha</span><b>{payload.load_balance}</b></div>}
+                  <p className="footnote">{Object.values(payload.assumptions||{}).join(" · ")}. {payload.note}</p>
+                </>}
+              </>}
               {view==="sustentabilidad" && <>
                 <label className="small" style={{display:"block",marginBottom:8}}>Cabezas en el lote (para emisiones)<div className="row" style={{marginTop:6}}><input type="number" min={0} value={herdHeads||""} placeholder="ej. 250" onChange={e=>{const v=Math.max(0,Number(e.target.value)||0);setHerdHeads(v);try{localStorage.setItem("dots-heads",String(v))}catch{}}}/><button onClick={()=>void load("sustentabilidad")}>Calcular</button></div></label>
                 {payload?.deforestation && (()=>{const d=payload.deforestation;const ok=String(d.verdict).startsWith("sin pérdida");return <div className={"verdict "+(ok?"ok":d.verdict==="sin dato"?"":"warn")}><span>Libre de deforestación · corte {d.cutoff}</span><b>{d.verdict}</b><small>Árboles en el lote: {d.baseline_year} {fmt((d.series.find((r:Data)=>r.year===d.baseline_year)?.trees??0)*100,1)} % → {d.last_year} {fmt((d.series.find((r:Data)=>r.year===d.last_year)?.trees??0)*100,1)} % · pérdida estimada {fmt(d.tree_loss_ha,1)} ha</small></div>})()}
@@ -1031,7 +1065,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
                 {payload?.latest?.indices && <div className="idx-cards">{["evi","savi","ndmi","ndwi"].map(k=>{const x=payload.latest.indices[k];return x?<div className="idx-card" key={k} title={x.meaning}><span>{x.name}</span><b>{fmt(x.mean,2)}</b><small>{x.meaning}</small></div>:null})}{payload.latest.indices.water_fraction!=null&&<div className="idx-card" title="Fracción de píxeles con NDWI positivo"><span>Agua en superficie</span><b>{fmt(payload.latest.indices.water_fraction*100,1)} %</b><small>del lote con agua libre o anegado</small></div>}</div>}
                 {payload?.latest && <p className="footnote">Última escena válida: {(payload.latest.datetime||payload.latest.from||"").slice(0,10)} · {payload.area_ha} ha · {payload.latest.pixels??"s/d"} píxeles · {payload.sensor}</p>}
                 {(payload?.series||[]).slice().reverse().map((r:Data,i:number)=><div className="soil" key={i}><span>{(r.datetime||r.from||"").slice(0,10)}<small style={{display:"block"}}>{r.status}{r.clear_fraction_lot!=null?` · ${Math.round(r.clear_fraction_lot*100)} % despejado`:""}</small></span><strong>{r.status==="válida"?fmt(r.ndvi_mean,2):"—"}</strong></div>,2)}
-                {view==="ndvi" && payload?.latest && <label className="small" style={{display:"block",marginTop:10}}><input type="checkbox" checked={showNdvi} onChange={e=>setShowNdvi(e.target.checked)}/> Ver NDVI sobre el mapa (recortado al lote)</label>}
+                {view==="ndvi" && payload?.latest && <div className="overlay-switch"><span>Sobre el lote · {String(payload.latest.datetime||"").slice(0,10)}</span>{[["ndvi","NDVI"],["rgb","Color real"],["off","Ninguna"]].map(([k,l])=><button key={k} className={(k==="off"?!showNdvi:showNdvi&&overlayMode===k)?"active":""} onClick={()=>{if(k==="off"){setShowNdvi(false)}else{setShowNdvi(true);setOverlayMode(k as any)}}}>{l}</button>)}</div>}
                 <p className="footnote">Escala: menos de 0,2 suelo desnudo o agua · 0,2–0,5 vegetación rala o pastura seca · más de 0,5 vegetación activa. No reemplaza la recorrida a campo.</p>
               </>}
               {view === "metnorway" && <><p className="footnote">MET Norway · conexión directa · pronóstico modelado. Actualizado: {payload?.properties?.meta?.updated_at || "Sin fecha"}</p>{Object.entries(payload?.properties?.timeseries?.[0]?.data?.instant?.details || {}).map(([key,value])=><div className="soil" key={key}><span style={{fontSize:10,maxWidth:"65%"}}>{key.replaceAll("_"," ")}</span><strong style={{fontSize:12}}>{fmt(value)} <small>{payload?.properties?.meta?.units?.[key]}</small></strong></div>)}<p className="footnote">Hora válida: {payload?.properties?.timeseries?.[0]?.time || "Sin fecha"}. Datos MET Norway, CC BY 4.0.</p></>}
@@ -1281,7 +1315,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
                   </a>
                 </p>
               )}
-              {view!=="alertas" && <button
+              {view!=="alertas" && view!=="forraje" && <button
                 style={{ width: "100%", marginTop: 13 }}
                 onClick={() => void load(view)}
               >
@@ -1529,7 +1563,10 @@ function Observatory({onHome}:{onHome:()=>void}) {
           </section>
         </aside>
         <section className="charts">
-          {view==="sustentabilidad" && payload?.deforestation?.series?.length ? <>
+          {view==="forraje" && payload?.daily ? <>
+            <section className="panel chart"><h2>Crecimiento diario del pasto</h2><p className="small">kg MS/ha/día · {payload.kind_label} · últimos 60 días</p><Chart dates={payload.daily.map((d:Data)=>d.date.slice(5))} unit="kg MS/ha/día" series={[{name:"Crecimiento",values:payload.daily.map((d:Data)=>d.ppna),color:"#19b98a"}]}/></section>
+            <section className="panel chart"><h2>Producción por mes</h2><p className="small">kg MS/ha acumulados en cada mes</p><Chart dates={payload.monthly.map((m:Data)=>m.month)} unit="kg MS/ha" series={[{name:"Producción",values:payload.monthly.map((m:Data)=>m.total),type:"bar",color:"#22c55e"}]}/></section>
+          </> : view==="sustentabilidad" && payload?.deforestation?.series?.length ? <>
             <section className="panel chart"><h2>Cobertura del lote por año</h2><p className="small">Impact Observatory 10 m · % del lote · árboles, pastizal y cultivo · corte EUDR 2020</p><Chart dates={payload.deforestation.series.map((r:Data)=>String(r.year))} unit="%" series={[{name:"Árboles",values:payload.deforestation.series.map((r:Data)=>r.trees!=null?r.trees*100:null),color:"#22c55e"},{name:"Pastizal",values:payload.deforestation.series.map((r:Data)=>r.rangeland!=null?r.rangeland*100:null),color:"#e9bd72"},{name:"Cultivo",values:payload.deforestation.series.map((r:Data)=>r.crops!=null?r.crops*100:null),color:"#a7a5ff"}]}/></section>
           </> : view==="estadistica" && payload?.climatology ? <>
             <section className="panel chart"><h2>Probabilidad de helada y calor por mes</h2><p className="small">ERA5 1991–{new Date().getFullYear()-1} · % de años con al menos una helada · días con máxima ≥ 35 °C</p><Chart dates={payload.climatology.map((m:Data)=>m.label)} unit="%" series={[{name:"Prob. de helada",values:payload.climatology.map((m:Data)=>m.p_frost),type:"bar",color:"#93c5fd"},{name:"Días ≥ 35 °C",values:payload.climatology.map((m:Data)=>m.heat_days),color:"#fd9c91"}]}/></section>

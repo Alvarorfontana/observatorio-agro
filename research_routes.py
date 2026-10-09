@@ -13,6 +13,7 @@ import forecast_stats as fst
 import contact
 import alerts as alr
 import sustainability as sus
+import forage as fgr
 
 research_api=Blueprint('research_api',__name__,url_prefix='/api/fuentes')
 
@@ -33,6 +34,17 @@ VEGETATION={
 @research_api.get('/contacto/canal')
 def contact_channel():
     return jsonify(contact.channel())
+
+@research_api.post('/forraje')
+def lot_forage():
+    try:
+        d=request.get_json(silent=True) or {}
+        lat,lon=c.coordinates({'lat':[d.get('lat')],'lon':[d.get('lon')]})
+        heads=d.get('heads'); heads=int(heads) if isinstance(heads,(int,float)) and 0<heads<=200000 else None
+        return jsonify(fgr.forage(lat,lon,d.get('polygon'),d.get('ndvi') if isinstance(d.get('ndvi'),dict) else None,
+                                  str(d.get('kind') or 'pastizal'),float(d.get('use') or fgr.DEFAULT_USE),heads))
+    except ValueError as e: return jsonify({'status':'sin dato','error':str(e)}),400
+    except Exception as e: return jsonify({'status':'sin dato','error':'No se pudo estimar la producción de pasto','type':type(e).__name__}),502
 
 @research_api.post('/alertas')
 def lot_alerts():
@@ -98,7 +110,7 @@ def research_data(name):
             return jsonify(_both())
         if name in VEGETATION:
             if name=='ndvi-imagen':
-                png,bounds=veg.ndvi_png(request.args.get('item',''),polygon,request.args.get('baseline'))
+                png,bounds=veg.ndvi_png(request.args.get('item',''),polygon,request.args.get('baseline'),'rgb' if request.args.get('mode')=='rgb' else 'ndvi')
                 return Response(png,mimetype='image/png',headers={'X-DOTS-Bounds':json.dumps(bounds),'Cache-Control':'public, max-age=86400'})
             return jsonify(VEGETATION[name](polygon,request.args))
         years=int(request.args.get('years','30'))
