@@ -7,7 +7,7 @@
 import React from "react";
 import {
   LayoutDashboard, Layers, Satellite, Sprout, Waves, CircleDot, Beef, CloudSun,
-  Flame, Gauge, FileText, Network, ChevronsLeft, X, Hexagon,
+  Flame, Gauge, FileText, Network, Thermometer, ChevronsLeft, X, Hexagon,
 } from "lucide-react";
 
 export type NavItem = {
@@ -32,7 +32,8 @@ export function buildNav(go: (k: string) => void, draw: () => void, pdf: () => v
     { title: "Clima y riesgo", items: [
       { key: "modelos", label: "Clima · modelos", icon: <CloudSun />, onClick: () => go("modelos") },
       { key: "firms", label: "Riesgos · focos", icon: <Flame />, onClick: () => go("firms") },
-      { key: "enso", label: "ENSO · clima global", icon: <Gauge />, onClick: () => go("enso") },
+      { key: "indices", label: "Índices agroclimáticos", icon: <Thermometer />, onClick: () => go("indices") },
+      { key: "teleconexiones", label: "El Niño · teleconexiones", icon: <Gauge />, onClick: () => go("teleconexiones") },
     ]},
     { title: "Salidas", items: [
       { key: "plataformas", label: "Fuentes y APIs", icon: <Network />, onClick: () => go("plataformas") },

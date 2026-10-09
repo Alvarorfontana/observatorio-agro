@@ -107,6 +107,8 @@ const SOURCES = [
   ["escenas", "Escenas satelitales", "Earth Search / Sentinel-2"],
   ["ndvi", "NDVI del lote", "Sentinel-2 10 m · Planetary Computer"],
   ["historico", "Histórico reciente", "NASA POWER"],
+  ["indices", "Índices agroclimáticos", "ERA5 · definiciones xclim/ETCCDI"],
+  ["teleconexiones", "El Niño y teleconexiones", "NOAA PSL · ENSO, SOI, AAO, TSA, PDO"],
   ["rios", "Ríos y caudales", "GloFAS / Open-Meteo"],
   ["suelo", "Nitrógeno del suelo", "ISRIC SoilGrids"],
   ["serie", "Clima de 20–30 años", "ERA5 / Open-Meteo"],
@@ -521,6 +523,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
     // Reusing an old payload after changing polygon was a functional bug in earlier versions.
     setView(key);
     void load(key);
+    requestAnimationFrame(() => { const el = document.getElementById("dots-detail"); const side = el?.closest(".sidebar") as HTMLElement | null; if (el && side) side.scrollTo({ top: Math.max(0, el.offsetTop - side.offsetTop - 16), behavior: "smooth" }); });
   };
   const addFieldMarker = (type = markerType) => {
     if (!mapRef.current) return;
@@ -876,7 +879,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
             <details style={{marginTop:12}}><summary className="small">Agencias directas · 6 conexiones</summary><div style={{marginTop:10}}>{SOURCES.filter(([key])=>NATIONAL.includes(key)||key==="metnorway").map(([key,label])=><button key={key} className={"data-button "+(view===key?"active":"")} onClick={()=>changeView(key)} aria-pressed={view===key}>{label}<span>{sources[key]?.status.toUpperCase()||"CONSULTAR"}</span></button>)}</div></details>
             <details style={{marginTop:12}}><summary className="small">Conectores globales · abiertos y con credencial</summary><div style={{marginTop:10}}>{SOURCES.filter(([key])=>RESEARCH.includes(key)).map(([key,label])=><button key={key} className={"data-button "+(view===key?"active":"")} onClick={()=>changeView(key)}>{label}<span>{sources[key]?.status.toUpperCase()||"CONSULTAR"}</span></button>)}</div></details>
             <a className="small" href="/CONEXIONES-INVESTIGACION.md" target="_blank" rel="noreferrer">Matriz de 20 servicios y activación</a>
-            <div style={{ marginTop: 18 }}>
+            <div style={{ marginTop: 18 }} id="dots-detail">
               {sources[view]?.status === "consultando" && (
                 <p className="small">Consultando datos reales…</p>
               )}
@@ -902,6 +905,19 @@ function Observatory({onHome}:{onHome:()=>void}) {
                   <p className="footnote">Se muestran hasta 35 valores; exportá JSON para ver toda la respuesta. La antigüedad y la distancia de cada registro importan.</p>
                 </>
               )}
+              {view==="indices" && payload?.catalog && <>
+                <p className="footnote">ERA5 diario en el punto del lote · {payload.period?.[0]}–{payload.period?.[1]} · último año {payload.last_year} comparado con el promedio del período.</p>
+                <div className="idx-table">
+                  <div className="idx-head"><span>Índice</span><span>{payload.last_year}</span><span>Promedio</span><span>Dif.</span></div>
+                  {payload.catalog.map((k:Data)=>{const last=(payload.years||[]).slice(-1)[0]||{};const v=last[k.key];const a=payload.anomaly_last_year?.[k.key];const isDate=k.unit==="fecha";return <div className="idx-row" key={k.key} title={`${k.description} · xclim: ${k.xclim}`}><span>{k.label}<small>{k.unit}</small></span><strong>{isDate?(v?String(v).slice(5).split("-").reverse().join("/"):"—"):fmt(v)}</strong><span>{isDate?"":fmt(payload.mean?.[k.key])}</span><span className={a==null||isDate?"":a>0?"up":a<0?"down":""}>{isDate||a==null?"":(a>0?"+":"")+fmt(a)}</span></div>})}
+                </div>
+                <p className="footnote">Grilla ERA5 de ~25 km: describe el clima de la zona, no microclimas del lote.</p>
+              </>}
+              {view==="teleconexiones" && payload?.indices && <>
+                {payload.enso_consensus && <div className="key"><span>El Niño · consenso NOAA</span><strong>{payload.enso_consensus}</strong><small className="small">{payload.enso_agreement} índices coinciden (Niño 3.4, ONI, MEI v2)</small></div>}
+                {Object.entries(payload.indices).map(([k,e]:[string,any])=><div className="soil" key={k}><span>{e?.data?.name||e?.scope||k}<small style={{display:"block"}}>{e?.status==="recibido"?`${e.data.period} · ${e.data.phase}`:"sin dato"}</small></span><strong>{e?.status==="recibido"?fmt(e.data.value,2):"—"}</strong></div>)}
+                <p className="footnote">Niño 3.4, ONI y MEI: ±0,5 marca Niño o Niña. AAO negativo y TSA cálido suelen acompañar cambios de lluvia en el Litoral; interpretar junto al pronóstico estacional.</p>
+              </>}
               {NDVI_VIEWS.includes(view) && <>
                 {vertices.length < 3 && <p className="error">Dibujá el lote primero: el NDVI es una estadística dentro del polígono, no un valor de punto.</p>}
                 {payload?.latest && <div className="keygrid">
@@ -1376,7 +1392,12 @@ function Observatory({onHome}:{onHome:()=>void}) {
           </section>
         </aside>
         <section className="charts">
-          {NDVI_VIEWS.includes(view) ? <section className="panel chart"><h2>NDVI del lote · serie</h2><p className="small">{payload?.sensor||"Sentinel-2"} · media zonal dentro del polígono · escenas nubladas en el lote excluidas</p><Chart dates={(payload?.series||[]).filter((r:Data)=>r.status==="válida").map((r:Data)=>(r.datetime||r.from||"").slice(0,10))} unit="NDVI" series={[{name:"NDVI medio",values:(payload?.series||[]).filter((r:Data)=>r.status==="válida").map((r:Data)=>r.ndvi_mean??null),color:"#19b98a"}]}/></section> : view==="ina" ? <><section className="panel chart"><h2>{inaSeries==="37299"?"Temperatura observada":"Río Paraná · altura observada"}</h2><p className="small">INA · Bella Vista · serie {inaSeries} · fechas originales</p><Chart dates={(payload?.data||[]).map((r:Data)=>r.timestart)} unit={payload?.responseHeader?.seriesmetadata?.unit_abrev||"m"} series={[{name:"Altura",values:(payload?.data||[]).map((r:Data)=>r.valor??null),color:"#06b6d4"}]}/></section><section className="panel chart"><h2>Estación hidrométrica</h2><p className="footnote">Nivel del río medido en una estación; no describe inundación del lote. Para evaluar riesgo hacen falta relieve, umbrales y delimitación de la cuenca.</p></section></> : view==="aire" ? <>{["pm2_5","pm10"].map((k,i)=><section className="panel chart" key={k}><h2>{i===0?"Partículas PM2.5":"Partículas PM10"}</h2><p className="small">CAMS · pronóstico modelado · UTC</p><Chart dates={payload?.hourly?.time||[]} unit={payload?.hourly_units?.[k]||""} series={[{name:k,values:payload?.hourly?.[k]||[],color:i===0?"#06b6d4":"#b7c989"}]}/></section>)}</> : NATIONAL.includes(view) ? (
+          {view==="indices" && payload?.years ? <>
+            <section className="panel chart"><h2>Lluvia anual y días de lluvia intensa</h2><p className="small">ERA5 · mm por año · días con 20 mm o más</p><Chart dates={payload.years.map((r:Data)=>String(r.year))} unit="mm" series={[{name:"Lluvia anual",values:payload.years.map((r:Data)=>r.prcptot),type:"bar",color:"#06b6d4"}]}/></section>
+            <section className="panel chart"><h2>Heladas y calor extremo</h2><p className="small">Días por año · mínima menor a 0 °C · máxima de 35 °C o más</p><Chart dates={payload.years.map((r:Data)=>String(r.year))} unit="días" series={[{name:"Heladas",values:payload.years.map((r:Data)=>r.frost_days),color:"#93c5fd"},{name:"Máx ≥ 35 °C",values:payload.years.map((r:Data)=>r.tx35),color:"#fd9c91"},{name:"Racha seca",values:payload.years.map((r:Data)=>r.cdd),color:"#e9bd72"}]}/></section>
+          </> : view==="teleconexiones" && payload?.indices ? <>
+            {[["Pacífico ecuatorial · El Niño",["nino34","oni","meiv2"]],["Hemisferio sur y Atlántico",["aao","soi","tsa"]]].map(([title,keys]:any)=><section className="panel chart" key={title}><h2>{title}</h2><p className="small">NOAA PSL · últimos 12 meses publicados</p><Chart dates={(payload.indices[keys[0]]?.data?.last12||[]).map((r:Data)=>r.period)} unit="índice" series={keys.map((k:string,i:number)=>({name:payload.indices[k]?.data?.name||k,values:(payload.indices[k]?.data?.last12||[]).map((r:Data)=>r.value),color:["#06b6d4","#e9bd72","#a7a5ff"][i]}))}/></section>)}
+          </> : NDVI_VIEWS.includes(view) ? <section className="panel chart"><h2>NDVI del lote · serie</h2><p className="small">{payload?.sensor||"Sentinel-2"} · media zonal dentro del polígono · escenas nubladas en el lote excluidas</p><Chart dates={(payload?.series||[]).filter((r:Data)=>r.status==="válida").map((r:Data)=>(r.datetime||r.from||"").slice(0,10))} unit="NDVI" series={[{name:"NDVI medio",values:(payload?.series||[]).filter((r:Data)=>r.status==="válida").map((r:Data)=>r.ndvi_mean??null),color:"#19b98a"}]}/></section> : view==="ina" ? <><section className="panel chart"><h2>{inaSeries==="37299"?"Temperatura observada":"Río Paraná · altura observada"}</h2><p className="small">INA · Bella Vista · serie {inaSeries} · fechas originales</p><Chart dates={(payload?.data||[]).map((r:Data)=>r.timestart)} unit={payload?.responseHeader?.seriesmetadata?.unit_abrev||"m"} series={[{name:"Altura",values:(payload?.data||[]).map((r:Data)=>r.valor??null),color:"#06b6d4"}]}/></section><section className="panel chart"><h2>Estación hidrométrica</h2><p className="footnote">Nivel del río medido en una estación; no describe inundación del lote. Para evaluar riesgo hacen falta relieve, umbrales y delimitación de la cuenca.</p></section></> : view==="aire" ? <>{["pm2_5","pm10"].map((k,i)=><section className="panel chart" key={k}><h2>{i===0?"Partículas PM2.5":"Partículas PM10"}</h2><p className="small">CAMS · pronóstico modelado · UTC</p><Chart dates={payload?.hourly?.time||[]} unit={payload?.hourly_units?.[k]||""} series={[{name:k,values:payload?.hourly?.[k]||[],color:i===0?"#06b6d4":"#b7c989"}]}/></section>)}</> : NATIONAL.includes(view) ? (
             <>
               {[(view==="eccc"?"TEMP":view==="nws"?"temperature":"air_temperature"), (view==="eccc"?"WIND_SPEED":view==="nws"?"windSpeed":"wind_speed")].map((variable,i)=>{
                 const rows=(payload?.observations||[]).filter((o:Data)=>o.variable===variable).sort((a:Data,b:Data)=>String(a.observed_at).localeCompare(String(b.observed_at)));

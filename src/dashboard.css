@@ -673,3 +673,41 @@
   padding: 14px;
   font-size: 13px;
 }
+
+/* tabla de índices agroclimáticos */
+.ta-shell .idx-table {
+  display: grid;
+  margin-top: 10px;
+  border: 1px solid var(--ta-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.ta-shell .idx-head,
+.ta-shell .idx-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) 0.9fr 0.9fr 0.8fr;
+  gap: 6px;
+  align-items: center;
+  padding: 8px 10px;
+  font-size: 12px;
+}
+.ta-shell .idx-head {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--ta-text-3);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.ta-shell .idx-row + .idx-row {
+  border-top: 1px solid var(--ta-border);
+}
+.ta-shell .idx-row small {
+  display: block;
+  font-size: 10px;
+  color: var(--ta-text-3);
+}
+.ta-shell .idx-row strong {
+  font-size: 14px;
+}
+.ta-shell .idx-row .up { color: var(--ta-warn); }
+.ta-shell .idx-row .down { color: #7cd4fd; }

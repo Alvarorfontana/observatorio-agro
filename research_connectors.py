@@ -335,13 +335,16 @@ def _iri():
 
 def enso_multisource():
     out = {}
-    for name, fn in (('NOAA_ONI', _noaa_oni), ('BOM_SOI', _bom_soi), ('IRI_forecast', _iri)):
+    def _psl():
+        import climate_indices as ci
+        return ci.psl_indices()
+    for name, fn in (('NOAA_ONI', _noaa_oni), ('BOM_SOI', _bom_soi), ('IRI_forecast', _iri), ('NOAA_PSL', _psl)):
         try:
             out[name] = fn()
         except Exception as e:
             out[name] = envelope({}, None, 'ENSO', name, 'sin dato', f'{type(e).__name__}')
     ok = sum(1 for v in out.values() if v['status'] == 'recibido')
-    return envelope(out, 'multi', 'ENSO · NOAA + BOM + IRI (WMO y JMA aún no conectados)',
+    return envelope(out, 'multi', 'ENSO · NOAA CPC + NOAA PSL + BOM + IRI (WMO y JMA aún no conectados)',
                     'NOAA · BOM · IRI', 'recibido' if ok else 'sin dato',
                     None if ok else 'Ninguna fuente ENSO respondió')
 
