@@ -262,3 +262,11 @@
 .source-strip.marquee b small { font-size: 10px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: #8aa0a9; }
 @keyframes dots-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 @media (prefers-reduced-motion: reduce) { .marquee-track { animation: none; flex-wrap: wrap; width: auto; } }
+
+/* contacto */
+.contact-form .hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+.contact-form select { width: 100%; }
+.form-status { font-size: 14px; margin-top: 10px; color: #52656c; }
+.form-status.ok { color: #148b6b; font-weight: 600; }
+.form-status.err { color: #b42318; }
+.wa-btn { display: inline-block; margin-top: 22px; padding: 12px 18px; border-radius: 10px; background: #25d366; color: #06131d; font-weight: 700; text-decoration: none; }

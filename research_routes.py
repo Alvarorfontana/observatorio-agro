@@ -10,6 +10,7 @@ import climate_indices as ci
 import report_typst as rt
 import rainfall as rain
 import forecast_stats as fst
+import contact
 
 research_api=Blueprint('research_api',__name__,url_prefix='/api/fuentes')
 
@@ -26,6 +27,18 @@ VEGETATION={
   'openeo-ndvi':lambda p,a:veg.openeo_ndvi(p,_int(a,'days',120,15,365)),
   'gee-ndvi':lambda p,a:veg.gee_ndvi(p,_int(a,'ndvi_years',10,1,25)),
 }
+
+@research_api.get('/contacto/canal')
+def contact_channel():
+    return jsonify(contact.channel())
+
+@research_api.post('/contacto')
+def contact_send():
+    try:
+        return jsonify(contact.send(request.get_json(silent=True) or {}))
+    except PermissionError as e: return jsonify({'status':'sin canal','error':str(e)}),409
+    except ValueError as e: return jsonify({'status':'inválido','error':str(e)}),400
+    except Exception as e: return jsonify({'status':'error','error':'No se pudo enviar la consulta. Probá de nuevo en unos minutos.'}),502
 
 @research_api.get('/<name>')
 def research_data(name):
