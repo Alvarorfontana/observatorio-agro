@@ -182,6 +182,21 @@
   #for r in d.recommendations [- #r]
 ]
 
+#if d.at("alerts", default: ()).len() > 0 [
+  #v(6pt)
+  #text(weight: "semibold")[Alertas activas] #text(size: 7.5pt, fill: muted)[· #d.alerts_note]
+  #v(3pt)
+  #for a in d.alerts [
+    #block(width: 100%, inset: (left: 9pt, rest: 7pt), radius: 6pt, fill: tone(a.tone).transparentize(92%),
+      stroke: (left: 3pt + tone(a.tone)))[
+      #text(weight: "semibold", fill: tone(a.tone))[#a.title] #text(size: 7pt, fill: muted)[· #upper(a.level) · #a.source]
+      #linebreak()#text(size: 8.5pt)[#a.detail]
+      #linebreak()#text(size: 8.5pt, weight: "medium")[→ #a.action]
+    ]
+    #v(3pt)
+  ]
+]
+
 // ─────────────────────────── HALLAZGOS ───────────────────────────
 #pagebreak()
 #section("02", "Hallazgos por dimensión")

@@ -824,3 +824,24 @@
 .ta-shell .prob-row .p.mid { color: var(--ta-warn); }
 .ta-shell .prob-row .p.hi { color: var(--ta-risk); }
 .ta-shell strong.muted { color: var(--ta-text-3); }
+
+/* alertas */
+.ta-shell .ta-bell { position: relative; width: 44px; height: 44px; min-height: 44px; padding: 0; display: grid; place-items: center; border-radius: 8px; border: 1px solid var(--ta-border); background: transparent; color: var(--ta-text-2); margin-left: auto; }
+.ta-shell .ta-bell svg { width: 20px; height: 20px; }
+.ta-shell .ta-bell b { position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px; border-radius: 9px; font-size: 11px; display: grid; place-items: center; background: var(--ta-warn); color: #0c111d; }
+.ta-shell .ta-bell.hot { color: var(--ta-risk); border-color: rgba(249,112,102,.5); }
+.ta-shell .ta-bell.hot b { background: var(--ta-risk); }
+.ta-shell .ta-bell.warm { color: var(--ta-warn); }
+.ta-shell .ta-header .live { margin-left: 8px; }
+.ta-shell .alert-card { border: 1px solid var(--ta-border); border-left: 4px solid var(--ta-text-3); border-radius: 10px; padding: 10px 12px; margin-top: 8px; display: grid; gap: 4px; }
+.ta-shell .alert-card header { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.ta-shell .alert-card header span { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; }
+.ta-shell .alert-card p { font-size: 12.5px; line-height: 1.5; margin: 0; }
+.ta-shell .alert-card .alert-action { color: var(--ta-text); font-weight: 500; }
+.ta-shell .alert-card small { font-size: 10.5px; color: var(--ta-text-3); }
+.ta-shell .alert-card.lvl-alta { border-left-color: var(--ta-risk); }
+.ta-shell .alert-card.lvl-alta header span { color: var(--ta-risk); }
+.ta-shell .alert-card.lvl-media { border-left-color: var(--ta-warn); }
+.ta-shell .alert-card.lvl-media header span { color: var(--ta-warn); }
+.ta-shell .alert-card.lvl-baja { border-left-color: #7cd4fd; }
+.ta-shell .alert-card.lvl-baja header span { color: #7cd4fd; }

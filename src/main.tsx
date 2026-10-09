@@ -117,6 +117,7 @@ const SOURCES = [
   ["indices", "Índices agroclimáticos", "ERA5 · definiciones xclim/ETCCDI"],
   ["lluvia", "Lluvia observada y sequía", "CHIRPS · satélite + estaciones · SPI"],
   ["estadistica", "Probabilidades y tendencias", "Conjuntos ECMWF/GFS · ERA5 · SEAS5"],
+  ["alertas", "Alertas del lote", "Reglas declaradas sobre fuentes verificadas"],
   ["teleconexiones", "El Niño y teleconexiones", "NOAA PSL · ENSO, SOI, AAO, TSA, PDO"],
   ["rios", "Ríos y caudales", "GloFAS / Open-Meteo"],
   ["suelo", "Nitrógeno del suelo", "ISRIC SoilGrids"],
@@ -525,6 +526,21 @@ function Observatory({onHome}:{onHome:()=>void}) {
     }, 5000);
     return () => clearTimeout(t);
   }, [sources.lluvia]);
+  const [alertsData, setAlertsData] = useState<any>(null);
+  const [alertsBusy, setAlertsBusy] = useState(false);
+  const loadAlerts = async () => {
+    setAlertsBusy(true);
+    try {
+      const data = (k: string) => (sources[k]?.payload as any)?.data;
+      const r = await fetch("/api/fuentes/alertas", { method: "POST", headers: { "Content-Type": "application/json" }, signal: AbortSignal.timeout(55000),
+        body: JSON.stringify({ lat: point[0], lon: point[1], polygon: vertices.length >= 3 ? vertices : null,
+          known: { estadistica: data("estadistica"), alertas: alertsData, lluvia: data("lluvia")?.spi ? data("lluvia") : null, ndvi: data("ndvi"), firms: data("firms") ?? null } }) });
+      const j = await r.json();
+      if (!r.ok) throw Error(j.error || "No se pudieron evaluar las alertas");
+      setAlertsData(j.data);
+    } catch (e) { notify((e as Error).message); } finally { setAlertsBusy(false); }
+  };
+  useEffect(() => { void loadAlerts(); }, [point[0], point[1], vertices.length]);
   const [showNdvi, setShowNdvi] = useState(true);
   const [navCollapsed, setNavCollapsed] = useState(() => typeof window !== "undefined" && window.innerWidth < 1800);
   const [navOpen, setNavOpen] = useState(false);
@@ -547,7 +563,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
     // Always refresh: source results are spatial/temporal and must follow the currently selected lot.
     // Reusing an old payload after changing polygon was a functional bug in earlier versions.
     setView(key);
-    void load(key);
+    if (key === "alertas") { void loadAlerts(); } else void load(key);
     requestAnimationFrame(() => { const el = document.getElementById("dots-detail"); const side = el?.closest(".sidebar") as HTMLElement | null; if (el && side) side.scrollTo({ top: Math.max(0, el.offsetTop - side.offsetTop - 16), behavior: "smooth" }); });
   };
   const addFieldMarker = (type = markerType) => {
@@ -803,6 +819,9 @@ function Observatory({onHome}:{onHome:()=>void}) {
           </b>
           <span>WGS84</span>
         </div>
+        <button className={"ta-bell"+(alertsData?.alerts?.some((a:any)=>a.level==="alta")?" hot":alertsData?.alerts?.length?" warm":"")} onClick={()=>{setView("alertas");void loadAlerts();}} title="Alertas del lote">
+          <TriangleAlert/>{alertsData?.alerts?.length ? <b>{alertsData.alerts.length}</b> : null}
+        </button>
         <span className="live">
           {Object.values(sources).filter((s) => s.status === "recibido").length}{" "}
           FUENTES RECIBIDAS
@@ -947,6 +966,12 @@ function Observatory({onHome}:{onHome:()=>void}) {
                   <p className="footnote">Se muestran hasta 35 valores; exportá JSON para ver toda la respuesta. La antigüedad y la distancia de cada registro importan.</p>
                 </>
               )}
+              {view==="alertas" && <>
+                <div className="row" style={{marginBottom:8}}><p className="footnote" style={{margin:0}}>{alertsBusy?"Evaluando reglas…":alertsData?.summary||"Sin evaluar"}</p><button onClick={()=>void loadAlerts()} disabled={alertsBusy}>Actualizar</button></div>
+                {(alertsData?.alerts||[]).map((a:Data,i:number)=><article className={"alert-card lvl-"+a.level} key={i}><header><b>{a.title}</b><span>{a.level}</span></header><p>{a.detail}</p><p className="alert-action">→ {a.action}</p><small>{a.source}</small></article>)}
+                {alertsData && !alertsData.alerts?.length && <p className="small">No hay alertas activas en las reglas que pudieron evaluarse.</p>}
+                {alertsData?.unevaluated && Object.keys(alertsData.unevaluated).length>0 && <p className="footnote">Sin evaluar: {Object.entries(alertsData.unevaluated).map(([k,v]:any)=>`${k} (${v})`).join(" · ")}. Abrí NDVI, Lluvia y sequía o Riesgos para completar esas reglas.</p>}
+              </>}
               {view==="estadistica" && payload && <>
                 {payload.ensemble?.week_rain && <div className="key"><span>Lluvia próximos 7 días · {payload.ensemble.members} pronósticos</span><strong>{fmt(payload.ensemble.week_rain.median,0)} mm</strong><small className="small">rango probable {fmt(payload.ensemble.week_rain.p10,0)}–{fmt(payload.ensemble.week_rain.p90,0)} mm · {payload.ensemble.week_rain.p_ge20} % de chance de 20 mm o más</small></div>}
                 {payload.ensemble?.days && <div className="prob-table"><div className="prob-head"><span>Día</span><span>Helada</span><span>≥35 °C</span><span>Lluvia ≥10</span></div>{payload.ensemble.days.map((d:Data)=><div className="prob-row" key={d.date}><span>{d.date.slice(8,10)}/{d.date.slice(5,7)}<small>{fmt(d.tmin_med,0)}° / {fmt(d.tmax_med,0)}°</small></span>{[d.p_frost,d.p_heat35,d.p_rain10].map((v:number,i:number)=><b key={i} className={"p "+(v>=60?"hi":v>=30?"mid":v>0?"lo":"")} style={{"--p":`${v||0}%`} as any}>{v!=null?`${v}%`:"—"}</b>)}</div>)}</div>}

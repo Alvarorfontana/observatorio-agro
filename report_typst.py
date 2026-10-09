@@ -195,6 +195,11 @@ def build_data(result, name='Lote DOTS', extras=None):
     wr = (st.get('ensemble') or {}).get('week_rain') or {}
     stat_note = (f"Pronóstico por conjunto ({(st.get('ensemble') or {}).get('members', '—')} pronósticos ECMWF y NOAA): "
                  f"lluvia probable en 7 días {num(wr.get('p10'), 0)}–{num(wr.get('p90'), 0)} mm, mediana {num(wr.get('median'), 0)} mm.") if wr else ''
+    al = extras.get('alertas') or {}
+    alerts_rows = [{'title': a['title'], 'detail': a['detail'], 'action': a['action'], 'source': a['source'],
+                    'tone': 'risk' if a['level'] == 'alta' else 'warn' if a['level'] == 'media' else 'idle', 'level': a['level']}
+                   for a in (al.get('alerts') or [])]
+    alerts_note = al.get('summary', '') if al else ''
     ev = result.get('evidence') or []
     ok = sum(1 for e in ev if e.get('status') == 'recibido')
     return {
@@ -219,6 +224,7 @@ def build_data(result, name='Lote DOTS', extras=None):
                          'Definiciones xclim / ETCCDI. Grilla de ~25 km: describe la zona, no microclimas.') if irows else '',
         'telecon': tl,
         'spi': spi_rows,
+        'alerts': alerts_rows, 'alerts_note': alerts_note,
         'prob': prob, 'seasonal': seas, 'trends': trd, 'stat_note': stat_note,
         'spi_note': (f"CHIRPS v2 (~5 km), promedio sobre el lote. Último mes completo: {lluvia.get('last_month', '')}. Normal: mediana 1991-2020. SPI menor a −1 indica sequía.") if spi_rows else '',
         'enso_text': enso_text,

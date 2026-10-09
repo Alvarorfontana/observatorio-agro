@@ -11,6 +11,7 @@ import report_typst as rt
 import rainfall as rain
 import forecast_stats as fst
 import contact
+import alerts as alr
 
 research_api=Blueprint('research_api',__name__,url_prefix='/api/fuentes')
 
@@ -31,6 +32,15 @@ VEGETATION={
 @research_api.get('/contacto/canal')
 def contact_channel():
     return jsonify(contact.channel())
+
+@research_api.post('/alertas')
+def lot_alerts():
+    try:
+        d=request.get_json(silent=True) or {}
+        lat,lon=c.coordinates({'lat':[d.get('lat')],'lon':[d.get('lon')]})
+        return jsonify(alr.evaluate(lat,lon,d.get('polygon'),d.get('known') if isinstance(d.get('known'),dict) else None))
+    except ValueError as e: return jsonify({'status':'sin dato','error':str(e)}),400
+    except Exception as e: return jsonify({'status':'sin dato','error':'No se pudieron evaluar las alertas','type':type(e).__name__}),502
 
 @research_api.post('/contacto')
 def contact_send():
