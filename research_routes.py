@@ -1,12 +1,27 @@
 """Additional research APIs: independent from the legacy dashboard and engine."""
-import os
+import os, json
 from flask import Blueprint, request, jsonify, Response
 from urllib.parse import urlparse
 from datetime import datetime, timezone
 import research_connectors as c
 import agentic_engine as agentic
+import vegetation as veg
 
 research_api=Blueprint('research_api',__name__,url_prefix='/api/fuentes')
+
+def _int(args,key,default,lo,hi):
+    try: v=int(args.get(key,default))
+    except (TypeError,ValueError): raise ValueError(f'{key} inválido')
+    if not lo<=v<=hi: raise ValueError(f'{key} fuera de rango ({lo}-{hi})')
+    return v
+
+VEGETATION={
+  'ndvi':lambda p,a:veg.ndvi_open(p,_int(a,'days',120,15,365),_int(a,'scenes',6,1,10)),
+  'ndvi-imagen':None,
+  'sentinel-hub-ndvi':lambda p,a:veg.sentinel_hub_ndvi(p,_int(a,'days',180,15,730)),
+  'openeo-ndvi':lambda p,a:veg.openeo_ndvi(p,_int(a,'days',120,15,365)),
+  'gee-ndvi':lambda p,a:veg.gee_ndvi(p,_int(a,'ndvi_years',10,1,25)),
+}
 
 @research_api.get('/<name>')
 def research_data(name):
@@ -30,9 +45,13 @@ def research_data(name):
         lat,lon=c.coordinates(q)
         polygon=None
         if request.args.get('polygon'):
-            import json
             try: polygon=json.loads(request.args.get('polygon','null'))
             except Exception: raise ValueError('Polígono inválido')
+        if name in VEGETATION:
+            if name=='ndvi-imagen':
+                png,bounds=veg.ndvi_png(request.args.get('item',''),polygon,request.args.get('baseline'))
+                return Response(png,mimetype='image/png',headers={'X-DOTS-Bounds':json.dumps(bounds),'Cache-Control':'public, max-age=86400'})
+            return jsonify(VEGETATION[name](polygon,request.args))
         years=int(request.args.get('years','30'))
         if years not in (20,30):raise ValueError('Seleccioná 20 o 30 años')
         endyear=datetime.now(timezone.utc).year-1
@@ -56,6 +75,7 @@ def research_data(name):
         if name not in jobs:return jsonify({'error':'Fuente no habilitada'}),404
         if name=='firms' and not os.environ.get('FIRMS_MAP_KEY'):return jsonify({'status':'pendiente de credencial','error':'Solicitar MAP_KEY gratuita de NASA FIRMS y cargar FIRMS_MAP_KEY en Vercel. No hay conteo disponible.'}),409
         return jsonify(jobs[name]())
+    except PermissionError as e:return jsonify({'status':'requiere credencial','error':str(e)}),409
     except ValueError as e:return jsonify({'status':'sin dato','error':str(e)}),400
     except Exception as e:return jsonify({'status':'sin dato','error':'La fuente no respondió válidamente','type':type(e).__name__}),502
 
@@ -95,7 +115,8 @@ def agentic_status():
       'credenciales':{
         'NASA FIRMS': 'configurada' if os.environ.get('FIRMS_MAP_KEY') else 'requiere FIRMS_MAP_KEY',
       },
-      'procesamiento_pendiente':['NDVI/EVI raster Sentinel-2','biomasa/pastura','detección satelital validada de cuerpos de agua','sensores de ganado'], 'enso':['NOAA CPC/RONI','Columbia IRI','WMO','JMA','BOM Australia'],
+      'procesamiento':{'NDVI Sentinel-2 por lote':'abierto · Planetary Computer','NDVI Sentinel Hub':'requiere CDSE','NDVI openEO':'requiere CDSE','NDVI MODIS histórico':'requiere Earth Engine'},
+      'procesamiento_pendiente':['EVI/NDWI','biomasa/pastura','detección satelital validada de cuerpos de agua','sensores de ganado'], 'enso':['NOAA CPC/RONI','Columbia IRI','WMO','JMA','BOM Australia'],
       'regla':'Una fuente caída se reporta como faltante y no impide que las demás produzcan el análisis.'
     })
 

@@ -52,7 +52,15 @@ type Source = {
   payload?: Data;
   error?: string;
 };
-const RESEARCH = ["plataformas","inta-suelos-wms","aire","elevacion","ina","usgs","nasa-catalogo","productos-nasa","landsat","radar","copernicus-stac","cnes-stac","dlr-stac","deafrica-stac","firms","nasa-power-30","enso","era5-cds","sentinel-hub","noaa-cdo","usgs-m2m","nasa-earthdata","copernicus-marine","gee","openaq","gfw","aemet","eumetsat","jaxa","mosdac","kma","fengyun"];
+const RESEARCH = ["plataformas","sentinel-hub-ndvi","openeo-ndvi","gee-ndvi","inta-suelos-wms","aire","elevacion","ina","usgs","nasa-catalogo","productos-nasa","landsat","radar","copernicus-stac","cnes-stac","dlr-stac","deafrica-stac","firms","nasa-power-30","enso","era5-cds","sentinel-hub","noaa-cdo","usgs-m2m","nasa-earthdata","copernicus-marine","gee","openaq","gfw","aemet","eumetsat","jaxa","mosdac","kma","fengyun"];
+const NDVI_VIEWS = ["ndvi","sentinel-hub-ndvi","openeo-ndvi","gee-ndvi"];
+const GIBS_LAYERS: [string,string,string][] = [
+  ["","Capas NASA · ninguna",""],
+  ["MODIS_Terra_NDVI_8Day","NDVI MODIS · 8 días · 250 m","Vegetación regional. Para el lote usar NDVI Sentinel-2 (10 m)."],
+  ["MODIS_Terra_Land_Surface_Temp_Day","Temperatura de superficie · día · 1 km","Temperatura del suelo/canopeo, no del aire."],
+  ["SMAP_L4_Analyzed_Surface_Soil_Moisture","Humedad de suelo SMAP · 9 km","Modelo asimilado, 0–5 cm. Escala regional."],
+  ["IMERG_Precipitation_Rate","Lluvia GPM IMERG · 30 min","Tasa de lluvia satelital estimada, no pluviómetro."],
+];
 const NATIONAL = ["smn", "inmet", "dmc", "eccc", "nws"];
 const SOURCES = [
   ["plataformas","Matriz de conexiones","REST · STAC · WMS/WMTS · OAuth"],
@@ -73,6 +81,9 @@ const SOURCES = [
   ["nasa-power-30","NASA POWER · 30 años","NASA / REST abierto"],
   ["enso","ENSO · consenso mundial","NOAA · IRI · WMO · JMA · BOM"],
   ["era5-cds","ERA5 / CDS","ECMWF · requiere CDS_API_KEY"],
+  ["sentinel-hub-ndvi","NDVI · Sentinel Hub","Copernicus · CDSE OAuth2"],
+  ["openeo-ndvi","NDVI · openEO","Copernicus · CDSE OAuth2"],
+  ["gee-ndvi","NDVI histórico · Earth Engine","MODIS 250 m · proyecto Cloud"],
   ["sentinel-hub","Sentinel Hub · proceso","Copernicus · OAuth2 requerido"],
   ["noaa-cdo","NOAA CDO histórico","NOAA · token requerido"],
   ["usgs-m2m","USGS M2M / Landsat","USGS · cuenta/token"],
@@ -90,6 +101,7 @@ const SOURCES = [
   ["variables", "Clima y suelo", "Open-Meteo"],
   ["modelos", "Comparar modelos globales", "Open-Meteo / 7 proveedores"],
   ["escenas", "Escenas satelitales", "Earth Search / Sentinel-2"],
+  ["ndvi", "NDVI del lote", "Sentinel-2 10 m · Planetary Computer"],
   ["historico", "Histórico reciente", "NASA POWER"],
   ["rios", "Ríos y caudales", "GloFAS / Open-Meteo"],
   ["suelo", "Nitrógeno del suelo", "ISRIC SoilGrids"],
@@ -284,6 +296,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
       new Date(Date.now() - 2 * 86400000).toISOString().slice(0, 10),
     ),
     [layer, setLayer] = useState("base"),
+    [gibsLayer, setGibsLayer] = useState(""),
     [toast, setToast] = useState(""),
     [vertices, setVertices] = useState<Point[]>([]),
     [drawing, setDrawing] = useState(false),
@@ -465,6 +478,31 @@ function Observatory({onHome}:{onHome:()=>void}) {
       overlay.remove();
     };
   }, [layer, date]);
+  useEffect(() => {
+    if (!gibsLayer || !mapRef.current) return;
+    // WMS sin TIME: GIBS devuelve la última fecha disponible de cada capa.
+    const wms = L.tileLayer.wms("https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi", {
+      layers: gibsLayer, format: "image/png", transparent: true, opacity: .7,
+      attribution: "NASA GIBS / EOSDIS",
+    } as L.WMSOptions).addTo(mapRef.current);
+    let warned = false;
+    wms.on("tileerror", () => { if (!warned) { warned = true; notify("NASA GIBS no devolvió esta capa ahora. Probá más tarde u otra capa."); } });
+    return () => { wms.remove(); };
+  }, [gibsLayer]);
+  const [showNdvi, setShowNdvi] = useState(true);
+  const ndviOverlay = useRef<L.ImageOverlay | null>(null);
+  useEffect(() => {
+    ndviOverlay.current?.remove(); ndviOverlay.current = null;
+    const latest = (sources.ndvi?.payload as any)?.data?.latest;
+    if (!mapRef.current || !showNdvi || view !== "ndvi" || !latest?.item || vertices.length < 3) return;
+    const lats = vertices.map(v=>v[0]), lons = vertices.map(v=>v[1]);
+    const bounds: L.LatLngBoundsExpression = [[Math.min(...lats), Math.min(...lons)], [Math.max(...lats), Math.max(...lons)]];
+    const url = "/api/fuentes/ndvi-imagen?" + new URLSearchParams({lat:String(point[0]),lon:String(point[1]),item:latest.item,baseline:String(latest.processing_baseline||""),polygon:JSON.stringify(vertices)});
+    const ov = L.imageOverlay(url, bounds, {opacity: .85, interactive: false}).addTo(mapRef.current);
+    ov.on("error", () => notify("La imagen NDVI no se pudo recortar al lote. Los valores del panel siguen siendo válidos."));
+    ndviOverlay.current = ov;
+    return () => { ov.remove(); };
+  }, [sources.ndvi, showNdvi, view, vertices]);
   const changeView = (key: string) => {
     // Always refresh: source results are spatial/temporal and must follow the currently selected lot.
     // Reusing an old payload after changing polygon was a functional bug in earlier versions.
@@ -677,7 +715,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
           <button title="Resumen"><LayoutDashboard/></button>
           <button title="Lotes y potreros" onClick={()=>startDraw("free")}><Layers/></button>
           <button title="Satélites" onClick={()=>changeView("escenas")}><Satellite/></button>
-          <button title="Vegetación y pasturas" onClick={()=>changeView("escenas")}><Sprout/></button>
+          <button title="Vegetación y pasturas · NDVI del lote" onClick={()=>changeView("ndvi")}><Sprout/></button>
           <button title="Agua" onClick={()=>changeView("rios")}><Waves/></button>
           <button title="Suelos" onClick={()=>changeView("suelo")}><CircleDot/></button>
           <button title="Ganado"><Beef/></button>
@@ -814,6 +852,19 @@ function Observatory({onHome}:{onHome:()=>void}) {
                   <p className="footnote">Se muestran hasta 35 valores; exportá JSON para ver toda la respuesta. La antigüedad y la distancia de cada registro importan.</p>
                 </>
               )}
+              {NDVI_VIEWS.includes(view) && <>
+                {vertices.length < 3 && <p className="error">Dibujá el lote primero: el NDVI es una estadística dentro del polígono, no un valor de punto.</p>}
+                {payload?.latest && <div className="keygrid">
+                  <div className="key"><span>NDVI medio</span><strong>{fmt(payload.latest.ndvi_mean,2)}</strong></div>
+                  <div className="key"><span>Mediana</span><strong>{fmt(payload.latest.ndvi_median ?? payload.latest.ndvi_p50,2)}</strong></div>
+                  <div className="key"><span>Rango p2–p98</span><strong>{payload.latest.ndvi_p2!=null?`${fmt(payload.latest.ndvi_p2,2)} – ${fmt(payload.latest.ndvi_p98,2)}`:"s/d"}</strong></div>
+                  <div className="key"><span>Lote despejado</span><strong>{payload.latest.clear_fraction_lot!=null?Math.round(payload.latest.clear_fraction_lot*100)+" %":"s/d"}</strong></div>
+                </div>}
+                {payload?.latest && <p className="footnote">Última escena válida: {(payload.latest.datetime||payload.latest.from||"").slice(0,10)} · {payload.area_ha} ha · {payload.latest.pixels??"s/d"} píxeles · {payload.sensor}</p>}
+                {(payload?.series||[]).slice().reverse().map((r:Data,i:number)=><div className="soil" key={i}><span>{(r.datetime||r.from||"").slice(0,10)}<small style={{display:"block"}}>{r.status}{r.clear_fraction_lot!=null?` · ${Math.round(r.clear_fraction_lot*100)} % despejado`:""}</small></span><strong>{r.status==="válida"?fmt(r.ndvi_mean,2):"—"}</strong></div>,2)}
+                {view==="ndvi" && payload?.latest && <label className="small" style={{display:"block",marginTop:10}}><input type="checkbox" checked={showNdvi} onChange={e=>setShowNdvi(e.target.checked)}/> Ver NDVI sobre el mapa (recortado al lote)</label>}
+                <p className="footnote">Escala: menos de 0,2 suelo desnudo o agua · 0,2–0,5 vegetación rala o pastura seca · más de 0,5 vegetación activa. No reemplaza la recorrida a campo.</p>
+              </>}
               {view === "metnorway" && <><p className="footnote">MET Norway · conexión directa · pronóstico modelado. Actualizado: {payload?.properties?.meta?.updated_at || "Sin fecha"}</p>{Object.entries(payload?.properties?.timeseries?.[0]?.data?.instant?.details || {}).map(([key,value])=><div className="soil" key={key}><span style={{fontSize:10,maxWidth:"65%"}}>{key.replaceAll("_"," ")}</span><strong style={{fontSize:12}}>{fmt(value)} <small>{payload?.properties?.meta?.units?.[key]}</small></strong></div>)}<p className="footnote">Hora válida: {payload?.properties?.timeseries?.[0]?.time || "Sin fecha"}. Datos MET Norway, CC BY 4.0.</p></>}
               {view === "variables" && (
                 <>
@@ -1136,6 +1187,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
             Mapa satelital
           </button>
           <button className={layer === "modis" ? "active" : ""} onClick={() => setLayer("modis")} aria-pressed={layer === "modis"}>MODIS · imagen</button>
+          <select value={gibsLayer} onChange={e=>{setGibsLayer(e.target.value); const d=GIBS_LAYERS.find(([k])=>k===e.target.value)?.[2]; if(d) notify(d);}} aria-label="Capa NASA GIBS">{GIBS_LAYERS.map(([k,l])=><option key={k} value={k}>{l}</option>)}</select>
           <button onClick={()=>changeView("firms")}>FIRMS · focos térmicos</button>
           <button onClick={()=>changeView("nasa-power-30")}>NASA POWER · clima</button>
           <button onClick={()=>changeView("enso")}>ENSO · multifuente</button>
@@ -1174,11 +1226,11 @@ function Observatory({onHome}:{onHome:()=>void}) {
         </div>
         {drawing && (
           <div className="panel message show">
-            <p>{vertices.length} vértices. Marcá al menos tres puntos.</p>
+            <p>{vertices.length} vértices. {drawMode==="rectangle"?"Marcá 2 esquinas opuestas o 4 vértices.":"Marcá al menos tres puntos."}</p>
             <div className="row">
               <button
                 className="primary"
-                disabled={vertices.length < 3}
+                disabled={drawMode==="rectangle" ? !(vertices.length===2||vertices.length===4) : vertices.length < 3}
                 onClick={finish}
               >
                 Finalizar
@@ -1208,10 +1260,11 @@ function Observatory({onHome}:{onHome:()=>void}) {
                 <TriangleAlert className="icon" />
                 Pasturas / NDVI
               </strong>
-              <p>
-                Sin cálculo conectado. Se requieren bandas roja e infrarroja y
-                máscara de nubes.
-              </p>
+              {(sources.ndvi?.payload as any)?.data?.latest ? <p>
+                NDVI medio {fmt((sources.ndvi?.payload as any).data.latest.ndvi_mean,2)} · {String((sources.ndvi?.payload as any).data.latest.datetime||"").slice(0,10)} · Sentinel-2, nubes del lote excluidas.
+              </p> : <p>
+                {vertices.length>=3 ? <button className="data-button" style={{marginTop:6}} onClick={()=>changeView("ndvi")}>Calcular NDVI del lote</button> : "Dibujá un lote para calcular NDVI Sentinel-2 dentro del polígono."}
+              </p>}
             </div>
             <div className="notice">
               <strong>Ganado / bebederos</strong>
@@ -1257,7 +1310,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
           </section>
         </aside>
         <section className="charts">
-          {view==="ina" ? <><section className="panel chart"><h2>{inaSeries==="37299"?"Temperatura observada":"Río Paraná · altura observada"}</h2><p className="small">INA · Bella Vista · serie {inaSeries} · fechas originales</p><Chart dates={(payload?.data||[]).map((r:Data)=>r.timestart)} unit={payload?.responseHeader?.seriesmetadata?.unit_abrev||"m"} series={[{name:"Altura",values:(payload?.data||[]).map((r:Data)=>r.valor??null),color:"#06b6d4"}]}/></section><section className="panel chart"><h2>Estación hidrométrica</h2><p className="footnote">Nivel del río medido en una estación; no describe inundación del lote. Para evaluar riesgo hacen falta relieve, umbrales y delimitación de la cuenca.</p></section></> : view==="aire" ? <>{["pm2_5","pm10"].map((k,i)=><section className="panel chart" key={k}><h2>{i===0?"Partículas PM2.5":"Partículas PM10"}</h2><p className="small">CAMS · pronóstico modelado · UTC</p><Chart dates={payload?.hourly?.time||[]} unit={payload?.hourly_units?.[k]||""} series={[{name:k,values:payload?.hourly?.[k]||[],color:i===0?"#06b6d4":"#b7c989"}]}/></section>)}</> : NATIONAL.includes(view) ? (
+          {NDVI_VIEWS.includes(view) ? <section className="panel chart"><h2>NDVI del lote · serie</h2><p className="small">{payload?.sensor||"Sentinel-2"} · media zonal dentro del polígono · escenas nubladas en el lote excluidas</p><Chart dates={(payload?.series||[]).filter((r:Data)=>r.status==="válida").map((r:Data)=>(r.datetime||r.from||"").slice(0,10))} unit="NDVI" series={[{name:"NDVI medio",values:(payload?.series||[]).filter((r:Data)=>r.status==="válida").map((r:Data)=>r.ndvi_mean??null),color:"#19b98a"}]}/></section> : view==="ina" ? <><section className="panel chart"><h2>{inaSeries==="37299"?"Temperatura observada":"Río Paraná · altura observada"}</h2><p className="small">INA · Bella Vista · serie {inaSeries} · fechas originales</p><Chart dates={(payload?.data||[]).map((r:Data)=>r.timestart)} unit={payload?.responseHeader?.seriesmetadata?.unit_abrev||"m"} series={[{name:"Altura",values:(payload?.data||[]).map((r:Data)=>r.valor??null),color:"#06b6d4"}]}/></section><section className="panel chart"><h2>Estación hidrométrica</h2><p className="footnote">Nivel del río medido en una estación; no describe inundación del lote. Para evaluar riesgo hacen falta relieve, umbrales y delimitación de la cuenca.</p></section></> : view==="aire" ? <>{["pm2_5","pm10"].map((k,i)=><section className="panel chart" key={k}><h2>{i===0?"Partículas PM2.5":"Partículas PM10"}</h2><p className="small">CAMS · pronóstico modelado · UTC</p><Chart dates={payload?.hourly?.time||[]} unit={payload?.hourly_units?.[k]||""} series={[{name:k,values:payload?.hourly?.[k]||[],color:i===0?"#06b6d4":"#b7c989"}]}/></section>)}</> : NATIONAL.includes(view) ? (
             <>
               {[(view==="eccc"?"TEMP":view==="nws"?"temperature":"air_temperature"), (view==="eccc"?"WIND_SPEED":view==="nws"?"windSpeed":"wind_speed")].map((variable,i)=>{
                 const rows=(payload?.observations||[]).filter((o:Data)=>o.variable===variable).sort((a:Data,b:Data)=>String(a.observed_at).localeCompare(String(b.observed_at)));

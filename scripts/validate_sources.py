@@ -4,6 +4,7 @@ import json, os, sys
 from datetime import datetime, timezone
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 import research_connectors as c
+import vegetation as veg
 LAT,LON=-28.507,-59.043
 POLY=[[-28.512,-59.049],[-28.502,-59.049],[-28.502,-59.037],[-28.512,-59.037]]
 checks=[
@@ -11,13 +12,18 @@ checks=[
  ('nasa-gibs','IMAGE',c.nasa_gibs_capabilities),
  ('sentinel-2','CATALOG',lambda:c.scenes(LAT,LON,POLY)),
  ('nasa-power','ANALYSIS',lambda:c.nasa_power_long(LAT,LON,1)),
+ ('pc-ndvi','ANALYSIS',lambda:veg.ndvi_open(POLY,days=90,scenes=3)),
 ]
+if os.environ.get('CDSE_CLIENT_ID'):
+ checks.append(('sentinel-hub-ndvi','ANALYSIS',lambda:veg.sentinel_hub_ndvi(POLY,90)))
+ checks.append(('openeo-ndvi','ANALYSIS',lambda:veg.openeo_ndvi(POLY,60)))
+if os.environ.get('GOOGLE_APPLICATION_CREDENTIALS_JSON'): checks.append(('gee-ndvi','ANALYSIS',lambda:veg.gee_ndvi(POLY,2)))
 if os.environ.get('FIRMS_MAP_KEY'): checks.append(('nasa-firms','MARKERS',lambda:c.firms(LAT,LON,POLY)))
 out=[]
 for name,cap,fn in checks:
  row={'source':name,'capability':cap,'checked_at':datetime.now(timezone.utc).isoformat()}
  try:
-  r=fn(); row.update(status='OPERATIVE',source_url=r.get('source_url'),scope=r.get('scope'))
+  r=fn(); row.update(status='OPERATIVE' if r.get('status')!='sin dato' else 'NO_VALID_DATA',source_url=r.get('source_url'),scope=r.get('scope'))
  except Exception as e: row.update(status='ERROR',error=type(e).__name__+': '+str(e))
  out.append(row)
 for name,envs in {'sentinel-hub':['CDSE_CLIENT_ID','CDSE_CLIENT_SECRET'],'era5-cds':['CDS_API_KEY'],'nasa-earthdata':['EARTHDATA_TOKEN']}.items():
