@@ -8,6 +8,7 @@ import agentic_engine as agentic
 import vegetation as veg
 import climate_indices as ci
 import report_typst as rt
+import rainfall as rain
 
 research_api=Blueprint('research_api',__name__,url_prefix='/api/fuentes')
 
@@ -49,6 +50,10 @@ def research_data(name):
         if request.args.get('polygon'):
             try: polygon=json.loads(request.args.get('polygon','null'))
             except Exception: raise ValueError('Polígono inválido')
+        if name=='lluvia':
+            if request.args.get('job'):
+                return jsonify(rain.result(request.args.get('job','')))
+            return jsonify(rain.start(polygon if polygon else [[lat-0.01,lon-0.01],[lat-0.01,lon+0.01],[lat+0.01,lon+0.01],[lat+0.01,lon-0.01]]))
         if name in VEGETATION:
             if name=='ndvi-imagen':
                 png,bounds=veg.ndvi_png(request.args.get('item',''),polygon,request.args.get('baseline'))

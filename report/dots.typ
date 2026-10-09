@@ -246,6 +246,20 @@
   )
 ]
 
+#if d.at("spi", default: ()).len() > 0 [
+  #section("05b", "Lluvia observada y sequía")
+  #text(size: 8pt, fill: muted)[#d.spi_note]
+  #v(4pt)
+  #grid(columns: (1fr, 1fr, 1fr, 1fr), gutter: 6pt,
+    ..d.spi.map(s => card[
+      #text(size: 7pt, fill: muted)[#s.label]
+      #linebreak()#text(size: 14pt, weight: "bold")[#s.mm]#text(size: 7.5pt, fill: muted)[ mm]
+      #linebreak()#text(size: 7.5pt, fill: tone(s.tone), weight: "semibold")[#s.class] #text(size: 7pt, fill: muted)[· SPI #s.spi]
+      #linebreak()#text(size: 7pt, fill: muted)[normal #s.normal mm]
+    ])
+  )
+]
+
 #if d.telecon.len() > 0 [
   #section("06", "El Niño y teleconexiones")
   #if d.enso_text != "" [#card(fill: brand-soft, stroke: none)[#d.enso_text] #v(4pt)]

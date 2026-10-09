@@ -165,6 +165,23 @@ def build_data(result, name='Lote DOTS', extras=None):
         enso_text = (f"Consenso NOAA: {tele['enso_consensus']} ({tele.get('enso_agreement')} índices del Pacífico coinciden). "
                      'Interpretar junto al pronóstico estacional del SMN para la zona.')
 
+    # ── lluvia observada CHIRPS
+    lluvia = extras.get('lluvia') or {}
+    spi_rows = []
+    for k, lab in (('1', 'Último mes'), ('3', 'Últimos 3 meses'), ('6', 'Últimos 6 meses'), ('12', 'Últimos 12 meses')):
+        x = (lluvia.get('spi') or {}).get(k) or {}
+        if x.get('mm') is None:
+            continue
+        sv = x.get('spi')
+        spi_rows.append({'label': lab, 'mm': num(x['mm'], 0), 'normal': num(x.get('normal'), 0),
+                         'class': x.get('class', ''), 'spi': num(sv, 1) if sv is not None else '—',
+                         'tone': 'idle' if sv is None else 'warn' if sv <= -1 else 'ok' if sv < 1 else 'idle'})
+    rec = lluvia.get('recent') or []
+    if rec:
+        charts.append({'kind': 'bars', 'title': 'Lluvia observada vs. normal', 'subtitle': 'CHIRPS · últimos 12 meses · mm',
+                       'unit': 'mm', 'labels': [r['period'][5:7] + '/' + r['period'][2:4] for r in rec],
+                       'series': [{'name': 'Observada', 'values': [_f(r.get('mm')) for r in rec]},
+                                  {'name': 'Normal', 'values': [_f(r.get('normal')) for r in rec]}]})
     ev = result.get('evidence') or []
     ok = sum(1 for e in ev if e.get('status') == 'recibido')
     return {
@@ -188,6 +205,8 @@ def build_data(result, name='Lote DOTS', extras=None):
         'indices_note': (f"ERA5 diario en el punto del lote, {indices.get('period', ['', ''])[0]}–{indices.get('period', ['', ''])[1]}. "
                          'Definiciones xclim / ETCCDI. Grilla de ~25 km: describe la zona, no microclimas.') if irows else '',
         'telecon': tl,
+        'spi': spi_rows,
+        'spi_note': (f"CHIRPS v2 (~5 km), promedio sobre el lote. Último mes completo: {lluvia.get('last_month', '')}. Normal: mediana 1991-2020. SPI menor a −1 indica sequía.") if spi_rows else '',
         'enso_text': enso_text,
         'warnings': result.get('warnings') or [],
         'evidence': [{'source': str(e.get('source', '')), 'status': str(e.get('status', '')),
@@ -195,7 +214,7 @@ def build_data(result, name='Lote DOTS', extras=None):
                      for e in ev],
         'evidence_note': f'{len(ev)} fuentes consultadas · {ok} con respuesta válida · {len(ev) - ok} sin dato. Ningún faltante se reemplaza por valores supuestos.',
         'attributions': ('Datos: Open-Meteo / ERA5 (Copernicus), NASA POWER, ISRIC SoilGrids, ESA Sentinel-2 vía Microsoft Planetary Computer, '
-                         'NOAA PSL y CPC, NASA FIRMS'
+                         'NOAA PSL y CPC, NASA FIRMS, CHIRPS (Climate Hazards Center, UCSB) vía ClimateSERV'
                          + ('; límites de lote: Fields of the World / PRUE (Robinson et al. 2026), CC-BY-4.0' if ftw else '')
                          + '. Tipografía IBM Plex (SIL OFL). Documento compuesto con Typst.'),
     }

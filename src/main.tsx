@@ -115,6 +115,7 @@ const SOURCES = [
   ["ndvi", "NDVI del lote", "Sentinel-2 10 m · Planetary Computer"],
   ["historico", "Histórico reciente", "NASA POWER"],
   ["indices", "Índices agroclimáticos", "ERA5 · definiciones xclim/ETCCDI"],
+  ["lluvia", "Lluvia observada y sequía", "CHIRPS · satélite + estaciones · SPI"],
   ["teleconexiones", "El Niño y teleconexiones", "NOAA PSL · ENSO, SOI, AAO, TSA, PDO"],
   ["rios", "Ríos y caudales", "GloFAS / Open-Meteo"],
   ["suelo", "Nitrógeno del suelo", "ISRIC SoilGrids"],
@@ -510,6 +511,19 @@ function Observatory({onHome}:{onHome:()=>void}) {
     wms.on("tileerror", () => { if (!warned) { warned = true; notify(gibsLayer===WORLDCOVER?"Terrascope no devolvió la capa WorldCover. Probá más tarde.":"NASA GIBS no devolvió esta capa ahora. Probá más tarde u otra capa."); } });
     return () => { wms.remove(); };
   }, [gibsLayer]);
+  useEffect(() => {
+    const d = (sources.lluvia?.payload as any)?.data;
+    if (!d?.job || d.status !== "en proceso") return;
+    const t = setTimeout(async () => {
+      try {
+        const r = await fetch(`/api/fuentes/lluvia?${new URLSearchParams({ lat: String(point[0]), lon: String(point[1]), job: d.job })}`);
+        const j = await r.json();
+        if (!r.ok) throw Error(j.error || "ClimateSERV no respondió");
+        setSources(prev => ({ ...prev, lluvia: { status: j.status === "sin dato" ? "sin dato" : "recibido", payload: j, error: j.error } }));
+      } catch (e) { setSources(prev => ({ ...prev, lluvia: { status: "sin dato", error: (e as Error).message } })); }
+    }, 5000);
+    return () => clearTimeout(t);
+  }, [sources.lluvia]);
   const [showNdvi, setShowNdvi] = useState(true);
   const [navCollapsed, setNavCollapsed] = useState(() => typeof window !== "undefined" && window.innerWidth < 1800);
   const [navOpen, setNavOpen] = useState(false);
@@ -695,7 +709,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
     const data = (k: string) => (sources[k]?.payload as any)?.data;
     return {
       lot: l ? { name: l.name, areaHa: l.areaHa, perimeterKm: l.perimeterKm, compactness: l.compactness, ftw: l.ftw, vertices: l.vertices } : null,
-      ndvi: data("ndvi"), indices: data("indices"), telecon: data("teleconexiones"), clima: data("variables"),
+      ndvi: data("ndvi"), indices: data("indices"), telecon: data("teleconexiones"), clima: data("variables"), lluvia: data("lluvia")?.spi ? data("lluvia") : null,
       place: placeLabel,
     };
   };
@@ -932,6 +946,12 @@ function Observatory({onHome}:{onHome:()=>void}) {
                   <p className="footnote">Se muestran hasta 35 valores; exportá JSON para ver toda la respuesta. La antigüedad y la distancia de cada registro importan.</p>
                 </>
               )}
+              {view==="lluvia" && payload?.status==="en proceso" && <p className="small">CHIRPS está calculando la lluvia diaria desde {payload.start} sobre {vertices.length>=3?"el lote":"el entorno del punto"}… {payload.progress!=null?`${payload.progress} %`:""} Puede tardar uno o dos minutos.</p>}
+              {view==="lluvia" && payload?.spi && <>
+                <p className="footnote">{payload.product} · último mes completo {payload.last_month} · normal {payload.normal_period?.[0]}–{payload.normal_period?.[1]}.</p>
+                <div className="spi-grid">{["1","3","6","12"].map(k=>{const x=payload.spi[k]||{};const cls=x.spi==null?"":x.spi<=-1?"dry":x.spi>=1?"wet":"ok";return <div className={"spi "+cls} key={k}><span>{k==="1"?"Último mes":`Últimos ${k} meses`}</span><b>{x.mm!=null?fmt(x.mm,0):"—"}<small> mm</small></b><em>{x.class}{x.spi!=null?` · SPI ${fmt(x.spi,1)}`:""}</em><small>normal {x.normal!=null?fmt(x.normal,0):"—"} mm</small></div>})}</div>
+                <p className="footnote">SPI: menos de −1 sequía, más de 1 exceso. Se compara con los mismos meses de 1991–2020 en este lugar.</p>
+              </>}
               {view==="indices" && payload?.catalog && <>
                 <p className="footnote">ERA5 diario en el punto del lote · {payload.period?.[0]}–{payload.period?.[1]} · último año {payload.last_year} comparado con el promedio del período.</p>
                 <div className="idx-table">
@@ -1437,7 +1457,10 @@ function Observatory({onHome}:{onHome:()=>void}) {
           </section>
         </aside>
         <section className="charts">
-          {view==="indices" && payload?.years ? <>
+          {view==="lluvia" && payload?.recent ? <>
+            <section className="panel chart"><h2>Lluvia mensual vs. normal</h2><p className="small">CHIRPS · últimos 12 meses · mm · normal = mediana 1991–2020</p><Chart dates={payload.recent.map((r:Data)=>r.period)} unit="mm" series={[{name:"Lluvia",values:payload.recent.map((r:Data)=>r.mm),type:"bar",color:"#06b6d4"},{name:"Normal",values:payload.recent.map((r:Data)=>r.normal),color:"#e9bd72"}]}/></section>
+            <section className="panel chart"><h2>Lluvia anual observada</h2><p className="small">CHIRPS · años completos · mm</p><Chart dates={(payload.annual||[]).map((r:Data)=>String(r.year))} unit="mm" series={[{name:"Lluvia anual",values:(payload.annual||[]).map((r:Data)=>r.mm),type:"bar",color:"#19b98a"}]}/></section>
+          </> : view==="indices" && payload?.years ? <>
             <section className="panel chart"><h2>Lluvia anual y días de lluvia intensa</h2><p className="small">ERA5 · mm por año · días con 20 mm o más</p><Chart dates={payload.years.map((r:Data)=>String(r.year))} unit="mm" series={[{name:"Lluvia anual",values:payload.years.map((r:Data)=>r.prcptot),type:"bar",color:"#06b6d4"}]}/></section>
             <section className="panel chart"><h2>Heladas y calor extremo</h2><p className="small">Días por año · mínima menor a 0 °C · máxima de 35 °C o más</p><Chart dates={payload.years.map((r:Data)=>String(r.year))} unit="días" series={[{name:"Heladas",values:payload.years.map((r:Data)=>r.frost_days),color:"#93c5fd"},{name:"Máx ≥ 35 °C",values:payload.years.map((r:Data)=>r.tx35),color:"#fd9c91"},{name:"Racha seca",values:payload.years.map((r:Data)=>r.cdd),color:"#e9bd72"}]}/></section>
           </> : view==="teleconexiones" && payload?.indices ? <>

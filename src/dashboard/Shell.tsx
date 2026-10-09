@@ -7,7 +7,7 @@
 import React from "react";
 import {
   LayoutDashboard, Layers, Satellite, Sprout, Waves, CircleDot, Beef, CloudSun,
-  Flame, Gauge, FileText, Network, Thermometer, ChevronsLeft, X, Hexagon,
+  Flame, Gauge, FileText, Network, Thermometer, CloudRain, ChevronsLeft, X, Hexagon,
 } from "lucide-react";
 
 export type NavItem = {
@@ -26,6 +26,7 @@ export function buildNav(go: (k: string) => void, draw: () => void, pdf: () => v
       { key: "escenas", label: "Satélites", icon: <Satellite />, onClick: () => go("escenas") },
       { key: "ndvi", label: "Vegetación · NDVI", icon: <Sprout />, onClick: () => go("ndvi") },
       { key: "rios", label: "Agua y ríos", icon: <Waves />, onClick: () => go("rios") },
+      { key: "lluvia", label: "Lluvia y sequía", icon: <CloudRain />, onClick: () => go("lluvia") },
       { key: "suelo", label: "Suelos", icon: <CircleDot />, onClick: () => go("suelo") },
       { key: "__ganado", label: "Ganado", icon: <Beef />, soon: true },
     ]},
