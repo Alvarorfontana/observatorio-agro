@@ -558,6 +558,33 @@ function Observatory({onHome}:{onHome:()=>void}) {
       setSources(p => ({ ...p, forraje: { status: "recibido", payload: j } }));
     } catch (e) { setSources(p => ({ ...p, forraje: { status: "sin dato", error: (e as Error).message } })); }
   };
+  const [estName, setEstName] = useState<string>(() => { try { return localStorage.getItem("dots-establishment") || ""; } catch { return ""; } });
+  const [coverYear, setCoverYear] = useState<number | null>(null);
+  const [eudrBusy, setEudrBusy] = useState(false);
+  const coverOverlay = useRef<L.ImageOverlay | null>(null);
+  const currentLot = () => { const l = lots.find(x => x.id === selectedLotId); return l ? { name: l.name, vertices: l.vertices, areaHa: l.areaHa, perimeterKm: l.perimeterKm, ftw: l.ftw } : (vertices.length >= 3 ? { name: "Lote", vertices, areaHa: lotAreaHa, perimeterKm: lotPerimeterKm } : null); };
+  const eudrDownload = async (kind: "pdf" | "geojson") => {
+    const lot = currentLot(); if (!lot) { notify("Dibujá o seleccioná un lote primero."); return; }
+    setEudrBusy(true);
+    try {
+      const r = await fetch(`/api/fuentes/eudr/${kind}`, { method: "POST", headers: { "Content-Type": "application/json" }, signal: AbortSignal.timeout(58000),
+        body: JSON.stringify({ lot, establecimiento: estName, heads: herdHeads || null, sustentabilidad: (sources.sustentabilidad?.payload as any)?.data }) });
+      if (!r.ok) { const j = await r.json().catch(() => ({})); throw Error(j.error || "No se pudo generar"); }
+      download(await r.blob(), kind === "pdf" ? "DOTS-libre-de-deforestacion.pdf" : "DOTS-lote-geolocalizacion.geojson");
+    } catch (e) { notify((e as Error).message); } finally { setEudrBusy(false); }
+  };
+  useEffect(() => {
+    coverOverlay.current?.remove(); coverOverlay.current = null;
+    const ser = (sources.sustentabilidad?.payload as any)?.data?.deforestation?.series || [];
+    const row = ser.find((r: any) => r.year === coverYear);
+    if (!mapRef.current || view !== "sustentabilidad" || !row?.item || vertices.length < 3) return;
+    const lats = vertices.map(v => v[0]), lons = vertices.map(v => v[1]);
+    const url = "/api/fuentes/cobertura-imagen?" + new URLSearchParams({ lat: String(point[0]), lon: String(point[1]), item: row.item, polygon: JSON.stringify(vertices) });
+    const ov = L.imageOverlay(url, [[Math.min(...lats), Math.min(...lons)], [Math.max(...lats), Math.max(...lons)]], { opacity: .85, interactive: false }).addTo(mapRef.current);
+    ov.on("error", () => notify("No se pudo dibujar la cobertura de ese año."));
+    coverOverlay.current = ov;
+    return () => { ov.remove(); };
+  }, [coverYear, sources.sustentabilidad, view, vertices]);
   const [showNdvi, setShowNdvi] = useState(true);
   const [overlayMode, setOverlayMode] = useState<"ndvi"|"rgb">("ndvi");
   const [navCollapsed, setNavCollapsed] = useState(() => typeof window !== "undefined" && window.innerWidth < 1800);
@@ -1006,6 +1033,19 @@ function Observatory({onHome}:{onHome:()=>void}) {
               {view==="sustentabilidad" && <>
                 <label className="small" style={{display:"block",marginBottom:8}}>Cabezas en el lote (para emisiones)<div className="row" style={{marginTop:6}}><input type="number" min={0} value={herdHeads||""} placeholder="ej. 250" onChange={e=>{const v=Math.max(0,Number(e.target.value)||0);setHerdHeads(v);try{localStorage.setItem("dots-heads",String(v))}catch{}}}/><button onClick={()=>void load("sustentabilidad")}>Calcular</button></div></label>
                 {payload?.deforestation && (()=>{const d=payload.deforestation;const ok=String(d.verdict).startsWith("sin pérdida");return <div className={"verdict "+(ok?"ok":d.verdict==="sin dato"?"":"warn")}><span>Libre de deforestación · corte {d.cutoff}</span><b>{d.verdict}</b><small>Árboles en el lote: {d.baseline_year} {fmt((d.series.find((r:Data)=>r.year===d.baseline_year)?.trees??0)*100,1)} % → {d.last_year} {fmt((d.series.find((r:Data)=>r.year===d.last_year)?.trees??0)*100,1)} % · pérdida estimada {fmt(d.tree_loss_ha,1)} ha</small></div>})()}
+                {payload?.deforestation?.series?.length>0 && <>
+                  <div className="lot-vars-title" style={{marginTop:10}}>Cobertura año por año · % del lote</div>
+                  <div className="cover-table"><div className="cover-head"><span>Año</span><span>Árboles</span><span>ha</span><span>Pastizal</span><span>Cultivo</span><span>Ver</span></div>
+                    {payload.deforestation.series.map((r:Data)=><div className={"cover-row"+(r.year===2020?" cut":"")} key={r.year}><span>{r.year}</span><b>{r.trees!=null?fmt(r.trees*100,1):"—"}</b><span>{r.trees!=null&&payload.deforestation.area_ha?fmt(r.trees*payload.deforestation.area_ha,1):"—"}</span><span>{r.rangeland!=null?fmt(r.rangeland*100,0):"—"}</span><span>{r.crops!=null?fmt(r.crops*100,0):"—"}</span><button className={coverYear===r.year?"active":""} onClick={()=>setCoverYear(coverYear===r.year?null:r.year)} title="Ver la cobertura de ese año sobre el lote">◧</button></div>)}
+                  </div>
+                  {coverYear && <div className="dots-legend-inline">{[["#397d49","Árboles"],["#e3e2c3","Pastizal"],["#e49635","Cultivo"],["#419bdf","Agua"],["#7a87c6","Veg. inundada"],["#a59b8f","Suelo desnudo"]].map(([c,l])=><span key={l}><i style={{background:c}}/>{l}</span>)}</div>}
+                  <p className="footnote">Fila resaltada: año de corte. Tocá ◧ para ver la cobertura de ese año sobre el lote y comparar 2020 con el último.</p>
+                </>}
+                <div className="eudr-actions">
+                  <label className="small">Establecimiento (para el informe)<input value={estName} placeholder="Nombre · partido · provincia" onChange={e=>{setEstName(e.target.value);try{localStorage.setItem("dots-establishment",e.target.value)}catch{}}}/></label>
+                  <button className="primary" disabled={eudrBusy} onClick={()=>void eudrDownload("pdf")}>{eudrBusy?"Generando…":"Informe de verificación (PDF)"}</button>
+                  <button disabled={eudrBusy} onClick={()=>void eudrDownload("geojson")}>Geolocalización del lote (GeoJSON)</button>
+                </div>
                 {payload?.deforestation?.worldcover_tree_2020!=null && <p className="footnote">Control con ESA WorldCover: árboles {fmt(payload.deforestation.worldcover_tree_2020*100,1)} % (2020) y {fmt((payload.deforestation.worldcover_tree_2021??0)*100,1)} % (2021).</p>}
                 {payload?.carbon && <>
                   <div className="lot-vars-title" style={{marginTop:10}}>Carbono del suelo · 0–30 cm</div>
@@ -1823,7 +1863,7 @@ function SiteLink({to,children,className=""}:{to:string;children:React.ReactNode
   return <a href={to} className={className} onClick={(e)=>{e.preventDefault();history.pushState({},"",to);window.dispatchEvent(new PopStateEvent("popstate"));window.scrollTo({top:0,behavior:"smooth"});}}>{children}</a>
 }
 function Brand(){return <SiteLink to="/" className="site-brand"><img className="brand-logo" src="/dots-logo.svg" alt="DOTS Campo"/><span><b>DOTS <em>CAMPO</em></b><small>DATOS · OBSERVACIÓN · TERRITORIO · SATÉLITE</small></span></SiteLink>}
-function PublicHeader({onDemo}:{onDemo:()=>void}){return <header className="site-header"><Brand/><nav><SiteLink to="/que-es-dots">Qué es DOTS</SiteLink><SiteLink to="/modulos">Módulos</SiteLink><SiteLink to="/panel">Panel regional</SiteLink><SiteLink to="/tecnologia">Fuentes y datos</SiteLink><SiteLink to="/conexiones">APIs y accesos</SiteLink><button className="nav-demo" onClick={onDemo}>Demo</button></nav><div className="site-head-actions"><SiteLink to="/acceso" className="ghost-link">Ingresar</SiteLink><button className="demo-btn" onClick={onDemo}>Abrir Observatorio →</button></div></header>}
+function PublicHeader({onDemo}:{onDemo:()=>void}){return <header className="site-header"><Brand/><nav><SiteLink to="/que-es-dots">Qué es DOTS</SiteLink><SiteLink to="/libre-deforestacion" className="nav-highlight">Libre de deforestación</SiteLink><SiteLink to="/modulos">Módulos</SiteLink><SiteLink to="/panel">Panel regional</SiteLink><SiteLink to="/tecnologia">Fuentes y datos</SiteLink><SiteLink to="/conexiones">APIs y accesos</SiteLink><button className="nav-demo" onClick={onDemo}>Demo</button></nav><div className="site-head-actions"><SiteLink to="/acceso" className="ghost-link">Ingresar</SiteLink><button className="demo-btn" onClick={onDemo}>Abrir Observatorio →</button></div></header>}
 const sourceGroups=[
  ["ARGENTINA",["CONAE · SAOCOM","SMN","INA"]],
  ["EUROPA",["Copernicus · Sentinel","ECMWF · C3S","EUMETSAT","DLR · Alemania","CNES · Francia"]],
@@ -1839,6 +1879,7 @@ function Home({onDemo}:{onDemo:()=>void}){return <div className="public-site"><P
  <SourceStrip/>
  <section className="home-intro editorial"><div><span className="section-tag">UN CAMPO · UNA LECTURA</span><h2>Del límite del potrero a la decisión.</h2></div><p>DOTS no reemplaza la recorrida ni el análisis profesional. Ordena información dispersa alrededor de una unidad territorial concreta y muestra qué fue observado, modelado, calculado o pronosticado.</p></section>
  <section className="journey"><article><b>01</b><h3>Delimitá</h3><p>Triángulo, rectángulo o polígono libre. Superficie, perímetro y centroide.</p></article><article><b>02</b><h3>Observá</h3><p>Escenas, clima, agua, suelo, vegetación y riesgos sobre el mismo territorio.</p></article><article><b>03</b><h3>Compará</h3><p>Fechas, modelos y fuentes sin perder procedencia ni calidad.</p></article><article><b>04</b><h3>Decidí</h3><p>Hallazgos, alertas, tareas e Informe Territorial DOTS unificado.</p></article></section>
+ <section className="eudr-feature"><div><span className="section-tag">NUEVO · UNIÓN EUROPEA</span><h2>Libre de deforestación, verificado por satélite.</h2><p>Desde el 30/12/2026 la carne y el cuero que se exporten a Europa deben probar que no vienen de tierras deforestadas después de 2020. DOTS lo verifica lote por lote y entrega el informe y la geolocalización listos para la debida diligencia, con el carbono del suelo y las emisiones del rodeo.</p><div className="cover-actions"><SiteLink to="/libre-deforestacion">Cómo funciona →</SiteLink><button onClick={onDemo}>Verificar un lote</button></div></div><ul><li><b>2017–2023</b>cobertura anual a 10 m</li><li><b>2 fuentes</b>Impact Observatory y ESA</li><li><b>6 decimales</b>polígono GeoJSON</li><li><b>t C/ha</b>carbono del suelo</li></ul></section>
  <section className="field-story"><div className="field-visual"><img src="/dots-hero.jpg" alt="Lotes de un establecimiento con índice de vegetación por sector"/></div><div><span className="section-tag">GEMELO DIGITAL GANADERO</span><h2>Cada potrero tiene contexto.</h2><p>Límites, pasturas, agua, infraestructura, ganado, clima, suelo, satélite, riesgos e historial se leen juntos. El mapa permanece como centro operativo mientras cambian las capas de análisis.</p><button onClick={onDemo}>Explorar el Observatorio</button></div></section>
  <section className="cap-grid">{[[MapPinned,"Lotes y potreros","Geometría, hectáreas, perímetro, historial y comparación."],[Droplets,"Agua e infraestructura","Fuentes de agua, cobertura, balance hídrico e inspecciones."],[Layers,"Pasturas y suelos","Vegetación, humedad y propiedades del suelo con método declarado."],[Thermometer,"Clima y ganado","Pronósticos, THI y contexto térmico para el rodeo."],[TriangleAlert,"Riesgos","Fuego, sequía, exceso hídrico y anomalías con evidencia."],[FileText,"Informe territorial","Un único PDF con mapa, gráficos, interpretación y trazabilidad."]].map(([Icon,t,d]:any)=><article key={t}><Icon/><h3>{t}</h3><p>{d}</p><SiteLink to="/modulos" className="cap-more">Cómo funciona →</SiteLink></article>)}</section>
  <section className="demo-call"><div><span className="section-tag">DEMOSTRACIÓN</span><h2>El mapa es el centro. Los datos explican el territorio.</h2><p>Delimitá un lote y consultá las fuentes disponibles. Si una fuente no responde o una variable no está medida, DOTS lo declara.</p></div><button onClick={onDemo}>Abrir Observatorio →</button></section>
@@ -1965,6 +2006,41 @@ function About({onDemo}:{onDemo:()=>void}){
     <section className="demo-call"><div><span className="section-tag">PROBALO</span><h2>Dibujá un potrero y mirá todo esto en acción.</h2><p>Los datos se consultan en el momento y cada uno muestra su fuente.</p></div><button onClick={onDemo}>Abrir Observatorio →</button></section>
   </main><SiteFooter/></div>;
 }
+
+function Deforestation({onDemo}:{onDemo:()=>void}){
+  const steps:[string,string,string][]=[
+    ["01","Delimitá el lote","Dibujalo o tomalo con un clic del mapa global de lotes. DOTS guarda el polígono en WGS84 con seis decimales, como pide la norma."],
+    ["02","DOTS mide la cobertura año por año","Impact Observatory (10 m, 2017–2023) clasifica cada píxel del lote en árboles, pastizal, cultivo o agua. ESA WorldCover controla 2020 y 2021 con otro sensor."],
+    ["03","Compara contra el corte","La cobertura arbórea del último año se compara con la de 2020. Se informan la pérdida en hectáreas y el cambio en puntos, con criterios publicados."],
+    ["04","Entrega la evidencia","Informe PDF con resultado, tabla anual, método, fuentes y límites, más el archivo GeoJSON del lote con su huella digital para cargar en el sistema europeo."],
+  ];
+  return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner eudr-page">
+    <section className="eudr-hero"><div>
+      <span className="section-tag">LIBRE DE DEFORESTACIÓN · CARBONO</span>
+      <h1>La evidencia satelital que pide Europa, por lote.</h1>
+      <p>Desde el 30 de diciembre de 2026 la carne vacuna y el cuero que entren a la Unión Europea tienen que demostrar que no vienen de tierras deforestadas después del 31 de diciembre de 2020. DOTS verifica la cobertura de cada lote con imágenes satelitales y entrega un informe listo para la debida diligencia.</p>
+      <div className="cover-actions"><button onClick={onDemo}>Verificar un lote →</button><SiteLink to="/contacto">Consultar para frigoríficos y exportadores</SiteLink></div>
+    </div><div className="eudr-badge"><b>31/12/2020</b><span>fecha de corte</span><b>30/12/2026</b><span>aplicación para operadores grandes y medianos</span><b>30/06/2027</b><span>microempresas y personas humanas</span></div></section>
+    <section className="eudr-steps">{steps.map(([n,t,d])=><article key={n}><span>{n}</span><h3>{t}</h3><p>{d}</p></article>)}</section>
+    <section className="about-body">
+      <section className="about-block"><div className="about-side"><span className="module-num">QUÉ PIDE LA NORMA</span><h2>Reglamento (UE) 2023/1115</h2></div><div className="about-text">
+        <p>El reglamento alcanza, entre otros productos, al ganado bovino, la carne vacuna y el cuero. Para venderlos en la Unión Europea, el operador tiene que demostrar tres cosas: que no provienen de tierras deforestadas después del 31 de diciembre de 2020, que se produjeron según la legislación del país de origen y que están cubiertos por una declaración de debida diligencia.</p>
+        <p>La geolocalización se expresa con al menos seis decimales. Para el ganado se admite la ubicación de cada establecimiento donde se crió el animal; DOTS entrega además el polígono completo del lote, que es la evidencia más sólida ante una consulta o una alerta.</p>
+        <p>Tras las modificaciones de 2025, las obligaciones rigen desde el 30 de diciembre de 2026 para operadores grandes y medianos y desde el 30 de junio de 2027 para microempresas y personas humanas.</p></div></section>
+      <section className="about-block"><div className="about-side"><span className="module-num">CÓMO SE DECIDE</span><h2>Criterios publicados</h2></div><div className="about-text">
+        <p><b>Sin pérdida detectada</b>: menos de 0,5 ha de pérdida estimada o una variación de cobertura arbórea mayor a −1 punto entre 2020 y el último año.</p>
+        <p><b>Pérdida menor · revisar</b>: entre 0,5 y 5 ha. Puede ser poda, sombra, un error de clasificación o un desmonte puntual.</p>
+        <p><b>Requiere verificación</b>: 5 ha o más. Se recomienda revisar imágenes de mayor resolución y la documentación del establecimiento.</p></div></section>
+      <section className="about-block"><div className="about-side"><span className="module-num">CARBONO</span><h2>Suelo y rodeo</h2></div><div className="about-text">
+        <p>El mismo informe muestra el carbono orgánico que guarda el suelo del lote en los primeros 30 cm (ISRIC SoilGrids, con su rango de incertidumbre) y su equivalente en CO₂. Con la cantidad de cabezas, estima el metano del rodeo con los factores del IPCC.</p>
+        <p>Es una línea de base para conversar con compradores y programas de carbono. Un proyecto de bonos de carbono requiere además muestreo de suelo y una metodología certificada.</p></div></section>
+      <section className="about-block"><div className="about-side"><span className="module-num">LÍMITES</span><h2>Qué no reemplaza</h2></div><div className="about-text">
+        <p>Es evidencia técnica de teledetección para la debida diligencia, no una certificación legal ni la declaración ante el sistema europeo. Los mapas de 10 m pueden confundir monte abierto con pastizal arbolado; ante una alerta corresponde revisar imágenes de mayor resolución, la documentación y, si hace falta, el campo.</p>
+        <p>Los animales que pasaron por otros establecimientos necesitan la geolocalización de cada uno.</p></div></section>
+    </section>
+    <section className="demo-call"><div><span className="section-tag">PARA QUIÉN</span><h2>Productores, frigoríficos, consignatarias y exportadores.</h2><p>Verificación por lote en el Observatorio, o por lotes completos de proveedores para empresas. Consultanos por volumen.</p></div><button onClick={onDemo}>Abrir Observatorio →</button></section>
+  </main><SiteFooter/></div>;
+}
 function PageHero({eyebrow,title,lead}:{eyebrow:string;title:string;lead:string}){return <section className="page-hero"><span className="section-tag">{eyebrow}</span><h1>{title}</h1><p>{lead}</p></section>}
 const cards={producto:[["01","Territorio primero","Todo análisis comienza en el polígono real del lote o potrero."],["02","Observación multifuente","Satélites, estaciones, modelos y bases territoriales se consultan por lugar y fecha."],["03","Interpretación trazable","Cada variable indica fuente, unidad, fecha, método, estado y alcance."],["04","Decisión y seguimiento","DOTS reúne hallazgos, recomendaciones, tareas e informe en una sola lectura."]],soluciones:[["Lotes y potreros","Superficie, perímetro, centroides, historial y análisis por unidad de manejo."],["Pasturas","Escenas y evolución espectral cuando existe procesamiento raster verificable."],["Agua","Lluvia, balance, ríos e infraestructura hídrica declarada o detectada con su nivel de evidencia."],["Suelos","Humedad, temperatura, relieve y propiedades modeladas con profundidad y fuente declaradas."],["Ganado","THI, carga y rotación cuando existe inventario o dato aportado por el productor."],["Riesgos","FIRMS, calor, sequía y exceso hídrico sin convertir ausencia de detección en ausencia de riesgo."]],ganaderia:[["Potrero como unidad","Cada lectura parte de un límite territorial y su historia."],["Agua para el rodeo","Cobertura, distancias y estado de la infraestructura hídrica."],["Pastura y carga","Condición vegetal cruzada con ocupación y presión de pastoreo cuando hay datos."],["Bienestar térmico","THI y meteorología para anticipar condiciones de estrés por calor."],["Rotación","Entrada, salida, descanso y recuperación del potrero."],["Tareas","Del diagnóstico a inspecciones, movimientos y acciones verificables."]]};
 function InstitutionalDepth({kind}:{kind:"producto"|"soluciones"|"ganaderia"}){
@@ -2064,6 +2140,7 @@ function App(){
   if(path==="/soluciones")return <InfoPage kind="soluciones" onDemo={openDemo}/>;
   if(path==="/ganaderia")return <InfoPage kind="ganaderia" onDemo={openDemo}/>;
   if(path==="/que-es-dots")return <About onDemo={openDemo}/>;
+  if(path==="/libre-deforestacion")return <Deforestation onDemo={openDemo}/>;
   if(path==="/modulos")return <Modules onDemo={openDemo}/>;
   if(path==="/panel")return <RegionalPanel onDemo={openDemo}/>;
   if(path==="/tecnologia")return <Technology onDemo={openDemo}/>;

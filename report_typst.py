@@ -282,3 +282,136 @@ def pdf(result, name='Lote DOTS', extras=None):
         pass
     import agentic_engine as agentic
     return agentic.pdf_bytes(result, name), 'reportlab'
+
+
+# ───────────────────────────── informe de libre de deforestación ─────────────────────────────
+EUDR_TEMPLATE = os.path.join(BASE, 'eudr.typ')
+
+
+def geojson_lot(vertices, name='Lote', area_ha=None):
+    """GeoJSON (WGS84, lon/lat, 6 decimales) con el polígono y su centroide, como pide la geolocalización EUDR."""
+    ring = [[round(float(lo), 6), round(float(la), 6)] for la, lo in vertices]
+    if ring and ring[0] != ring[-1]:
+        ring.append(ring[0])
+    cy = sum(p[1] for p in ring[:-1]) / max(1, len(ring) - 1); cx = sum(p[0] for p in ring[:-1]) / max(1, len(ring) - 1)
+    props = {'name': name, 'area_ha': None if area_ha is None else round(float(area_ha), 2), 'crs': 'EPSG:4326', 'source': 'DOTS / Campo'}
+    return {'type': 'FeatureCollection', 'features': [
+        {'type': 'Feature', 'properties': {**props, 'geometry_role': 'plot polygon'}, 'geometry': {'type': 'Polygon', 'coordinates': [ring]}},
+        {'type': 'Feature', 'properties': {**props, 'geometry_role': 'centroid'}, 'geometry': {'type': 'Point', 'coordinates': [round(cx, 6), round(cy, 6)]}}]}
+
+
+def eudr_data(lot, establishment, sust, generated=None):
+    import hashlib
+    vertices = lot.get('vertices') or []
+    if len(vertices) < 3:
+        raise ValueError('El informe necesita el polígono del lote')
+    de = (sust or {}).get('deforestation') or {}
+    cb = (sust or {}).get('carbon') or {}
+    area = lot.get('areaHa') or de.get('area_ha')
+    g = datetime.now(timezone.utc)
+    gen = generated or f'{g.day:02d} {MONTHS[g.month - 1]} {g.year} · {g:%H:%M} UTC'
+    gj = geojson_lot(vertices, lot.get('name') or 'Lote', area)
+    gtxt = json.dumps(gj, ensure_ascii=False, separators=(',', ':'), sort_keys=True)
+    ring = gj['features'][0]['geometry']['coordinates'][0]
+    cen = gj['features'][1]['geometry']['coordinates']
+    verdict = str(de.get('verdict') or 'sin dato')
+    vt = 'ok' if verdict.startswith('sin pérdida') else 'idle' if verdict == 'sin dato' else 'warn'
+    base_y, last_y = de.get('baseline_year'), de.get('last_year')
+    ser = de.get('series') or []
+    tb = next((r for r in ser if r.get('year') == base_y), {}); tl = next((r for r in ser if r.get('year') == last_y), {})
+    pct = lambda v: '—' if v is None else num(v * 100, 1) + ' %'
+    detail = (f"Árboles en el lote: {pct(tb.get('trees'))} en {base_y} y {pct(tl.get('trees'))} en {last_y}. "
+              f"Pérdida estimada {num(de.get('tree_loss_ha'), 2)} ha ({num(de.get('tree_change_pp'), 1)} puntos de cobertura).") if ser else \
+             'No hubo datos de cobertura suficientes para evaluar el lote.'
+    series = [{'year': r['year'], 'cut': r['year'] == 2020, 'trees': pct(r.get('trees')),
+               'trees_ha': num((r.get('trees') or 0) * (area or 0), 1) if r.get('trees') is not None and area else '—',
+               'rangeland': pct(r.get('rangeland')), 'crops': pct(r.get('crops')), 'water': pct(r.get('water'))} for r in ser]
+    wc = ''
+    if de.get('worldcover_tree_2020') is not None:
+        wc = (f"ESA WorldCover (otro sensor y otro modelo de clasificación) da {pct(de['worldcover_tree_2020'])} de cobertura arbórea en 2020 "
+              f"y {pct(de.get('worldcover_tree_2021'))} en 2021 para el mismo polígono.")
+    carbon = []
+    if cb.get('soc_t_ha') is not None:
+        carbon.append({'label': 'Carbono orgánico del suelo · 0-30 cm', 'value': f"{num(cb['soc_t_ha'], 1)} t C/ha",
+                       'detail': f"Rango probable {num((cb.get('soc_t_ha_range') or [None])[0], 0)}–{num((cb.get('soc_t_ha_range') or [None, None])[1], 0)} t C/ha (SoilGrids, percentiles 5 y 95)"})
+    if cb.get('soc_total_t'):
+        carbon.append({'label': 'Stock del lote', 'value': f"{num(cb['soc_total_t'], 0)} t C",
+                       'detail': f"Equivale a {num(cb.get('soc_total_tco2e'), 0)} t CO₂e (factor 44/12)"})
+    if cb.get('herd'):
+        h = cb['herd']
+        carbon.append({'label': f"Emisiones del rodeo · {h['heads']} cabezas", 'value': f"{num(h['co2e_t_year'], 0)} t CO₂e/año",
+                       'detail': f"{num(h['ch4_t_year'], 1)} t CH₄/año · {num(h['ef_kg_ch4_head'], 0)} kg CH₄/cabeza/año · GWP {num(h['gwp'], 0)}"})
+        if h.get('years_equiv_soc'):
+            carbon.append({'label': 'Relación stock / emisiones', 'value': f"{num(h['years_equiv_soc'], 0)} años",
+                           'detail': 'Años de emisiones del rodeo equivalentes al carbono que guarda el suelo del lote (referencia, no balance).'})
+    coords = []
+    pairs = ring[:-1]
+    half = (len(pairs) + 1) // 2
+    for i in range(half):
+        a = pairs[i]; b = pairs[i + half] if i + half < len(pairs) else None
+        coords += [str(i + 1), f'{a[1]:.6f}', f'{a[0]:.6f}']
+        coords += [str(i + half + 1), f'{b[1]:.6f}', f'{b[0]:.6f}'] if b else ['', '', '']
+    return {
+        'title': f"DOTS · Verificación de libre de deforestación · {lot.get('name') or 'Lote'}",
+        'generated': gen, 'establishment': establishment or 'Establecimiento sin nombre declarado',
+        'cutoff': '31/12/2020',
+        'verdict': {'text': verdict, 'tone': vt, 'detail': detail},
+        'lot': {'name': lot.get('name') or 'Lote', 'shape': shape(vertices), 'facts': [
+            ['Superficie', f"{num(area, 2)} ha" if area else '—'],
+            ['Perímetro', f"{num(lot.get('perimeterKm'), 2)} km" if lot.get('perimeterKm') else '—'],
+            ['Centroide (lat, lon)', f'{cen[1]:.6f}, {cen[0]:.6f}'],
+            ['Vértices del polígono', str(len(pairs))],
+            ['Sistema de referencia', 'WGS84 (EPSG:4326)'],
+            ['Origen del límite', 'Fields of the World (automático)' if lot.get('ftw') else 'Dibujado por el usuario'],
+        ]},
+        'series': series,
+        'series_note': ('Porcentaje del polígono en cada clase según Impact Observatory 10 m (Sentinel-2). '
+                        'La fila resaltada es el año de corte (2020).'),
+        'worldcover': wc,
+        'criteria': [
+            ['Sin pérdida detectada', 'Pérdida estimada menor a 0,5 ha o variación de cobertura arbórea mayor a −1 punto entre 2020 y el último año.'],
+            ['Pérdida menor · revisar', 'Pérdida estimada entre 0,5 y 5 ha: puede ser poda, sombra, error de clasificación o desmonte puntual.'],
+            ['Requiere verificación', 'Pérdida estimada de 5 ha o más: se recomienda revisar imágenes de alta resolución y la documentación del establecimiento.'],
+        ],
+        'carbon': carbon,
+        'carbon_note': ('El stock de carbono proviene de un modelo global a 250 m (ISRIC SoilGrids) y sirve como línea de base; un proyecto de bonos '
+                        'de carbono requiere muestreo de suelo. Emisiones: IPCC 2006 Nivel 1 (fermentación entérica, otros bovinos, Latinoamérica), GWP100 de IPCC AR6.'),
+        'framework': [
+            'El Reglamento (UE) 2023/1115 sobre productos libres de deforestación alcanza, entre otros, al ganado bovino, la carne vacuna y el cuero. '
+            'Exige que los productos no provengan de tierras deforestadas después del 31 de diciembre de 2020, que se hayan producido conforme a la '
+            'legislación del país de origen y que estén cubiertos por una declaración de debida diligencia.',
+            'Tras las modificaciones de 2025, las obligaciones se aplican desde el 30 de diciembre de 2026 para operadores grandes y medianos, y desde '
+            'el 30 de junio de 2027 para microempresas y personas humanas. La geolocalización debe expresarse con al menos seis decimales; para el ganado '
+            'se admite la ubicación de cada establecimiento donde se crió el animal. DOTS entrega además el polígono completo del lote como evidencia más sólida.',
+            'Este documento aporta evidencia técnica de teledetección para esa debida diligencia. La evaluación de legalidad, la trazabilidad de los animales '
+            'y la declaración ante el sistema de información de la Unión Europea corresponden al operador.',
+        ],
+        'sources': [
+            ['Impact Observatory 10 m Annual LULC v2', 'Clasificación anual 2017-2023 a partir de Sentinel-2; clase 2 = árboles. Licencia CC-BY 4.0. Vía Microsoft Planetary Computer.'],
+            ['ESA WorldCover 10 m', 'Clasificación 2020 y 2021 (Sentinel-1 y Sentinel-2); clase 10 = cobertura arbórea. Licencia CC-BY 4.0.'],
+            ['Cálculo DOTS', 'Fracción de píxeles de cada clase dentro del polígono (estadística zonal en el servidor de datos) × superficie del lote.'],
+            ['ISRIC SoilGrids', 'Stock de carbono orgánico 0-30 cm, 250 m, media y percentiles 5 y 95.'],
+            ['IPCC', 'Directrices 2006, Vol. 4, Cap. 10, cuadro 10.11 (56 kg CH₄/cabeza/año) y AR6 (GWP100 del metano = 27).'],
+        ],
+        'limits': [
+            'Los mapas de 10 m pueden confundir monte abierto con pastizal arbolado o sombra; un cambio pequeño no implica desmonte.',
+            'Los mapas anuales reflejan el estado de cada año, no la fecha exacta de un cambio dentro del año.',
+            'La verificación cubre el polígono declarado; animales que pasaron por otros establecimientos requieren la geolocalización de cada uno.',
+            'No reemplaza la verificación documental ni, cuando haya alertas, la revisión con imágenes de mayor resolución o la visita a campo.',
+        ],
+        'coords': coords,
+        'geo_note': 'Vértices del polígono en orden. El mismo polígono y su centroide se entregan en un archivo GeoJSON para cargar en el sistema de información de la UE.',
+        'geo_hash': hashlib.sha256(gtxt.encode()).hexdigest(),
+        'geojson': gj,
+        'attributions': ('Datos: Impact Observatory, Esri y Microsoft (10 m Annual LULC, CC-BY 4.0); ESA WorldCover (CC-BY 4.0); ISRIC SoilGrids; '
+                         'IPCC. Procesamiento: Microsoft Planetary Computer. Tipografía IBM Plex (SIL OFL). Documento compuesto con Typst.'),
+    }
+
+
+def eudr_pdf(lot, establishment, sust):
+    import typst
+    data = eudr_data(lot, establishment, sust)
+    gj = data.pop('geojson')
+    out = typst.compile(EUDR_TEMPLATE, root=BASE, font_paths=[FONTS], ignore_system_fonts=True,
+                        sys_inputs={'data': json.dumps(data, ensure_ascii=False, default=str)})
+    return out, gj, data['geo_hash']

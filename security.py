@@ -14,6 +14,7 @@ from flask import request, jsonify
 RULES = [
     ('/api/fuentes/contacto', 5, 600),       # 5 consultas cada 10 minutos
     ('/api/fuentes/analizar', 6, 300),       # informes PDF
+    ('/api/fuentes/eudr', 10, 300),
     ('/api/fuentes/agentic', 12, 300),
     ('/api/fuentes/tile', 600, 60),          # teselas del mapa base
     ('/api/fuentes/ndvi-imagen', 60, 60),

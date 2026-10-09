@@ -55,3 +55,19 @@ def test_carbon_and_herd(monkeypatch):
     assert d['soc_t_ha'] == 52.0 and d['soc_total_t'] == 5200 and d['soc_t_ha_range'] == [30.0, 80.0]
     assert d['herd']['ch4_t_year'] == 11.2 and d['herd']['co2e_t_year'] == 302.4
     assert d['soc_total_tco2e'] == round(5200 * 44 / 12)
+
+
+def test_cover_png(monkeypatch):
+    import json
+    seen = {}
+    class P:
+        headers = {'Content-Type': 'image/png'}; content = b'\x89PNG'
+        def raise_for_status(self): pass
+    def post(url, params=None, json=None, timeout=None):
+        seen.update(params); return P()
+    monkeypatch.setattr(c.SESSION, 'post', post)
+    png, b = su.cover_png('io-lulc-21J-2023', LOT)
+    assert png.startswith(b'\x89PNG') and seen['assets'] == 'data' and '"2"' in seen['colormap']
+    import pytest
+    with pytest.raises(ValueError):
+        su.cover_png('../x', LOT)

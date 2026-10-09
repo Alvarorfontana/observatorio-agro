@@ -272,3 +272,28 @@
 .wa-btn { display: inline-block; margin-top: 22px; padding: 12px 18px; border-radius: 10px; background: #25d366; color: #06131d; font-weight: 700; text-decoration: none; }
 .contact-form select, .contact-form input, .contact-form textarea { background: #fff; color: #10222b; border: 1px solid #cfd8d4; }
 .contact-form button[disabled] { background: #dfe5e1; color: #52656c; opacity: 1; }
+
+/* libre de deforestación */
+.site-header nav .nav-highlight { color: #25efb5; font-weight: 600; }
+.eudr-feature { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 40px; align-items: center; padding: 80px 7vw; background: linear-gradient(120deg, #0b2a22, #07151e 70%); color: #fff; }
+.eudr-feature h2 { font-size: clamp(32px, 3.4vw, 50px); letter-spacing: -0.03em; line-height: 1.05; margin: 12px 0 16px; }
+.eudr-feature p { color: #b7c8cf; font-size: 17px; line-height: 1.65; max-width: 720px; }
+.eudr-feature .section-tag { color: #25efb5; }
+.eudr-feature ul { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.eudr-feature li { border: 1px solid rgba(37,239,181,.25); border-radius: 16px; padding: 18px; color: #b7c8cf; font-size: 13px; background: rgba(255,255,255,.03); }
+.eudr-feature li b { display: block; color: #fff; font-size: 24px; margin-bottom: 4px; }
+.eudr-hero { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, .8fr); gap: 40px; align-items: center; padding: 96px 8vw 72px; background: radial-gradient(circle at 85% 20%, #11483a, #07151e 55%); color: #fff; }
+.eudr-hero .section-tag { color: #25efb5; }
+.eudr-hero h1 { font-size: clamp(38px, 4vw, 62px); line-height: 1.02; letter-spacing: -0.04em; margin: 14px 0 20px; }
+.eudr-hero p { color: #b7c8cf; font-size: 18px; line-height: 1.65; max-width: 780px; }
+.eudr-badge { border: 1px solid rgba(37,239,181,.3); border-radius: 20px; padding: 24px; display: grid; gap: 2px; background: rgba(255,255,255,.03); }
+.eudr-badge b { font-size: 30px; letter-spacing: -0.02em; margin-top: 10px; }
+.eudr-badge b:first-child { margin-top: 0; color: #25efb5; }
+.eudr-badge span { color: #9fb3ba; font-size: 13px; }
+.eudr-steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: #d3ddd8; }
+.eudr-steps article { background: #fff; padding: 30px; }
+.eudr-steps span { font: 700 12px "JetBrains Mono", monospace; color: #148b6b; letter-spacing: .12em; }
+.eudr-steps h3 { font-size: 20px; margin: 10px 0; color: #10222b; }
+.eudr-steps p { color: #52656c; line-height: 1.6; font-size: 14.5px; }
+@media (max-width: 1000px) { .eudr-feature, .eudr-hero { grid-template-columns: 1fr; } .eudr-steps { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 640px) { .eudr-steps { grid-template-columns: 1fr; } .eudr-feature, .eudr-hero { padding: 56px 24px; } }

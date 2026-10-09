@@ -131,3 +131,27 @@ def carbon(lat, lon, area_ha=None, heads=None, ef=EF_CH4_HEAD, gwp=GWP_CH4):
     out['scope'] = ('El stock de carbono del suelo es un modelo global a 250 m: sirve de línea de base, no reemplaza el muestreo '
                     'que exige un proyecto de bonos de carbono. Las emisiones usan factores por defecto del IPCC.')
     return c.envelope(out, env['source_url'], 'carbono del suelo y emisiones del rodeo', 'ISRIC SoilGrids · IPCC')
+
+
+IO_COLORS = {0: [0, 0, 0, 0], 1: [65, 155, 223, 255], 2: [57, 125, 73, 255], 4: [122, 135, 198, 255], 5: [228, 150, 53, 255],
+             7: [196, 40, 27, 255], 8: [165, 155, 143, 255], 9: [168, 235, 255, 255], 10: [97, 97, 97, 255], 11: [227, 226, 195, 255]}
+IO_LEGEND = [('#397d49', 'Árboles'), ('#e3e2c3', 'Pastizal'), ('#e49635', 'Cultivo'), ('#419bdf', 'Agua'),
+             ('#7a87c6', 'Vegetación inundada'), ('#a59b8f', 'Suelo desnudo'), ('#c4281b', 'Construido')]
+
+
+def cover_png(item_id, polygon):
+    """PNG de la cobertura anual (Impact Observatory) recortada al lote, con los colores oficiales de las clases."""
+    import json as _json
+    pts = veg.require_polygon(polygon)
+    if not isinstance(item_id, str) or not 3 <= len(item_id) <= 80 or not all(ch.isalnum() or ch in '-_.' for ch in item_id):
+        raise ValueError('Ítem de cobertura inválido')
+    feature = {'type': 'Feature', 'properties': {}, 'geometry': veg.geojson_polygon(pts)}
+    r = c.SESSION.post(f'{PC_DATA}/item/feature.png',
+                       params={'collection': 'io-lulc-annual-v02', 'item': item_id, 'assets': 'data', 'asset_bidx': 'data|1',
+                               'colormap': _json.dumps({str(k): v for k, v in IO_COLORS.items()}), 'max_size': 768},
+                       json=feature, timeout=40)
+    r.raise_for_status()
+    if not r.headers.get('Content-Type', '').startswith('image/png'):
+        raise ValueError('La API raster no devolvió PNG')
+    w, s, e, n = c.polygon_bbox(pts)
+    return r.content, [[s, w], [n, e]]

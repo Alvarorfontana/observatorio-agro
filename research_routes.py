@@ -46,6 +46,33 @@ def lot_forage():
     except ValueError as e: return jsonify({'status':'sin dato','error':str(e)}),400
     except Exception as e: return jsonify({'status':'sin dato','error':'No se pudo estimar la producción de pasto','type':type(e).__name__}),502
 
+@research_api.post('/eudr/pdf')
+def eudr_pdf():
+    try:
+        d=request.get_json(silent=True) or {}
+        lot=d.get('lot') if isinstance(d.get('lot'),dict) else {}
+        verts=lot.get('vertices') or []
+        veg.require_polygon(verts)
+        sust=d.get('sustentabilidad') if isinstance(d.get('sustentabilidad'),dict) else None
+        if not sust or not sust.get('deforestation'):
+            cen=[sum(v[0] for v in verts)/len(verts),sum(v[1] for v in verts)/len(verts)]
+            sust={'deforestation':sus.deforestation(verts)['data'],'carbon':sus.carbon(cen[0],cen[1],veg.area_ha(verts),d.get('heads') or None)['data']}
+        pdf,gj,h=rt.eudr_pdf(lot,str(d.get('establecimiento') or '')[:160],sust)
+        return Response(pdf,mimetype='application/pdf',headers={'Content-Disposition':'attachment; filename=DOTS-libre-de-deforestacion.pdf','X-DOTS-GeoJSON-SHA256':h})
+    except ValueError as e: return jsonify({'error':str(e)}),400
+    except Exception as e: return jsonify({'status':'sin dato','error':'No se pudo generar la verificación','type':type(e).__name__}),502
+
+@research_api.post('/eudr/geojson')
+def eudr_geojson():
+    try:
+        d=request.get_json(silent=True) or {}
+        lot=d.get('lot') if isinstance(d.get('lot'),dict) else {}
+        verts=lot.get('vertices') or []
+        veg.require_polygon(verts)
+        gj=rt.geojson_lot(verts,str(lot.get('name') or 'Lote')[:80],lot.get('areaHa'))
+        return Response(json.dumps(gj,ensure_ascii=False,indent=2),mimetype='application/geo+json',headers={'Content-Disposition':'attachment; filename=DOTS-lote-geolocalizacion.geojson'})
+    except ValueError as e: return jsonify({'error':str(e)}),400
+
 @research_api.post('/alertas')
 def lot_alerts():
     try:
@@ -91,6 +118,9 @@ def research_data(name):
             if request.args.get('job'):
                 return jsonify(rain.result(request.args.get('job','')))
             return jsonify(rain.start(polygon if polygon else [[lat-0.01,lon-0.01],[lat-0.01,lon+0.01],[lat+0.01,lon+0.01],[lat+0.01,lon-0.01]]))
+        if name=='cobertura-imagen':
+            png,bounds=sus.cover_png(request.args.get('item',''),polygon)
+            return Response(png,mimetype='image/png',headers={'X-DOTS-Bounds':json.dumps(bounds),'Cache-Control':'public, max-age=604800'})
         if name=='sustentabilidad':
             heads=_int(request.args,'heads',0,0,200000)
             def _both():

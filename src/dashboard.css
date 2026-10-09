@@ -885,3 +885,15 @@
 .ta-shell .forage-form { display: grid; gap: 8px; margin-bottom: 10px; }
 .ta-shell .forage-form label { display: grid; gap: 4px; font-size: 12px; color: var(--ta-text-2); }
 .ta-shell .forage-form input[type=range] { padding: 0; min-height: 24px; }
+.ta-shell .cover-table { display: grid; border: 1px solid var(--ta-border); border-radius: 12px; overflow: hidden; margin-top: 6px; }
+.ta-shell .cover-head, .ta-shell .cover-row { display: grid; grid-template-columns: .8fr 1fr .9fr 1fr .9fr .6fr; gap: 4px; padding: 5px 8px; align-items: center; font-size: 11.5px; }
+.ta-shell .cover-head { background: rgba(255,255,255,.04); color: var(--ta-text-3); font-size: 10px; text-transform: uppercase; }
+.ta-shell .cover-row + .cover-row { border-top: 1px solid var(--ta-border); }
+.ta-shell .cover-row.cut { background: var(--ta-brand-soft); }
+.ta-shell .cover-row > *:not(:first-child) { text-align: right; }
+.ta-shell .cover-row button { min-height: 26px; padding: 0 8px; justify-self: end; font-size: 13px; }
+.ta-shell .cover-row button.active { background: var(--ta-brand-soft); color: var(--ta-brand); }
+.ta-shell .dots-legend-inline { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; font-size: 10.5px; color: var(--ta-text-2); }
+.ta-shell .dots-legend-inline i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
+.ta-shell .eudr-actions { display: grid; gap: 8px; margin: 12px 0; }
+.ta-shell .eudr-actions label { display: grid; gap: 4px; }
