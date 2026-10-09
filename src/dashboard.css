@@ -201,22 +201,22 @@
 }
 
 /* colapsado (escritorio) — sólo íconos, se expande al pasar el mouse */
-.nav-collapsed .ta-sidebar:not(:hover) {
+.nav-collapsed .ta-sidebar {
   width: var(--ta-side-min);
 }
-.nav-collapsed .ta-sidebar:not(:hover) .ta-logo-text,
-.nav-collapsed .ta-sidebar:not(:hover) .ta-menu-text,
-.nav-collapsed .ta-sidebar:not(:hover) .ta-badge,
-.nav-collapsed .ta-sidebar:not(:hover) .ta-nav-title span {
+.nav-collapsed .ta-sidebar .ta-logo-text,
+.nav-collapsed .ta-sidebar .ta-menu-text,
+.nav-collapsed .ta-sidebar .ta-badge,
+.nav-collapsed .ta-sidebar .ta-nav-title span {
   display: none;
 }
-.nav-collapsed .ta-sidebar:not(:hover) .ta-nav-title {
+.nav-collapsed .ta-sidebar .ta-nav-title {
   height: 1px;
   margin: 0 12px 10px;
   background: var(--ta-border);
 }
-.nav-collapsed .ta-sidebar:not(:hover) .ta-logo,
-.nav-collapsed .ta-sidebar:not(:hover) .ta-menu-item {
+.nav-collapsed .ta-sidebar .ta-logo,
+.nav-collapsed .ta-sidebar .ta-menu-item {
   justify-content: center;
 }
 .nav-collapsed .ta-collapse .ta-menu-icon svg {
@@ -793,3 +793,9 @@
   .ta-shell .app.ta-content { grid-template-columns: minmax(0, 1fr); }
 }
 .ta-shell .dots-legend { font-size: 10.5px; padding: 8px 10px; gap: 4px; }
+.ta-shell .idx-head, .ta-shell .idx-row { grid-template-columns: minmax(0, 1.7fr) 0.8fr 0.8fr 0.8fr; padding: 7px 9px; }
+.ta-shell .idx-row span:first-child { font-size: 11.5px; line-height: 1.25; }
+.ta-shell .idx-row strong { font-size: 13px; text-align: right; }
+.ta-shell .idx-row > span:nth-child(3), .ta-shell .idx-row > span:nth-child(4) { text-align: right; font-size: 11.5px; }
+.ta-shell .idx-head span:not(:first-child) { text-align: right; }
+.ta-shell .key small { display: block; margin-top: 4px; }
