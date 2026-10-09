@@ -1,16 +1,18 @@
 # DOTS Campo v1.9 — Complementos de GitHub para el modelo
 
-Objetivo: pasar de **catálogo** a **análisis raster por lote** sin romper el límite de la función de Vercel (250 MB descomprimida).
+Objetivo: pasar de **catálogo** a **análisis raster por lote** manteniendo la función de Vercel liviana.
+
+Límites vigentes (docs de Vercel, sept. 2026): funciones Python hasta 500 MB descomprimidas (5 GB en beta "large functions"), duración máx. 300 s en Hobby y 800 s en Pro, memoria 2 GB en Hobby. Hobby es sólo para uso no comercial.
 
 ## Medición de tamaño (Python 3.13, instalación limpia)
 
 | Paquete | Peso aprox. | ¿Entra en Vercel? |
 |---|---|---|
-| rasterio + numpy (GDAL incluido) | ~200 MB | No, junto a Flask y reportlab queda al límite |
-| earthengine-api (+ google-api-python-client) | ~150 MB extra | No |
+| rasterio + numpy (GDAL incluido) | ~200 MB | Sí entra (límite Python 500 MB), pero arranques en frío más lentos |
+| earthengine-api (+ google-api-python-client) | ~150 MB extra | Junto con rasterio queda cerca del límite |
 | google-auth (sólo token OAuth) | ~2 MB | Sí |
 
-Conclusión: el procesamiento raster pesado se delega a servicios que ya ejecutan esas librerías del lado del servidor. DOTS sólo envía el polígono y recibe estadísticas o una imagen recortada.
+Conclusión: igual conviene delegar el raster pesado a servicios que ya ejecutan esas librerías (respuesta más rápida, menos memoria). DOTS envía el polígono y recibe estadísticas o una imagen recortada. Si hiciera falta rasterio local, ahora es posible en Vercel.
 
 ## Mapa de repositorios → fuente → cómo se usa en DOTS
 
@@ -47,7 +49,7 @@ Conclusión: el procesamiento raster pesado se delega a servicios que ya ejecuta
 | [Lavreniuk/Delineate-Anything](https://github.com/Lavreniuk/Delineate-Anything) | Segmentación de parcelas YOLOv11, 0,25 a 10 m, muy rápido | Mejor modelo actual para delimitación desde imagen |
 | [sentinel-hub/field-delineation](https://github.com/sentinel-hub/field-delineation) | ResUnet-a sobre Sentinel-2. MIT | Archivado desde 2023, sólo como referencia |
 
-Estos componentes necesitan pyarrow/duckdb, GDAL o GPU, así que van en un **worker DOTS** separado (Render o Cloud Run) que la API de Vercel llama por HTTP. Queda como siguiente etapa.
+La delimitación con modelos (FTW, Delineate Anything) necesita GPU o procesos largos: va en un **worker DOTS** separado (Render o Google Cloud Run) que la API de Vercel llama por HTTP. La lectura del mapa global FTW (GeoParquet con duckdb) y AgERA5 sí podrían entrar en una función Python de Vercel. Queda como siguiente etapa.
 
 ## Endpoints nuevos
 
