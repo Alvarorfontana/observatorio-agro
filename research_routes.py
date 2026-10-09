@@ -9,6 +9,7 @@ import vegetation as veg
 import climate_indices as ci
 import report_typst as rt
 import rainfall as rain
+import forecast_stats as fst
 
 research_api=Blueprint('research_api',__name__,url_prefix='/api/fuentes')
 
@@ -70,6 +71,7 @@ def research_data(name):
           'suelo':lambda:c.external('https://rest.isric.org/soilgrids/v2.0/properties/query',{'lat':lat,'lon':lon,'property':'nitrogen','depth':'0-5cm','value':'mean'}),
           'serie':lambda:c.external('https://archive-api.open-meteo.com/v1/archive',{'latitude':lat,'longitude':lon,'start_date':f'{endyear-years+1}-01-01','end_date':f'{endyear}-12-31','daily':'temperature_2m_mean,precipitation_sum','models':'era5','timezone':'UTC'}),
           'proyeccion':lambda:c.external('https://climate-api.open-meteo.com/v1/climate',{'latitude':lat,'longitude':lon,'start_date':'2031-01-01','end_date':'2040-12-31','models':'MPI_ESM1_2_XR','daily':'temperature_2m_mean,precipitation_sum'}),
+          'estadistica':lambda:fst.analyze(lat,lon),
           'indices':lambda:ci.agro_indices(lat,lon,_int(request.args,'index_years',10,3,30)),'teleconexiones':lambda:ci.psl_indices(),
           'nws':lambda:c.nws(lat,lon),'metnorway':lambda:c.met_norway(lat,lon),
           'aire':lambda:c.air_quality(lat,lon),'elevacion':lambda:c.elevation(lat,lon),

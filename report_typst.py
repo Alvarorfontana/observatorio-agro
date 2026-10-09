@@ -182,6 +182,19 @@ def build_data(result, name='Lote DOTS', extras=None):
                        'unit': 'mm', 'labels': [r['period'][5:7] + '/' + r['period'][2:4] for r in rec],
                        'series': [{'name': 'Observada', 'values': [_f(r.get('mm')) for r in rec]},
                                   {'name': 'Normal', 'values': [_f(r.get('normal')) for r in rec]}]})
+    # ── estadística
+    st = extras.get('estadistica') or {}
+    prob = [{'day': d['date'][8:10] + '/' + d['date'][5:7], 'frost': f"{d.get('p_frost', 0)} %", 'heat': f"{d.get('p_heat35', 0)} %",
+             'rain': f"{d.get('p_rain10', 0)} %", 'temps': f"{num(d.get('tmin_med'), 0)}° / {num(d.get('tmax_med'), 0)}°"}
+            for d in ((st.get('ensemble') or {}).get('days') or [])[:10]]
+    seas = [{'period': m['period'], 'rain': m['rain_reading'], 'temp': m['temp_reading'],
+             'split': f"{m['rain']['below']} / {m['rain']['normal']} / {m['rain']['above']}" if m.get('rain') else '—'}
+            for m in (st.get('seasonal') or [])]
+    trd = [{'label': t['label'], 'value': ('+' if t['per_decade'] > 0 else '') + num(t['per_decade'], 2 if t['key'] == 'tx' else 1) + f" {t['unit']}/década",
+            'reading': t['reading'], 'tone': 'warn' if t['significant'] else 'idle'} for t in (st.get('trends') or [])]
+    wr = (st.get('ensemble') or {}).get('week_rain') or {}
+    stat_note = (f"Pronóstico por conjunto ({(st.get('ensemble') or {}).get('members', '—')} pronósticos ECMWF y NOAA): "
+                 f"lluvia probable en 7 días {num(wr.get('p10'), 0)}–{num(wr.get('p90'), 0)} mm, mediana {num(wr.get('median'), 0)} mm.") if wr else ''
     ev = result.get('evidence') or []
     ok = sum(1 for e in ev if e.get('status') == 'recibido')
     return {
@@ -206,6 +219,7 @@ def build_data(result, name='Lote DOTS', extras=None):
                          'Definiciones xclim / ETCCDI. Grilla de ~25 km: describe la zona, no microclimas.') if irows else '',
         'telecon': tl,
         'spi': spi_rows,
+        'prob': prob, 'seasonal': seas, 'trends': trd, 'stat_note': stat_note,
         'spi_note': (f"CHIRPS v2 (~5 km), promedio sobre el lote. Último mes completo: {lluvia.get('last_month', '')}. Normal: mediana 1991-2020. SPI menor a −1 indica sequía.") if spi_rows else '',
         'enso_text': enso_text,
         'warnings': result.get('warnings') or [],
@@ -214,7 +228,7 @@ def build_data(result, name='Lote DOTS', extras=None):
                      for e in ev],
         'evidence_note': f'{len(ev)} fuentes consultadas · {ok} con respuesta válida · {len(ev) - ok} sin dato. Ningún faltante se reemplaza por valores supuestos.',
         'attributions': ('Datos: Open-Meteo / ERA5 (Copernicus), NASA POWER, ISRIC SoilGrids, ESA Sentinel-2 vía Microsoft Planetary Computer, '
-                         'NOAA PSL y CPC, NASA FIRMS, CHIRPS (Climate Hazards Center, UCSB) vía ClimateSERV'
+                         'NOAA PSL y CPC, NASA FIRMS, conjuntos ECMWF IFS y GFS y ECMWF SEAS5 vía Open-Meteo, CHIRPS (Climate Hazards Center, UCSB) vía ClimateSERV'
                          + ('; límites de lote: Fields of the World / PRUE (Robinson et al. 2026), CC-BY-4.0' if ftw else '')
                          + '. Tipografía IBM Plex (SIL OFL). Documento compuesto con Typst.'),
     }

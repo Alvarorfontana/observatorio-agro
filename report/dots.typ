@@ -260,6 +260,34 @@
   )
 ]
 
+#if d.at("prob", default: ()).len() > 0 or d.at("seasonal", default: ()).len() > 0 [
+  #section("05c", "Probabilidades y tendencias")
+  #if d.stat_note != "" [#text(size: 8.5pt)[#d.stat_note] #v(4pt)]
+  #if d.prob.len() > 0 [
+    #table(columns: (0.7fr, 1fr, 1fr, 1fr, 1.2fr), stroke: (x, y) => (bottom: 0.5pt + line-c), inset: (x: 5pt, y: 4pt),
+      fill: (x, y) => if y == 0 { soft }, align: (left, right, right, right, right),
+      table.header(..("Día", "Prob. helada", "Prob. ≥ 35 °C", "Prob. lluvia ≥ 10 mm", "Mín / máx (mediana)").map(h => text(size: 7.5pt, weight: "semibold", fill: muted)[#h])),
+      ..d.prob.map(r => (r.day, r.frost, r.heat, r.rain, r.temps)).flatten().map(x => text(size: 8pt)[#x])
+    )
+  ]
+  #if d.seasonal.len() > 0 [
+    #v(6pt)
+    #text(weight: "semibold")[Perspectiva estacional ECMWF] #text(size: 7.5pt, fill: muted)[· % de pronósticos con lluvia baja / normal / alta frente a 1991-2020]
+    #table(columns: (0.8fr, 0.9fr, 1.5fr, 1.5fr), stroke: (x, y) => (bottom: 0.5pt + line-c), inset: (x: 5pt, y: 4pt),
+      ..d.seasonal.map(m => (text(weight: "semibold")[#m.period], text(size: 8pt)[#m.split], text(size: 8pt)[#m.rain], text(size: 8pt, fill: muted)[#m.temp])).flatten()
+    )
+  ]
+  #if d.trends.len() > 0 [
+    #v(6pt)
+    #text(weight: "semibold")[Tendencias del clima local] #text(size: 7.5pt, fill: muted)[· Mann-Kendall y pendiente de Sen]
+    #grid(columns: (1fr, 1fr), gutter: 6pt, ..d.trends.map(tr => card[
+      #text(size: 7.5pt, fill: muted)[#tr.label]
+      #linebreak()#text(size: 12pt, weight: "bold", fill: tone(tr.tone))[#tr.value]
+      #linebreak()#text(size: 7pt, fill: muted)[#tr.reading]
+    ]))
+  ]
+]
+
 #if d.telecon.len() > 0 [
   #section("06", "El Niño y teleconexiones")
   #if d.enso_text != "" [#card(fill: brand-soft, stroke: none)[#d.enso_text] #v(4pt)]

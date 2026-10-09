@@ -116,6 +116,7 @@ const SOURCES = [
   ["historico", "Histórico reciente", "NASA POWER"],
   ["indices", "Índices agroclimáticos", "ERA5 · definiciones xclim/ETCCDI"],
   ["lluvia", "Lluvia observada y sequía", "CHIRPS · satélite + estaciones · SPI"],
+  ["estadistica", "Probabilidades y tendencias", "Conjuntos ECMWF/GFS · ERA5 · SEAS5"],
   ["teleconexiones", "El Niño y teleconexiones", "NOAA PSL · ENSO, SOI, AAO, TSA, PDO"],
   ["rios", "Ríos y caudales", "GloFAS / Open-Meteo"],
   ["suelo", "Nitrógeno del suelo", "ISRIC SoilGrids"],
@@ -709,7 +710,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
     const data = (k: string) => (sources[k]?.payload as any)?.data;
     return {
       lot: l ? { name: l.name, areaHa: l.areaHa, perimeterKm: l.perimeterKm, compactness: l.compactness, ftw: l.ftw, vertices: l.vertices } : null,
-      ndvi: data("ndvi"), indices: data("indices"), telecon: data("teleconexiones"), clima: data("variables"), lluvia: data("lluvia")?.spi ? data("lluvia") : null,
+      ndvi: data("ndvi"), indices: data("indices"), telecon: data("teleconexiones"), clima: data("variables"), lluvia: data("lluvia")?.spi ? data("lluvia") : null, estadistica: data("estadistica"),
       place: placeLabel,
     };
   };
@@ -946,6 +947,14 @@ function Observatory({onHome}:{onHome:()=>void}) {
                   <p className="footnote">Se muestran hasta 35 valores; exportá JSON para ver toda la respuesta. La antigüedad y la distancia de cada registro importan.</p>
                 </>
               )}
+              {view==="estadistica" && payload && <>
+                {payload.ensemble?.week_rain && <div className="key"><span>Lluvia próximos 7 días · {payload.ensemble.members} pronósticos</span><strong>{fmt(payload.ensemble.week_rain.median,0)} mm</strong><small className="small">rango probable {fmt(payload.ensemble.week_rain.p10,0)}–{fmt(payload.ensemble.week_rain.p90,0)} mm · {payload.ensemble.week_rain.p_ge20} % de chance de 20 mm o más</small></div>}
+                {payload.ensemble?.days && <div className="prob-table"><div className="prob-head"><span>Día</span><span>Helada</span><span>≥35 °C</span><span>Lluvia ≥10</span></div>{payload.ensemble.days.map((d:Data)=><div className="prob-row" key={d.date}><span>{d.date.slice(8,10)}/{d.date.slice(5,7)}<small>{fmt(d.tmin_med,0)}° / {fmt(d.tmax_med,0)}°</small></span>{[d.p_frost,d.p_heat35,d.p_rain10].map((v:number,i:number)=><b key={i} className={"p "+(v>=60?"hi":v>=30?"mid":v>0?"lo":"")} style={{"--p":`${v||0}%`} as any}>{v!=null?`${v}%`:"—"}</b>)}</div>)}</div>}
+                {payload.seasonal?.length>0 && <><div className="lot-vars-title" style={{marginTop:12}}>Perspectiva estacional ECMWF</div>{payload.seasonal.map((m:Data)=><div className="soil" key={m.period}><span>{m.period}<small style={{display:"block"}}>lluvia: {m.rain_reading} · temperatura: {m.temp_reading}</small></span><strong>{m.rain?`${m.rain.below}/${m.rain.normal}/${m.rain.above}`:"—"}</strong></div>)}<p className="footnote">Porcentajes de pronósticos con lluvia baja / normal / alta frente a los terciles de 1991–2020 en este lugar.</p></>}
+                {payload.trends?.length>0 && <><div className="lot-vars-title" style={{marginTop:12}}>Tendencias {payload.trends[0].years?.[0]}–{payload.trends[0].years?.[1]}</div>{payload.trends.map((t:Data)=><div className="soil" key={t.key}><span>{t.label}<small style={{display:"block"}}>{t.reading} · p = {fmt(t.p_value,3)}</small></span><strong className={t.significant?"":"muted"}>{t.per_decade>0?"+":""}{fmt(t.per_decade,t.key==="tx"?2:1)} {t.unit}/década</strong></div>)}</>}
+                {Object.keys(payload.errors||{}).length>0 && <p className="error">Sin dato: {Object.keys(payload.errors).join(", ")}. No se completan con valores supuestos.</p>}
+                <p className="footnote">{payload.method}</p>
+              </>}
               {view==="lluvia" && payload?.status==="en proceso" && <p className="small">CHIRPS está calculando la lluvia diaria desde {payload.start} sobre {vertices.length>=3?"el lote":"el entorno del punto"}… {payload.progress!=null?`${payload.progress} %`:""} Puede tardar uno o dos minutos.</p>}
               {view==="lluvia" && payload?.spi && <>
                 <p className="footnote">{payload.product} · último mes completo {payload.last_month} · normal {payload.normal_period?.[0]}–{payload.normal_period?.[1]}.</p>
@@ -1457,7 +1466,10 @@ function Observatory({onHome}:{onHome:()=>void}) {
           </section>
         </aside>
         <section className="charts">
-          {view==="lluvia" && payload?.recent ? <>
+          {view==="estadistica" && payload?.climatology ? <>
+            <section className="panel chart"><h2>Probabilidad de helada y calor por mes</h2><p className="small">ERA5 1991–{new Date().getFullYear()-1} · % de años con al menos una helada · días con máxima ≥ 35 °C</p><Chart dates={payload.climatology.map((m:Data)=>m.label)} unit="%" series={[{name:"Prob. de helada",values:payload.climatology.map((m:Data)=>m.p_frost),type:"bar",color:"#93c5fd"},{name:"Días ≥ 35 °C",values:payload.climatology.map((m:Data)=>m.heat_days),color:"#fd9c91"}]}/></section>
+            <section className="panel chart"><h2>Lluvia mensual típica</h2><p className="small">Terciles 1991–hoy · seco por debajo, lluvioso por encima · mm</p><Chart dates={payload.climatology.map((m:Data)=>m.label)} unit="mm" series={[{name:"Tercil seco",values:payload.climatology.map((m:Data)=>m.rain_p33),color:"#e9bd72"},{name:"Mediana",values:payload.climatology.map((m:Data)=>m.rain_med),type:"bar",color:"#06b6d4"},{name:"Tercil lluvioso",values:payload.climatology.map((m:Data)=>m.rain_p67),color:"#a7a5ff"}]}/></section>
+          </> : view==="lluvia" && payload?.recent ? <>
             <section className="panel chart"><h2>Lluvia mensual vs. normal</h2><p className="small">CHIRPS · últimos 12 meses · mm · normal = mediana 1991–2020</p><Chart dates={payload.recent.map((r:Data)=>r.period)} unit="mm" series={[{name:"Lluvia",values:payload.recent.map((r:Data)=>r.mm),type:"bar",color:"#06b6d4"},{name:"Normal",values:payload.recent.map((r:Data)=>r.normal),color:"#e9bd72"}]}/></section>
             <section className="panel chart"><h2>Lluvia anual observada</h2><p className="small">CHIRPS · años completos · mm</p><Chart dates={(payload.annual||[]).map((r:Data)=>String(r.year))} unit="mm" series={[{name:"Lluvia anual",values:(payload.annual||[]).map((r:Data)=>r.mm),type:"bar",color:"#19b98a"}]}/></section>
           </> : view==="indices" && payload?.years ? <>
