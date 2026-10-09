@@ -223,3 +223,42 @@
 .inner .demo-call h2 { color: #fff; }
 .rp-chart { height: auto; display: flex; flex-direction: column; }
 .rp-chart .chart-content { height: 240px !important; width: 100%; }
+
+/* Qué es DOTS */
+.about-body { padding: 24px 8vw 40px; }
+.about-block {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.8fr) minmax(0, 2fr);
+  gap: 48px;
+  padding: 44px 0;
+  border-bottom: 1px solid #dfe5e1;
+  scroll-margin-top: 70px;
+}
+.about-side h2 { font-size: clamp(26px, 2.4vw, 36px); letter-spacing: -0.03em; line-height: 1.08; margin-top: 10px; }
+.about-text p { font-size: 17px; line-height: 1.75; color: #29404a; max-width: 760px; }
+.about-text p + p { margin-top: 16px; }
+.about-text p:first-child::first-letter { color: #148b6b; font-weight: 700; }
+@media (max-width: 860px) {
+  .about-block { grid-template-columns: 1fr; gap: 12px; }
+  .about-body { padding: 8px 24px 24px; }
+}
+
+/* franja de fuentes en movimiento */
+.source-strip.marquee { display: flex; align-items: center; gap: 28px; overflow: hidden; }
+.source-strip.marquee > span { flex: 0 0 auto; }
+.marquee-viewport {
+  flex: 1;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+}
+.marquee-track { display: flex; gap: 34px; width: max-content; animation: dots-marquee 60s linear infinite; }
+.marquee-viewport:hover .marquee-track { animation-play-state: paused; }
+.source-strip.marquee b { display: inline-flex; align-items: baseline; gap: 8px; white-space: nowrap; font-size: 14px; }
+.source-strip.marquee b::before { content: none !important; }
+.source-strip.marquee b i { width: 7px; height: 7px; border-radius: 50%; background: #25efb5; align-self: center; box-shadow: 0 0 10px #25efb5aa; }
+.source-strip.marquee b.soon { opacity: 0.6; }
+.source-strip.marquee b.soon i { background: transparent; border: 1px solid #a8bbc4; box-shadow: none; }
+.source-strip.marquee b small { font-size: 10px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: #8aa0a9; }
+@keyframes dots-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) { .marquee-track { animation: none; flex-wrap: wrap; width: auto; } }
