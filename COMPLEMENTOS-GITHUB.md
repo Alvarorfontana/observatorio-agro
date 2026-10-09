@@ -102,3 +102,14 @@ Botón **Automático · FTW** en Operaciones del lote. Lee en el navegador el ma
 - Límite: FTW mapea cultivos anuales; en pasturas puede no haber contorno. Ahí sigue el dibujo manual.
 
 Librerías nuevas en el frontend: `pmtiles` (BSD-3), `@mapbox/vector-tile` (BSD-3), `pbf` (BSD-3), `polygon-clipping` (MIT).
+
+## Catálogos de variables (para ordenar y nombrar las variables de DOTS)
+
+| Repo / catálogo | Qué lista | Uso en DOTS |
+|---|---|---|
+| [Ouranosinc/xclim](https://github.com/Ouranosinc/xclim) (Apache-2.0) | Más de 150 indicadores climáticos calculados: temperatura, lluvia, caudales, hielo (días de helada, ola de calor, días secos consecutivos, grados día, etc.) | Lista de referencia de índices agroclimáticos y ganaderos a calcular sobre las series diarias que DOTS ya trae |
+| [cf-convention/cf-convention.github.io](https://github.com/cf-convention/cf-convention.github.io) | Tabla de nombres estándar CF: miles de variables de clima, océano, suelo e hidrología con unidad canónica | Nombre y unidad únicos para cada variable del informe |
+| NOAA PSL Climate Indices ([lista](https://psl.noaa.gov/data/climateindices/list/)) | ENSO (ONI, MEI v2, Niño 1+2, 3, 3.4, 4, BEST), SOI, AAO, PDO, AMO, TSA y otros; texto plano por mes | Ampliar el módulo ENSO más allá del ONI; incluye índices relevantes para el Cono Sur (AAO, TSA) |
+| Caravan (Google Research) | Hidrología de gran muestra: 6830 cuencas con forzantes meteorológicos y atributos estáticos de cuenca | Plantilla de variables hidrológicas por cuenca |
+| ISRIC SoilGrids (ya integrado) | Nitrógeno, carbono orgánico, pH, arcilla, arena, limo, densidad aparente, CIC, por profundidad | Ya se consulta; ampliar a CIC y más profundidades |
+| NASA POWER (ya integrado) | Parámetros agrometeorológicos de la comunidad AG | Ya se consulta |
