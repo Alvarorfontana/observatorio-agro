@@ -686,6 +686,18 @@ function Observatory({onHome}:{onHome:()=>void}) {
     terrainOverlay.current = ov;
     return () => { ov.remove(); };
   }, [terrainTick, terrainMode, view, lotKey]);
+  // En la vista Tablero, con un lote elegido, se piden solos los datos del lote (una vez por lote)
+  useEffect(() => {
+    if (mainView !== "tablero" || vertices.length < 3) return;
+    const t = setTimeout(() => {
+      const want = ["ndvi", "lluvia"].filter(k => !sources[k]);
+      const needTerrain = !sources.relieve && terrainRef.current?.key !== lotKey;
+      if (!want.length && !needTerrain) return;
+      want.forEach(k => void load(k));
+      if (needTerrain) void loadTerrain();
+    }, 600);
+    return () => clearTimeout(t);
+  }, [mainView, lotKey, !!sources.ndvi, !!sources.lluvia, !!sources.relieve]);
   const changeView = (key: string) => {
     // Always refresh: source results are spatial/temporal and must follow the currently selected lot.
     // Reusing an old payload after changing polygon was a functional bug in earlier versions.

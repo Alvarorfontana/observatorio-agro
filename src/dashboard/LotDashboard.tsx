@@ -120,6 +120,18 @@ export function LotDashboard({ weather, sources, lot, thi, terrain, onLoad, onTe
   const ndTone: Tone = nd == null ? "idle" : nd >= 0.5 ? "ok" : nd >= 0.3 ? "warn" : "risk";
 
   const statusRows = Object.entries(sources).filter(([, s]) => s && s.status);
+  // Por qué un recuadro está vacío: consultando, falló (con el motivo) o la fuente respondió sin dato
+  const why = (k: string, idle: string) => {
+    const s = sources[k];
+    if (s?.status === "consultando") return { text: "Consultando la fuente…", failed: false };
+    if (s?.status === "sin dato") return { text: `La fuente no devolvió datos: ${s.error || "sin respuesta"}. No se reemplaza por otro valor.`, failed: true };
+    if (s?.payload?.status === "sin dato") return { text: `La fuente respondió sin dato válido${s.payload.error ? `: ${s.payload.error}` : ""}. No se reemplaza por otro valor.`, failed: true };
+    return { text: idle, failed: false };
+  };
+  const wx = why("variables", "Esperando el pronóstico de Open-Meteo…");
+  const wn = why("ndvi", hasLot ? "Preparando el NDVI de este lote…" : "Dibujá o seleccioná un lote para ver su NDVI.");
+  const wl = why("lluvia", hasLot ? "Preparando la lluvia observada del lote…" : "Dibujá o seleccioná un lote para ver su lluvia observada.");
+  const wr = why("relieve", hasLot ? "Preparando el relieve de este lote…" : "Dibujá o seleccioná un lote para ver su relieve.");
 
   return (
     <div className="db-grid">
@@ -143,7 +155,7 @@ export function LotDashboard({ weather, sources, lot, thi, terrain, onLoad, onTe
                 markLine: { silent: true, symbol: "none", label: { color: t.text3, fontSize: 10, formatter: "{b}", position: "insideStartTop" }, lineStyle: { type: "dashed", color: t.warn }, data: [{ yAxis: 72, name: "alerta" }, { yAxis: 79, name: "peligro", lineStyle: { color: t.risk } }] } },
             ],
           };
-        }} /> : <Empty text="Sin pronóstico todavía." />}
+        }} /> : <Empty text={wx.text} button={wx.failed ? "Reintentar" : undefined} onClick={() => onLoad("variables")} />}
       </Card>
       <Card span={6} title="Agua del suelo" sub="Humedad volumétrica por profundidad · m³/m³ · ahora">
         {soilKeys.length ? <EChart height={260} label="Humedad del suelo por profundidad" option={t => ({
@@ -153,7 +165,7 @@ export function LotDashboard({ weather, sources, lot, thi, terrain, onLoad, onTe
           yAxis: { type: "category", inverse: true, data: soilKeys.map(k => k.replace("soil_moisture_", "").replace("_to_", "–").replace("cm", " cm")), axisLine: { lineStyle: { color: t.grid } }, axisTick: { show: false }, axisLabel: { color: t.text2, fontSize: 11 } },
           series: [{ type: "bar", data: soilKeys.map(k => h[k]?.[i0]), barMaxWidth: 16, itemStyle: { color: (p: any) => p.value < 0.12 ? t.warn : t.c[1] }, label: { show: true, position: "right", color: t.text2, fontSize: 11, formatter: (p: any) => fmt(p.value, 2) } }],
           tooltip: { trigger: "item" },
-        })} /> : <Empty text="Sin datos de suelo." />}
+        })} /> : <Empty text={weather ? "Open-Meteo no informó humedad de suelo para esta grilla." : wx.text} />}
       </Card>
 
       {/* Fila 3: agua y pasto */}
@@ -165,7 +177,7 @@ export function LotDashboard({ weather, sources, lot, thi, terrain, onLoad, onTe
             { name: "Evapotranspiración", type: "bar", data: (d.et0_fao_evapotranspiration || []).map((x: number) => x == null ? null : -x), barMaxWidth: 16, itemStyle: { color: t.c[4] } },
             { name: "Balance acumulado", type: "line", data: cum, symbolSize: 6, lineStyle: { width: 2, color: t.text }, itemStyle: { color: t.text } },
           ] };
-        }} /> : <Empty text="Sin pronóstico todavía." />}
+        }} /> : <Empty text={wx.text} button={wx.failed ? "Reintentar" : undefined} onClick={() => onLoad("variables")} />}
       </Card>
       <Card span={8} title="Vigor del pasto (NDVI)" sub="Sentinel-2 · media dentro del lote · escenas nubladas excluidas">
         {nser.length ? <EChart label="NDVI del lote" option={t => {
@@ -174,7 +186,7 @@ export function LotDashboard({ weather, sources, lot, thi, terrain, onLoad, onTe
             { name: "NDVI", type: "line", data: nser.map(r => r.ndvi_mean), symbolSize: 7, lineStyle: { width: 2.5, color: t.c[0] }, itemStyle: { color: t.c[0] }, areaStyle: { color: t.c[0], opacity: 0.14 },
               markArea: { silent: true, itemStyle: { color: t.light ? "rgba(0,0,0,.03)" : "rgba(255,255,255,.03)" }, data: [[{ yAxis: 0.5 }, { yAxis: 1 }]] } },
           ] };
-        }} /> : <Empty text={hasLot ? "Todavía no se calculó el NDVI de este lote." : "Dibujá o seleccioná un lote para ver su NDVI."} button={hasLot ? "Calcular NDVI" : undefined} onClick={() => onLoad("ndvi")} busy={busy("ndvi")} />}
+        }} /> : <Empty text={wn.text} button={hasLot && !busy("ndvi") ? (wn.failed ? "Reintentar" : "Calcular NDVI") : undefined} onClick={() => onLoad("ndvi")} busy={busy("ndvi")} />}
       </Card>
 
       {/* Fila 4: lluvia histórica y relieve */}
@@ -185,7 +197,7 @@ export function LotDashboard({ weather, sources, lot, thi, terrain, onLoad, onTe
             { name: "Observada", type: "bar", color: t.c[1], data: rec.map(r => r.mm), barMaxWidth: 16, itemStyle: { color: (p: any) => { const n = rec[p.dataIndex]?.normal; return n != null && p.value < n * 0.6 ? t.warn : t.c[1]; } } },
             { name: "Normal", type: "line", step: "middle", data: rec.map(r => r.normal), symbol: "none", lineStyle: { width: 2, type: "dashed", color: t.text2 }, itemStyle: { color: t.text2 } },
           ] };
-        }} /> : <Empty text={ll?.status === "en proceso" ? "CHIRPS está calculando la lluvia del lote. Puede tardar uno o dos minutos." : "Todavía no se consultó la lluvia observada."} button={ll?.status === "en proceso" ? undefined : "Consultar lluvia"} onClick={() => onLoad("lluvia")} busy={busy("lluvia")} />}
+        }} /> : <Empty text={ll?.status === "en proceso" ? `CHIRPS está calculando la lluvia del lote${ll.progress != null ? ` (${ll.progress} %)` : ""}. Puede tardar uno o dos minutos.` : wl.text} button={ll?.status === "en proceso" || !hasLot || busy("lluvia") ? undefined : wl.failed ? "Reintentar" : "Consultar lluvia"} onClick={() => onLoad("lluvia")} busy={busy("lluvia")} />}
       </Card>
       <Card span={6} title="Relieve y anegamiento" sub="Copernicus DEM 30 m · % del lote por propensión">
         {terrain?.riskPct ? <>
@@ -198,7 +210,7 @@ export function LotDashboard({ weather, sources, lot, thi, terrain, onLoad, onTe
             tooltip: { trigger: "item" },
           })} />
           <dl className="db-facts"><div><dt>Posición</dt><dd>{String(terrain.positionLabel || "").replace(/^./, (c: string) => c.toUpperCase())}</dd></div><div><dt>Bajos ≥ 10 cm</dt><dd>{fmt(terrain.depressionHa, 1)} ha</dd></div><div><dt>Desnivel</dt><dd>{fmt(terrain.relief, 1)} m</dd></div></dl>
-        </> : <Empty text={hasLot ? "Todavía no se analizó el relieve de este lote." : "Dibujá o seleccioná un lote para ver su relieve."} button={hasLot ? "Analizar relieve" : undefined} onClick={onTerrain} busy={busy("relieve")} />}
+        </> : <Empty text={wr.text} button={hasLot && !busy("relieve") ? (wr.failed ? "Reintentar" : "Analizar relieve") : undefined} onClick={onTerrain} busy={busy("relieve")} />}
       </Card>
 
       {/* Fila 5: trazabilidad */}
