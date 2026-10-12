@@ -279,3 +279,60 @@ body { font-family: var(--sans); }
 .ta-shell header.ta-header span, .ta-shell header.ta-header small { color: var(--ta-text-2); }
 .ta-shell .src-list .src-name { font-size: 13px; font-weight: 500; color: var(--ta-text); text-transform: none; letter-spacing: 0; }
 .ta-shell .src-list .src-name small { font-weight: 400; color: var(--ta-text-3); }
+
+/* ───────── Vista Tablero (modelo de dashboard Carbon) ───────── */
+.ta-shell .app.ta-content.mode-tablero { grid-template-columns: minmax(0, 1fr) !important; grid-template-areas: "lot" "db" !important; }
+.ta-shell .app.mode-tablero > .ta-metrics,
+.ta-shell .app.mode-tablero > .sidebar,
+.ta-shell .app.mode-tablero > .ta-map-card,
+.ta-shell .app.mode-tablero > .inspector,
+.ta-shell .app.mode-tablero > .charts { display: none !important; }
+.ta-shell .db-wrap { grid-area: db; min-width: 0; }
+.ta-shell .db-grid { display: grid; grid-template-columns: repeat(16, minmax(0, 1fr)); gap: 16px; }
+.ta-shell .db-span-4 { grid-column: span 4; } .ta-shell .db-span-6 { grid-column: span 6; } .ta-shell .db-span-8 { grid-column: span 8; }
+.ta-shell .db-span-10 { grid-column: span 10; } .ta-shell .db-span-16 { grid-column: span 16; }
+@media (max-width: 1200px) { .ta-shell .db-span-4 { grid-column: span 8; } .ta-shell .db-span-6, .ta-shell .db-span-10, .ta-shell .db-span-8 { grid-column: span 16; } }
+@media (max-width: 640px) { .ta-shell .db-grid { gap: 10px; } .ta-shell .db-span-4 { grid-column: span 16; } }
+.ta-shell .db-tile {
+  position: relative; display: grid; gap: 6px; align-content: start; text-align: left; min-height: 132px; padding: 16px 18px;
+  background: var(--ta-card); border: 1px solid var(--ta-border); border-radius: 0; color: var(--ta-text); cursor: default;
+}
+.ta-shell button.db-tile { cursor: pointer; }
+.ta-shell button.db-tile:hover:not(:disabled) { background: var(--ta-layer-2); }
+.ta-shell .db-tile::after { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: transparent; }
+.ta-shell .db-tile.tone-ok::after { background: var(--ta-ok); } .ta-shell .db-tile.tone-warn::after { background: var(--ta-warn); } .ta-shell .db-tile.tone-risk::after { background: var(--ta-risk); }
+.ta-shell .db-tile-label { font-size: 13px; color: var(--ta-text-2); }
+.ta-shell .db-tile-value { font-size: 40px; line-height: 1.05; font-weight: 300; letter-spacing: -0.02em; color: var(--ta-text); }
+.ta-shell .db-tile-value small { margin-left: 6px; font-size: 16px; font-weight: 400; color: var(--ta-text-3); }
+.ta-shell .db-tile-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 12px; color: var(--ta-text-3); }
+.ta-shell .db-word { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
+.ta-shell .db-word.tone-ok { color: var(--ta-ok); background: rgba(66, 190, 101, 0.14); }
+.ta-shell .db-word.tone-warn { color: var(--ta-warn); background: rgba(241, 194, 27, 0.16); }
+.ta-shell .db-word.tone-risk { color: var(--ta-risk-text, #ff8389); background: rgba(250, 77, 86, 0.14); }
+.ta-shell .db-card { min-width: 0; padding: 16px 18px 12px; background: var(--ta-card); border: 1px solid var(--ta-border); border-radius: 0; }
+.ta-shell .db-card > .db-head { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+.ta-shell .db-card h3 { margin: 0; font-size: 16px; font-weight: 600; color: var(--ta-text); letter-spacing: 0; text-transform: none; }
+.ta-shell .db-card .db-head p { margin: 3px 0 0; font-size: 12px; color: var(--ta-text-3); }
+.ta-shell .db-empty { display: grid; place-content: center; justify-items: center; gap: 10px; min-height: 220px; text-align: center; color: var(--ta-text-3); font-size: 13px; background: var(--ta-layer-2); }
+.ta-shell .db-empty p { margin: 0; max-width: 320px; }
+.ta-shell .db-empty button { min-height: 38px; padding: 0 16px; }
+.ta-shell .db-facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin: 6px 0 0; background: var(--ta-border); border: 1px solid var(--ta-border); }
+.ta-shell .db-facts div { padding: 8px 10px; background: var(--ta-card); }
+.ta-shell .db-facts dt { font-size: 11px; color: var(--ta-text-3); } .ta-shell .db-facts dd { margin: 2px 0 0; font-size: 15px; font-weight: 600; }
+.ta-shell .db-table-wrap { overflow-x: auto; }
+.ta-shell .db-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.ta-shell .db-table th { text-align: left; font-weight: 600; font-size: 12px; color: var(--ta-text-2); background: var(--ta-layer-2); padding: 10px 12px; }
+.ta-shell .db-table td { padding: 10px 12px; border-bottom: 1px solid var(--ta-border); color: var(--ta-text); vertical-align: middle; }
+.ta-shell .db-table td small { color: var(--ta-text-3); }
+.ta-shell .db-link { min-height: 30px; padding: 0 10px; border: 0; background: transparent; color: var(--ta-brand); font-weight: 600; }
+.ta-shell .db-foot { grid-column: 1 / -1; margin: 0; font-size: 12px; color: var(--ta-text-3); }
+/* conmutador Tablero / Mapa */
+.ta-shell .view-switch { display: inline-grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--ta-border-strong); border-radius: 4px; overflow: hidden; }
+.ta-shell .view-switch button { min-height: 40px; padding: 0 16px; border: 0; border-radius: 0; background: transparent; color: var(--ta-text-2); font-weight: 500; }
+.ta-shell .view-switch button.active { background: var(--ta-text); color: var(--ta-bg); font-weight: 600; }
+.ta-shell[data-theme="claro"] .db-word.tone-warn { color: #8e6a00; background: rgba(241, 194, 27, 0.25); }
+.ta-shell[data-theme="claro"] .db-word.tone-risk { color: #da1e28; background: rgba(218, 30, 40, 0.1); }
+.ta-shell[data-theme="claro"] .db-word.tone-ok { color: #198038; background: rgba(36, 161, 72, 0.12); }
+.ta-shell[data-theme="claro"] .view-switch button { background: #fff; }
+.ta-shell[data-theme="claro"] .view-switch button.active { background: #161616; color: #fff; }
+.ta-shell[data-theme="claro"] .db-link { color: #007d79; background: transparent; }

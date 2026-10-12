@@ -8,6 +8,8 @@ import {
   GridComponent,
   TooltipComponent,
   LegendComponent,
+  MarkLineComponent,
+  MarkAreaComponent,
 } from "echarts/components";
 import { CanvasRenderer } from "echarts/renderers";
 import {
@@ -47,8 +49,11 @@ import { fieldAt, fieldsAround, compactness, FTW_ATTRIBUTION, FTW_RELIABLE } fro
 import { terrainForLot, terrainImage, DEM_ATTRIBUTION, DEM_SOURCE_URL, type TerrainAnalysis, type TerrainMode } from "./dashboard/terrain";
 import { RISK_COLORS, DRAIN_COLOR } from "./dashboard/terrainCore";
 import { VariablesPanel } from "./dashboard/VariablesPanel";
+import { LotDashboard } from "./dashboard/LotDashboard";
 import { readLotFile, lotsToGeoJSON, lotsToKML } from "./dashboard/lotFiles";
 echarts.use([
+  MarkLineComponent,
+  MarkAreaComponent,
   LineChart,
   BarChart,
   GridComponent,
@@ -620,6 +625,8 @@ function Observatory({onHome}:{onHome:()=>void}) {
   const [ftwBusy, setFtwBusy] = useState(false);
   const [sideTab, setSideTab] = useState<"lote" | "datos" | "asistente">("lote");
   const [srcQuery, setSrcQuery] = useState("");
+  const [mainView, setMainView] = useState<"mapa" | "tablero">(() => { try { return localStorage.getItem("dots-vista") === "mapa" ? "mapa" : "tablero"; } catch { return "tablero"; } });
+  useEffect(() => { try { localStorage.setItem("dots-vista", mainView); } catch {} if (mainView === "mapa") setTimeout(() => mapRef.current?.invalidateSize(), 50); }, [mainView]);
   const [theme, setTheme] = useState<"oscuro" | "claro">(() => { try { return localStorage.getItem("dots-theme") === "claro" ? "claro" : "oscuro"; } catch { return "oscuro"; } });
   useEffect(() => { try { localStorage.setItem("dots-theme", theme); } catch {} }, [theme]);
   const ndviOverlay = useRef<L.ImageOverlay | null>(null);
@@ -715,6 +722,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
     setFieldMarkers(prev=>{const manual=prev.filter((m:any)=>m.source!=="NASA FIRMS"); const auto=det.slice(0,150).map((r:any,i:number)=>({id:`firms-${r.latitude}-${r.longitude}-${i}`,type:"incendio",lat:Number(r.latitude),lon:Number(r.longitude),status:`${r.inside_lot===true?"DENTRO DEL LOTE":"ENTORNO"} · ${r.satellite||r.instrument||"VIIRS"} · ${r.acq_date||""} ${r.acq_time||""} · FRP ${r.frp||"s/d"}`,source:"NASA FIRMS",provenance:"SATELITAL",confidence:r.confidence||"s/d",observed_at:`${r.acq_date||""} ${r.acq_time||""}`})).filter((m:any)=>Number.isFinite(m.lat)&&Number.isFinite(m.lon)); return [...manual,...auto]});
   },[sources.firms]);
   const startDraw = (mode:"free"|"triangle"|"rectangle"="free") => {
+    setMainView("mapa");
     setDrawMode(mode);
     poly.current = null;
     setSelectedLotId(null);
@@ -821,6 +829,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
   };
   const startFtw = () => {
     if (!mapRef.current) return;
+    setMainView("mapa");
     stopDraw(); setFtwMode(true);
     const map = mapRef.current;
     if (map.getZoom() < 13) map.setZoom(14);
@@ -979,7 +988,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
           FUENTES RECIBIDAS
         </span>
       </header>
-      <main className="app ta-content">
+      <main className={"app ta-content mode-" + mainView}>
         {(()=>{
           const l = lots.find(x => x.id === selectedLotId);
           const rain7 = (daily.precipitation_sum||[]).reduce((a:number,b:number)=>a+(Number(b)||0),0);
@@ -1008,6 +1017,9 @@ function Observatory({onHome}:{onHome:()=>void}) {
               </button>)}
             </div>
             <div className="lot-bar-actions">
+              <div className="view-switch" role="tablist" aria-label="Vista">
+                {([["tablero","Tablero"],["mapa","Mapa"]] as const).map(([k,t])=><button key={k} role="tab" aria-selected={mainView===k} className={mainView===k?"active":""} onClick={()=>setMainView(k)}>{t}</button>)}
+              </div>
               {!l && <button onClick={() => { setSideTab("lote"); startDraw("free"); }}>Dibujar lote</button>}
               {!l && <button onClick={() => { setSideTab("lote"); startFtw(); }}>Automático</button>}
               <button className="primary" onClick={() => void pdf()} disabled={pdfBusy}><FileText className="icon" />{pdfBusy ? "Generando…" : "Informe PDF"}</button>
@@ -1027,6 +1039,14 @@ function Observatory({onHome}:{onHome:()=>void}) {
             {key:"focos",label:"Focos térmicos",value:sources.firms?.status==="recibido"?String(inside):"—",unit:sources.firms?.status==="recibido"?"en el lote":undefined,hint:sources.firms?.status==="recibido"?`${det.length} en el entorno · NASA FIRMS 3 días`:"Tocá para consultar FIRMS",icon:<Flame/>,tone:sources.firms?.status==="recibido"?(inside>0?"risk":"ok"):"idle",onClick:()=>changeView("firms")},
           ]}/>;
         })()}
+        {mainView === "tablero" && <section className="db-wrap" aria-label="Tablero del lote">
+          <LotDashboard weather={weather} sources={sources as any} thi={thi} hasLot={vertices.length >= 3}
+            lot={lots.find(x => x.id === selectedLotId) || null}
+            terrain={(sources.relieve?.payload as any)?.data?.lot === lotKey ? (sources.relieve?.payload as any)?.data : null}
+            labels={Object.fromEntries(SOURCES.map(([k, l]) => [k, l]))}
+            onLoad={(k) => void load(k)} onTerrain={() => void loadTerrain()}
+            onOpen={(k) => { setMainView("mapa"); changeView(k); }} />
+        </section>}
         <aside className="sidebar">
           <nav className="side-tabs" role="tablist" aria-label="Secciones del tablero">
             {([["lote","Lote"],["datos","Datos"],["asistente","Asistente"]] as const).map(([k,t])=><button key={k} role="tab" aria-selected={sideTab===k} className={sideTab===k?"active":""} onClick={()=>setSideTab(k)}>{t}</button>)}
