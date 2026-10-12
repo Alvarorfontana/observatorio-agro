@@ -754,6 +754,72 @@ function Observatory({onHome}:{onHome:()=>void}) {
     line.current = null;
     if (mapRef.current) mapRef.current.getContainer().style.cursor = "";
   };
+  const drawLotLayer = (id: string, name: string, points: Point[], center: Point) => {
+    const layer=L.polygon(points,{color:"#57dce0",fillOpacity:.12,weight:2}).addTo(mapRef.current!).bindTooltip(name,{permanent:true,direction:"center"});
+    layer.on("click",()=>{ setSelectedLotId(id); setVertices(points); currentPoints.current=points; poly.current=layer; setPoint(center); setCoords(center.map(v=>v.toFixed(6))); mapRef.current?.fitBounds(layer.getBounds(),{padding:[40,40]}); });
+    lotLayers.current[id]=layer;
+    return layer;
+  };
+  const removeLot = (id: string) => {
+    const l = lots.find(x => x.id === id); if (!l) return;
+    if (!window.confirm(`¿Borrar "${l.name}" de este navegador? Antes podés descargarlo en KML.`)) return;
+    lotLayers.current[id]?.remove(); delete lotLayers.current[id];
+    setLots(prev => prev.filter(x => x.id !== id));
+    if (selectedLotId === id) { setSelectedLotId(null); poly.current = null; currentPoints.current = []; setVertices([]); }
+    notify(`${l.name} borrado.`);
+    if (cloudOn && cloudKey) void syncLots([id]);
+  };
+  // Nube: lotes guardados en el repositorio privado de datos y resultados del procesamiento semanal (geoai)
+  const [cloudOn, setCloudOn] = useState<boolean | null>(null);
+  const [cloudKey, setCloudKey] = useState<string>(() => { try { return localStorage.getItem("dots-clave") || ""; } catch { return ""; } });
+  const [cloudBusy, setCloudBusy] = useState(false);
+  const [cloudMsg, setCloudMsg] = useState("");
+  const [water, setWater] = useState<Record<string, any>>({});
+  useEffect(() => { fetch("/api/lotes/estado").then(r => r.ok ? r.json() : null).then(j => setCloudOn(!!j?.configured)).catch(() => setCloudOn(false)); }, []);
+  useEffect(() => { try { localStorage.setItem("dots-clave", cloudKey); } catch {} }, [cloudKey]);
+  const syncLots = async (remove: string[] = []) => {
+    if (!cloudKey) { setCloudMsg("Escribí la clave del establecimiento."); return; }
+    setCloudBusy(true); setCloudMsg("");
+    try {
+      const r = await fetch("/api/lotes/sincronizar", { method: "POST", headers: { "Content-Type": "application/json", "X-DOTS-Key": cloudKey },
+        body: JSON.stringify({ lotes: lots.map(l => ({ id: l.id, name: l.name, vertices: l.vertices, areaHa: l.areaHa })), quitar: remove }) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw Error(j.error || "No se pudo guardar");
+      setCloudMsg(`Guardado: ${j.lotes} lote${j.lotes === 1 ? "" : "s"} en el procesamiento semanal. Los resultados aparecen después del próximo lunes.`);
+    } catch (e) { setCloudMsg((e as Error).message); } finally { setCloudBusy(false); }
+  };
+  useEffect(() => {
+    const id = selectedLotId; if (!id || !cloudOn || !cloudKey || water[id]) return;
+    fetch(`/api/lotes/resultado?id=${encodeURIComponent(id)}`, { headers: { "X-DOTS-Key": cloudKey } })
+      .then(async r => { const j = await r.json().catch(() => ({})); setWater(w => ({ ...w, [id]: r.ok ? j : { status: "sin dato", error: j.error } })); })
+      .catch(() => setWater(w => ({ ...w, [id]: { status: "sin dato", error: "Sin conexión" } })));
+  }, [selectedLotId, cloudOn, cloudKey]);
+  const waterLayer = useRef<L.GeoJSON | null>(null);
+  useEffect(() => {
+    waterLayer.current?.remove(); waterLayer.current = null;
+    const w = selectedLotId ? water[selectedLotId] : null;
+    if (!mapRef.current || mainView !== "mapa" || !w?.water_geojson?.features?.length) return;
+    waterLayer.current = L.geoJSON(w.water_geojson, { style: { color: "#33b1ff", weight: 1.5, fillColor: "#33b1ff", fillOpacity: 0.45 }, interactive: false }).addTo(mapRef.current);
+    return () => { waterLayer.current?.remove(); };
+  }, [water, selectedLotId, mainView]);
+
+  // Los lotes quedan guardados en este navegador: sobreviven a recargar la página.
+  const lotsRestored = useRef(false);
+  useEffect(() => {
+    if (lotsRestored.current || !mapRef.current) return;
+    lotsRestored.current = true;
+    try {
+      const saved = JSON.parse(localStorage.getItem("dots-lotes") || "[]");
+      if (!Array.isArray(saved) || !saved.length) return;
+      const ok = saved.filter((l: any) => l && typeof l.id === "string" && Array.isArray(l.vertices) && l.vertices.length >= 3 && Array.isArray(l.center));
+      ok.forEach((l: any) => drawLotLayer(l.id, l.name, l.vertices, l.center));
+      setLots(ok);
+    } catch {}
+  }, []);
+  useEffect(() => {
+    if (!lotsRestored.current) return;
+    try { localStorage.setItem("dots-lotes", JSON.stringify(lots)); } catch {}
+  }, [lots]);
   const finish = (given?: Point[], origin?: string, ftw?: any, label?: string) => {
     try {
       let points = given ?? currentPoints.current;
@@ -774,9 +840,8 @@ function Observatory({onHome}:{onHome:()=>void}) {
       const id=`lote-${Date.now()}-${Math.random().toString(36).slice(2,7)}`;
       const name=label || `Lote ${lots.length+1}${origin?" · "+origin:""}`;
       if(given){currentPoints.current=points;setVertices(points);}
-      const layer=L.polygon(points,{color:"#57dce0",fillOpacity:.12,weight:2}).addTo(mapRef.current!).bindTooltip(name,{permanent:true,direction:"center"});
-      layer.on("click",()=>{ setSelectedLotId(id); setVertices(points); currentPoints.current=points; poly.current=layer; setPoint(center); setCoords(center.map(v=>v.toFixed(6))); mapRef.current?.fitBounds(layer.getBounds(),{padding:[40,40]}); });
-      lotLayers.current[id]=layer; poly.current=layer;
+      const layer=drawLotLayer(id,name,points,center);
+      poly.current=layer;
       if(given) mapRef.current?.fitBounds(layer.getBounds(),{padding:[60,60],maxZoom:16});
       setLots(prev=>[...prev,{id,name,vertices:[...points],center,areaHa,perimeterKm,compactness:compactness(areaHa,perimeterKm),ftw}]);
       setSelectedLotId(id);
@@ -900,6 +965,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
       ndvi: data("ndvi"), indices: data("indices"), telecon: data("teleconexiones"), clima: data("variables"), lluvia: data("lluvia")?.spi ? data("lluvia") : null, estadistica: data("estadistica"),
       alertas: alertsData, forraje: data("forraje")?.growth_rate_30d != null ? data("forraje") : null, sustentabilidad: data("sustentabilidad"),
       relieve: data("relieve")?.lot === JSON.stringify(vertices) ? data("relieve") : null,
+      agua: selectedLotId && water[selectedLotId]?.status === "recibido" ? water[selectedLotId] : null,
       place: placeLabel,
     };
   };
@@ -1057,6 +1123,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
             lot={lots.find(x => x.id === selectedLotId) || null}
             terrain={(sources.relieve?.payload as any)?.data?.lot === lotKey ? (sources.relieve?.payload as any)?.data : null}
             labels={Object.fromEntries(SOURCES.map(([k, l]) => [k, l]))}
+            water={selectedLotId ? water[selectedLotId] ?? null : null} cloudOn={!!cloudOn} hasKey={!!cloudKey} onCloud={() => { setMainView("mapa"); setSideTab("lote"); }}
             onLoad={(k) => void load(k)} onTerrain={() => void loadTerrain()}
             onOpen={(k) => { setMainView("mapa"); changeView(k); }} />
         </section>}
@@ -1518,7 +1585,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
             <p className="footnote">Cada polígono conserva límites, superficie y contexto de análisis. Seleccioná un lote para consultar todas las fuentes sobre ese territorio.</p>
             <div className="lot-list">{lots.length===0?<span className="small">Todavía no hay lotes delimitados.</span>:lots.map(l=><button key={l.id} className={selectedLotId===l.id?"active":""} onClick={()=>selectLot(l.id)}><strong>{l.name}</strong><span>{l.areaHa.toFixed(2)} ha</span></button>)}</div>
             {(()=>{const l=lots.find(x=>x.id===selectedLotId); if(!l) return null; const c=l.compactness; const nb=l.ftw?.neighborhood; return <div className="lot-vars">
-              <div className="lot-vars-title">Variables del lote</div>
+              <div className="lot-vars-title">Variables del lote <button className="lot-delete" onClick={()=>removeLot(l.id)} title="Borrar este lote del navegador">Borrar lote</button></div>
               <div className="lot-var"><span>Superficie</span><b>{fmt(l.areaHa,1)} ha</b></div>
               <div className="lot-var"><span>Perímetro</span><b>{fmt(l.perimeterKm,2)} km</b></div>
               <div className="lot-var" title="Polsby-Popper: 1 es un círculo. Bajo 0,4 el lote es alargado o irregular: más alambrado por hectárea y aguadas más lejanas."><span>Compacidad</span><b>{c!=null?`${fmt(c,2)} · ${c>=0.6?"compacto":c>=0.4?"intermedio":"alargado"}`:"—"}</b></div>
@@ -1537,6 +1604,15 @@ function Observatory({onHome}:{onHome:()=>void}) {
               <label className="data-button" title="KML de Google Earth o GeoJSON">Importar lotes (KML / GeoJSON)<input type="file" accept=".kml,.kmz,.geojson,.json,application/vnd.google-earth.kml+xml,application/geo+json" onChange={e=>{void importLots(e.target.files?.[0]);e.target.value=""}}/></label>
               {lots.length>0 && <><button onClick={()=>exportLots("kml")}>Descargar KML</button><button onClick={()=>exportLots("geojson")}>Descargar GeoJSON</button></>}
             </div>
+            {cloudOn !== null && <div className="cloud-box">
+              <div className="lot-vars-title">Procesamiento semanal · agua por satélite</div>
+              {cloudOn ? <>
+                <p className="footnote">Guardá tus lotes en el repositorio privado de DOTS. Cada lunes se analizan con geoai sobre Sentinel-2 para detectar aguadas, tajamares y bajos con agua.</p>
+                <input type="password" value={cloudKey} onChange={e=>setCloudKey(e.target.value)} placeholder="Clave del establecimiento" aria-label="Clave del establecimiento" autoComplete="current-password"/>
+                <button className="primary" style={{width:"100%",marginTop:6}} onClick={()=>void syncLots()} disabled={cloudBusy||!lots.length}>{cloudBusy?"Guardando…":"Guardar lotes en la nube"}</button>
+                {cloudMsg && <p className="small" style={{marginTop:6}}>{cloudMsg}</p>}
+              </> : <p className="footnote">Todavía no está activado en este sitio. Por ahora los lotes se guardan solo en este navegador.</p>}
+            </div>}
             {selectedLotId&&<button className="primary" style={{width:"100%",marginTop:10}} onClick={()=>void askDots("Analizá integralmente el lote seleccionado: clima, agua, suelo, vegetación, riesgos, ENSO y trazabilidad. No inventes variables faltantes.")}>{agentBusy?"Analizando fuentes…":"Analizar lote seleccionado"}</button>}
           </section>
           <section className="panel block operations" hidden={sideTab!=="lote"}>

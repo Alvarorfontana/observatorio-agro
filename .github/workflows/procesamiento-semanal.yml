@@ -1,0 +1,80 @@
+# Procesamiento semanal de los lotes DOTS con geoai (gratis: repositorio público, sin placa gráfica).
+# Lee los lotes del repositorio PRIVADO de datos, detecta agua con geoai (OmniWaterMask) sobre
+# Sentinel-2 y guarda los resultados en ese mismo repositorio privado. La web los lee desde ahí.
+#
+# Configuración única (ver DOTS-v2.0-PROCESAMIENTO-SEMANAL.md):
+#   - secreto DOTS_DATA_TOKEN: token con permiso de contenido sobre el repositorio de datos
+#   - variable DOTS_DATA_REPO (opcional): por defecto Alvarorfontana/dots-datos
+# Los registros de este repositorio son públicos: el script no imprime nombres ni coordenadas.
+name: Procesamiento semanal de lotes
+
+on:
+  schedule:
+    - cron: "52 8 * * 1"   # lunes 05:52 de Argentina (08:52 UTC)
+  workflow_dispatch: {}
+
+concurrency:
+  group: procesamiento-lotes
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  procesar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      DOTS_DATA_REPO: ${{ vars.DOTS_DATA_REPO || 'Alvarorfontana/dots-datos' }}
+      HAS_TOKEN: ${{ secrets.DOTS_DATA_TOKEN != '' }}
+    steps:
+      - name: Verificar configuración
+        run: |
+          if [ "$HAS_TOKEN" != "true" ]; then
+            echo "::notice::Falta el secreto DOTS_DATA_TOKEN. El procesamiento semanal queda en pausa hasta configurarlo."
+          fi
+
+      - name: Código
+        if: env.HAS_TOKEN == 'true'
+        uses: actions/checkout@v4
+
+      - name: Datos privados (lotes y resultados)
+        if: env.HAS_TOKEN == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.DOTS_DATA_REPO }}
+          token: ${{ secrets.DOTS_DATA_TOKEN }}
+          path: datos
+
+      - name: Python
+        if: env.HAS_TOKEN == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: scripts/requirements-procesamiento.txt
+
+      - name: Instalar geoai (CPU)
+        if: env.HAS_TOKEN == 'true'
+        run: |
+          python -m pip install --upgrade pip
+          pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          pip install -r scripts/requirements-procesamiento.txt
+
+      - name: Procesar lotes
+        if: env.HAS_TOKEN == 'true'
+        run: python scripts/procesar_lotes.py datos
+
+      - name: Guardar resultados en el repositorio privado
+        if: env.HAS_TOKEN == 'true'
+        run: |
+          cd datos
+          git config user.name "DOTS procesamiento semanal"
+          git config user.email "actions@users.noreply.github.com"
+          git add resultados
+          if git diff --cached --quiet; then
+            echo "Sin cambios en los resultados."
+          else
+            git commit -q -m "Resultados semanales $(date -u +%Y-%m-%d)"
+            git push -q
+          fi

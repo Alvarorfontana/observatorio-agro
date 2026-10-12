@@ -66,7 +66,7 @@
 #let section(t) = {
   sec.step()
   block(sticky: true, above: 16pt, below: 8pt, grid(columns: (auto, 1fr), column-gutter: 8pt, align: horizon,
-    box(fill: brand-soft, inset: (x: 6pt, y: 3pt), radius: 4pt, text(size: 8pt, weight: "bold", fill: brand, context sec.display("01"))),
+    box(fill: brand-soft, inset: (x: 6pt, y: 3pt), radius: 4pt, text(size: 8pt, weight: "bold", fill: brand, context { let n = sec.get().first(); if n < 10 { "0" + str(n) } else { str(n) } })),
     text(size: 13.5pt, weight: "semibold")[#t],
   ))
 }
@@ -432,6 +432,25 @@
       #v(3pt)
       #text(size: 6.8pt, fill: muted)[#r.note]
     ],
+  )
+]
+
+#if d.at("water", default: none) != none [
+  #let w = d.water
+  #section("Agua detectada por satélite")
+  #grid(columns: (1fr, 1fr), column-gutter: 10pt,
+    card[
+      #table(columns: (1fr, auto), stroke: (x, y) => (bottom: 0.4pt + line-c), inset: (x: 3pt, y: 5pt), align: (left, right),
+        ..w.facts.map(f => (text(size: 8pt, fill: muted)[#f.at(0)], text(size: 8.5pt, weight: "semibold")[#f.at(1)])).flatten())
+      #v(3pt)
+      #text(size: 6.8pt, fill: muted)[#w.note]
+    ],
+    if w.values.len() > 1 { card[
+      #text(weight: "semibold")[Agua en el lote, semana a semana]
+      #linebreak()#text(size: 7.5pt, fill: muted)[hectáreas detectadas en cada imagen procesada]
+      #v(12pt)
+      #bars(w.labels, ((name: "Agua", values: w.values),), unit: "ha", colors: (rain-c,), h: 30mm)
+    ] } else { card(fill: soft, stroke: none)[#text(size: 8pt, fill: muted)[La evolución semanal aparece a partir de la segunda imagen procesada.]] },
   )
 ]
 
