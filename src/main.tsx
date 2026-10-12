@@ -43,6 +43,9 @@ import "./site.css";
 import { ObsSidebar, MetricCards, buildNav } from "./dashboard/Shell";
 import { MARKER_KINDS, markerIcon, kindOf, MarkerLegend } from "./dashboard/markers";
 import { fieldAt, fieldsAround, compactness, FTW_ATTRIBUTION, FTW_RELIABLE } from "./dashboard/fields";
+import { terrainForLot, terrainImage, DEM_ATTRIBUTION, DEM_SOURCE_URL, type TerrainAnalysis, type TerrainMode } from "./dashboard/terrain";
+import { RISK_COLORS, DRAIN_COLOR } from "./dashboard/terrainCore";
+import { readLotFile, lotsToGeoJSON, lotsToKML } from "./dashboard/lotFiles";
 echarts.use([
   LineChart,
   BarChart,
@@ -113,6 +116,7 @@ const SOURCES = [
   ["modelos", "Comparar modelos globales", "Open-Meteo / 7 proveedores"],
   ["escenas", "Escenas satelitales", "Earth Search / Sentinel-2"],
   ["ndvi", "NDVI del lote", "Sentinel-2 10 m · Planetary Computer"],
+  ["relieve", "Relieve y anegamiento", "Copernicus DEM 30 m · cálculo en el navegador"],
   ["historico", "Histórico reciente", "NASA POWER"],
   ["indices", "Índices agroclimáticos", "ERA5 · definiciones xclim/ETCCDI"],
   ["lluvia", "Lluvia observada y sequía", "CHIRPS · satélite + estaciones · SPI"],
@@ -593,9 +597,20 @@ function Observatory({onHome}:{onHome:()=>void}) {
   const [herdHeads, setHerdHeads] = useState<number>(() => { try { return Number(localStorage.getItem("dots-heads") || 0); } catch { return 0; } });
   const [ftwBusy, setFtwBusy] = useState(false);
   const ndviOverlay = useRef<L.ImageOverlay | null>(null);
+  // Línea de tiempo NDVI (como el Time Slider de GeoLibre): recorre las escenas válidas del lote.
+  const ndviValid: Data[] = ((sources.ndvi?.payload as any)?.data?.series || []).filter((r: Data) => r.status === "válida" && r.item);
+  const [ndviPick, setNdviPick] = useState<number | null>(null);
+  const [ndviPlay, setNdviPlay] = useState(false);
+  const ndviIdx = ndviPick == null || ndviPick >= ndviValid.length ? ndviValid.length - 1 : ndviPick;
+  useEffect(() => { setNdviPick(null); setNdviPlay(false); }, [sources.ndvi]);
+  useEffect(() => {
+    if (!ndviPlay || ndviValid.length < 2) return;
+    const t = setInterval(() => setNdviPick(i => ((i ?? ndviValid.length - 1) + 1) % ndviValid.length), 2200);
+    return () => clearInterval(t);
+  }, [ndviPlay, ndviValid.length]);
   useEffect(() => {
     ndviOverlay.current?.remove(); ndviOverlay.current = null;
-    const latest = (sources.ndvi?.payload as any)?.data?.latest;
+    const latest = ndviValid[ndviIdx] || (sources.ndvi?.payload as any)?.data?.latest;
     if (!mapRef.current || !showNdvi || view !== "ndvi" || !latest?.item || vertices.length < 3) return;
     const lats = vertices.map(v=>v[0]), lons = vertices.map(v=>v[1]);
     const bounds: L.LatLngBoundsExpression = [[Math.min(...lats), Math.min(...lons)], [Math.max(...lats), Math.max(...lons)]];
@@ -604,12 +619,45 @@ function Observatory({onHome}:{onHome:()=>void}) {
     ov.on("error", () => notify("La imagen NDVI no se pudo recortar al lote. Los valores del panel siguen siendo válidos."));
     ndviOverlay.current = ov;
     return () => { ov.remove(); };
-  }, [sources.ndvi, showNdvi, view, vertices, overlayMode]);
+  }, [sources.ndvi, showNdvi, view, vertices, overlayMode, ndviIdx]);
+  // Relieve y anegamiento: DEM Copernicus leído y procesado en el navegador (enfoque GeoLibre/Whitebox).
+  const terrainRef = useRef<{ key: string; a: TerrainAnalysis } | null>(null);
+  const terrainCtl = useRef<AbortController | null>(null);
+  const terrainOverlay = useRef<L.ImageOverlay | null>(null);
+  const [terrainMode, setTerrainMode] = useState<TerrainMode | "off">("anegamiento");
+  const [terrainTick, setTerrainTick] = useState(0);
+  const lotKey = JSON.stringify(vertices);
+  const loadTerrain = async () => {
+    if (vertices.length < 3) { setSources(p => ({ ...p, relieve: { status: "sin dato", error: "Dibujá o seleccioná un lote para analizar su relieve" } })); return; }
+    terrainCtl.current?.abort();
+    const ctl = new AbortController(); terrainCtl.current = ctl;
+    const key = lotKey, poly = vertices;
+    setSources(p => ({ ...p, relieve: { status: "consultando" } }));
+    try {
+      const a = await terrainForLot(poly, ctl.signal);
+      if (terrainCtl.current !== ctl) return;
+      terrainRef.current = { key, a };
+      setSources(p => ({ ...p, relieve: { status: "recibido", payload: { data: { ...a.summary, lot: key }, consulted_at: new Date().toISOString(), source_url: DEM_SOURCE_URL } } }));
+      setTerrainTick(t => t + 1);
+    } catch (e) {
+      if (terrainCtl.current !== ctl || ctl.signal.aborted) return;
+      setSources(p => ({ ...p, relieve: { status: "sin dato", error: (e as Error).message } }));
+    }
+  };
+  useEffect(() => {
+    terrainOverlay.current?.remove(); terrainOverlay.current = null;
+    const t = terrainRef.current;
+    if (!mapRef.current || view !== "relieve" || terrainMode === "off" || !t || t.key !== lotKey) return;
+    const { url, bounds } = terrainImage(t.a, terrainMode);
+    const ov = L.imageOverlay(url, bounds, { opacity: .78, interactive: false, className: "pixel-layer" }).addTo(mapRef.current);
+    terrainOverlay.current = ov;
+    return () => { ov.remove(); };
+  }, [terrainTick, terrainMode, view, lotKey]);
   const changeView = (key: string) => {
     // Always refresh: source results are spatial/temporal and must follow the currently selected lot.
     // Reusing an old payload after changing polygon was a functional bug in earlier versions.
     setView(key);
-    if (key === "alertas") { void loadAlerts(); } else if (key === "forraje") { void loadForage(); } else void load(key);
+    if (key === "alertas") { void loadAlerts(); } else if (key === "forraje") { void loadForage(); } else if (key === "relieve") { void loadTerrain(); } else void load(key);
     requestAnimationFrame(() => { const el = document.getElementById("dots-detail"); const side = el?.closest(".sidebar") as HTMLElement | null; if (el && side) side.scrollTo({ top: Math.max(0, el.offsetTop - side.offsetTop - 16), behavior: "smooth" }); });
   };
   const addFieldMarker = (type = markerType) => {
@@ -658,7 +706,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
     line.current = null;
     if (mapRef.current) mapRef.current.getContainer().style.cursor = "";
   };
-  const finish = (given?: Point[], origin?: string, ftw?: any) => {
+  const finish = (given?: Point[], origin?: string, ftw?: any, label?: string) => {
     try {
       let points = given ?? currentPoints.current;
       if(!given && drawMode==="triangle" && points.length!==3) throw Error("Triángulo: marcá exactamente 3 vértices.");
@@ -675,8 +723,8 @@ function Observatory({onHome}:{onHome:()=>void}) {
       const center = centroid(points);
       const areaHa = (()=>{ const R=6378137,lat0=points.reduce((a,p)=>a+p[0],0)/points.length*Math.PI/180,xy=points.map(([la,lo])=>[R*lo*Math.PI/180*Math.cos(lat0),R*la*Math.PI/180]);let a=0;for(let i=0;i<xy.length;i++){const j=(i+1)%xy.length;a+=xy[i][0]*xy[j][1]-xy[j][0]*xy[i][1]}return Math.abs(a)/2/10000;})();
       const perimeterKm = (()=>{const rad=(x:number)=>x*Math.PI/180,R=6371;let d=0;for(let i=0;i<points.length;i++){const a=points[i],b=points[(i+1)%points.length],dl=rad(b[0]-a[0]),dn=rad(b[1]-a[1]);const h=Math.sin(dl/2)**2+Math.cos(rad(a[0]))*Math.cos(rad(b[0]))*Math.sin(dn/2)**2;d+=2*R*Math.asin(Math.sqrt(h))}return d;})();
-      const id=`lote-${Date.now()}`;
-      const name=`Lote ${lots.length+1}${origin?" · "+origin:""}`;
+      const id=`lote-${Date.now()}-${Math.random().toString(36).slice(2,7)}`;
+      const name=label || `Lote ${lots.length+1}${origin?" · "+origin:""}`;
       if(given){currentPoints.current=points;setVertices(points);}
       const layer=L.polygon(points,{color:"#57dce0",fillOpacity:.12,weight:2}).addTo(mapRef.current!).bindTooltip(name,{permanent:true,direction:"center"});
       layer.on("click",()=>{ setSelectedLotId(id); setVertices(points); currentPoints.current=points; poly.current=layer; setPoint(center); setCoords(center.map(v=>v.toFixed(6))); mapRef.current?.fitBounds(layer.getBounds(),{padding:[40,40]}); });
@@ -691,6 +739,28 @@ function Observatory({onHome}:{onHome:()=>void}) {
     } catch (e) {
       notify((e as Error).message);
     }
+  };
+  const importLots = async (file?: File | null) => {
+    if (!file || !mapRef.current) return;
+    try {
+      const found = await readLotFile(file);
+      let ok = 0, bad = 0;
+      const bounds = L.latLngBounds([]);
+      for (const f of found) {
+        if (f.polygon.length < 3 || crosses(f.polygon as Point[])) { bad++; continue; }
+        finish(f.polygon as Point[], "importado", undefined, f.name);
+        f.polygon.forEach(p => bounds.extend(p)); ok++;
+      }
+      if (ok) mapRef.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
+      notify(`${ok} lote${ok === 1 ? "" : "s"} importado${ok === 1 ? "" : "s"} de ${file.name}${bad ? ` · ${bad} con lados cruzados no se cargaron` : ""}.`);
+    } catch (e) { notify((e as Error).message || "No se pudo leer el archivo."); }
+  };
+  const exportLots = (kind: "geojson" | "kml") => {
+    if (!lots.length) { notify("Todavía no hay lotes para descargar."); return; }
+    const rows = lots.map(l => ({ name: l.name, vertices: l.vertices, areaHa: l.areaHa, perimeterKm: l.perimeterKm, origin: l.ftw ? "Fields of the World" : undefined }));
+    const title = estName ? `Lotes · ${estName}` : "Lotes DOTS Campo";
+    if (kind === "kml") download(new Blob([lotsToKML(rows, title)], { type: "application/vnd.google-earth.kml+xml" }), "DOTS-lotes.kml");
+    else download(new Blob([lotsToGeoJSON(rows)], { type: "application/geo+json" }), "DOTS-lotes.geojson");
   };
   const clearFtw = () => { ftwLayer.current?.remove(); ftwLayer.current = null; };
   const showFtwAround = async (lat:number, lon:number) => {
@@ -1105,7 +1175,8 @@ function Observatory({onHome}:{onHome:()=>void}) {
                 {payload?.latest?.indices && <div className="idx-cards">{["evi","savi","ndmi","ndwi"].map(k=>{const x=payload.latest.indices[k];return x?<div className="idx-card" key={k} title={x.meaning}><span>{x.name}</span><b>{fmt(x.mean,2)}</b><small>{x.meaning}</small></div>:null})}{payload.latest.indices.water_fraction!=null&&<div className="idx-card" title="Fracción de píxeles con NDWI positivo"><span>Agua en superficie</span><b>{fmt(payload.latest.indices.water_fraction*100,1)} %</b><small>del lote con agua libre o anegado</small></div>}</div>}
                 {payload?.latest && <p className="footnote">Última escena válida: {(payload.latest.datetime||payload.latest.from||"").slice(0,10)} · {payload.area_ha} ha · {payload.latest.pixels??"s/d"} píxeles · {payload.sensor}</p>}
                 {(payload?.series||[]).slice().reverse().map((r:Data,i:number)=><div className="soil" key={i}><span>{(r.datetime||r.from||"").slice(0,10)}<small style={{display:"block"}}>{r.status}{r.clear_fraction_lot!=null?` · ${Math.round(r.clear_fraction_lot*100)} % despejado`:""}</small></span><strong>{r.status==="válida"?fmt(r.ndvi_mean,2):"—"}</strong></div>,2)}
-                {view==="ndvi" && payload?.latest && <div className="overlay-switch"><span>Sobre el lote · {String(payload.latest.datetime||"").slice(0,10)}</span>{[["ndvi","NDVI"],["rgb","Color real"],["off","Ninguna"]].map(([k,l])=><button key={k} className={(k==="off"?!showNdvi:showNdvi&&overlayMode===k)?"active":""} onClick={()=>{if(k==="off"){setShowNdvi(false)}else{setShowNdvi(true);setOverlayMode(k as any)}}}>{l}</button>)}</div>}
+                {view==="ndvi" && ndviValid.length>1 && <div className="ndvi-timeline"><button onClick={()=>setNdviPlay(p=>!p)} aria-label={ndviPlay?"Pausar":"Reproducir"}>{ndviPlay?"❚❚":"▶"}</button><input type="range" min={0} max={ndviValid.length-1} step={1} value={ndviIdx} onChange={e=>{setNdviPlay(false);setNdviPick(Number(e.target.value))}} aria-label="Fecha de la escena"/><small>Escena {ndviIdx+1} de {ndviValid.length} · {String(ndviValid[ndviIdx]?.datetime||"").slice(0,10)} · NDVI medio {fmt(ndviValid[ndviIdx]?.ndvi_mean,2)}</small></div>}
+                {view==="ndvi" && payload?.latest && <div className="overlay-switch"><span>Sobre el lote · {String((ndviValid[ndviIdx]||payload.latest).datetime||"").slice(0,10)}</span>{[["ndvi","NDVI"],["rgb","Color real"],["off","Ninguna"]].map(([k,l])=><button key={k} className={(k==="off"?!showNdvi:showNdvi&&overlayMode===k)?"active":""} onClick={()=>{if(k==="off"){setShowNdvi(false)}else{setShowNdvi(true);setOverlayMode(k as any)}}}>{l}</button>)}</div>}
                 <p className="footnote">Escala: menos de 0,2 suelo desnudo o agua · 0,2–0,5 vegetación rala o pastura seca · más de 0,5 vegetación activa. No reemplaza la recorrida a campo.</p>
               </>}
               {view === "metnorway" && <><p className="footnote">MET Norway · conexión directa · pronóstico modelado. Actualizado: {payload?.properties?.meta?.updated_at || "Sin fecha"}</p>{Object.entries(payload?.properties?.timeseries?.[0]?.data?.instant?.details || {}).map(([key,value])=><div className="soil" key={key}><span style={{fontSize:10,maxWidth:"65%"}}>{key.replaceAll("_"," ")}</span><strong style={{fontSize:12}}>{fmt(value)} <small>{payload?.properties?.meta?.units?.[key]}</small></strong></div>)}<p className="footnote">Hora válida: {payload?.properties?.timeseries?.[0]?.time || "Sin fecha"}. Datos MET Norway, CC BY 4.0.</p></>}
@@ -1355,7 +1426,30 @@ function Observatory({onHome}:{onHome:()=>void}) {
                   </a>
                 </p>
               )}
-              {view!=="alertas" && view!=="forraje" && <button
+              {view==="relieve" && (()=>{const t=terrainRef.current; const s=t && t.key===lotKey ? t.a.summary : null; const busy=sources.relieve?.status==="consultando"; return <>
+                <p className="footnote">Copernicus DEM 30 m leído por partes desde el navegador. Se calculan bajos cerrados, escurrimiento y humedad topográfica del lote y su entorno, sin servidor.</p>
+                {!s && !busy && <button className="primary" style={{width:"100%"}} onClick={()=>void loadTerrain()} disabled={vertices.length<3}>{vertices.length<3?"Dibujá un lote primero":t?"Recalcular para este lote":"Analizar relieve del lote"}</button>}
+                {busy && <p className="small">Leyendo el DEM y calculando el escurrimiento…</p>}
+                {s && <>
+                  <div className={"verdict "+(s.riskPct.alto>=15?"warn":"ok")}><span>Posición en el paisaje</span><b>{s.positionLabel==="bajo"?"Bajo":s.positionLabel==="loma"?"Loma":"Media loma"} · {s.position} / 100</b><small>{s.riskPct.alto>=15?`${fmt(s.riskPct.alto,0)} % del lote con alta propensión a anegarse.`:"Sin sectores extensos propensos a anegarse."} Cota media {fmt(s.elevMean,1)} m; entorno {fmt(s.envMean,1)} m.</small></div>
+                  <div className="keygrid">
+                    <div className="key"><span>Desnivel dentro del lote</span><strong>{fmt(s.relief,1)} <small>m (p5–p95)</small></strong></div>
+                    <div className="key"><span>Pendiente media</span><strong>{fmt(s.slopeMeanPct,2)} <small>%</small></strong></div>
+                    <div className="key"><span>Bajos cerrados ≥ 10 cm</span><strong>{fmt(s.depressionHa,1)} <small>ha · {fmt(s.depressionPct,0)} %</small></strong></div>
+                    <div className="key"><span>Agua que retienen</span><strong>{fmt(s.storageM3/1000,1)} <small>mil m³ · máx {fmt(s.maxDepthM,2)} m</small></strong></div>
+                    <div className="key"><span>Vías de escurrimiento</span><strong>{fmt(s.drainageHa,1)} <small>ha del lote</small></strong></div>
+                    <div className="key"><span>Casi plano (&lt; 0,5 %)</span><strong>{fmt(s.flatPct,0)} <small>%</small></strong></div>
+                  </div>
+                  <div className="terrain-bar" aria-label="Propensión a anegarse">{(["bajo","medio","alto"] as const).map((k,i)=><i key={k} style={{width:s.riskPct[k]+"%",background:`rgb(${RISK_COLORS[i+1].join(",")})`}} title={`${k}: ${s.riskPct[k]} %`}/>)}</div>
+                  <div className="dots-legend-inline">{[["bajo","Baja"],["medio","Media"],["alto","Alta"]].map(([k,l],i)=><span key={k}><i style={{background:`rgb(${RISK_COLORS[i+1].join(",")})`}}/>{l} {fmt((s.riskPct as any)[k],0)} %</span>)}<span><i style={{background:`rgb(${DRAIN_COLOR.join(",")})`}}/>Escurrimiento</span></div>
+                  <div className="overlay-switch"><span>Capa sobre el lote</span>{([["anegamiento","Anegamiento"],["relieve","Relieve"],["pendiente","Pendiente"],["twi","Humedad topográfica"],["off","Ninguna"]] as const).map(([k,l])=><button key={k} className={terrainMode===k?"active":""} onClick={()=>setTerrainMode(k)}>{l}</button>)}</div>
+                  <p className="footnote">Método: relleno de depresiones priority-flood (Barnes 2014), flujo D8, pendiente de Horn e índice topográfico de humedad ln(a/tan β). Propensión alta = bajo de 20 cm o más, o humedad topográfica en el 10 % superior del entorno; media = 5 cm o 25 % superior. Escurrimiento = más de 10 ha aguas arriba. Celdas de {s.cellM} m.</p>
+                  <p className="warning">El DEM es un modelo de superficie: montes y construcciones suman altura. En llanuras con desniveles de centímetros es un indicador relativo, no una cota de inundación. Validar con recorrida, napa y antecedentes de lluvia.</p>
+                  <p className="footnote">{DEM_ATTRIBUTION}.</p>
+                  <button style={{width:"100%",marginTop:8}} onClick={()=>void loadTerrain()}>Recalcular</button>
+                </>}
+              </>})()}
+              {view!=="alertas" && view!=="forraje" && view!=="relieve" && <button
                 style={{ width: "100%", marginTop: 13 }}
                 onClick={() => void load(view)}
               >
@@ -1400,6 +1494,10 @@ function Observatory({onHome}:{onHome:()=>void}) {
                 <p className="footnote">Fields of the World detecta cultivos anuales: un valor bajo en zona ganadera indica predominio de pasturas o monte, no ausencia de producción.</p>
               </>}
             </div>})()}
+            <div className="lot-io">
+              <label className="data-button" title="KML de Google Earth o GeoJSON">Importar lotes (KML / GeoJSON)<input type="file" accept=".kml,.kmz,.geojson,.json,application/vnd.google-earth.kml+xml,application/geo+json" onChange={e=>{void importLots(e.target.files?.[0]);e.target.value=""}}/></label>
+              {lots.length>0 && <><button onClick={()=>exportLots("kml")}>Descargar KML</button><button onClick={()=>exportLots("geojson")}>Descargar GeoJSON</button></>}
+            </div>
             {selectedLotId&&<button className="primary" style={{width:"100%",marginTop:10}} onClick={()=>void askDots("Analizá integralmente el lote seleccionado: clima, agua, suelo, vegetación, riesgos, ENSO y trazabilidad. No inventes variables faltantes.")}>{agentBusy?"Analizando fuentes…":"Analizar lote seleccionado"}</button>}
           </section>
           <section className="panel block operations">
@@ -1603,7 +1701,10 @@ function Observatory({onHome}:{onHome:()=>void}) {
           </section>
         </aside>
         <section className="charts">
-          {view==="forraje" && payload?.daily ? <>
+          {view==="relieve" && payload?.histogram && payload?.lot===lotKey ? <>
+            <section className="panel chart"><h2>Distribución de cotas del lote</h2><p className="small">Copernicus DEM 30 m · % del lote por franja de altura · m s. n. m.</p><Chart dates={payload.histogram.map((h:Data)=>`${fmt(h.from,1)}–${fmt(h.to,1)}`)} unit="% del lote" series={[{name:"Superficie",values:payload.histogram.map((h:Data)=>h.pct),type:"bar",color:"#06b6d4"}]}/></section>
+            <section className="panel chart"><h2>Propensión a anegarse</h2><p className="small">% del lote por clase · bajos cerrados y humedad topográfica</p><Chart dates={["Baja","Media","Alta"]} unit="% del lote" series={[{name:"Superficie",values:[payload.riskPct.bajo,payload.riskPct.medio,payload.riskPct.alto],type:"bar",color:"#e9bd72"}]}/></section>
+          </> : view==="forraje" && payload?.daily ? <>
             <section className="panel chart"><h2>Crecimiento diario del pasto</h2><p className="small">kg MS/ha/día · {payload.kind_label} · últimos 60 días</p><Chart dates={payload.daily.map((d:Data)=>d.date.slice(5))} unit="kg MS/ha/día" series={[{name:"Crecimiento",values:payload.daily.map((d:Data)=>d.ppna),color:"#19b98a"}]}/></section>
             <section className="panel chart"><h2>Producción por mes</h2><p className="small">kg MS/ha acumulados en cada mes</p><Chart dates={payload.monthly.map((m:Data)=>m.month)} unit="kg MS/ha" series={[{name:"Producción",values:payload.monthly.map((m:Data)=>m.total),type:"bar",color:"#22c55e"}]}/></section>
           </> : view==="sustentabilidad" && payload?.deforestation?.series?.length ? <>

@@ -4,6 +4,12 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": "http://127.0.0.1:8000",
+      // DEM Copernicus GLO-30 (COG, lectura por rangos) para relieve y anegamiento
+      "/dem": {
+        target: "https://copernicus-dem-30m.s3.amazonaws.com",
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/dem/, ""),
+      },
       // Mapa global de lotes Fields of the World (PMTiles, lectura por rangos)
       "/ftw": {
         target: process.env.FTW_PROXY_TARGET || "https://data.source.coop",
@@ -24,6 +30,7 @@ export default defineConfig({
             "echarts/renderers",
           ],
           map: ["leaflet"],
+          raster: ["geotiff"],
         },
       },
     },

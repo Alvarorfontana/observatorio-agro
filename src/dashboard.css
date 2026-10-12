@@ -897,3 +897,16 @@
 .ta-shell .dots-legend-inline i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
 .ta-shell .eudr-actions { display: grid; gap: 8px; margin: 12px 0; }
 .ta-shell .eudr-actions label { display: grid; gap: 4px; }
+
+/* Relieve y anegamiento (DEM en el navegador) */
+.leaflet-image-layer.pixel-layer { image-rendering: pixelated; image-rendering: crisp-edges; }
+.ta-shell .terrain-bar { display: flex; height: 10px; border-radius: 6px; overflow: hidden; margin-top: 12px; background: var(--ta-border); }
+.ta-shell .terrain-bar i { display: block; height: 100%; }
+/* Línea de tiempo NDVI */
+.ta-shell .ndvi-timeline { display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: center; margin-top: 10px; }
+.ta-shell .ndvi-timeline input[type=range] { width: 100%; }
+.ta-shell .ndvi-timeline small { grid-column: 1 / -1; font-size: 11px; color: var(--ta-text-2); }
+/* Importar / exportar lotes */
+.ta-shell .lot-io { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.ta-shell .lot-io > * { flex: 1 1 auto; font-size: 12px; text-align: center; cursor: pointer; }
+.ta-shell .lot-io input[type=file] { display: none; }

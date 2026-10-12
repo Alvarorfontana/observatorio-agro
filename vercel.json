@@ -14,11 +14,15 @@
       "destination": "https://data.source.coop/ftw/global-field-boundaries/pmtiles/$1"
     },
     {
+      "source": "/dem/(.*)",
+      "destination": "https://copernicus-dem-30m.s3.amazonaws.com/$1"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api/index"
     },
     {
-      "source": "/((?!api/|ftw/|assets/).*)",
+      "source": "/((?!api/|ftw/|dem/|assets/).*)",
       "destination": "/index.html"
     }
   ],
