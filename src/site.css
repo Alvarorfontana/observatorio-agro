@@ -297,3 +297,52 @@
 .eudr-steps p { color: #52656c; line-height: 1.6; font-size: 14.5px; }
 @media (max-width: 1000px) { .eudr-feature, .eudr-hero { grid-template-columns: 1fr; } .eudr-steps { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 640px) { .eudr-steps { grid-template-columns: 1fr; } .eudr-feature, .eudr-hero { padding: 56px 24px; } }
+
+/* ───────── Guía para productores (/guia) ───────── */
+.guide section { padding: 64px 8vw; border-top: 1px solid #dce3df; }
+.guide section:nth-of-type(even) { background: #ffffff; }
+.guide .section-tag { color: #168d6e; }
+.guide h2 { font-size: clamp(28px, 3vw, 42px); line-height: 1.1; letter-spacing: -0.02em; margin: 12px 0 18px; max-width: 900px; }
+.guide h3 { font-size: 18px; margin: 0 0 8px; }
+.guide p { font-size: 17px; line-height: 1.65; color: #3d4f57; max-width: 860px; }
+.guide-intro { display: grid; grid-template-columns: 1fr 1.3fr; gap: 6vw; }
+.guide-three, .guide-numbers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: #dce3df; border: 1px solid #dce3df; margin: 24px 0; }
+.guide-numbers { grid-template-columns: repeat(4, 1fr); }
+.guide-three article, .guide-numbers article { background: #fff; padding: 26px; }
+.guide-three b { font-size: 19px; }
+.guide-three p { font-size: 15.5px; margin: 8px 0 0; }
+.guide-note { font-size: 15px !important; padding: 14px 18px; background: #fff7e0; border-left: 4px solid #d6a400; color: #4d4100 !important; }
+.guide-steps ol { list-style: none; padding: 0; margin: 28px 0 0; display: grid; gap: 1px; background: #dce3df; border: 1px solid #dce3df; }
+.guide-steps li { display: grid; grid-template-columns: 64px 1fr; gap: 18px; padding: 24px; background: #fff; }
+.guide-steps li > span { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; background: #0b2530; color: #25efb5; font-weight: 700; font-size: 20px; }
+.guide-steps p { margin: 0 0 6px; font-size: 16.5px; }
+.guide-steps small { font-size: 14.5px; color: #61727a; line-height: 1.5; }
+.guide-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: #dce3df; border: 1px solid #dce3df; margin-top: 24px; }
+.guide-grid article { background: #fff; padding: 24px 26px; }
+.guide-grid p { font-size: 15.5px; margin: 0 0 8px; }
+.guide-read { color: #10222b !important; }
+.guide-table-wrap { overflow-x: auto; margin-top: 22px; border: 1px solid #dce3df; }
+.guide-table { width: 100%; border-collapse: collapse; background: #fff; font-size: 14.5px; }
+.guide-table th { text-align: left; background: #0b2530; color: #fff; padding: 12px 14px; font-weight: 600; white-space: nowrap; }
+.guide-table td { padding: 12px 14px; border-top: 1px solid #e6ebe8; color: #33464e; vertical-align: top; }
+.guide-table td:first-child { font-weight: 600; color: #10222b; }
+.guide-numbers b { display: block; font-size: 44px; line-height: 1; color: #0b7f63; margin-bottom: 10px; }
+.guide-numbers span { font-size: 15px; line-height: 1.5; color: #3d4f57; }
+.guide-use ol { list-style: none; padding: 0; margin: 22px 0 28px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.guide-use li { display: grid; gap: 6px; padding: 20px; background: #f2f3ef; border-top: 3px solid #1cc79a; }
+.guide-use li b { font-size: 17px; } .guide-use li span { font-size: 15px; line-height: 1.55; color: #3d4f57; }
+.guide-use button { background: #25efb5; color: #032219; border: 0; font-weight: 800; padding: 15px 22px; border-radius: 5px; }
+.guide-limits ul { margin: 18px 0 0; padding-left: 20px; display: grid; gap: 12px; max-width: 900px; }
+.guide-limits li { font-size: 16.5px; line-height: 1.55; color: #3d4f57; }
+.guide-limits li b { color: #10222b; }
+.guide-words dl { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px 40px; margin: 20px 0 0; max-width: 1000px; }
+.guide-words dt { font-weight: 700; font-size: 16px; } .guide-words dd { margin: 4px 0 0; font-size: 15.5px; line-height: 1.5; color: #3d4f57; }
+@media (max-width: 900px) {
+  .guide section { padding: 44px 6vw; }
+  .guide-intro, .guide-grid, .guide-three, .guide-words dl { grid-template-columns: 1fr; }
+  .guide-numbers, .guide-use ol { grid-template-columns: 1fr 1fr; }
+  .guide p { font-size: 16px; }
+}
+@media (max-width: 520px) { .guide-numbers, .guide-use ol { grid-template-columns: 1fr; } .guide-steps li { grid-template-columns: 1fr; } }
+.guide .page-hero p { color: #c3d3d9; font-size: 19px; }
+.guide .page-hero { border-top: 0; padding: 100px 8vw 72px; }

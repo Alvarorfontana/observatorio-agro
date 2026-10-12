@@ -336,3 +336,4 @@ body { font-family: var(--sans); }
 .ta-shell[data-theme="claro"] .view-switch button { background: #fff; }
 .ta-shell[data-theme="claro"] .view-switch button.active { background: #161616; color: #fff; }
 .ta-shell[data-theme="claro"] .db-link { color: #007d79; background: transparent; }
+.ta-shell .lot-bar-help { display: inline-block; margin: 2px 0; font-size: 12px; color: var(--ta-brand); text-decoration: underline; }
