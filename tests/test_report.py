@@ -54,3 +54,51 @@ def test_pdf_falls_back_to_reportlab(monkeypatch):
     monkeypatch.setattr(rt, 'TEMPLATE', '/no/existe.typ')
     pdf, engine = rt.pdf(RESULT, 'Potrero')
     assert engine == 'reportlab' and pdf[:5] == b'%PDF-'
+
+
+def test_week_outlook_semaforo():
+    w = rt.week_outlook(0.62, [{'ndvi_mean': 0.55}, {'ndvi_mean': 0.62}], -27.2, 8, 35.2, 78.6, {'growth_rate_30d': 38})
+    by = {x['key']: x for x in w}
+    assert by['Agua']['tone'] == 'warn' and by['Agua']['value'] == '-27 mm'
+    assert by['Pasto']['tone'] == 'ok' and 'en ascenso' in by['Pasto']['head']
+    assert by['Calor y rodeo']['tone'] == 'warn'
+    vacio = rt.week_outlook(None, [], None, None, None, None, None)
+    assert all(x['tone'] == 'idle' and x['head'] == 'Sin dato' for x in vacio)
+
+
+def test_metric_tone():
+    assert rt.metric_tone({'variable': 'THI bovino', 'value': 80}) == 'risk'
+    assert rt.metric_tone({'variable': 'Viento', 'value': 10, 'reading': 'sin riesgo'}) == 'ok'
+    assert rt.metric_tone({'variable': 'Lluvia', 'value': 2, 'reading': 'escasa'}) == 'warn'
+    assert rt.metric_tone({'variable': 'X', 'value': 1, 'reading': ''}) == 'idle'
+
+
+def test_frame_bbox_contains_polygon():
+    w, s, e, n = rt.frame_bbox(RESULT['polygon'])
+    assert all(w < p[1] < e and s < p[0] < n for p in RESULT['polygon'])
+    assert rt.frame_bbox([[1, 1]]) is None
+
+
+def test_pdf_with_relief_and_image():
+    pytest.importorskip('typst')
+    import io
+    Image = pytest.importorskip('PIL.Image')
+    buf = io.BytesIO(); Image.new('RGB', (64, 64), (90, 120, 70)).save(buf, 'JPEG')
+    extras = {'lot': {'name': 'Potrero Norte', 'areaHa': 400}, '_thumb': buf.getvalue(),
+              'relieve': {'positionLabel': 'bajo', 'position': 20, 'relief': 0.8, 'slopeMeanPct': 0.1, 'depressionHa': 30, 'depressionPct': 7.5,
+                          'storageM3': 21000, 'drainageHa': 12, 'elevMean': 55, 'envMean': 56, 'riskPct': {'bajo': 60, 'medio': 20, 'alto': 20}}}
+    d = rt.build_data(RESULT, 'Potrero', extras)
+    assert d['relief']['tone'] == 'warn' and d['lot']['image'] and len(d['week']) == 3
+    pdf, engine = rt.pdf(RESULT, 'Potrero', extras)
+    assert engine == 'typst' and pdf[:5] == b'%PDF-'
+
+
+def test_pdf_with_satellite_water():
+    pytest.importorskip('typst')
+    extras = {'lot': {'name': 'Potrero Norte'}, 'agua': {'status': 'recibido', 'water_ha': 12.4, 'water_bodies': 3, 'water_pct': 1.7,
+              'scene': {'date': '2026-10-08', 'cloud_pct': 4.0},
+              'history': [{'scene_date': '2026-09-30', 'water_ha': 10.1}, {'scene_date': '2026-10-08', 'water_ha': 12.4}]}}
+    d = rt.build_data(RESULT, 'Potrero', extras)
+    assert d['water']['facts'][0][1] == '12,4 ha' and d['water']['values'] == [10.1, 12.4] and 'geoai' in d['attributions']
+    pdf, engine = rt.pdf(RESULT, 'Potrero', extras)
+    assert engine == 'typst' and pdf[:5] == b'%PDF-'

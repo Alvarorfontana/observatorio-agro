@@ -1,0 +1,345 @@
+/*
+ * DOTS · Tema del observatorio inspirado en Carbon Design System (IBM, Apache-2.0)
+ * https://github.com/carbon-design-system/carbon
+ * Se toman sus reglas, no sus componentes: tema oscuro Gray 100, IBM Plex en todo,
+ * mosaicos planos, radios chicos, una sola escala tipográfica y color sólo cuando
+ * significa algo (ok · alerta · peligro). Es la misma identidad que el informe PDF.
+ * Va al final para pisar estilos anteriores sin reescribirlos.
+ */
+:root {
+  --mono: "IBM Plex Mono", ui-monospace, monospace;
+  --sans: "IBM Plex Sans", system-ui, sans-serif;
+}
+body { font-family: var(--sans); }
+
+.ta-shell {
+  /* Carbon g100 */
+  --ta-bg: #161616;
+  --ta-surface: #1c1c1c;
+  --ta-card: #212121;
+  --ta-card-solid: #212121;
+  --ta-layer-2: #2a2a2a;
+  --ta-border: #333333;
+  --ta-border-strong: #4d4d4d;
+  --ta-text: #f4f4f4;
+  --ta-text-2: #c6c6c6;
+  --ta-text-3: #8d8d8d;
+  --ta-brand: #3ddbd9;        /* teal 30 de Carbon: el turquesa DOTS ajustado a la paleta */
+  --ta-brand-soft: rgba(61, 219, 217, 0.12);
+  --ta-ok: #42be65;
+  --ta-warn: #f1c21b;
+  --ta-orange: #ff832b;
+  --ta-risk: #fa4d56;
+  --ta-radius: 6px;
+  --ta-gap: 16px;
+  font-family: var(--sans);
+  font-feature-settings: "tnum" 1;  /* cifras alineadas en columnas */
+}
+.ta-shell button, .ta-shell input, .ta-shell select, .ta-shell textarea {
+  font-family: var(--sans);
+  border-radius: 4px;
+}
+.ta-shell button:hover:not(:disabled) { background: var(--ta-layer-2); }
+.ta-shell input:focus, .ta-shell select:focus, .ta-shell textarea:focus, .ta-shell button:focus-visible {
+  outline: 2px solid var(--ta-brand);
+  outline-offset: -2px;
+}
+.ta-shell .panel {
+  background: var(--ta-card);
+  border-color: var(--ta-border);
+  border-radius: var(--ta-radius);
+}
+.ta-shell .primary { background: var(--ta-brand); color: #081a1c; font-weight: 600; }
+.ta-shell .primary:hover:not(:disabled) { background: #08bdba; }
+
+/* Etiquetas de sección: de monoespaciada a Plex Sans en versalitas suaves */
+.ta-shell .tag, .ta-shell .section-title, .ta-shell .lot-vars-title {
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ta-text-3);
+}
+.ta-shell h2 { font-weight: 600; letter-spacing: 0; }
+
+/* Números: Plex Sans semibold con cifras tabulares (antes monoespaciada fina) */
+.ta-shell .key strong, .ta-shell .indice, .ta-shell .soil strong, .ta-shell .ta-metric-value {
+  font-family: var(--sans);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.ta-shell .key strong { font-size: 22px; }
+.ta-shell .key em, .ta-shell .key span { font-family: var(--sans); }
+.ta-shell .ta-metric-value { font-size: 28px; line-height: 34px; }
+.ta-shell .ta-metric-label { color: var(--ta-text-2); font-size: 13px; }
+.ta-shell .ta-metric-hint { color: var(--ta-text-3); }
+
+/* Botones de fuentes: lista sobria tipo Carbon */
+.ta-shell .data-button {
+  border-radius: 0;
+  border-width: 0 0 1px 0;
+  border-color: var(--ta-border);
+  background: transparent;
+  padding-left: 12px;
+}
+.ta-shell .data-button.active {
+  background: var(--ta-layer-2);
+  box-shadow: inset 3px 0 0 var(--ta-brand);
+  color: var(--ta-text);
+}
+.ta-shell .data-button span { font-family: var(--sans); font-size: 10.5px; letter-spacing: 0.04em; color: var(--ta-text-3); }
+
+/* Mapa: rótulos técnicos en Plex Mono más discreto */
+.ta-shell .ta-map-card .toolbar button.active { background: var(--ta-layer-2); color: var(--ta-text); box-shadow: inset 0 -2px 0 var(--ta-brand); }
+
+/* ───────── Panel de variables ───────── */
+.cv-panel { display: grid; gap: 18px; margin-top: 4px; }
+.cv-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 10px; margin-bottom: 8px; }
+.cv-group h3 { margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ta-text-2); }
+.cv-head span { font-size: 11px; color: var(--ta-text-3); }
+.cv-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: var(--ta-border); border: 1px solid var(--ta-border); }
+.cv-grid-tight { margin-top: 8px; }
+.cv-tile { position: relative; display: grid; gap: 4px; align-content: start; padding: 10px 12px 10px 14px; background: var(--ta-card); min-height: 86px; }
+.cv-tile::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 3px; background: transparent; }
+.cv-tile.tone-warn::before { background: var(--ta-warn); }
+.cv-tile.tone-risk::before { background: var(--ta-risk); }
+.cv-tile-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 18px; }
+.cv-label { font-size: 12px; color: var(--ta-text-2); line-height: 1.25; }
+.cv-value { font-size: 22px; font-weight: 600; line-height: 1.1; color: var(--ta-text); letter-spacing: -0.01em; }
+.cv-value small { margin-left: 4px; font-size: 12px; font-weight: 400; color: var(--ta-text-3); }
+.cv-missing { font-size: 14px; font-weight: 400; color: var(--ta-text-3); }
+.cv-hint { font-size: 11px; color: var(--ta-text-3); }
+.cv-tag { justify-self: start; flex: none; font-size: 10.5px; font-weight: 600; padding: 1px 7px; border-radius: 10px; white-space: nowrap; }
+.cv-tag.tone-ok { color: var(--ta-ok); background: rgba(66, 190, 101, 0.14); }
+.cv-tag.tone-warn { color: var(--ta-warn); background: rgba(241, 194, 27, 0.14); }
+.cv-tag.tone-risk { color: #ff8389; background: rgba(250, 77, 86, 0.16); }
+.cv-tag.tone-idle { color: var(--ta-text-3); background: var(--ta-layer-2); }
+.cv-spark { width: 100%; height: 22px; display: block; margin-top: 2px; }
+.cv-spark polyline { stroke: var(--ta-text-3); stroke-width: 1.5; }
+.cv-spark.tone-ok polyline { stroke: var(--ta-brand); }
+.cv-spark.tone-warn polyline { stroke: var(--ta-warn); }
+.cv-spark.tone-risk polyline { stroke: var(--ta-risk); }
+.cv-soil { display: grid; gap: 7px; padding: 10px 12px; background: var(--ta-card); border: 1px solid var(--ta-border); }
+.cv-soil-row { display: grid; grid-template-columns: 74px 1fr 42px; gap: 10px; align-items: center; font-size: 12px; color: var(--ta-text-2); }
+.cv-soil-row i { display: block; height: 6px; background: var(--ta-layer-2); }
+.cv-soil-row i b { display: block; height: 100%; background: #4589ff; }
+.cv-soil-row i b.tone-warn { background: var(--ta-warn); }
+.cv-soil-row strong { text-align: right; color: var(--ta-text); font-weight: 600; }
+.cv-all { border-top: 1px solid var(--ta-border); padding-top: 10px; }
+.cv-all summary { cursor: pointer; font-size: 12.5px; font-weight: 600; color: var(--ta-text-2); }
+.cv-all-group h4 { margin: 14px 0 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ta-text-3); }
+.cv-all-row { display: grid; grid-template-columns: minmax(0, 1fr) 64px 92px; gap: 10px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--ta-border); font-size: 12px; color: var(--ta-text-2); }
+.cv-all-row .cv-spark { height: 16px; margin: 0; }
+.cv-all-row strong { text-align: right; color: var(--ta-text); font-weight: 600; white-space: nowrap; }
+.cv-all-row small { color: var(--ta-text-3); font-weight: 400; }
+.cv-foot { margin: 0; font-size: 11px; color: var(--ta-text-3); line-height: 1.45; }
+
+/* THI del rodeo: número, palabra y escala con los umbrales */
+.cv-thi { margin: 10px 0 12px; }
+.cv-thi-top { display: flex; align-items: center; gap: 10px; }
+.cv-thi-top strong { font-size: 40px; line-height: 1; font-weight: 600; color: var(--ta-text); letter-spacing: -0.02em; }
+.cv-thi.tone-warn .cv-thi-top strong { color: var(--ta-warn); }
+.cv-thi.tone-risk .cv-thi-top strong { color: #ff8389; }
+.cv-thi-scale { position: relative; height: 8px; margin-top: 12px; background: linear-gradient(90deg, var(--ta-ok) 0 40%, var(--ta-warn) 40% 63.3%, var(--ta-risk) 63.3% 100%); opacity: 0.85; }
+.cv-thi-scale i { position: absolute; top: -3px; bottom: -3px; width: 1px; background: var(--ta-bg); }
+.cv-thi-scale b { position: absolute; top: -5px; width: 4px; height: 18px; margin-left: -2px; background: var(--ta-text); box-shadow: 0 0 0 2px var(--ta-bg); }
+.cv-thi-legend { position: relative; height: 14px; margin-top: 6px; font-size: 10.5px; color: var(--ta-text-3); }
+.cv-thi-legend span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+.cv-thi-legend span:first-child { transform: none; }
+
+@media (max-width: 420px) {
+  .cv-value { font-size: 20px; }
+  .cv-all-row { grid-template-columns: minmax(0, 1fr) 48px 84px; }
+}
+.cv-grid > .cv-tile:last-child:nth-child(odd) { grid-column: span 2; }
+
+/* ───────── Tablero centrado en el lote ───────── */
+.ta-shell [hidden] { display: none !important; }
+.ta-shell { --ta-is-light: 0; }
+.ta-shell .app.ta-content { grid-template-areas: "lot lot lot" "metrics metrics metrics" "side map insp" "side charts charts"; }
+@media (max-width: 1500px) { .ta-shell .app.ta-content { grid-template-areas: "lot lot" "metrics metrics" "side map" "side insp" "side charts"; } }
+@media (max-width: 960px) { .ta-shell .app.ta-content { grid-template-areas: "lot" "metrics" "map" "side" "insp" "charts"; } }
+.ta-shell .lot-bar {
+  grid-area: lot; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.6fr) auto; gap: 16px 24px; align-items: center;
+  padding: 16px 20px; background: var(--ta-card); border: 1px solid var(--ta-border); border-left: 4px solid var(--ta-brand); border-radius: var(--ta-radius);
+}
+.ta-shell .lot-bar-kicker { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ta-brand); }
+.ta-shell .lot-bar-title h1 { margin: 2px 0; font-size: 24px; line-height: 1.2; font-weight: 600; letter-spacing: -0.01em; }
+.ta-shell .lot-bar-title select { margin: 4px 0; font-size: 20px; font-weight: 600; padding: 4px 32px 4px 8px; min-height: 40px; max-width: 100%; }
+.ta-shell .lot-bar-meta { display: block; font-size: 12.5px; color: var(--ta-text-3); }
+.ta-shell .lot-bar-week { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.ta-shell .week-chip {
+  display: grid; gap: 1px; justify-items: start; text-align: left; min-height: 0; padding: 9px 12px 9px 14px; position: relative;
+  background: var(--ta-layer-2); border: 0; border-radius: 4px; color: var(--ta-text); cursor: pointer;
+}
+.ta-shell .week-chip::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 4px; border-radius: 4px 0 0 4px; background: var(--ta-text-3); }
+.ta-shell .week-chip.tone-ok::before { background: var(--ta-ok); }
+.ta-shell .week-chip.tone-warn::before { background: var(--ta-warn); }
+.ta-shell .week-chip.tone-risk::before { background: var(--ta-risk); }
+.ta-shell .week-chip span { font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ta-text-3); }
+.ta-shell .week-chip b { font-size: 15px; font-weight: 600; }
+.ta-shell .week-chip.tone-warn b { color: var(--ta-warn); }
+.ta-shell .week-chip.tone-risk b { color: var(--ta-risk-text, #ff8389); }
+.ta-shell .week-chip small { font-size: 11.5px; color: var(--ta-text-2); }
+.ta-shell .lot-bar-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.ta-shell .lot-bar-actions button { min-height: 40px; padding: 0 14px; white-space: nowrap; }
+@media (max-width: 1280px) { .ta-shell .lot-bar { grid-template-columns: minmax(0, 1fr) auto; } .ta-shell .lot-bar-week { grid-column: 1 / -1; grid-row: 2; } }
+@media (max-width: 640px) {
+  .ta-shell .lot-bar { grid-template-columns: minmax(0, 1fr); padding: 14px; }
+  .ta-shell .lot-bar-week { grid-template-columns: minmax(0, 1fr); grid-row: auto; }
+  .ta-shell .lot-bar-actions { justify-content: stretch; } .ta-shell .lot-bar-actions button { flex: 1; }
+  .ta-shell .lot-bar-title h1 { font-size: 21px; }
+}
+
+/* Pestañas de la columna izquierda */
+.ta-shell .side-tabs { flex: none; position: sticky; top: 0; z-index: 5; display: grid; grid-template-columns: repeat(3, 1fr); background: var(--ta-card); border: 1px solid var(--ta-border); border-radius: var(--ta-radius); overflow: hidden; }
+.ta-shell .side-tabs button { min-height: 44px; border: 0; border-radius: 0; background: transparent; color: var(--ta-text-2); font-weight: 500; box-shadow: inset 0 -2px 0 var(--ta-border); }
+.ta-shell .side-tabs button.active { color: var(--ta-text); font-weight: 600; box-shadow: inset 0 -3px 0 var(--ta-brand); background: var(--ta-layer-2); }
+
+/* Catálogo de fuentes: buscador, lista con scroll y estado con color */
+.ta-shell .src-search { width: 100%; min-height: 40px; margin-bottom: 8px; padding: 0 12px; }
+.ta-shell .src-list { max-height: 340px; overflow-y: auto; border: 1px solid var(--ta-border); border-radius: 4px; }
+.ta-shell .src-list .data-button { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; margin: 0; min-height: 50px; text-align: left; }
+.ta-shell .src-list .data-button:last-child { border-bottom: 0; }
+.ta-shell .src-name { display: grid; gap: 1px; font-size: 13px; color: var(--ta-text); letter-spacing: 0; text-transform: none; }
+.ta-shell .src-name small { font-size: 11px; color: var(--ta-text-3); }
+.ta-shell .src-state { flex: none; font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; padding: 2px 8px; border-radius: 10px; background: var(--ta-layer-2); color: var(--ta-text-3); }
+.ta-shell .src-state.st-recibido { color: var(--ta-ok); background: rgba(66, 190, 101, 0.14); }
+.ta-shell .src-state.st-sin-dato { color: var(--ta-risk-text, #ff8389); background: rgba(250, 77, 86, 0.14); }
+.ta-shell .src-state.st-consultando { color: var(--ta-brand); background: var(--ta-brand-soft); }
+
+/* Gráficos: títulos y altura cómodos */
+.ta-shell .chart h2 { font-size: 15px; font-weight: 600; letter-spacing: 0; }
+.ta-shell .chart .small { color: var(--ta-text-3); }
+
+/* Selector de tema */
+.ta-shell .theme-toggle { margin-left: auto; min-height: 36px; padding: 0 12px; font-size: 12.5px; font-weight: 600; background: transparent; border: 1px solid var(--ta-border-strong); color: var(--ta-text-2); }
+
+/* ───────── Tema claro "blanco y negro": barra y menú negros, contenido blanco ───────── */
+.ta-shell[data-theme="claro"] {
+  --ta-is-light: 1;
+  --ta-bg: #f4f4f4;
+  --ta-surface: #ffffff;
+  --ta-card: #ffffff;
+  --ta-card-solid: #ffffff;
+  --ta-layer-2: #f0f0f0;
+  --ta-border: #e0e0e0;
+  --ta-border-strong: #c6c6c6;
+  --ta-text: #161616;
+  --ta-text-2: #393939;
+  --ta-text-3: #6f6f6f;
+  --ta-brand: #007d79;
+  --ta-brand-soft: rgba(0, 125, 121, 0.1);
+  --ta-ok: #198038;
+  --ta-warn: #8e6a00;
+  --ta-risk: #da1e28;
+  --ta-risk-text: #da1e28;
+  --panel: #ffffff;
+  --muted: #525252;
+  --cyan: #007d79;
+  --edge: #e0e0e0;
+  color-scheme: light;
+}
+.ta-shell[data-theme="claro"] button, .ta-shell[data-theme="claro"] input, .ta-shell[data-theme="claro"] select, .ta-shell[data-theme="claro"] textarea {
+  background: #ffffff; color: var(--ta-text); border-color: var(--ta-border-strong);
+}
+.ta-shell[data-theme="claro"] button:hover:not(:disabled) { background: #e8e8e8; }
+.ta-shell[data-theme="claro"] .primary { background: #007d79; color: #ffffff; }
+.ta-shell[data-theme="claro"] .primary:hover:not(:disabled) { background: #005d5d; }
+.ta-shell[data-theme="claro"] .side-tabs button, .ta-shell[data-theme="claro"] .data-button { background: transparent; }
+.ta-shell[data-theme="claro"] .side-tabs button.active, .ta-shell[data-theme="claro"] .data-button.active { background: var(--ta-layer-2); }
+.ta-shell[data-theme="claro"] .week-chip { background: #f4f4f4; }
+.ta-shell[data-theme="claro"] .cv-tag.tone-warn { color: #8e6a00; background: rgba(241, 194, 27, 0.25); }
+.ta-shell[data-theme="claro"] .cv-tag.tone-risk { color: #da1e28; background: rgba(218, 30, 40, 0.1); }
+.ta-shell[data-theme="claro"] .cv-thi.tone-risk .cv-thi-top strong { color: #da1e28; }
+.ta-shell[data-theme="claro"] .src-state.st-recibido { background: rgba(36, 161, 72, 0.12); }
+.ta-shell[data-theme="claro"] .cv-soil-row i b { background: #0f62fe; }
+/* barra superior y menú lateral negros, como en Carbon */
+.ta-shell[data-theme="claro"] header.ta-header, .ta-shell[data-theme="claro"] .ta-sidebar {
+  --ta-text: #f4f4f4; --ta-text-2: #c6c6c6; --ta-text-3: #a8a8a8; --ta-border: #393939; --ta-border-strong: #525252; --ta-brand: #3ddbd9; --ta-brand-soft: rgba(61, 219, 217, 0.14); --ta-layer-2: #333333;
+  background: #161616; color: #f4f4f4;
+}
+.ta-shell[data-theme="claro"] header.ta-header button, .ta-shell[data-theme="claro"] .ta-sidebar button { background: transparent; color: #f4f4f4; border-color: #525252; }
+.ta-shell[data-theme="claro"] header.ta-header button:hover:not(:disabled), .ta-shell[data-theme="claro"] .ta-sidebar button:hover:not(:disabled) { background: #333333; }
+.ta-shell[data-theme="claro"] .panel { box-shadow: none; }
+.ta-shell[data-theme="claro"] .ta-map-card .toolbar { background: rgba(255, 255, 255, 0.94); }
+
+/* Gráficos más altos y legibles: el área del gráfico ocupa la tarjeta */
+.ta-shell .chart { height: auto; min-height: 0; display: flex; flex-direction: column; }
+.ta-shell .chart .chart-content { height: 240px !important; width: 100%; flex: none; margin-top: 6px; }
+@media (max-width: 640px) { .ta-shell .chart .chart-content { height: 210px !important; } }
+/* Detalles del tema claro */
+.ta-shell[data-theme="claro"] .ta-metric-icon { background: var(--ta-layer-2); color: var(--ta-text); }
+.ta-shell[data-theme="claro"] .tone-ok .ta-metric-icon { background: rgba(36, 161, 72, 0.12); color: #198038; }
+.ta-shell[data-theme="claro"] .tone-warn .ta-metric-icon { background: rgba(241, 194, 27, 0.22); color: #8e6a00; }
+.ta-shell[data-theme="claro"] .tone-risk .ta-metric-icon { background: rgba(218, 30, 40, 0.1); color: #da1e28; }
+.ta-shell[data-theme="claro"] .status { color: var(--ta-text-3); }
+.ta-shell .status { font-family: var(--sans); font-size: 12px; }
+.ta-shell header.ta-header span, .ta-shell header.ta-header small { color: var(--ta-text-2); }
+.ta-shell .src-list .src-name { font-size: 13px; font-weight: 500; color: var(--ta-text); text-transform: none; letter-spacing: 0; }
+.ta-shell .src-list .src-name small { font-weight: 400; color: var(--ta-text-3); }
+
+/* ───────── Vista Tablero (modelo de dashboard Carbon) ───────── */
+.ta-shell .app.ta-content.mode-tablero { grid-template-columns: minmax(0, 1fr) !important; grid-template-areas: "lot" "db" !important; }
+.ta-shell .app.mode-tablero > .ta-metrics,
+.ta-shell .app.mode-tablero > .sidebar,
+.ta-shell .app.mode-tablero > .ta-map-card,
+.ta-shell .app.mode-tablero > .inspector,
+.ta-shell .app.mode-tablero > .charts { display: none !important; }
+.ta-shell .db-wrap { grid-area: db; min-width: 0; }
+.ta-shell .db-grid { display: grid; grid-template-columns: repeat(16, minmax(0, 1fr)); gap: 16px; }
+.ta-shell .db-span-4 { grid-column: span 4; } .ta-shell .db-span-6 { grid-column: span 6; } .ta-shell .db-span-8 { grid-column: span 8; }
+.ta-shell .db-span-10 { grid-column: span 10; } .ta-shell .db-span-16 { grid-column: span 16; }
+@media (max-width: 1200px) { .ta-shell .db-span-4 { grid-column: span 8; } .ta-shell .db-span-6, .ta-shell .db-span-10, .ta-shell .db-span-8 { grid-column: span 16; } }
+@media (max-width: 640px) { .ta-shell .db-grid { gap: 10px; } .ta-shell .db-span-4 { grid-column: span 16; } }
+.ta-shell .db-tile {
+  position: relative; display: grid; gap: 6px; align-content: start; text-align: left; min-height: 132px; padding: 16px 18px;
+  background: var(--ta-card); border: 1px solid var(--ta-border); border-radius: 0; color: var(--ta-text); cursor: default;
+}
+.ta-shell button.db-tile { cursor: pointer; }
+.ta-shell button.db-tile:hover:not(:disabled) { background: var(--ta-layer-2); }
+.ta-shell .db-tile::after { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: transparent; }
+.ta-shell .db-tile.tone-ok::after { background: var(--ta-ok); } .ta-shell .db-tile.tone-warn::after { background: var(--ta-warn); } .ta-shell .db-tile.tone-risk::after { background: var(--ta-risk); }
+.ta-shell .db-tile-label { font-size: 13px; color: var(--ta-text-2); }
+.ta-shell .db-tile-value { font-size: 40px; line-height: 1.05; font-weight: 300; letter-spacing: -0.02em; color: var(--ta-text); }
+.ta-shell .db-tile-value small { margin-left: 6px; font-size: 16px; font-weight: 400; color: var(--ta-text-3); }
+.ta-shell .db-tile-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 12px; color: var(--ta-text-3); }
+.ta-shell .db-word { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
+.ta-shell .db-word.tone-ok { color: var(--ta-ok); background: rgba(66, 190, 101, 0.14); }
+.ta-shell .db-word.tone-warn { color: var(--ta-warn); background: rgba(241, 194, 27, 0.16); }
+.ta-shell .db-word.tone-risk { color: var(--ta-risk-text, #ff8389); background: rgba(250, 77, 86, 0.14); }
+.ta-shell .db-card { min-width: 0; padding: 16px 18px 12px; background: var(--ta-card); border: 1px solid var(--ta-border); border-radius: 0; }
+.ta-shell .db-card > .db-head { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+.ta-shell .db-card h3 { margin: 0; font-size: 16px; font-weight: 600; color: var(--ta-text); letter-spacing: 0; text-transform: none; }
+.ta-shell .db-card .db-head p { margin: 3px 0 0; font-size: 12px; color: var(--ta-text-3); }
+.ta-shell .db-empty { display: grid; place-content: center; justify-items: center; gap: 10px; min-height: 220px; text-align: center; color: var(--ta-text-3); font-size: 13px; background: var(--ta-layer-2); }
+.ta-shell .db-empty p { margin: 0; max-width: 320px; }
+.ta-shell .db-empty button { min-height: 38px; padding: 0 16px; }
+.ta-shell .db-facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin: 6px 0 0; background: var(--ta-border); border: 1px solid var(--ta-border); }
+.ta-shell .db-facts div { padding: 8px 10px; background: var(--ta-card); }
+.ta-shell .db-facts dt { font-size: 11px; color: var(--ta-text-3); } .ta-shell .db-facts dd { margin: 2px 0 0; font-size: 15px; font-weight: 600; }
+.ta-shell .db-table-wrap { overflow-x: auto; }
+.ta-shell .db-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.ta-shell .db-table th { text-align: left; font-weight: 600; font-size: 12px; color: var(--ta-text-2); background: var(--ta-layer-2); padding: 10px 12px; }
+.ta-shell .db-table td { padding: 10px 12px; border-bottom: 1px solid var(--ta-border); color: var(--ta-text); vertical-align: middle; }
+.ta-shell .db-table td small { color: var(--ta-text-3); }
+.ta-shell .db-link { min-height: 30px; padding: 0 10px; border: 0; background: transparent; color: var(--ta-brand); font-weight: 600; }
+.ta-shell .db-foot { grid-column: 1 / -1; margin: 0; font-size: 12px; color: var(--ta-text-3); }
+/* conmutador Tablero / Mapa */
+.ta-shell .view-switch { display: inline-grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--ta-border-strong); border-radius: 4px; overflow: hidden; }
+.ta-shell .view-switch button { min-height: 40px; padding: 0 16px; border: 0; border-radius: 0; background: transparent; color: var(--ta-text-2); font-weight: 500; }
+.ta-shell .view-switch button.active { background: var(--ta-text); color: var(--ta-bg); font-weight: 600; }
+.ta-shell[data-theme="claro"] .db-word.tone-warn { color: #8e6a00; background: rgba(241, 194, 27, 0.25); }
+.ta-shell[data-theme="claro"] .db-word.tone-risk { color: #da1e28; background: rgba(218, 30, 40, 0.1); }
+.ta-shell[data-theme="claro"] .db-word.tone-ok { color: #198038; background: rgba(36, 161, 72, 0.12); }
+.ta-shell[data-theme="claro"] .view-switch button { background: #fff; }
+.ta-shell[data-theme="claro"] .view-switch button.active { background: #161616; color: #fff; }
+.ta-shell[data-theme="claro"] .db-link { color: #007d79; background: transparent; }
+.ta-shell .lot-bar-help { display: inline-block; margin: 2px 0; font-size: 12px; color: var(--ta-brand); text-decoration: underline; }
+.ta-shell .lot-delete { float: right; min-height: 24px; padding: 0 8px; font-size: 11px; font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--ta-risk-text, #ff8389); background: transparent; border: 1px solid var(--ta-border-strong); }
+.ta-shell .db-facts-4 { grid-template-columns: repeat(4, 1fr); margin: 0 0 10px; }
+@media (max-width: 640px) { .ta-shell .db-facts-4 { grid-template-columns: 1fr 1fr; } }
+.ta-shell .db-note { margin: 4px 0 0; font-size: 12.5px; color: var(--ta-text-3); }
+.ta-shell .cloud-box { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--ta-border); }
+.ta-shell .cloud-box input { width: 100%; min-height: 38px; padding: 0 10px; }

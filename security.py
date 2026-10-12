@@ -19,6 +19,7 @@ RULES = [
     ('/api/fuentes/agentic', 12, 300),
     ('/api/fuentes/tile', 600, 60),          # teselas del mapa base
     ('/api/fuentes/ndvi-imagen', 60, 60),
+    ('/api/lotes/', 30, 300),               # guardado de lotes y resultados semanales
     ('/api/fuentes/', 120, 60),              # resto de las fuentes
 ]
 _hits = {}

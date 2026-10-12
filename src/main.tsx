@@ -8,6 +8,8 @@ import {
   GridComponent,
   TooltipComponent,
   LegendComponent,
+  MarkLineComponent,
+  MarkAreaComponent,
 } from "echarts/components";
 import { CanvasRenderer } from "echarts/renderers";
 import {
@@ -40,10 +42,19 @@ import {
 import "./styles.css";
 import "./dashboard.css";
 import "./site.css";
+import "./theme-carbon.css";
 import { ObsSidebar, MetricCards, buildNav } from "./dashboard/Shell";
 import { MARKER_KINDS, markerIcon, kindOf, MarkerLegend } from "./dashboard/markers";
 import { fieldAt, fieldsAround, compactness, FTW_ATTRIBUTION, FTW_RELIABLE } from "./dashboard/fields";
+import { terrainForLot, terrainImage, DEM_ATTRIBUTION, DEM_SOURCE_URL, type TerrainAnalysis, type TerrainMode } from "./dashboard/terrain";
+import { RISK_COLORS, DRAIN_COLOR } from "./dashboard/terrainCore";
+import { VariablesPanel } from "./dashboard/VariablesPanel";
+import { LotDashboard } from "./dashboard/LotDashboard";
+import { GuideContent } from "./site/GuideContent";
+import { readLotFile, lotsToGeoJSON, lotsToKML } from "./dashboard/lotFiles";
 echarts.use([
+  MarkLineComponent,
+  MarkAreaComponent,
   LineChart,
   BarChart,
   GridComponent,
@@ -113,6 +124,7 @@ const SOURCES = [
   ["modelos", "Comparar modelos globales", "Open-Meteo / 7 proveedores"],
   ["escenas", "Escenas satelitales", "Earth Search / Sentinel-2"],
   ["ndvi", "NDVI del lote", "Sentinel-2 10 m · Planetary Computer"],
+  ["relieve", "Relieve y anegamiento", "Copernicus DEM 30 m · cálculo en el navegador"],
   ["historico", "Histórico reciente", "NASA POWER"],
   ["indices", "Índices agroclimáticos", "ERA5 · definiciones xclim/ETCCDI"],
   ["lluvia", "Lluvia observada y sequía", "CHIRPS · satélite + estaciones · SPI"],
@@ -167,42 +179,62 @@ function Chart({
   useEffect(() => {
     if (!ref.current) return;
     const chart = echarts.init(ref.current, undefined, { renderer: "canvas" });
+    // Colores desde el tema (claro u oscuro) y paleta DOTS unificada para todos los gráficos
+    const css = getComputedStyle(ref.current);
+    const v = (n: string, d: string) => css.getPropertyValue(n).trim() || d;
+    const txt = v("--ta-text-2", "#c6c6c6"), txt3 = v("--ta-text-3", "#8d8d8d"), grid = v("--ta-border", "#333333"),
+      tipBg = v("--ta-layer-2", "#393939"), tipTx = v("--ta-text", "#f4f4f4");
+    const light = css.getPropertyValue("--ta-is-light").trim() === "1";
+    const PAL: Record<string, [string, string]> = { // color viejo → [oscuro, claro]
+      "#06b6d4": ["#33b1ff", "#0072c3"], "#19b98a": ["#3ddbd9", "#007d79"], "#22c55e": ["#42be65", "#198038"],
+      "#e9bd72": ["#ff7eb6", "#d02670"], "#a7a5ff": ["#be95ff", "#8a3ffc"], "#b7c989": ["#8d8d8d", "#a8a8a8"],
+      "#93c5fd": ["#78a9ff", "#4589ff"], "#57dce0": ["#3ddbd9", "#007d79"], "#f0b974": ["#ff7eb6", "#d02670"], "#fd9c91": ["#ff8389", "#da1e28"], "#e7a0db": ["#ff7eb6", "#9f1853"],
+    };
+    const col = (c: string) => (PAL[c?.toLowerCase()] || [c, c])[light ? 1 : 0];
+    const many = dates.length > 24;
     chart.setOption({
       animation: false,
-      textStyle: { fontFamily: "Inter", color: "#a0b3bf" },
+      textStyle: { fontFamily: "IBM Plex Sans", color: txt },
       tooltip: {
         trigger: "axis",
-        backgroundColor: "#132734",
-        borderColor: "#42616c",
-        textStyle: { color: "#e7f1f5" },
-        valueFormatter: (v: any) =>
-          v === null ? "Sin dato" : fmt(v) + " " + unit,
+        backgroundColor: tipBg,
+        borderWidth: 0,
+        padding: [8, 10],
+        textStyle: { color: tipTx, fontSize: 12 },
+        axisPointer: { type: series.some(s => s.type === "bar") ? "shadow" : "line", lineStyle: { color: txt3 }, shadowStyle: { color: light ? "rgba(0,0,0,.05)" : "rgba(255,255,255,.05)" } },
+        valueFormatter: (val: any) =>
+          val === null || val === undefined ? "Sin dato" : fmt(val) + " " + unit,
       },
-      grid: { left: 42, right: 15, top: 12, bottom: 27 },
+      legend: series.length > 1 ? { top: 0, right: 0, icon: "rect", itemWidth: 10, itemHeight: 10, itemGap: 14, textStyle: { color: txt, fontSize: 11 } } : undefined,
+      grid: { left: 44, right: 12, top: series.length > 1 ? 36 : 16, bottom: 28 },
       xAxis: {
         type: "category",
         data: dates,
-        axisLabel: { color: "#a0b3bf", fontSize: 11, hideOverlap: true },
-        axisLine: { lineStyle: { color: "#3a4d57" } },
+        axisLabel: { color: txt3, fontSize: 11, hideOverlap: true },
+        axisLine: { lineStyle: { color: grid } },
         axisTick: { show: false },
       },
       yAxis: {
         type: "value",
         scale: true,
+        splitNumber: 4,
         name: unit,
-        nameTextStyle: { fontSize: 10, color: "#a0b3bf" },
-        axisLabel: { color: "#a0b3bf", fontSize: 11 },
-        splitLine: { lineStyle: { color: "#293d49" } },
+        nameTextStyle: { fontSize: 10, color: txt3, align: "left" },
+        axisLabel: { color: txt3, fontSize: 11 },
+        splitLine: { lineStyle: { color: grid } },
       },
       series: series.map((s) => ({
         name: s.name,
         type: s.type || "line",
         data: s.values,
         connectNulls: false,
+        showSymbol: !many,
         symbolSize: 5,
         lineStyle: { width: 2 },
-        itemStyle: { color: s.color },
-        barMaxWidth: 16,
+        itemStyle: { color: col(s.color) },
+        ...(s.type !== "bar" && series.length === 1 ? { areaStyle: { color: col(s.color), opacity: 0.12 } } : {}),
+        barMaxWidth: 18,
+        emphasis: { focus: "series" },
       })),
     });
     const observer = new ResizeObserver(() => chart.resize());
@@ -626,10 +658,27 @@ function Observatory({onHome}:{onHome:()=>void}) {
   const [ftwMode, setFtwMode] = useState(false);
   const [herdHeads, setHerdHeads] = useState<number>(() => { try { return Number(localStorage.getItem("dots-heads") || 0); } catch { return 0; } });
   const [ftwBusy, setFtwBusy] = useState(false);
+  const [sideTab, setSideTab] = useState<"lote" | "datos" | "asistente">("lote");
+  const [srcQuery, setSrcQuery] = useState("");
+  const [mainView, setMainView] = useState<"mapa" | "tablero">(() => { try { return localStorage.getItem("dots-vista") === "mapa" ? "mapa" : "tablero"; } catch { return "tablero"; } });
+  useEffect(() => { try { localStorage.setItem("dots-vista", mainView); } catch {} if (mainView === "mapa") setTimeout(() => mapRef.current?.invalidateSize(), 50); }, [mainView]);
+  const [theme, setTheme] = useState<"oscuro" | "claro">(() => { try { return localStorage.getItem("dots-theme") === "claro" ? "claro" : "oscuro"; } catch { return "oscuro"; } });
+  useEffect(() => { try { localStorage.setItem("dots-theme", theme); } catch {} }, [theme]);
   const ndviOverlay = useRef<L.ImageOverlay | null>(null);
+  // Línea de tiempo NDVI (como el Time Slider de GeoLibre): recorre las escenas válidas del lote.
+  const ndviValid: Data[] = ((sources.ndvi?.payload as any)?.data?.series || []).filter((r: Data) => r.status === "válida" && r.item);
+  const [ndviPick, setNdviPick] = useState<number | null>(null);
+  const [ndviPlay, setNdviPlay] = useState(false);
+  const ndviIdx = ndviPick == null || ndviPick >= ndviValid.length ? ndviValid.length - 1 : ndviPick;
+  useEffect(() => { setNdviPick(null); setNdviPlay(false); }, [sources.ndvi]);
+  useEffect(() => {
+    if (!ndviPlay || ndviValid.length < 2) return;
+    const t = setInterval(() => setNdviPick(i => ((i ?? ndviValid.length - 1) + 1) % ndviValid.length), 2200);
+    return () => clearInterval(t);
+  }, [ndviPlay, ndviValid.length]);
   useEffect(() => {
     ndviOverlay.current?.remove(); ndviOverlay.current = null;
-    const latest = (sources.ndvi?.payload as any)?.data?.latest;
+    const latest = ndviValid[ndviIdx] || (sources.ndvi?.payload as any)?.data?.latest;
     if (!mapRef.current || !showNdvi || view !== "ndvi" || !String(latest?.item||"").startsWith("S2") || vertices.length < 3) return;
     const lats = vertices.map(v=>v[0]), lons = vertices.map(v=>v[1]);
     const bounds: L.LatLngBoundsExpression = [[Math.min(...lats), Math.min(...lons)], [Math.max(...lats), Math.max(...lons)]];
@@ -638,12 +687,58 @@ function Observatory({onHome}:{onHome:()=>void}) {
     ov.on("error", () => notify("La imagen NDVI no se pudo recortar al lote. Los valores del panel siguen siendo válidos."));
     ndviOverlay.current = ov;
     return () => { ov.remove(); };
-  }, [sources.ndvi, showNdvi, view, vertices, overlayMode]);
+  }, [sources.ndvi, showNdvi, view, vertices, overlayMode, ndviIdx]);
+  // Relieve y anegamiento: DEM Copernicus leído y procesado en el navegador (enfoque GeoLibre/Whitebox).
+  const terrainRef = useRef<{ key: string; a: TerrainAnalysis } | null>(null);
+  const terrainCtl = useRef<AbortController | null>(null);
+  const terrainOverlay = useRef<L.ImageOverlay | null>(null);
+  const [terrainMode, setTerrainMode] = useState<TerrainMode | "off">("anegamiento");
+  const [terrainTick, setTerrainTick] = useState(0);
+  const lotKey = JSON.stringify(vertices);
+  const loadTerrain = async () => {
+    if (vertices.length < 3) { setSources(p => ({ ...p, relieve: { status: "sin dato", error: "Dibujá o seleccioná un lote para analizar su relieve" } })); return; }
+    terrainCtl.current?.abort();
+    const ctl = new AbortController(); terrainCtl.current = ctl;
+    const key = lotKey, poly = vertices;
+    setSources(p => ({ ...p, relieve: { status: "consultando" } }));
+    try {
+      const a = await terrainForLot(poly, ctl.signal);
+      if (terrainCtl.current !== ctl) return;
+      terrainRef.current = { key, a };
+      setSources(p => ({ ...p, relieve: { status: "recibido", payload: { data: { ...a.summary, lot: key }, consulted_at: new Date().toISOString(), source_url: DEM_SOURCE_URL } } }));
+      setTerrainTick(t => t + 1);
+    } catch (e) {
+      if (terrainCtl.current !== ctl || ctl.signal.aborted) return;
+      setSources(p => ({ ...p, relieve: { status: "sin dato", error: (e as Error).message } }));
+    }
+  };
+  useEffect(() => {
+    terrainOverlay.current?.remove(); terrainOverlay.current = null;
+    const t = terrainRef.current;
+    if (!mapRef.current || view !== "relieve" || terrainMode === "off" || !t || t.key !== lotKey) return;
+    const { url, bounds } = terrainImage(t.a, terrainMode);
+    const ov = L.imageOverlay(url, bounds, { opacity: .78, interactive: false, className: "pixel-layer" }).addTo(mapRef.current);
+    terrainOverlay.current = ov;
+    return () => { ov.remove(); };
+  }, [terrainTick, terrainMode, view, lotKey]);
+  // En la vista Tablero, con un lote elegido, se piden solos los datos del lote (una vez por lote)
+  useEffect(() => {
+    if (mainView !== "tablero" || vertices.length < 3) return;
+    const t = setTimeout(() => {
+      const want = ["ndvi", "lluvia"].filter(k => !sources[k]);
+      const needTerrain = !sources.relieve && terrainRef.current?.key !== lotKey;
+      if (!want.length && !needTerrain) return;
+      want.forEach(k => void load(k));
+      if (needTerrain) void loadTerrain();
+    }, 600);
+    return () => clearTimeout(t);
+  }, [mainView, lotKey, !!sources.ndvi, !!sources.lluvia, !!sources.relieve]);
   const changeView = (key: string) => {
     // Always refresh: source results are spatial/temporal and must follow the currently selected lot.
     // Reusing an old payload after changing polygon was a functional bug in earlier versions.
     setView(key);
-    if (key === "alertas") { void loadAlerts(); } else if (key === "forraje") { void loadForage(); } else if (key === "costos") { void loadCosts(); } else void load(key);
+    setSideTab("datos");
+    if (key === "alertas") { void loadAlerts(); } else if (key === "forraje") { void loadForage(); } else if (key === "relieve") { void loadTerrain(); } else if (key === "costos") { void loadCosts(); } else void load(key);
     requestAnimationFrame(() => { const el = document.getElementById("dots-detail"); const side = el?.closest(".sidebar") as HTMLElement | null; if (el && side) side.scrollTo({ top: Math.max(0, el.offsetTop - side.offsetTop - 16), behavior: "smooth" }); });
   };
   const addFieldMarker = (type = markerType) => {
@@ -674,6 +769,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
     setFieldMarkers(prev=>{const manual=prev.filter((m:any)=>m.source!=="NASA FIRMS"); const auto=det.slice(0,150).map((r:any,i:number)=>({id:`firms-${r.latitude}-${r.longitude}-${i}`,type:"incendio",lat:Number(r.latitude),lon:Number(r.longitude),status:`${r.inside_lot===true?"DENTRO DEL LOTE":"ENTORNO"} · ${r.satellite||r.instrument||"VIIRS"} · ${r.acq_date||""} ${r.acq_time||""} · FRP ${r.frp||"s/d"}`,source:"NASA FIRMS",provenance:"SATELITAL",confidence:r.confidence||"s/d",observed_at:`${r.acq_date||""} ${r.acq_time||""}`})).filter((m:any)=>Number.isFinite(m.lat)&&Number.isFinite(m.lon)); return [...manual,...auto]});
   },[sources.firms]);
   const startDraw = (mode:"free"|"triangle"|"rectangle"="free") => {
+    setMainView("mapa");
     setDrawMode(mode);
     poly.current = null;
     setSelectedLotId(null);
@@ -692,7 +788,73 @@ function Observatory({onHome}:{onHome:()=>void}) {
     line.current = null;
     if (mapRef.current) mapRef.current.getContainer().style.cursor = "";
   };
-  const finish = (given?: Point[], origin?: string, ftw?: any) => {
+  const drawLotLayer = (id: string, name: string, points: Point[], center: Point) => {
+    const layer=L.polygon(points,{color:"#57dce0",fillOpacity:.12,weight:2}).addTo(mapRef.current!).bindTooltip(name,{permanent:true,direction:"center"});
+    layer.on("click",()=>{ setSelectedLotId(id); setVertices(points); currentPoints.current=points; poly.current=layer; setPoint(center); setCoords(center.map(v=>v.toFixed(6))); mapRef.current?.fitBounds(layer.getBounds(),{padding:[40,40]}); });
+    lotLayers.current[id]=layer;
+    return layer;
+  };
+  const removeLot = (id: string) => {
+    const l = lots.find(x => x.id === id); if (!l) return;
+    if (!window.confirm(`¿Borrar "${l.name}" de este navegador? Antes podés descargarlo en KML.`)) return;
+    lotLayers.current[id]?.remove(); delete lotLayers.current[id];
+    setLots(prev => prev.filter(x => x.id !== id));
+    if (selectedLotId === id) { setSelectedLotId(null); poly.current = null; currentPoints.current = []; setVertices([]); }
+    notify(`${l.name} borrado.`);
+    if (cloudOn && cloudKey) void syncLots([id]);
+  };
+  // Nube: lotes guardados en el repositorio privado de datos y resultados del procesamiento semanal (geoai)
+  const [cloudOn, setCloudOn] = useState<boolean | null>(null);
+  const [cloudKey, setCloudKey] = useState<string>(() => { try { return localStorage.getItem("dots-clave") || ""; } catch { return ""; } });
+  const [cloudBusy, setCloudBusy] = useState(false);
+  const [cloudMsg, setCloudMsg] = useState("");
+  const [water, setWater] = useState<Record<string, any>>({});
+  useEffect(() => { fetch("/api/lotes/estado").then(r => r.ok ? r.json() : null).then(j => setCloudOn(!!j?.configured)).catch(() => setCloudOn(false)); }, []);
+  useEffect(() => { try { localStorage.setItem("dots-clave", cloudKey); } catch {} }, [cloudKey]);
+  const syncLots = async (remove: string[] = []) => {
+    if (!cloudKey) { setCloudMsg("Escribí la clave del establecimiento."); return; }
+    setCloudBusy(true); setCloudMsg("");
+    try {
+      const r = await fetch("/api/lotes/sincronizar", { method: "POST", headers: { "Content-Type": "application/json", "X-DOTS-Key": cloudKey },
+        body: JSON.stringify({ lotes: lots.map(l => ({ id: l.id, name: l.name, vertices: l.vertices, areaHa: l.areaHa })), quitar: remove }) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw Error(j.error || "No se pudo guardar");
+      setCloudMsg(`Guardado: ${j.lotes} lote${j.lotes === 1 ? "" : "s"} en el procesamiento semanal. Los resultados aparecen después del próximo lunes.`);
+    } catch (e) { setCloudMsg((e as Error).message); } finally { setCloudBusy(false); }
+  };
+  useEffect(() => {
+    const id = selectedLotId; if (!id || !cloudOn || !cloudKey || water[id]) return;
+    fetch(`/api/lotes/resultado?id=${encodeURIComponent(id)}`, { headers: { "X-DOTS-Key": cloudKey } })
+      .then(async r => { const j = await r.json().catch(() => ({})); setWater(w => ({ ...w, [id]: r.ok ? j : { status: "sin dato", error: j.error } })); })
+      .catch(() => setWater(w => ({ ...w, [id]: { status: "sin dato", error: "Sin conexión" } })));
+  }, [selectedLotId, cloudOn, cloudKey]);
+  const waterLayer = useRef<L.GeoJSON | null>(null);
+  useEffect(() => {
+    waterLayer.current?.remove(); waterLayer.current = null;
+    const w = selectedLotId ? water[selectedLotId] : null;
+    if (!mapRef.current || mainView !== "mapa" || !w?.water_geojson?.features?.length) return;
+    waterLayer.current = L.geoJSON(w.water_geojson, { style: { color: "#33b1ff", weight: 1.5, fillColor: "#33b1ff", fillOpacity: 0.45 }, interactive: false }).addTo(mapRef.current);
+    return () => { waterLayer.current?.remove(); };
+  }, [water, selectedLotId, mainView]);
+
+  // Los lotes quedan guardados en este navegador: sobreviven a recargar la página.
+  const lotsRestored = useRef(false);
+  useEffect(() => {
+    if (lotsRestored.current || !mapRef.current) return;
+    lotsRestored.current = true;
+    try {
+      const saved = JSON.parse(localStorage.getItem("dots-lotes") || "[]");
+      if (!Array.isArray(saved) || !saved.length) return;
+      const ok = saved.filter((l: any) => l && typeof l.id === "string" && Array.isArray(l.vertices) && l.vertices.length >= 3 && Array.isArray(l.center));
+      ok.forEach((l: any) => drawLotLayer(l.id, l.name, l.vertices, l.center));
+      setLots(ok);
+    } catch {}
+  }, []);
+  useEffect(() => {
+    if (!lotsRestored.current) return;
+    try { localStorage.setItem("dots-lotes", JSON.stringify(lots)); } catch {}
+  }, [lots]);
+  const finish = (given?: Point[], origin?: string, ftw?: any, label?: string) => {
     try {
       let points = given ?? currentPoints.current;
       if(!given && drawMode==="triangle" && points.length!==3) throw Error("Triángulo: marcá exactamente 3 vértices.");
@@ -709,12 +871,11 @@ function Observatory({onHome}:{onHome:()=>void}) {
       const center = centroid(points);
       const areaHa = (()=>{ const R=6378137,lat0=points.reduce((a,p)=>a+p[0],0)/points.length*Math.PI/180,xy=points.map(([la,lo])=>[R*lo*Math.PI/180*Math.cos(lat0),R*la*Math.PI/180]);let a=0;for(let i=0;i<xy.length;i++){const j=(i+1)%xy.length;a+=xy[i][0]*xy[j][1]-xy[j][0]*xy[i][1]}return Math.abs(a)/2/10000;})();
       const perimeterKm = (()=>{const rad=(x:number)=>x*Math.PI/180,R=6371;let d=0;for(let i=0;i<points.length;i++){const a=points[i],b=points[(i+1)%points.length],dl=rad(b[0]-a[0]),dn=rad(b[1]-a[1]);const h=Math.sin(dl/2)**2+Math.cos(rad(a[0]))*Math.cos(rad(b[0]))*Math.sin(dn/2)**2;d+=2*R*Math.asin(Math.sqrt(h))}return d;})();
-      const id=`lote-${Date.now()}`;
-      const name=`Lote ${lots.length+1}${origin?" · "+origin:""}`;
+      const id=`lote-${Date.now()}-${Math.random().toString(36).slice(2,7)}`;
+      const name=label || `Lote ${lots.length+1}${origin?" · "+origin:""}`;
       if(given){currentPoints.current=points;setVertices(points);}
-      const layer=L.polygon(points,{color:"#57dce0",fillOpacity:.12,weight:2}).addTo(mapRef.current!).bindTooltip(name,{permanent:true,direction:"center"});
-      layer.on("click",()=>{ setSelectedLotId(id); setVertices(points); currentPoints.current=points; poly.current=layer; setPoint(center); setCoords(center.map(v=>v.toFixed(6))); mapRef.current?.fitBounds(layer.getBounds(),{padding:[40,40]}); });
-      lotLayers.current[id]=layer; poly.current=layer;
+      const layer=drawLotLayer(id,name,points,center);
+      poly.current=layer;
       if(given) mapRef.current?.fitBounds(layer.getBounds(),{padding:[60,60],maxZoom:16});
       setLots(prev=>[...prev,{id,name,vertices:[...points],center,areaHa,perimeterKm,compactness:compactness(areaHa,perimeterKm),ftw}]);
       setSelectedLotId(id);
@@ -725,6 +886,34 @@ function Observatory({onHome}:{onHome:()=>void}) {
     } catch (e) {
       notify((e as Error).message);
     }
+  };
+  const importLots = async (file?: File | null) => {
+    if (!file || !mapRef.current) return;
+    try {
+      const found = await readLotFile(file);
+      let ok = 0, bad = 0;
+      const bounds = L.latLngBounds([]);
+      for (const f of found) {
+        if (f.polygon.length < 3 || crosses(f.polygon as Point[])) { bad++; continue; }
+        finish(f.polygon as Point[], "importado", undefined, f.name);
+        f.polygon.forEach(p => bounds.extend(p)); ok++;
+      }
+      if (ok) mapRef.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
+      notify(`${ok} lote${ok === 1 ? "" : "s"} importado${ok === 1 ? "" : "s"} de ${file.name}${bad ? ` · ${bad} con lados cruzados no se cargaron` : ""}.`);
+    } catch (e) { notify((e as Error).message || "No se pudo leer el archivo."); }
+  };
+  const selectLot = (id: string) => {
+    const l = lots.find(x => x.id === id); if (!l) return;
+    setSelectedLotId(l.id); setVertices(l.vertices); currentPoints.current = l.vertices; poly.current = lotLayers.current[l.id];
+    setPoint(l.center); setCoords(l.center.map(v => v.toFixed(6)));
+    mapRef.current?.fitBounds(lotLayers.current[l.id].getBounds(), { padding: [40, 40] });
+  };
+  const exportLots = (kind: "geojson" | "kml") => {
+    if (!lots.length) { notify("Todavía no hay lotes para descargar."); return; }
+    const rows = lots.map(l => ({ name: l.name, vertices: l.vertices, areaHa: l.areaHa, perimeterKm: l.perimeterKm, origin: l.ftw ? "Fields of the World" : undefined }));
+    const title = estName ? `Lotes · ${estName}` : "Lotes DOTS Campo";
+    if (kind === "kml") download(new Blob([lotsToKML(rows, title)], { type: "application/vnd.google-earth.kml+xml" }), "DOTS-lotes.kml");
+    else download(new Blob([lotsToGeoJSON(rows)], { type: "application/geo+json" }), "DOTS-lotes.geojson");
   };
   const clearFtw = () => { ftwLayer.current?.remove(); ftwLayer.current = null; };
   const showFtwAround = async (lat:number, lon:number) => {
@@ -752,6 +941,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
   };
   const startFtw = () => {
     if (!mapRef.current) return;
+    setMainView("mapa");
     stopDraw(); setFtwMode(true);
     const map = mapRef.current;
     if (map.getZoom() < 13) map.setZoom(14);
@@ -807,8 +997,10 @@ function Observatory({onHome}:{onHome:()=>void}) {
     return {
       lot: l ? { name: l.name, areaHa: l.areaHa, perimeterKm: l.perimeterKm, compactness: l.compactness, ftw: l.ftw, vertices: l.vertices } : null,
       ndvi: data("ndvi"), indices: data("indices"), telecon: data("teleconexiones"), clima: data("variables"), lluvia: data("lluvia")?.spi ? data("lluvia") : null, estadistica: data("estadistica"),
-      alertas: alertsData, forraje: data("forraje")?.growth_rate_30d!=null ? data("forraje") : null,
-      sustentabilidad: data("sustentabilidad"), costos: data("costos")?.margin ? data("costos") : null,
+      alertas: alertsData, forraje: data("forraje")?.growth_rate_30d != null ? data("forraje") : null, sustentabilidad: data("sustentabilidad"),
+      relieve: data("relieve")?.lot === JSON.stringify(vertices) ? data("relieve") : null,
+      agua: selectedLotId && water[selectedLotId]?.status === "recibido" ? water[selectedLotId] : null,
+      costos: data("costos")?.margin ? data("costos") : null,
       place: placeLabel,
     };
   };
@@ -889,7 +1081,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
     ),
     depth = nitrogen?.depths?.[0];
   return (
-    <div className={"whole ta-shell"+(navCollapsed?" nav-collapsed":"")}>
+    <div className={"whole ta-shell"+(navCollapsed?" nav-collapsed":"")} data-theme={theme}>
       <ObsSidebar groups={buildNav(changeView,()=>startDraw("free"),()=>void agentPdf())} active={view} collapsed={navCollapsed} mobileOpen={navOpen} onCollapse={()=>setNavCollapsed(c=>!c)} onCloseMobile={()=>setNavOpen(false)} onHome={onHome}/>
       <div className="ta-main">
       <header className="panel ta-header">
@@ -901,6 +1093,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
           </b>
           <span>WGS84</span>
         </div>
+        <button className="theme-toggle" onClick={()=>setTheme(t=>t==="oscuro"?"claro":"oscuro")} title="Cambiar entre tema claro y oscuro" aria-label="Cambiar tema">{theme==="oscuro"?"Claro":"Oscuro"}</button>
         <button className={"ta-bell"+(alertsData?.alerts?.some((a:any)=>a.level==="alta")?" hot":alertsData?.alerts?.length?" warm":"")} onClick={()=>{setView("alertas");void loadAlerts();}} title="Alertas del lote">
           <TriangleAlert/>{alertsData?.alerts?.length ? <b>{alertsData.alerts.length}</b> : null}
         </button>
@@ -909,7 +1102,44 @@ function Observatory({onHome}:{onHome:()=>void}) {
           FUENTES RECIBIDAS
         </span>
       </header>
-      <main className="app ta-content">
+      <main className={"app ta-content mode-" + mainView}>
+        {(()=>{
+          const l = lots.find(x => x.id === selectedLotId);
+          const rain7 = (daily.precipitation_sum||[]).reduce((a:number,b:number)=>a+(Number(b)||0),0);
+          const et7 = (daily.et0_fao_evapotranspiration||[]).reduce((a:number,b:number)=>a+(Number(b)||0),0);
+          const bal = daily.precipitation_sum && daily.et0_fao_evapotranspiration ? rain7 - et7 : null;
+          const nl:any = (sources.ndvi?.payload as any)?.data?.latest;
+          const nd = nl?.ndvi_mean != null ? Number(nl.ndvi_mean) : null;
+          const chips = [
+            { k: "Agua", tone: bal==null?"idle":bal<-30?"risk":bal<-15?"warn":"ok", word: bal==null?"Sin dato":bal<-30?"Déficit marcado":bal<-15?"Balance negativo":bal<10?"Equilibrado":"Excedente", val: bal==null?"":`${bal>0?"+":""}${fmt(bal,0)} mm en 7 días`, go: "variables" },
+            { k: "Pasto", tone: nd==null?"idle":nd>=0.5?"ok":nd>=0.3?"warn":"risk", word: nd==null?(vertices.length>=3?"Calcular NDVI":"Sin lote"):nd>=0.5?"Vigor alto":nd>=0.3?"Vigor medio":"Vigor bajo", val: nd==null?"":`NDVI ${fmt(nd,2)}`, go: "ndvi" },
+            { k: "Calor y rodeo", tone: thi==null?"idle":thi>=79?"risk":thi>=72?"warn":"ok", word: thi==null?"Sin dato":thi>=79?"Peligro":thi>=72?"Alerta":"Sin estrés", val: thi==null?"":`THI ${fmt(thi)}`, go: "variables" },
+          ];
+          return <section className="lot-bar" aria-label="Tablero del lote">
+            <div className="lot-bar-id">
+              <span className="lot-bar-kicker">Tablero del lote</span>
+              <div className="lot-bar-title">
+                {lots.length > 1
+                  ? <select value={selectedLotId || ""} onChange={e => selectLot(e.target.value)} aria-label="Elegir lote">{!l && <option value="">Elegí un lote</option>}{lots.map(x => <option key={x.id} value={x.id}>{x.name}</option>)}</select>
+                  : <h1>{l ? l.name : "Sin lote seleccionado"}</h1>}
+              </div>
+              <a className="lot-bar-help" href="/guia" target="_blank" rel="noreferrer">¿Cómo se calcula cada dato?</a><span className="lot-bar-meta">{l ? `${fmt(l.areaHa,1)} ha · ${fmt(l.perimeterKm,2)} km de perímetro · ${l.ftw ? "límite automático FTW" : "límite dibujado"} · ${placeLabel}` : `${placeLabel} · dibujá, tomá automático o importá tus lotes`}</span>
+            </div>
+            <div className="lot-bar-week">
+              {chips.map(c => <button key={c.k} className={"week-chip tone-" + c.tone} onClick={() => changeView(c.go)}>
+                <span>{c.k}</span><b>{c.word}</b>{c.val && <small>{c.val}</small>}
+              </button>)}
+            </div>
+            <div className="lot-bar-actions">
+              <div className="view-switch" role="tablist" aria-label="Vista">
+                {([["tablero","Tablero"],["mapa","Mapa"]] as const).map(([k,t])=><button key={k} role="tab" aria-selected={mainView===k} className={mainView===k?"active":""} onClick={()=>setMainView(k)}>{t}</button>)}
+              </div>
+              {!l && <button onClick={() => { setSideTab("lote"); startDraw("free"); }}>Dibujar lote</button>}
+              {!l && <button onClick={() => { setSideTab("lote"); startFtw(); }}>Automático</button>}
+              <button className="primary" onClick={() => void pdf()} disabled={pdfBusy}><FileText className="icon" />{pdfBusy ? "Generando…" : "Informe PDF"}</button>
+            </div>
+          </section>;
+        })()}
         {(()=>{
           const nl:any = (sources.ndvi?.payload as any)?.data?.latest;
           const rain = (daily.precipitation_sum||[]).reduce((a:number,b:number)=>a+(Number(b)||0),0);
@@ -923,8 +1153,20 @@ function Observatory({onHome}:{onHome:()=>void}) {
             {key:"focos",label:"Focos térmicos",value:sources.firms?.status==="recibido"?String(inside):"—",unit:sources.firms?.status==="recibido"?"en el lote":undefined,hint:sources.firms?.status==="recibido"?`${det.length} en el entorno · NASA FIRMS 3 días`:"Tocá para consultar FIRMS",icon:<Flame/>,tone:sources.firms?.status==="recibido"?(inside>0?"risk":"ok"):"idle",onClick:()=>changeView("firms")},
           ]}/>;
         })()}
+        {mainView === "tablero" && <section className="db-wrap" aria-label="Tablero del lote">
+          <LotDashboard weather={weather} sources={sources as any} thi={thi} hasLot={vertices.length >= 3}
+            lot={lots.find(x => x.id === selectedLotId) || null}
+            terrain={(sources.relieve?.payload as any)?.data?.lot === lotKey ? (sources.relieve?.payload as any)?.data : null}
+            labels={Object.fromEntries(SOURCES.map(([k, l]) => [k, l]))}
+            water={selectedLotId ? water[selectedLotId] ?? null : null} cloudOn={!!cloudOn} hasKey={!!cloudKey} onCloud={() => { setMainView("mapa"); setSideTab("lote"); }}
+            onLoad={(k) => void load(k)} onTerrain={() => void loadTerrain()}
+            onOpen={(k) => { setMainView("mapa"); changeView(k); }} />
+        </section>}
         <aside className="sidebar">
-          <section className="panel block">
+          <nav className="side-tabs" role="tablist" aria-label="Secciones del tablero">
+            {([["lote","Lote"],["datos","Datos"],["asistente","Asistente"]] as const).map(([k,t])=><button key={k} role="tab" aria-selected={sideTab===k} className={sideTab===k?"active":""} onClick={()=>setSideTab(k)}>{t}</button>)}
+          </nav>
+          <section className="panel block" hidden={sideTab!=="lote"}>
             <div className="tag">01 / ÁREA E INFORMES</div>
             <h1>Lectura del campo</h1>
             <p className="small location">{placeLabel}. Buscá cualquier localidad o paraje y luego delimitá el lote.</p>
@@ -980,7 +1222,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
               {!!waterAssets.length && <div className="water-list">{waterAssets.map((a,i)=><span key={i}>{i+1}. {a.type}</span>)}</div>}
             </div>
           </section>
-          <section className="panel block agentic-box">
+          <section className="panel block agentic-box" hidden={sideTab!=="asistente"}>
             <div className="tag">02 / DOTS AGENTIC</div>
             <h2>Preguntarle a DOTS</h2>
             <p className="small">El orquestador selecciona las fuentes disponibles, conserva los faltantes y audita lo que puede afirmar.</p>
@@ -1004,21 +1246,25 @@ function Observatory({onHome}:{onHome:()=>void}) {
               <button className="primary" onClick={()=>void agentPdf()} disabled={pdfBusy}><FileText className="icon" />{pdfBusy?"Generando…":"Descargar PDF técnico"}</button>
             </div>}
           </section>
-          <section className="panel block">
+          <section className="panel block" hidden={sideTab!=="datos"}>
             <div className="tag" style={{ marginBottom: 10 }}>
               03 / FUENTES Y VARIABLES
             </div>
-            {SOURCES.filter(([key]) => !NATIONAL.includes(key) && key !== "metnorway" && !RESEARCH.includes(key)).map(([key, label]) => (
+            <input className="src-search" type="search" value={srcQuery} onChange={e=>setSrcQuery(e.target.value)} placeholder="Buscar dato o fuente…" aria-label="Buscar dato o fuente"/>
+            <div className="src-list">
+            {SOURCES.filter(([key]) => !NATIONAL.includes(key) && key !== "metnorway" && !RESEARCH.includes(key))
+              .filter(([, label, by]) => !srcQuery || (label + " " + by).toLowerCase().includes(srcQuery.toLowerCase())).map(([key, label, by]) => (
               <button
                 key={key}
                 className={"data-button " + (view === key ? "active" : "")}
                 onClick={() => changeView(key)}
                 aria-pressed={view === key}
               >
-                {label}
-                <span>{sources[key]?.status.toUpperCase() || "CONSULTAR"}</span>
+                <span className="src-name">{label}<small>{by}</small></span>
+                <span className={"src-state st-" + (sources[key]?.status || "consultar").replace(" ", "-")}>{sources[key]?.status || "consultar"}</span>
               </button>
             ))}
+            </div>
             <details style={{marginTop:12}}><summary className="small">Agencias directas · 6 conexiones</summary><div style={{marginTop:10}}>{SOURCES.filter(([key])=>NATIONAL.includes(key)||key==="metnorway").map(([key,label])=><button key={key} className={"data-button "+(view===key?"active":"")} onClick={()=>changeView(key)} aria-pressed={view===key}>{label}<span>{sources[key]?.status.toUpperCase()||"CONSULTAR"}</span></button>)}</div></details>
             <details style={{marginTop:12}}><summary className="small">Conectores globales · abiertos y con credencial</summary><div style={{marginTop:10}}>{SOURCES.filter(([key])=>RESEARCH.includes(key)).map(([key,label])=><button key={key} className={"data-button "+(view===key?"active":"")} onClick={()=>changeView(key)}>{label}<span>{sources[key]?.status.toUpperCase()||"CONSULTAR"}</span></button>)}</div></details>
             <a className="small" href="/CONEXIONES-INVESTIGACION.md" target="_blank" rel="noreferrer">Matriz de 20 servicios y activación</a>
@@ -1167,82 +1413,12 @@ function Observatory({onHome}:{onHome:()=>void}) {
                 {payload?.latest && <p className="footnote">Última escena válida: {(payload.latest.datetime||payload.latest.from||"").slice(0,10)} · {payload.area_ha} ha · {payload.latest.pixels??"s/d"} píxeles · {payload.sensor}</p>}
                 {payload?.fallback && <p className="footnote warn-note">Fuente de respaldo: {payload.fallback_reason ? `${payload.fallback_reason}. ` : ""}Se usó NDVI MODIS de NASA (250 m), más grueso que Sentinel-2. {payload.interpretation_scope}</p>}
                 {(payload?.series||[]).slice().reverse().map((r:Data,i:number)=><div className="soil" key={i}><span>{(r.datetime||r.from||"").slice(0,10)}<small style={{display:"block"}}>{r.status}{r.clear_fraction_lot!=null?` · ${Math.round(r.clear_fraction_lot*100)} % despejado`:""}</small></span><strong>{r.status==="válida"?fmt(r.ndvi_mean,2):"—"}</strong></div>,2)}
-                {view==="ndvi" && payload?.latest && <div className="overlay-switch"><span>Sobre el lote · {String(payload.latest.datetime||"").slice(0,10)}</span>{[["ndvi","NDVI"],["rgb","Color real"],["off","Ninguna"]].map(([k,l])=><button key={k} className={(k==="off"?!showNdvi:showNdvi&&overlayMode===k)?"active":""} onClick={()=>{if(k==="off"){setShowNdvi(false)}else{setShowNdvi(true);setOverlayMode(k as any)}}}>{l}</button>)}</div>}
+                {view==="ndvi" && ndviValid.length>1 && <div className="ndvi-timeline"><button onClick={()=>setNdviPlay(p=>!p)} aria-label={ndviPlay?"Pausar":"Reproducir"}>{ndviPlay?"❚❚":"▶"}</button><input type="range" min={0} max={ndviValid.length-1} step={1} value={ndviIdx} onChange={e=>{setNdviPlay(false);setNdviPick(Number(e.target.value))}} aria-label="Fecha de la escena"/><small>Escena {ndviIdx+1} de {ndviValid.length} · {String(ndviValid[ndviIdx]?.datetime||"").slice(0,10)} · NDVI medio {fmt(ndviValid[ndviIdx]?.ndvi_mean,2)}</small></div>}
+                {view==="ndvi" && payload?.latest && <div className="overlay-switch"><span>Sobre el lote · {String((ndviValid[ndviIdx]||payload.latest).datetime||"").slice(0,10)}</span>{[["ndvi","NDVI"],["rgb","Color real"],["off","Ninguna"]].map(([k,l])=><button key={k} className={(k==="off"?!showNdvi:showNdvi&&overlayMode===k)?"active":""} onClick={()=>{if(k==="off"){setShowNdvi(false)}else{setShowNdvi(true);setOverlayMode(k as any)}}}>{l}</button>)}</div>}
                 <p className="footnote">Escala: menos de 0,2 suelo desnudo o agua · 0,2–0,5 vegetación rala o pastura seca · más de 0,5 vegetación activa. No reemplaza la recorrida a campo.</p>
               </>}
               {view === "metnorway" && <><p className="footnote">MET Norway · conexión directa · pronóstico modelado. Actualizado: {payload?.properties?.meta?.updated_at || "Sin fecha"}</p>{Object.entries(payload?.properties?.timeseries?.[0]?.data?.instant?.details || {}).map(([key,value])=><div className="soil" key={key}><span style={{fontSize:10,maxWidth:"65%"}}>{key.replaceAll("_"," ")}</span><strong style={{fontSize:12}}>{fmt(value)} <small>{payload?.properties?.meta?.units?.[key]}</small></strong></div>)}<p className="footnote">Hora válida: {payload?.properties?.timeseries?.[0]?.time || "Sin fecha"}. Datos MET Norway, CC BY 4.0.</p></>}
-              {view === "variables" && weather?.hourly && (()=>{const h=weather.hourly, i=Math.max(0,soilIndex), dd=weather.daily||{};const sm=[["0–1 cm","soil_moisture_0_to_1cm"],["1–3 cm","soil_moisture_1_to_3cm"],["3–9 cm","soil_moisture_3_to_9cm"],["9–27 cm","soil_moisture_9_to_27cm"],["27–81 cm","soil_moisture_27_to_81cm"]];return <div className="wx-extra">
-                <div className="lot-vars-title">Humedad del suelo por profundidad · m³/m³</div>
-                <div className="wx-bars">{sm.map(([l,k])=>{const v=h[k]?.[i];return <div key={k}><span>{l}</span><i style={{width:`${Math.min(100,(v||0)/0.5*100)}%`}}/><b>{v!=null?fmt(v,2):"—"}</b></div>})}</div>
-                <div className="lot-vars-title">Hoy</div>
-                <div className="wx-grid">
-                  {[["Rocío",cur.dew_point_2m,"°C",1],["Nubosidad",cur.cloud_cover,"%",0],["Ráfagas",cur.wind_gusts_10m,"km/h",0],["VPD",h.vapour_pressure_deficit?.[i],"kPa",2],["Suelo 6 cm",h.soil_temperature_6cm?.[i],"°C",1],["Suelo 18 cm",h.soil_temperature_18cm?.[i],"°C",1],["Radiación",dd.shortwave_radiation_sum?.[0],"MJ/m²",1],["Horas de sol",dd.sunshine_duration?.[0]!=null?dd.sunshine_duration[0]/3600:null,"h",1],["UV máx.",dd.uv_index_max?.[0],"",1],["Prob. lluvia",dd.precipitation_probability_max?.[0],"%",0]].map(([l,v,u,d]:any)=><div key={l}><span>{l}</span><b>{v!=null?fmt(v,d):"—"}<small> {u}</small></b></div>)}
-                </div>
-                <p className="footnote">VPD alto (más de 1,5 kPa) indica aire seco: el pasto cierra estomas y crece menos. Modelos de Open-Meteo en la grilla del lote.</p>
-              </div>})()}
-              {view === "variables" && (
-                <>
-                  <div className="keygrid">
-                    {[
-                      ["Temperatura", "temperature_2m", "°C"],
-                      ["Humedad", "relative_humidity_2m", "%"],
-                      ["Viento 10 m", "wind_speed_10m", "km/h"],
-                      ["Presión", "surface_pressure", "hPa"],
-                    ].map(([label, key, unit]) => (
-                      <div className="key" key={key}>
-                        <span>{label}</span>
-                        <strong>{fmt(cur[key])}</strong>
-                        <em>{unit}</em>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="soil">
-                    <span>Suelo 0–1 cm</span>
-                    <strong>
-                      {fmt(
-                        weather?.hourly?.soil_moisture_0_to_1cm?.[soilIndex],
-                        3,
-                      )}{" "}
-                      <small>m³/m³</small>
-                    </strong>
-                  </div>
-                  <details style={{ marginTop: 12 }}>
-                    <summary className="small">
-                      37 variables horarias · explorar valores
-                    </summary>
-                    <p className="footnote">
-                      Hora: {weather?.hourly?.time?.[soilIndex] || "Sin fecha"}.
-                      Unidades entregadas por la fuente. Valores nulos se
-                      muestran como sin dato.
-                    </p>
-                    {Object.entries(weather?.hourly || {})
-                      .filter(([key]) => key !== "time")
-                      .map(([key, values]) => (
-                        <div className="soil" key={key}>
-                          <span
-                            style={{
-                              fontSize: 10,
-                              overflowWrap: "anywhere",
-                              maxWidth: "65%",
-                            }}
-                          >
-                            {key.replaceAll("_", " ")}
-                          </span>
-                          <strong style={{ fontSize: 12 }}>
-                            {fmt((values as any[])?.[soilIndex], 3)}{" "}
-                            <small>{weather?.hourly_units?.[key]}</small>
-                          </strong>
-                        </div>
-                      ))}
-                  </details>
-                  <p className="footnote">
-                    Open-Meteo · {cur.time || "sin fecha"} ·{" "}
-                    {weather?.timezone || "sin zona"}. Grilla:{" "}
-                    {fmt(weather?.latitude, 4)} / {fmt(weather?.longitude, 4)}.
-                    Condiciones modeladas.
-                  </p>
-                </>
-              )}
+              {view === "variables" && <VariablesPanel weather={weather} />}
               {view === "modelos" && (
                 <>
                   <p className="footnote">
@@ -1417,7 +1593,30 @@ function Observatory({onHome}:{onHome:()=>void}) {
                   </a>
                 </p>
               )}
-              {view!=="alertas" && view!=="forraje" && view!=="costos" && <button
+              {view==="relieve" && (()=>{const t=terrainRef.current; const s=t && t.key===lotKey ? t.a.summary : null; const busy=sources.relieve?.status==="consultando"; return <>
+                <p className="footnote">Copernicus DEM 30 m leído por partes desde el navegador. Se calculan bajos cerrados, escurrimiento y humedad topográfica del lote y su entorno, sin servidor.</p>
+                {!s && !busy && <button className="primary" style={{width:"100%"}} onClick={()=>void loadTerrain()} disabled={vertices.length<3}>{vertices.length<3?"Dibujá un lote primero":t?"Recalcular para este lote":"Analizar relieve del lote"}</button>}
+                {busy && <p className="small">Leyendo el DEM y calculando el escurrimiento…</p>}
+                {s && <>
+                  <div className={"verdict "+(s.riskPct.alto>=15?"warn":"ok")}><span>Posición en el paisaje</span><b>{s.positionLabel==="bajo"?"Bajo":s.positionLabel==="loma"?"Loma":"Media loma"} · {s.position} / 100</b><small>{s.riskPct.alto>=15?`${fmt(s.riskPct.alto,0)} % del lote con alta propensión a anegarse.`:"Sin sectores extensos propensos a anegarse."} Cota media {fmt(s.elevMean,1)} m; entorno {fmt(s.envMean,1)} m.</small></div>
+                  <div className="keygrid">
+                    <div className="key"><span>Desnivel dentro del lote</span><strong>{fmt(s.relief,1)} <small>m (p5–p95)</small></strong></div>
+                    <div className="key"><span>Pendiente media</span><strong>{fmt(s.slopeMeanPct,2)} <small>%</small></strong></div>
+                    <div className="key"><span>Bajos cerrados ≥ 10 cm</span><strong>{fmt(s.depressionHa,1)} <small>ha · {fmt(s.depressionPct,0)} %</small></strong></div>
+                    <div className="key"><span>Agua que retienen</span><strong>{fmt(s.storageM3/1000,1)} <small>mil m³ · máx {fmt(s.maxDepthM,2)} m</small></strong></div>
+                    <div className="key"><span>Vías de escurrimiento</span><strong>{fmt(s.drainageHa,1)} <small>ha del lote</small></strong></div>
+                    <div className="key"><span>Casi plano (&lt; 0,5 %)</span><strong>{fmt(s.flatPct,0)} <small>%</small></strong></div>
+                  </div>
+                  <div className="terrain-bar" aria-label="Propensión a anegarse">{(["bajo","medio","alto"] as const).map((k,i)=><i key={k} style={{width:s.riskPct[k]+"%",background:`rgb(${RISK_COLORS[i+1].join(",")})`}} title={`${k}: ${s.riskPct[k]} %`}/>)}</div>
+                  <div className="dots-legend-inline">{[["bajo","Baja"],["medio","Media"],["alto","Alta"]].map(([k,l],i)=><span key={k}><i style={{background:`rgb(${RISK_COLORS[i+1].join(",")})`}}/>{l} {fmt((s.riskPct as any)[k],0)} %</span>)}<span><i style={{background:`rgb(${DRAIN_COLOR.join(",")})`}}/>Escurrimiento</span></div>
+                  <div className="overlay-switch"><span>Capa sobre el lote</span>{([["anegamiento","Anegamiento"],["relieve","Relieve"],["pendiente","Pendiente"],["twi","Humedad topográfica"],["off","Ninguna"]] as const).map(([k,l])=><button key={k} className={terrainMode===k?"active":""} onClick={()=>setTerrainMode(k)}>{l}</button>)}</div>
+                  <p className="footnote">Método: relleno de depresiones priority-flood (Barnes 2014), flujo D8, pendiente de Horn e índice topográfico de humedad ln(a/tan β). Propensión alta = bajo de 20 cm o más, o humedad topográfica en el 10 % superior del entorno; media = 5 cm o 25 % superior. Escurrimiento = más de 10 ha aguas arriba. Celdas de {s.cellM} m.</p>
+                  <p className="warning">El DEM es un modelo de superficie: montes y construcciones suman altura. En llanuras con desniveles de centímetros es un indicador relativo, no una cota de inundación. Validar con recorrida, napa y antecedentes de lluvia.</p>
+                  <p className="footnote">{DEM_ATTRIBUTION}.</p>
+                  <button style={{width:"100%",marginTop:8}} onClick={()=>void loadTerrain()}>Recalcular</button>
+                </>}
+              </>})()}
+              {view!=="alertas" && view!=="forraje" && view!=="relieve" && view!=="costos" && <button
                 style={{ width: "100%", marginTop: 13 }}
                 onClick={() => void load(view)}
               >
@@ -1425,7 +1624,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
               </button>}
             </div>
           </section>
-          <section className="panel block">
+          <section className="panel block" hidden={sideTab!=="datos"}>
             <div className="section-title">FUENTES DEL MUNDO</div>
             <p className="footnote">
               Brasil, Argentina, Chile, Colombia, Venezuela, México, EE.UU.,
@@ -1442,12 +1641,12 @@ function Observatory({onHome}:{onHome:()=>void}) {
               Ver registro de fuentes y acceso ↗
             </a>
           </section>
-          <section className="panel block lot-manager">
+          <section className="panel block lot-manager" hidden={sideTab!=="lote"}>
             <div className="section-title">LOTES DEL ESTABLECIMIENTO</div>
             <p className="footnote">Cada polígono conserva límites, superficie y contexto de análisis. Seleccioná un lote para consultar todas las fuentes sobre ese territorio.</p>
-            <div className="lot-list">{lots.length===0?<span className="small">Todavía no hay lotes delimitados.</span>:lots.map(l=><button key={l.id} className={selectedLotId===l.id?"active":""} onClick={()=>{setSelectedLotId(l.id);setVertices(l.vertices);currentPoints.current=l.vertices;poly.current=lotLayers.current[l.id];setPoint(l.center);setCoords(l.center.map(v=>v.toFixed(6)));mapRef.current?.fitBounds(lotLayers.current[l.id].getBounds(),{padding:[40,40]})}}><strong>{l.name}</strong><span>{l.areaHa.toFixed(2)} ha</span></button>)}</div>
+            <div className="lot-list">{lots.length===0?<span className="small">Todavía no hay lotes delimitados.</span>:lots.map(l=><button key={l.id} className={selectedLotId===l.id?"active":""} onClick={()=>selectLot(l.id)}><strong>{l.name}</strong><span>{l.areaHa.toFixed(2)} ha</span></button>)}</div>
             {(()=>{const l=lots.find(x=>x.id===selectedLotId); if(!l) return null; const c=l.compactness; const nb=l.ftw?.neighborhood; return <div className="lot-vars">
-              <div className="lot-vars-title">Variables del lote</div>
+              <div className="lot-vars-title">Variables del lote <button className="lot-delete" onClick={()=>removeLot(l.id)} title="Borrar este lote del navegador">Borrar lote</button></div>
               <div className="lot-var"><span>Superficie</span><b>{fmt(l.areaHa,1)} ha</b></div>
               <div className="lot-var"><span>Perímetro</span><b>{fmt(l.perimeterKm,2)} km</b></div>
               <div className="lot-var" title="Polsby-Popper: 1 es un círculo. Bajo 0,4 el lote es alargado o irregular: más alambrado por hectárea y aguadas más lejanas."><span>Compacidad</span><b>{c!=null?`${fmt(c,2)} · ${c>=0.6?"compacto":c>=0.4?"intermedio":"alargado"}`:"—"}</b></div>
@@ -1462,9 +1661,22 @@ function Observatory({onHome}:{onHome:()=>void}) {
                 <p className="footnote">Fields of the World detecta cultivos anuales: un valor bajo en zona ganadera indica predominio de pasturas o monte, no ausencia de producción.</p>
               </>}
             </div>})()}
+            <div className="lot-io">
+              <label className="data-button" title="KML de Google Earth o GeoJSON">Importar lotes (KML / GeoJSON)<input type="file" accept=".kml,.kmz,.geojson,.json,application/vnd.google-earth.kml+xml,application/geo+json" onChange={e=>{void importLots(e.target.files?.[0]);e.target.value=""}}/></label>
+              {lots.length>0 && <><button onClick={()=>exportLots("kml")}>Descargar KML</button><button onClick={()=>exportLots("geojson")}>Descargar GeoJSON</button></>}
+            </div>
+            {cloudOn !== null && <div className="cloud-box">
+              <div className="lot-vars-title">Procesamiento semanal · agua por satélite</div>
+              {cloudOn ? <>
+                <p className="footnote">Guardá tus lotes en el repositorio privado de DOTS. Cada lunes se analizan con geoai sobre Sentinel-2 para detectar aguadas, tajamares y bajos con agua.</p>
+                <input type="password" value={cloudKey} onChange={e=>setCloudKey(e.target.value)} placeholder="Clave del establecimiento" aria-label="Clave del establecimiento" autoComplete="current-password"/>
+                <button className="primary" style={{width:"100%",marginTop:6}} onClick={()=>void syncLots()} disabled={cloudBusy||!lots.length}>{cloudBusy?"Guardando…":"Guardar lotes en la nube"}</button>
+                {cloudMsg && <p className="small" style={{marginTop:6}}>{cloudMsg}</p>}
+              </> : <p className="footnote">Todavía no está activado en este sitio. Por ahora los lotes se guardan solo en este navegador.</p>}
+            </div>}
             {selectedLotId&&<button className="primary" style={{width:"100%",marginTop:10}} onClick={()=>void askDots("Analizá integralmente el lote seleccionado: clima, agua, suelo, vegetación, riesgos, ENSO y trazabilidad. No inventes variables faltantes.")}>{agentBusy?"Analizando fuentes…":"Analizar lote seleccionado"}</button>}
           </section>
-          <section className="panel block operations">
+          <section className="panel block operations" hidden={sideTab!=="lote"}>
             <div className="tag">OPERACIONES DEL LOTE</div>
             <div className="draw-chooser"><button onClick={()=>startDraw("triangle")}><Triangle className="icon"/>Triángulo</button><button onClick={()=>startDraw("rectangle")}><Square className="icon"/>Rectángulo</button><button onClick={()=>startDraw("free")}><Layers className="icon"/>Polígono libre</button><button className="ftw-btn" onClick={startFtw} title="Lote automático desde el mapa global Fields of the World (gratis)"><Sprout className="icon"/>Automático · FTW</button></div>
             <p className="footnote">Cada informe queda vinculado al polígono cerrado: superficie, perímetro, centroide y límites.</p>
@@ -1603,9 +1815,11 @@ function Observatory({onHome}:{onHome:()=>void}) {
               </h2>
               <span className="tag">THI</span>
             </div>
-            <div className="indice">
-              {fmt(thi)} <small>índice</small>
-            </div>
+            {(()=>{const tn=thi==null?"idle":thi>=79?"risk":thi>=72?"warn":"ok";const word=thi==null?"Sin dato":thi>=79?"Peligro":thi>=72?"Alerta":"Sin estrés";const pos=thi==null?0:Math.min(100,Math.max(0,(thi-60)/30*100));return <div className={"cv-thi tone-"+tn}>
+              <div className="cv-thi-top"><strong>{thi==null?"—":fmt(thi)}</strong><span className={"cv-tag tone-"+tn}>{word}</span></div>
+              <div className="cv-thi-scale" aria-hidden="true"><i style={{left:"40%"}}/><i style={{left:"63.3%"}}/>{thi!=null&&<b style={{left:pos+"%"}}/>}</div>
+              <div className="cv-thi-legend"><span style={{left:0}}>60</span><span style={{left:"40%"}}>72 alerta</span><span style={{left:"63.3%"}}>79 peligro</span></div>
+            </div>})()}
             <p className="small">
               Calculado con temperatura y humedad del modelo. Sin diagnóstico
               veterinario automático.
@@ -1664,8 +1878,11 @@ function Observatory({onHome}:{onHome:()=>void}) {
             </p>
           </section>
         </aside>
-        <section className="charts">
-          {view==="forraje" && payload?.daily ? <>
+        <section className="charts" key={theme}>
+          {view==="relieve" && payload?.histogram && payload?.lot===lotKey ? <>
+            <section className="panel chart"><h2>Distribución de cotas del lote</h2><p className="small">Copernicus DEM 30 m · % del lote por franja de altura · m s. n. m.</p><Chart dates={payload.histogram.map((h:Data)=>`${fmt(h.from,1)}–${fmt(h.to,1)}`)} unit="% del lote" series={[{name:"Superficie",values:payload.histogram.map((h:Data)=>h.pct),type:"bar",color:"#06b6d4"}]}/></section>
+            <section className="panel chart"><h2>Propensión a anegarse</h2><p className="small">% del lote por clase · bajos cerrados y humedad topográfica</p><Chart dates={["Baja","Media","Alta"]} unit="% del lote" series={[{name:"Superficie",values:[payload.riskPct.bajo,payload.riskPct.medio,payload.riskPct.alto],type:"bar",color:"#e9bd72"}]}/></section>
+          </> : view==="forraje" && payload?.daily ? <>
             <section className="panel chart"><h2>Crecimiento diario del pasto</h2><p className="small">kg MS/ha/día · {payload.kind_label} · últimos 60 días</p><Chart dates={payload.daily.map((d:Data)=>d.date.slice(5))} unit="kg MS/ha/día" series={[{name:"Crecimiento",values:payload.daily.map((d:Data)=>d.ppna),color:"#19b98a"}]}/></section>
             <section className="panel chart"><h2>Producción por mes</h2><p className="small">kg MS/ha acumulados en cada mes</p><Chart dates={payload.monthly.map((m:Data)=>m.month)} unit="kg MS/ha" series={[{name:"Producción",values:payload.monthly.map((m:Data)=>m.total),type:"bar",color:"#22c55e"}]}/></section>
           </> : view==="costos" && payload?.sensitivity ? <>
@@ -1853,16 +2070,6 @@ function Observatory({onHome}:{onHome:()=>void}) {
                     },
                   ]}
                 />
-                <div className="chart-legend">
-                  <span>
-                    <i />
-                    Mínima
-                  </span>
-                  <span className="second">
-                    <i />
-                    Máxima
-                  </span>
-                </div>
               </section>
               <section className="panel chart">
                 <h2>Agua · precipitación y ET₀</h2>
@@ -1887,16 +2094,6 @@ function Observatory({onHome}:{onHome:()=>void}) {
                     },
                   ]}
                 />
-                <div className="chart-legend">
-                  <span>
-                    <i />
-                    Precipitación
-                  </span>
-                  <span className="et">
-                    <i />
-                    ET₀
-                  </span>
-                </div>
               </section>
             </>
           )}
@@ -1927,7 +2124,7 @@ function SiteLink({to,children,className=""}:{to:string;children:React.ReactNode
   return <a href={to} className={className} onClick={(e)=>{e.preventDefault();history.pushState({},"",to);window.dispatchEvent(new PopStateEvent("popstate"));window.scrollTo({top:0,behavior:"smooth"});}}>{children}</a>
 }
 function Brand(){return <SiteLink to="/" className="site-brand"><img className="brand-logo" src="/dots-logo.svg" alt="DOTS Campo"/><span><b>DOTS <em>CAMPO</em></b><small>DATOS · OBSERVACIÓN · TERRITORIO · SATÉLITE</small></span></SiteLink>}
-function PublicHeader({onDemo}:{onDemo:()=>void}){return <header className="site-header"><Brand/><nav><SiteLink to="/que-es-dots">Qué es DOTS</SiteLink><SiteLink to="/libre-deforestacion" className="nav-highlight">Libre de deforestación</SiteLink><SiteLink to="/modulos">Módulos</SiteLink><SiteLink to="/panel">Panel regional</SiteLink><SiteLink to="/tecnologia">Fuentes y datos</SiteLink><SiteLink to="/conexiones">APIs y accesos</SiteLink><button className="nav-demo" onClick={onDemo}>Demo</button></nav><div className="site-head-actions"><SiteLink to="/acceso" className="ghost-link">Ingresar</SiteLink><button className="demo-btn" onClick={onDemo}>Abrir Observatorio →</button></div></header>}
+function PublicHeader({onDemo}:{onDemo:()=>void}){return <header className="site-header"><Brand/><nav><SiteLink to="/que-es-dots">Qué es DOTS</SiteLink><SiteLink to="/guia">Cómo funciona</SiteLink><SiteLink to="/libre-deforestacion" className="nav-highlight">Libre de deforestación</SiteLink><SiteLink to="/modulos">Módulos</SiteLink><SiteLink to="/panel">Panel regional</SiteLink><SiteLink to="/tecnologia">Fuentes y datos</SiteLink><SiteLink to="/conexiones">APIs y accesos</SiteLink><button className="nav-demo" onClick={onDemo}>Demo</button></nav><div className="site-head-actions"><SiteLink to="/acceso" className="ghost-link">Ingresar</SiteLink><button className="demo-btn" onClick={onDemo}>Abrir Observatorio →</button></div></header>}
 const sourceGroups=[
  ["ARGENTINA",["CONAE · SAOCOM","SMN","INA"]],
  ["EUROPA",["Copernicus · Sentinel","ECMWF · C3S","EUMETSAT","DLR · Alemania","CNES · Francia"]],
@@ -2105,6 +2302,7 @@ function Deforestation({onDemo}:{onDemo:()=>void}){
     <section className="demo-call"><div><span className="section-tag">PARA QUIÉN</span><h2>Productores, frigoríficos, consignatarias y exportadores.</h2><p>Verificación por lote en el Observatorio, o por lotes completos de proveedores para empresas. Consultanos por volumen.</p></div><button onClick={onDemo}>Abrir Observatorio →</button></section>
   </main><SiteFooter/></div>;
 }
+function Guide({onDemo}:{onDemo:()=>void}){return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner guide"><PageHero eyebrow="CÓMO FUNCIONA DOTS" title="Lo que el satélite ve de un campo, contado para todos." lead="Para productores, estudiantes, profesionales, periodistas y curiosos: qué es DOTS, de qué satélite sale cada dato, cómo se procesa la información de un lote y cómo usarlo en cinco minutos."/><GuideContent onDemo={onDemo}/></main><SiteFooter/></div>}
 function PageHero({eyebrow,title,lead}:{eyebrow:string;title:string;lead:string}){return <section className="page-hero"><span className="section-tag">{eyebrow}</span><h1>{title}</h1><p>{lead}</p></section>}
 const cards={producto:[["01","Territorio primero","Todo análisis comienza en el polígono real del lote o potrero."],["02","Observación multifuente","Satélites, estaciones, modelos y bases territoriales se consultan por lugar y fecha."],["03","Interpretación trazable","Cada variable indica fuente, unidad, fecha, método, estado y alcance."],["04","Decisión y seguimiento","DOTS reúne hallazgos, recomendaciones, tareas e informe en una sola lectura."]],soluciones:[["Lotes y potreros","Superficie, perímetro, centroides, historial y análisis por unidad de manejo."],["Pasturas","Escenas y evolución espectral cuando existe procesamiento raster verificable."],["Agua","Lluvia, balance, ríos e infraestructura hídrica declarada o detectada con su nivel de evidencia."],["Suelos","Humedad, temperatura, relieve y propiedades modeladas con profundidad y fuente declaradas."],["Ganado","THI, carga y rotación cuando existe inventario o dato aportado por el productor."],["Riesgos","FIRMS, calor, sequía y exceso hídrico sin convertir ausencia de detección en ausencia de riesgo."]],ganaderia:[["Potrero como unidad","Cada lectura parte de un límite territorial y su historia."],["Agua para el rodeo","Cobertura, distancias y estado de la infraestructura hídrica."],["Pastura y carga","Condición vegetal cruzada con ocupación y presión de pastoreo cuando hay datos."],["Bienestar térmico","THI y meteorología para anticipar condiciones de estrés por calor."],["Rotación","Entrada, salida, descanso y recuperación del potrero."],["Tareas","Del diagnóstico a inspecciones, movimientos y acciones verificables."]]};
 function InstitutionalDepth({kind}:{kind:"producto"|"soluciones"|"ganaderia"}){
@@ -2191,7 +2389,7 @@ function Contact({onDemo}:{onDemo:()=>void}){
       {ch?.email_enabled===false && <p className="form-status">El envío se habilita cuando el correo de destino esté configurado. No simulamos envíos.</p>}
     </form></section></main><SiteFooter/></div>}
 function Access({onDemo}:{onDemo:()=>void}){return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner access-page"><PageHero eyebrow="ACCESO" title="Observatorio DOTS" lead="La autenticación real se incorporará con permisos por establecimiento. La demostración no simula una cuenta de usuario."/><button className="big-demo" onClick={onDemo}>Entrar a la demostración →</button></main><SiteFooter/></div>}
-function SiteFooter(){return <footer className="site-footer"><Brand/><p>Inteligencia territorial para la gestión ganadera.</p><div><SiteLink to="/producto">Cómo funciona</SiteLink><SiteLink to="/tecnologia">Fuentes</SiteLink><SiteLink to="/conexiones">APIs</SiteLink><SiteLink to="/demo">Demo</SiteLink><SiteLink to="/contacto">Contacto</SiteLink></div></footer>}
+function SiteFooter(){return <footer className="site-footer"><Brand/><p>Inteligencia territorial para la gestión ganadera.</p><div><SiteLink to="/guia">Guía: cómo funciona</SiteLink><SiteLink to="/producto">Cómo funciona</SiteLink><SiteLink to="/tecnologia">Fuentes</SiteLink><SiteLink to="/conexiones">APIs</SiteLink><SiteLink to="/demo">Demo</SiteLink><SiteLink to="/contacto">Contacto</SiteLink></div></footer>}
 
 function App(){
   const [path,setPath]=useState(window.location.pathname);
@@ -2204,6 +2402,7 @@ function App(){
   if(path==="/soluciones")return <InfoPage kind="soluciones" onDemo={openDemo}/>;
   if(path==="/ganaderia")return <InfoPage kind="ganaderia" onDemo={openDemo}/>;
   if(path==="/que-es-dots")return <About onDemo={openDemo}/>;
+  if(path==="/guia"||path==="/como-funciona")return <Guide onDemo={openDemo}/>;
   if(path==="/libre-deforestacion")return <Deforestation onDemo={openDemo}/>;
   if(path==="/modulos")return <Modules onDemo={openDemo}/>;
   if(path==="/panel")return <RegionalPanel onDemo={openDemo}/>;

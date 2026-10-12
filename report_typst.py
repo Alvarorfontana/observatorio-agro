@@ -51,6 +51,86 @@ def shape(polygon):
              round(pad + oy + (y - min(ys)) / span * (1 - 2 * pad), 4)] for x, y in zip(xs, ys)]
 
 
+def frame_bbox(polygon, pad=0.08):
+    """Caja (oeste, sur, este, norte) del cuadro cuadrado que usa shape(), para pedir la imagen satelital."""
+    if not polygon or len(polygon) < 3:
+        return None
+    lat0 = sum(p[0] for p in polygon) / len(polygon)
+    k = math.cos(math.radians(lat0))
+    xs = [p[1] * k for p in polygon]; ys = [-p[0] for p in polygon]
+    span = max(max(xs) - min(xs), max(ys) - min(ys)) or 1e-6
+    full = span / (1 - 2 * pad)
+    cx = (max(xs) + min(xs)) / 2; cy = (max(ys) + min(ys)) / 2
+    x0, x1 = cx - full / 2, cx + full / 2; y0, y1 = cy - full / 2, cy + full / 2
+    return (x0 / k, -y1, x1 / k, -y0)
+
+
+IMAGERY = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export'
+
+
+def satellite_thumb(polygon, size=560, timeout=6):
+    """JPEG del lote desde Esri World Imagery (una sola petición). None si no responde: el informe sigue sin imagen."""
+    if os.environ.get('DOTS_REPORT_IMAGERY', '1') == '0':
+        return None
+    box = frame_bbox(polygon)
+    if not box:
+        return None
+    try:
+        import requests
+        r = requests.get(IMAGERY, timeout=timeout, params={
+            'bbox': ','.join(f'{v:.6f}' for v in box), 'bboxSR': 4326, 'imageSR': 3857,
+            'size': f'{size},{size}', 'format': 'jpg', 'f': 'image'})
+        if r.ok and r.content[:3] == b'\xff\xd8\xff' and len(r.content) > 2000:
+            return r.content
+    except Exception:
+        pass
+    return None
+
+
+def metric_tone(m):
+    """Tono de una variable a partir de umbrales conocidos o de su lectura declarada."""
+    name = str(m.get('variable', '')).lower(); v = _f(m.get('value'))
+    if 'thi' in name and v is not None:
+        return 'ok' if v < 72 else 'warn' if v < 79 else 'risk'
+    if name.startswith('temperatura') and v is not None:
+        return 'risk' if v >= 35 else 'warn' if v >= 32 else 'ok'
+    r = str(m.get('reading', '')).lower()
+    if any(w in r for w in ('peligro', 'extremo', 'severo', 'crítico', 'critico', 'emergencia', 'muy alto')):
+        return 'risk'
+    if any(w in r for w in ('alerta', 'moderad', 'déficit', 'deficit', 'escas', 'seco', 'alta', 'alto', 'atención')):
+        return 'warn'
+    if any(w in r for w in ('normal', 'sin riesgo', 'confort', 'adecuad', 'bueno', 'óptimo')):
+        return 'ok'
+    return 'idle'
+
+
+def week_outlook(nmean, nser, bal, rain, et, thiv, forage):
+    """Semáforo de la semana: agua, pasto y calor. Sin dato se declara, no se supone."""
+    agua = {'key': 'Agua', 'tone': 'idle', 'head': 'Sin dato', 'value': '—', 'hint': 'Falta el pronóstico de lluvia'}
+    if bal is not None:
+        agua.update(tone='risk' if bal < -30 else 'warn' if bal < -15 else 'ok',
+                    head='Déficit marcado' if bal < -30 else 'Balance negativo' if bal < -15 else 'Equilibrado' if bal < 10 else 'Excedente',
+                    value=f'{"+" if bal > 0 else ""}{num(bal, 0)} mm',
+                    hint=f'Lluvia {num(rain, 0)} mm · evapotranspiración {num(et, 0)} mm en 7 días')
+    pasto = {'key': 'Pasto', 'tone': 'idle', 'head': 'Sin dato', 'value': '—', 'hint': 'Calcular NDVI del lote'}
+    if nmean is not None:
+        trend = ''
+        if len(nser) >= 2:
+            d = (_f(nser[-1].get('ndvi_mean')) or 0) - (_f(nser[-2].get('ndvi_mean')) or 0)
+            trend = 'en ascenso' if d > 0.02 else 'en descenso' if d < -0.02 else 'estable'
+        g = (forage or {}).get('growth_rate_30d')
+        pasto.update(tone='ok' if nmean >= 0.5 else 'warn' if nmean >= 0.3 else 'risk',
+                     head=('Vigor alto' if nmean >= 0.5 else 'Vigor medio' if nmean >= 0.3 else 'Vigor bajo') + (f', {trend}' if trend else ''),
+                     value=f'NDVI {num(nmean, 2)}',
+                     hint=(f'Crece {num(g, 0)} kg MS/ha/día · ' if g is not None else '') + 'Sentinel-2, nubes excluidas')
+    calor = {'key': 'Calor y rodeo', 'tone': 'idle', 'head': 'Sin dato', 'value': '—', 'hint': 'Falta temperatura y humedad'}
+    if thiv is not None:
+        calor.update(tone='ok' if thiv < 72 else 'warn' if thiv < 79 else 'risk',
+                     head='Sin estrés' if thiv < 72 else 'Alerta' if thiv < 79 else 'Peligro',
+                     value=f'THI {num(thiv)}', hint='Umbrales 72 alerta · 79 peligro')
+    return [agua, pasto, calor]
+
+
 def _metric(result, name):
     return next((m for m in result.get('metrics', []) if m.get('variable') == name), None)
 
@@ -118,23 +198,23 @@ def build_data(result, name='Lote DOTS', extras=None):
     daily = clima.get('daily') or {}
     days = [d[8:10] + '/' + d[5:7] for d in (daily.get('time') or [])[:7]]
     if days and daily.get('precipitation_sum'):
-        charts.append({'kind': 'bars', 'title': 'Lluvia y demanda atmosférica', 'subtitle': 'Pronóstico diario · mm',
+        charts.append({'kind': 'balance', 'group': 'clima', 'title': 'Balance de agua de la semana', 'subtitle': 'Lluvia hacia arriba, evapotranspiración hacia abajo · línea: balance acumulado · mm',
                        'unit': 'mm', 'labels': days,
                        'series': [{'name': 'Lluvia', 'values': [_f(x) for x in daily['precipitation_sum'][:7]]},
-                                  {'name': 'ET₀', 'values': [_f(x) for x in (daily.get('et0_fao_evapotranspiration') or [])[:7]]}]})
+                                  {'name': 'Evapotranspiración', 'values': [_f(x) for x in (daily.get('et0_fao_evapotranspiration') or [])[:7]]}]})
     if days and daily.get('temperature_2m_max'):
-        charts.append({'kind': 'bars', 'title': 'Temperaturas próximos días', 'subtitle': 'Máxima y mínima · °C',
+        charts.append({'kind': 'band', 'group': 'clima', 'title': 'Temperaturas de la semana', 'subtitle': 'Rango entre mínima y máxima · °C · naranja: 35 °C o más',
                        'unit': '°C', 'labels': days,
                        'series': [{'name': 'Máxima', 'values': [_f(x) for x in daily['temperature_2m_max'][:7]]},
                                   {'name': 'Mínima', 'values': [_f(x) for x in (daily.get('temperature_2m_min') or [])[:7]]}]})
     nser = [r for r in (ndvi.get('series') or []) if r.get('status') == 'válida' and r.get('ndvi_mean') is not None]
     if nser:
-        charts.append({'kind': 'line', 'title': 'NDVI del lote', 'subtitle': f"{ndvi.get('sensor', 'Sentinel-2')} · media zonal",
+        charts.append({'kind': 'line', 'group': 'veg', 'title': 'NDVI del lote', 'subtitle': f"{ndvi.get('sensor', 'Sentinel-2')} · media zonal",
                        'unit': '', 'labels': [str(r.get('datetime') or r.get('from'))[5:10][3:] + '/' + str(r.get('datetime') or r.get('from'))[5:7] for r in nser],
                        'series': [{'name': 'NDVI', 'values': [_f(r['ndvi_mean']) for r in nser]}], 'lo': 0, 'hi': 1})
     yrs = indices.get('years') or []
     if yrs:
-        charts.append({'kind': 'bars', 'title': 'Lluvia anual', 'subtitle': f"ERA5 · {indices.get('period', ['', ''])[0]}–{indices.get('period', ['', ''])[1]} · mm",
+        charts.append({'kind': 'bars', 'group': 'indices', 'title': 'Lluvia anual', 'subtitle': f"ERA5 · {indices.get('period', ['', ''])[0]}–{indices.get('period', ['', ''])[1]} · mm",
                        'unit': 'mm', 'labels': [str(r['year'])[2:] for r in yrs],
                        'series': [{'name': 'Lluvia', 'values': [_f(r.get('prcptot')) for r in yrs]}]})
 
@@ -178,7 +258,7 @@ def build_data(result, name='Lote DOTS', extras=None):
                          'tone': 'idle' if sv is None else 'warn' if sv <= -1 else 'ok' if sv < 1 else 'idle'})
     rec = lluvia.get('recent') or []
     if rec:
-        charts.append({'kind': 'bars', 'title': 'Lluvia observada vs. normal', 'subtitle': 'CHIRPS · últimos 12 meses · mm',
+        charts.append({'kind': 'bars', 'group': 'lluvia', 'title': 'Lluvia observada vs. normal', 'subtitle': 'CHIRPS · últimos 12 meses · mm',
                        'unit': 'mm', 'labels': [r['period'][5:7] + '/' + r['period'][2:4] for r in rec],
                        'series': [{'name': 'Observada', 'values': [_f(r.get('mm')) for r in rec]},
                                   {'name': 'Normal', 'values': [_f(r.get('normal')) for r in rec]}]})
@@ -208,7 +288,7 @@ def build_data(result, name='Lote DOTS', extras=None):
                         {'label': 'En todo el lote', 'value': num(fo.get('ev_lot'), 0), 'unit': 'EV'},
                         {'label': f"Acumulado {fo.get('accumulated_days', '')} días", 'value': num(fo.get('accumulated'), 0), 'unit': 'kg MS/ha'}]
         if fo.get('daily'):
-            charts.append({'kind': 'line', 'title': 'Crecimiento diario del pasto', 'subtitle': f"{fo.get('kind_label', '')} · kg MS/ha/día",
+            charts.append({'kind': 'line', 'group': 'veg', 'title': 'Crecimiento diario del pasto', 'subtitle': f"{fo.get('kind_label', '')} · kg MS/ha/día",
                            'unit': '', 'labels': [x['date'][8:10] + '/' + x['date'][5:7] for x in fo['daily']],
                            'series': [{'name': 'Crecimiento', 'values': [_f(x['ppna']) for x in fo['daily']]}]})
     forage_note = (' · '.join((fo.get('assumptions') or {}).values()) + '. ' + fo.get('note', '')
@@ -246,13 +326,45 @@ def build_data(result, name='Lote DOTS', extras=None):
     costs_note = ((f"Destino: {(cl.get('destination') or {}).get('name', '')} · {cl.get('method', '')}. " if cl else '')
                   + (f"Dólar oficial $ {num(fx.get('oficial_venta'), 2)} ({fx.get('source')}). " if fx.get('oficial_venta') else '')
                   + 'Precios y costos cargados por el productor. ' + str(co.get('method') or '')) if costs_cards else ''
+    rl = extras.get('relieve') or {}
+    relief = None
+    if rl.get('riskPct'):
+        rp = rl['riskPct']
+        relief = {'position': str(rl.get('positionLabel', '')).capitalize(), 'position_n': str(rl.get('position', '—')),
+                  'tone': 'warn' if (_f(rp.get('alto')) or 0) >= 15 else 'ok',
+                  'facts': [['Desnivel en el lote', f"{num(rl.get('relief'))} m"], ['Pendiente media', f"{num(rl.get('slopeMeanPct'), 2)} %"],
+                            ['Bajos cerrados ≥ 10 cm', f"{num(rl.get('depressionHa'))} ha · {num(rl.get('depressionPct'), 0)} %"],
+                            ['Agua que retienen', f"{num((_f(rl.get('storageM3')) or 0) / 1000)} mil m³"],
+                            ['Vías de escurrimiento', f"{num(rl.get('drainageHa'))} ha"], ['Cota media / entorno', f"{num(rl.get('elevMean'))} / {num(rl.get('envMean'))} m"]],
+                  'risk': [{'label': 'Baja', 'pct': _f(rp.get('bajo')) or 0, 'tone': 'ok'}, {'label': 'Media', 'pct': _f(rp.get('medio')) or 0, 'tone': 'warn'},
+                           {'label': 'Alta', 'pct': _f(rp.get('alto')) or 0, 'tone': 'risk'}],
+                  'note': f"Copernicus DEM GLO-30, celdas de {rl.get('cellM', 30)} m. Relleno de depresiones, flujo D8 e índice topográfico de humedad. "
+                          'Modelo de superficie: montes y construcciones suman altura. Indicador relativo, no cota de inundación.'}
+    ag = extras.get('agua') or {}
+    water = None
+    if ag.get('water_ha') is not None:
+        hs = [h for h in (ag.get('history') or []) if h.get('water_ha') is not None][-12:]
+        sc = ag.get('scene') or {}
+        water = {'facts': [['Agua dentro del lote', f"{num(ag.get('water_ha'))} ha"], ['Cuerpos de agua', num(ag.get('water_bodies'), 0)],
+                           ['Parte del lote', f"{num(ag.get('water_pct'))} %"], ['Imagen Sentinel-2', f"{str(sc.get('date', ''))[8:10]}/{str(sc.get('date', ''))[5:7]}/{str(sc.get('date', ''))[:4]} · nubes {num(sc.get('cloud_pct'), 0)} %"]],
+                 'labels': [str(h.get('scene_date', ''))[8:10] + '/' + str(h.get('scene_date', ''))[5:7] for h in hs],
+                 'values': [_f(h.get('water_ha')) for h in hs],
+                 'note': 'Procesamiento semanal: Sentinel-2 L2A (Earth Search), detección de agua con geoai y el modelo preentrenado OmniWaterMask, recortada al lote.'
+                         + (' Resultado de una semana anterior: la última imagen no tuvo dato válido.' if ag.get('stale') else '')}
+    nl_series = [r for r in (ndvi.get('series') or []) if r.get('status') == 'válida' and r.get('ndvi_mean') is not None]
+    week = week_outlook(nmean, nl_series, bal, _f(rain and rain.get('value')), _f(et and et.get('value')), thiv, fo)
+    thumb = extras.get('_thumb') if '_thumb' in extras else satellite_thumb(poly)
+    conf = result.get('confidence', {}) or {}
     ev = result.get('evidence') or []
     ok = sum(1 for e in ev if e.get('status') == 'recibido')
     return {
+        'week': week, 'relief': relief, 'water': water,
+        'confidence_line': f"Confianza de la lectura {conf.get('score', '—')}/100 ({conf.get('label', 's/d')}) · {ok} de {len(ev)} fuentes con respuesta válida",
         'title': f'DOTS · Informe territorial · {lot.get("name") or name}',
         'generated': generated,
         'place': extras.get('place') or (f'{lat:.4f}, {lon:.4f}' if lat is not None else ''),
-        'lot': {'name': lot.get('name') or name, 'shape': shape(poly), 'facts': facts, 'origin': origin},
+        'lot': {'name': lot.get('name') or name, 'shape': shape(poly), 'facts': facts, 'origin': origin,
+                'image': list(thumb) if thumb else None, 'image_credit': 'Imagen: Esri World Imagery (Maxar, Earthstar Geographics). Fecha de toma no homogénea.' if thumb else ''},
         'kpis': kpis,
         'confidence': {'score': str(result.get('confidence', {}).get('score', '—')),
                        'label': str(result.get('confidence', {}).get('label', ''))},
@@ -261,7 +373,7 @@ def build_data(result, name='Lote DOTS', extras=None):
         'findings': [{'topic': f.get('topic', ''), 'status': f.get('status', ''), 'text': f.get('text', '')}
                      for f in result.get('findings') or []],
         'metrics': [{'variable': m.get('variable', ''), 'value': f"{num(m.get('value'), 3 if 'm³' in str(m.get('unit')) else 1)} {m.get('unit', '')}".strip(),
-                     'reference': str(m.get('reference', '')), 'reading': str(m.get('reading', ''))}
+                     'reference': str(m.get('reference', '')), 'reading': str(m.get('reading', '')), 'tone': metric_tone(m)}
                     for m in result.get('metrics') or []],
         'charts': charts,
         'indices': irows,
@@ -285,6 +397,9 @@ def build_data(result, name='Lote DOTS', extras=None):
                          'NOAA PSL y CPC, NASA FIRMS, conjuntos ECMWF IFS y GFS y ECMWF SEAS5 vía Open-Meteo, CHIRPS (Climate Hazards Center, UCSB) vía ClimateSERV'
                          + ('; cobertura: Impact Observatory y ESA WorldCover vía Microsoft Planetary Computer (CC-BY 4.0)' if sust else '')
                          + ('; rutas: OSRM con datos OpenStreetMap (ODbL); dólar: DolarAPI' if costs_cards else '')
+                         + ('; relieve: Copernicus DEM GLO-30 © DLR e.V. 2010-2014 y © Airbus Defence and Space GmbH 2014-2018, provisto bajo COPERNICUS por la UE y la ESA' if relief else '')
+                         + ('; imagen satelital: Esri World Imagery' if thumb else '')
+                         + ('; agua: Sentinel-2 (ESA/Copernicus) procesado con geoai (opengeos, MIT) y OmniWaterMask' if water else '')
                          + ('; límites de lote: Fields of the World / PRUE (Robinson et al. 2026), CC-BY-4.0' if ftw else '')
                          + '. Tipografía IBM Plex (SIL OFL). Documento compuesto con Typst.'),
     }
