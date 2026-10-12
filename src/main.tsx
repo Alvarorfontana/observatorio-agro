@@ -40,11 +40,13 @@ import {
 import "./styles.css";
 import "./dashboard.css";
 import "./site.css";
+import "./theme-carbon.css";
 import { ObsSidebar, MetricCards, buildNav } from "./dashboard/Shell";
 import { MARKER_KINDS, markerIcon, kindOf, MarkerLegend } from "./dashboard/markers";
 import { fieldAt, fieldsAround, compactness, FTW_ATTRIBUTION, FTW_RELIABLE } from "./dashboard/fields";
 import { terrainForLot, terrainImage, DEM_ATTRIBUTION, DEM_SOURCE_URL, type TerrainAnalysis, type TerrainMode } from "./dashboard/terrain";
 import { RISK_COLORS, DRAIN_COLOR } from "./dashboard/terrainCore";
+import { VariablesPanel } from "./dashboard/VariablesPanel";
 import { readLotFile, lotsToGeoJSON, lotsToKML } from "./dashboard/lotFiles";
 echarts.use([
   LineChart,
@@ -172,7 +174,7 @@ function Chart({
     const chart = echarts.init(ref.current, undefined, { renderer: "canvas" });
     chart.setOption({
       animation: false,
-      textStyle: { fontFamily: "Inter", color: "#a0b3bf" },
+      textStyle: { fontFamily: "IBM Plex Sans", color: "#a8a8a8" },
       tooltip: {
         trigger: "axis",
         backgroundColor: "#132734",
@@ -185,17 +187,18 @@ function Chart({
       xAxis: {
         type: "category",
         data: dates,
-        axisLabel: { color: "#a0b3bf", fontSize: 11, hideOverlap: true },
-        axisLine: { lineStyle: { color: "#3a4d57" } },
+        axisLabel: { color: "#a8a8a8", fontSize: 11, hideOverlap: true },
+        axisLine: { lineStyle: { color: "#525252" } },
         axisTick: { show: false },
       },
       yAxis: {
         type: "value",
         scale: true,
+        splitNumber: 4,
         name: unit,
-        nameTextStyle: { fontSize: 10, color: "#a0b3bf" },
-        axisLabel: { color: "#a0b3bf", fontSize: 11 },
-        splitLine: { lineStyle: { color: "#293d49" } },
+        nameTextStyle: { fontSize: 10, color: "#8d8d8d" },
+        axisLabel: { color: "#a8a8a8", fontSize: 11 },
+        splitLine: { lineStyle: { color: "#333333" } },
       },
       series: series.map((s) => ({
         name: s.name,
@@ -1182,78 +1185,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
                 <p className="footnote">Escala: menos de 0,2 suelo desnudo o agua · 0,2–0,5 vegetación rala o pastura seca · más de 0,5 vegetación activa. No reemplaza la recorrida a campo.</p>
               </>}
               {view === "metnorway" && <><p className="footnote">MET Norway · conexión directa · pronóstico modelado. Actualizado: {payload?.properties?.meta?.updated_at || "Sin fecha"}</p>{Object.entries(payload?.properties?.timeseries?.[0]?.data?.instant?.details || {}).map(([key,value])=><div className="soil" key={key}><span style={{fontSize:10,maxWidth:"65%"}}>{key.replaceAll("_"," ")}</span><strong style={{fontSize:12}}>{fmt(value)} <small>{payload?.properties?.meta?.units?.[key]}</small></strong></div>)}<p className="footnote">Hora válida: {payload?.properties?.timeseries?.[0]?.time || "Sin fecha"}. Datos MET Norway, CC BY 4.0.</p></>}
-              {view === "variables" && weather?.hourly && (()=>{const h=weather.hourly, i=Math.max(0,soilIndex), dd=weather.daily||{};const sm=[["0–1 cm","soil_moisture_0_to_1cm"],["1–3 cm","soil_moisture_1_to_3cm"],["3–9 cm","soil_moisture_3_to_9cm"],["9–27 cm","soil_moisture_9_to_27cm"],["27–81 cm","soil_moisture_27_to_81cm"]];return <div className="wx-extra">
-                <div className="lot-vars-title">Humedad del suelo por profundidad · m³/m³</div>
-                <div className="wx-bars">{sm.map(([l,k])=>{const v=h[k]?.[i];return <div key={k}><span>{l}</span><i style={{width:`${Math.min(100,(v||0)/0.5*100)}%`}}/><b>{v!=null?fmt(v,2):"—"}</b></div>})}</div>
-                <div className="lot-vars-title">Hoy</div>
-                <div className="wx-grid">
-                  {[["Rocío",cur.dew_point_2m,"°C",1],["Nubosidad",cur.cloud_cover,"%",0],["Ráfagas",cur.wind_gusts_10m,"km/h",0],["VPD",h.vapour_pressure_deficit?.[i],"kPa",2],["Suelo 6 cm",h.soil_temperature_6cm?.[i],"°C",1],["Suelo 18 cm",h.soil_temperature_18cm?.[i],"°C",1],["Radiación",dd.shortwave_radiation_sum?.[0],"MJ/m²",1],["Horas de sol",dd.sunshine_duration?.[0]!=null?dd.sunshine_duration[0]/3600:null,"h",1],["UV máx.",dd.uv_index_max?.[0],"",1],["Prob. lluvia",dd.precipitation_probability_max?.[0],"%",0]].map(([l,v,u,d]:any)=><div key={l}><span>{l}</span><b>{v!=null?fmt(v,d):"—"}<small> {u}</small></b></div>)}
-                </div>
-                <p className="footnote">VPD alto (más de 1,5 kPa) indica aire seco: el pasto cierra estomas y crece menos. Modelos de Open-Meteo en la grilla del lote.</p>
-              </div>})()}
-              {view === "variables" && (
-                <>
-                  <div className="keygrid">
-                    {[
-                      ["Temperatura", "temperature_2m", "°C"],
-                      ["Humedad", "relative_humidity_2m", "%"],
-                      ["Viento 10 m", "wind_speed_10m", "km/h"],
-                      ["Presión", "surface_pressure", "hPa"],
-                    ].map(([label, key, unit]) => (
-                      <div className="key" key={key}>
-                        <span>{label}</span>
-                        <strong>{fmt(cur[key])}</strong>
-                        <em>{unit}</em>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="soil">
-                    <span>Suelo 0–1 cm</span>
-                    <strong>
-                      {fmt(
-                        weather?.hourly?.soil_moisture_0_to_1cm?.[soilIndex],
-                        3,
-                      )}{" "}
-                      <small>m³/m³</small>
-                    </strong>
-                  </div>
-                  <details style={{ marginTop: 12 }}>
-                    <summary className="small">
-                      37 variables horarias · explorar valores
-                    </summary>
-                    <p className="footnote">
-                      Hora: {weather?.hourly?.time?.[soilIndex] || "Sin fecha"}.
-                      Unidades entregadas por la fuente. Valores nulos se
-                      muestran como sin dato.
-                    </p>
-                    {Object.entries(weather?.hourly || {})
-                      .filter(([key]) => key !== "time")
-                      .map(([key, values]) => (
-                        <div className="soil" key={key}>
-                          <span
-                            style={{
-                              fontSize: 10,
-                              overflowWrap: "anywhere",
-                              maxWidth: "65%",
-                            }}
-                          >
-                            {key.replaceAll("_", " ")}
-                          </span>
-                          <strong style={{ fontSize: 12 }}>
-                            {fmt((values as any[])?.[soilIndex], 3)}{" "}
-                            <small>{weather?.hourly_units?.[key]}</small>
-                          </strong>
-                        </div>
-                      ))}
-                  </details>
-                  <p className="footnote">
-                    Open-Meteo · {cur.time || "sin fecha"} ·{" "}
-                    {weather?.timezone || "sin zona"}. Grilla:{" "}
-                    {fmt(weather?.latitude, 4)} / {fmt(weather?.longitude, 4)}.
-                    Condiciones modeladas.
-                  </p>
-                </>
-              )}
+              {view === "variables" && <VariablesPanel weather={weather} />}
               {view === "modelos" && (
                 <>
                   <p className="footnote">
@@ -1641,9 +1573,11 @@ function Observatory({onHome}:{onHome:()=>void}) {
               </h2>
               <span className="tag">THI</span>
             </div>
-            <div className="indice">
-              {fmt(thi)} <small>índice</small>
-            </div>
+            {(()=>{const tn=thi==null?"idle":thi>=79?"risk":thi>=72?"warn":"ok";const word=thi==null?"Sin dato":thi>=79?"Peligro":thi>=72?"Alerta":"Sin estrés";const pos=thi==null?0:Math.min(100,Math.max(0,(thi-60)/30*100));return <div className={"cv-thi tone-"+tn}>
+              <div className="cv-thi-top"><strong>{thi==null?"—":fmt(thi)}</strong><span className={"cv-tag tone-"+tn}>{word}</span></div>
+              <div className="cv-thi-scale" aria-hidden="true"><i style={{left:"40%"}}/><i style={{left:"63.3%"}}/>{thi!=null&&<b style={{left:pos+"%"}}/>}</div>
+              <div className="cv-thi-legend"><span style={{left:0}}>60</span><span style={{left:"40%"}}>72 alerta</span><span style={{left:"63.3%"}}>79 peligro</span></div>
+            </div>})()}
             <p className="small">
               Calculado con temperatura y humedad del modelo. Sin diagnóstico
               veterinario automático.

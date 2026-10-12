@@ -1,0 +1,155 @@
+/*
+ * DOTS · Tema del observatorio inspirado en Carbon Design System (IBM, Apache-2.0)
+ * https://github.com/carbon-design-system/carbon
+ * Se toman sus reglas, no sus componentes: tema oscuro Gray 100, IBM Plex en todo,
+ * mosaicos planos, radios chicos, una sola escala tipográfica y color sólo cuando
+ * significa algo (ok · alerta · peligro). Es la misma identidad que el informe PDF.
+ * Va al final para pisar estilos anteriores sin reescribirlos.
+ */
+:root {
+  --mono: "IBM Plex Mono", ui-monospace, monospace;
+  --sans: "IBM Plex Sans", system-ui, sans-serif;
+}
+body { font-family: var(--sans); }
+
+.ta-shell {
+  /* Carbon g100 */
+  --ta-bg: #161616;
+  --ta-surface: #1c1c1c;
+  --ta-card: #212121;
+  --ta-card-solid: #212121;
+  --ta-layer-2: #2a2a2a;
+  --ta-border: #333333;
+  --ta-border-strong: #4d4d4d;
+  --ta-text: #f4f4f4;
+  --ta-text-2: #c6c6c6;
+  --ta-text-3: #8d8d8d;
+  --ta-brand: #3ddbd9;        /* teal 30 de Carbon: el turquesa DOTS ajustado a la paleta */
+  --ta-brand-soft: rgba(61, 219, 217, 0.12);
+  --ta-ok: #42be65;
+  --ta-warn: #f1c21b;
+  --ta-orange: #ff832b;
+  --ta-risk: #fa4d56;
+  --ta-radius: 6px;
+  --ta-gap: 16px;
+  font-family: var(--sans);
+  font-feature-settings: "tnum" 1;  /* cifras alineadas en columnas */
+}
+.ta-shell button, .ta-shell input, .ta-shell select, .ta-shell textarea {
+  font-family: var(--sans);
+  border-radius: 4px;
+}
+.ta-shell button:hover:not(:disabled) { background: var(--ta-layer-2); }
+.ta-shell input:focus, .ta-shell select:focus, .ta-shell textarea:focus, .ta-shell button:focus-visible {
+  outline: 2px solid var(--ta-brand);
+  outline-offset: -2px;
+}
+.ta-shell .panel {
+  background: var(--ta-card);
+  border-color: var(--ta-border);
+  border-radius: var(--ta-radius);
+}
+.ta-shell .primary { background: var(--ta-brand); color: #081a1c; font-weight: 600; }
+.ta-shell .primary:hover:not(:disabled) { background: #08bdba; }
+
+/* Etiquetas de sección: de monoespaciada a Plex Sans en versalitas suaves */
+.ta-shell .tag, .ta-shell .section-title, .ta-shell .lot-vars-title {
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ta-text-3);
+}
+.ta-shell h2 { font-weight: 600; letter-spacing: 0; }
+
+/* Números: Plex Sans semibold con cifras tabulares (antes monoespaciada fina) */
+.ta-shell .key strong, .ta-shell .indice, .ta-shell .soil strong, .ta-shell .ta-metric-value {
+  font-family: var(--sans);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.ta-shell .key strong { font-size: 22px; }
+.ta-shell .key em, .ta-shell .key span { font-family: var(--sans); }
+.ta-shell .ta-metric-value { font-size: 28px; line-height: 34px; }
+.ta-shell .ta-metric-label { color: var(--ta-text-2); font-size: 13px; }
+.ta-shell .ta-metric-hint { color: var(--ta-text-3); }
+
+/* Botones de fuentes: lista sobria tipo Carbon */
+.ta-shell .data-button {
+  border-radius: 0;
+  border-width: 0 0 1px 0;
+  border-color: var(--ta-border);
+  background: transparent;
+  padding-left: 12px;
+}
+.ta-shell .data-button.active {
+  background: var(--ta-layer-2);
+  box-shadow: inset 3px 0 0 var(--ta-brand);
+  color: var(--ta-text);
+}
+.ta-shell .data-button span { font-family: var(--sans); font-size: 10.5px; letter-spacing: 0.04em; color: var(--ta-text-3); }
+
+/* Mapa: rótulos técnicos en Plex Mono más discreto */
+.ta-shell .ta-map-card .toolbar button.active { background: var(--ta-layer-2); color: var(--ta-text); box-shadow: inset 0 -2px 0 var(--ta-brand); }
+
+/* ───────── Panel de variables ───────── */
+.cv-panel { display: grid; gap: 18px; margin-top: 4px; }
+.cv-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 10px; margin-bottom: 8px; }
+.cv-group h3 { margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ta-text-2); }
+.cv-head span { font-size: 11px; color: var(--ta-text-3); }
+.cv-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: var(--ta-border); border: 1px solid var(--ta-border); }
+.cv-grid-tight { margin-top: 8px; }
+.cv-tile { position: relative; display: grid; gap: 4px; align-content: start; padding: 10px 12px 10px 14px; background: var(--ta-card); min-height: 86px; }
+.cv-tile::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 3px; background: transparent; }
+.cv-tile.tone-warn::before { background: var(--ta-warn); }
+.cv-tile.tone-risk::before { background: var(--ta-risk); }
+.cv-tile-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 18px; }
+.cv-label { font-size: 12px; color: var(--ta-text-2); line-height: 1.25; }
+.cv-value { font-size: 22px; font-weight: 600; line-height: 1.1; color: var(--ta-text); letter-spacing: -0.01em; }
+.cv-value small { margin-left: 4px; font-size: 12px; font-weight: 400; color: var(--ta-text-3); }
+.cv-missing { font-size: 14px; font-weight: 400; color: var(--ta-text-3); }
+.cv-hint { font-size: 11px; color: var(--ta-text-3); }
+.cv-tag { justify-self: start; flex: none; font-size: 10.5px; font-weight: 600; padding: 1px 7px; border-radius: 10px; white-space: nowrap; }
+.cv-tag.tone-ok { color: var(--ta-ok); background: rgba(66, 190, 101, 0.14); }
+.cv-tag.tone-warn { color: var(--ta-warn); background: rgba(241, 194, 27, 0.14); }
+.cv-tag.tone-risk { color: #ff8389; background: rgba(250, 77, 86, 0.16); }
+.cv-tag.tone-idle { color: var(--ta-text-3); background: var(--ta-layer-2); }
+.cv-spark { width: 100%; height: 22px; display: block; margin-top: 2px; }
+.cv-spark polyline { stroke: var(--ta-text-3); stroke-width: 1.5; }
+.cv-spark.tone-ok polyline { stroke: var(--ta-brand); }
+.cv-spark.tone-warn polyline { stroke: var(--ta-warn); }
+.cv-spark.tone-risk polyline { stroke: var(--ta-risk); }
+.cv-soil { display: grid; gap: 7px; padding: 10px 12px; background: var(--ta-card); border: 1px solid var(--ta-border); }
+.cv-soil-row { display: grid; grid-template-columns: 74px 1fr 42px; gap: 10px; align-items: center; font-size: 12px; color: var(--ta-text-2); }
+.cv-soil-row i { display: block; height: 6px; background: var(--ta-layer-2); }
+.cv-soil-row i b { display: block; height: 100%; background: #4589ff; }
+.cv-soil-row i b.tone-warn { background: var(--ta-warn); }
+.cv-soil-row strong { text-align: right; color: var(--ta-text); font-weight: 600; }
+.cv-all { border-top: 1px solid var(--ta-border); padding-top: 10px; }
+.cv-all summary { cursor: pointer; font-size: 12.5px; font-weight: 600; color: var(--ta-text-2); }
+.cv-all-group h4 { margin: 14px 0 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ta-text-3); }
+.cv-all-row { display: grid; grid-template-columns: minmax(0, 1fr) 64px 92px; gap: 10px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--ta-border); font-size: 12px; color: var(--ta-text-2); }
+.cv-all-row .cv-spark { height: 16px; margin: 0; }
+.cv-all-row strong { text-align: right; color: var(--ta-text); font-weight: 600; white-space: nowrap; }
+.cv-all-row small { color: var(--ta-text-3); font-weight: 400; }
+.cv-foot { margin: 0; font-size: 11px; color: var(--ta-text-3); line-height: 1.45; }
+
+/* THI del rodeo: número, palabra y escala con los umbrales */
+.cv-thi { margin: 10px 0 12px; }
+.cv-thi-top { display: flex; align-items: center; gap: 10px; }
+.cv-thi-top strong { font-size: 40px; line-height: 1; font-weight: 600; color: var(--ta-text); letter-spacing: -0.02em; }
+.cv-thi.tone-warn .cv-thi-top strong { color: var(--ta-warn); }
+.cv-thi.tone-risk .cv-thi-top strong { color: #ff8389; }
+.cv-thi-scale { position: relative; height: 8px; margin-top: 12px; background: linear-gradient(90deg, var(--ta-ok) 0 40%, var(--ta-warn) 40% 63.3%, var(--ta-risk) 63.3% 100%); opacity: 0.85; }
+.cv-thi-scale i { position: absolute; top: -3px; bottom: -3px; width: 1px; background: var(--ta-bg); }
+.cv-thi-scale b { position: absolute; top: -5px; width: 4px; height: 18px; margin-left: -2px; background: var(--ta-text); box-shadow: 0 0 0 2px var(--ta-bg); }
+.cv-thi-legend { position: relative; height: 14px; margin-top: 6px; font-size: 10.5px; color: var(--ta-text-3); }
+.cv-thi-legend span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+.cv-thi-legend span:first-child { transform: none; }
+
+@media (max-width: 420px) {
+  .cv-value { font-size: 20px; }
+  .cv-all-row { grid-template-columns: minmax(0, 1fr) 48px 84px; }
+}
+.cv-grid > .cv-tile:last-child:nth-child(odd) { grid-column: span 2; }
