@@ -321,6 +321,17 @@ def build_data(result, name='Lote DOTS', extras=None):
                            {'label': 'Alta', 'pct': _f(rp.get('alto')) or 0, 'tone': 'risk'}],
                   'note': f"Copernicus DEM GLO-30, celdas de {rl.get('cellM', 30)} m. Relleno de depresiones, flujo D8 e índice topográfico de humedad. "
                           'Modelo de superficie: montes y construcciones suman altura. Indicador relativo, no cota de inundación.'}
+    ag = extras.get('agua') or {}
+    water = None
+    if ag.get('water_ha') is not None:
+        hs = [h for h in (ag.get('history') or []) if h.get('water_ha') is not None][-12:]
+        sc = ag.get('scene') or {}
+        water = {'facts': [['Agua dentro del lote', f"{num(ag.get('water_ha'))} ha"], ['Cuerpos de agua', num(ag.get('water_bodies'), 0)],
+                           ['Parte del lote', f"{num(ag.get('water_pct'))} %"], ['Imagen Sentinel-2', f"{str(sc.get('date', ''))[8:10]}/{str(sc.get('date', ''))[5:7]}/{str(sc.get('date', ''))[:4]} · nubes {num(sc.get('cloud_pct'), 0)} %"]],
+                 'labels': [str(h.get('scene_date', ''))[8:10] + '/' + str(h.get('scene_date', ''))[5:7] for h in hs],
+                 'values': [_f(h.get('water_ha')) for h in hs],
+                 'note': 'Procesamiento semanal: Sentinel-2 L2A (Earth Search), detección de agua con geoai y el modelo preentrenado OmniWaterMask, recortada al lote.'
+                         + (' Resultado de una semana anterior: la última imagen no tuvo dato válido.' if ag.get('stale') else '')}
     nl_series = [r for r in (ndvi.get('series') or []) if r.get('status') == 'válida' and r.get('ndvi_mean') is not None]
     week = week_outlook(nmean, nl_series, bal, _f(rain and rain.get('value')), _f(et and et.get('value')), thiv, fo)
     thumb = extras.get('_thumb') if '_thumb' in extras else satellite_thumb(poly)
@@ -328,7 +339,7 @@ def build_data(result, name='Lote DOTS', extras=None):
     ev = result.get('evidence') or []
     ok = sum(1 for e in ev if e.get('status') == 'recibido')
     return {
-        'week': week, 'relief': relief,
+        'week': week, 'relief': relief, 'water': water,
         'confidence_line': f"Confianza de la lectura {conf.get('score', '—')}/100 ({conf.get('label', 's/d')}) · {ok} de {len(ev)} fuentes con respuesta válida",
         'title': f'DOTS · Informe territorial · {lot.get("name") or name}',
         'generated': generated,
@@ -367,6 +378,7 @@ def build_data(result, name='Lote DOTS', extras=None):
                          + ('; cobertura: Impact Observatory y ESA WorldCover vía Microsoft Planetary Computer (CC-BY 4.0)' if sust else '')
                          + ('; relieve: Copernicus DEM GLO-30 © DLR e.V. 2010-2014 y © Airbus Defence and Space GmbH 2014-2018, provisto bajo COPERNICUS por la UE y la ESA' if relief else '')
                          + ('; imagen satelital: Esri World Imagery' if thumb else '')
+                         + ('; agua: Sentinel-2 (ESA/Copernicus) procesado con geoai (opengeos, MIT) y OmniWaterMask' if water else '')
                          + ('; límites de lote: Fields of the World / PRUE (Robinson et al. 2026), CC-BY-4.0' if ftw else '')
                          + '. Tipografía IBM Plex (SIL OFL). Documento compuesto con Typst.'),
     }

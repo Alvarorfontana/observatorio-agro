@@ -1,0 +1,10 @@
+# Procesamiento semanal (GitHub Actions). torch y torchvision se instalan antes, versión CPU.
+geoai-py
+omniwatermask
+smoothify
+rasterio
+pystac-client
+shapely>=2
+pyproj
+geopandas
+numpy

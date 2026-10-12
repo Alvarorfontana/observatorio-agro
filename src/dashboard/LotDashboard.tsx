@@ -81,9 +81,10 @@ function Empty({ text, button, onClick, busy }: { text: string; button?: string;
   return <div className="db-empty"><p>{text}</p>{button && <button onClick={onClick} disabled={busy}>{busy ? "Consultando…" : button}</button>}</div>;
 }
 
-export function LotDashboard({ weather, sources, lot, thi, terrain, onLoad, onTerrain, onOpen, hasLot, labels = {} }: {
+export function LotDashboard({ weather, sources, lot, thi, terrain, onLoad, onTerrain, onOpen, hasLot, labels = {}, water = null, cloudOn = false, hasKey = false, onCloud }: {
   weather: Data | undefined; sources: Record<string, Src>; lot: Data | null; thi: number | null; terrain: Data | null;
   onLoad: (key: string) => void; onTerrain: () => void; onOpen: (key: string) => void; hasLot: boolean; labels?: Record<string, string>;
+  water?: Data | null; cloudOn?: boolean; hasKey?: boolean; onCloud?: () => void;
 }) {
   const cur = weather?.current || {}, d = weather?.daily || {}, h = weather?.hourly || {};
   const days: string[] = (d.time || []).map(dm);
@@ -213,7 +214,26 @@ export function LotDashboard({ weather, sources, lot, thi, terrain, onLoad, onTe
         </> : <Empty text={wr.text} button={hasLot && !busy("relieve") ? (wr.failed ? "Reintentar" : "Analizar relieve") : undefined} onClick={onTerrain} busy={busy("relieve")} />}
       </Card>
 
-      {/* Fila 5: trazabilidad */}
+      {/* Fila 5: agua detectada por satélite (procesamiento semanal con geoai) */}
+      <Card span={16} title="Agua detectada por satélite" sub="Procesamiento semanal · Sentinel-2 · geoai (modelo OmniWaterMask) · aguadas, tajamares y bajos con agua dentro del lote">
+        {water?.status === "recibido" || water?.stale ? <div className="db-water">
+          <dl className="db-facts db-facts-4">
+            <div><dt>Agua en el lote</dt><dd>{fmt(water.water_ha, 1)} ha</dd></div>
+            <div><dt>Cuerpos de agua</dt><dd>{fmt(water.water_bodies, 0)}</dd></div>
+            <div><dt>Parte del lote</dt><dd>{fmt(water.water_pct, 1)} %</dd></div>
+            <div><dt>Imagen del</dt><dd>{water.scene?.date ? dm(water.scene.date) + "/" + water.scene.date.slice(2, 4) : "—"}{water.stale ? " · anterior" : ""}</dd></div>
+          </dl>
+          {(water.history || []).length > 1 ? <EChart height={220} label="Evolución del agua y del NDVI" option={t => {
+            const hs: Data[] = water.history; const a = axis(t, hs.map(h => dm(String(h.scene_date))), "ha");
+            return { xAxis: a.x, yAxis: [{ ...a.y, scale: false }, { ...a.y, name: "", position: "right", min: 0, max: 1, splitLine: { show: false } }], grid: { left: 44, right: 40, top: 36, bottom: 28 },
+              series: [{ name: "Agua (ha)", type: "bar", barMaxWidth: 16, data: hs.map(h => h.water_ha), itemStyle: { color: t.c[1] } },
+                       { name: "NDVI", type: "line", yAxisIndex: 1, data: hs.map(h => h.ndvi), lineStyle: { width: 2, color: t.c[0] }, itemStyle: { color: t.c[0] } }] };
+          }} /> : <p className="db-note">El gráfico de evolución aparece desde la segunda semana procesada. En la vista Mapa el agua detectada se dibuja en azul sobre el lote.</p>}
+        </div> : <Empty text={!hasLot ? "Seleccioná un lote para ver el agua detectada." : !cloudOn ? "El procesamiento semanal todavía no está activado en este sitio." : !hasKey ? "Guardá tus lotes en la nube (pestaña Lote) para que entren en el procesamiento de cada lunes." : water?.status === "pendiente" ? "Este lote todavía no pasó por el procesamiento semanal. Los resultados aparecen después del próximo lunes." : water?.status === "sin dato" ? `Sin resultado: ${water.reason || water.error || "la fuente no respondió"}.` : "Buscando resultados…"}
+          button={hasLot && cloudOn && !hasKey ? "Ir a guardar lotes" : undefined} onClick={onCloud} />}
+      </Card>
+
+      {/* Fila 6: trazabilidad */}
       <Card span={16} title="Fuentes consultadas" sub={`${statusRows.filter(([, s]) => s.status === "recibido").length} con respuesta válida · ${statusRows.filter(([, s]) => s.status === "sin dato").length} sin dato · ningún faltante se reemplaza`}>
         <div className="db-table-wrap"><table className="db-table">
           <thead><tr><th>Fuente</th><th>Estado</th><th>Consulta</th><th></th></tr></thead>

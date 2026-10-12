@@ -91,3 +91,14 @@ def test_pdf_with_relief_and_image():
     assert d['relief']['tone'] == 'warn' and d['lot']['image'] and len(d['week']) == 3
     pdf, engine = rt.pdf(RESULT, 'Potrero', extras)
     assert engine == 'typst' and pdf[:5] == b'%PDF-'
+
+
+def test_pdf_with_satellite_water():
+    pytest.importorskip('typst')
+    extras = {'lot': {'name': 'Potrero Norte'}, 'agua': {'status': 'recibido', 'water_ha': 12.4, 'water_bodies': 3, 'water_pct': 1.7,
+              'scene': {'date': '2026-10-08', 'cloud_pct': 4.0},
+              'history': [{'scene_date': '2026-09-30', 'water_ha': 10.1}, {'scene_date': '2026-10-08', 'water_ha': 12.4}]}}
+    d = rt.build_data(RESULT, 'Potrero', extras)
+    assert d['water']['facts'][0][1] == '12,4 ha' and d['water']['values'] == [10.1, 12.4] and 'geoai' in d['attributions']
+    pdf, engine = rt.pdf(RESULT, 'Potrero', extras)
+    assert engine == 'typst' and pdf[:5] == b'%PDF-'
