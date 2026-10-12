@@ -313,6 +313,21 @@
   #text(size: 7.5pt, fill: muted)[#d.forage_note]
 ]
 
+#if d.at("costs", default: ()).len() > 0 [
+  #section("05f", "Costos y logística")
+  #grid(columns: (1fr, 1fr, 1fr), gutter: 6pt, ..d.costs.map(k => card[
+    #text(size: 7pt, fill: muted)[#k.label]
+    #linebreak()#text(size: 13pt, weight: "bold")[#k.value]#text(size: 7.5pt, fill: muted)[ #k.unit]
+  ]))
+  #if d.costs_lines.len() > 0 [
+    #v(4pt)
+    #table(columns: (1fr, auto), stroke: (x, y) => (bottom: 0.4pt + line-c), inset: (x: 4pt, y: 3.5pt),
+      ..d.costs_lines.map(l => (text(size: 8.5pt)[#l.label], text(size: 8.5pt, weight: "semibold")[#l.value])).flatten())
+  ]
+  #v(3pt)
+  #text(size: 7.5pt, fill: muted)[#d.costs_note]
+]
+
 #if d.at("sust", default: ()).len() > 0 [
   #section("05e", "Sustentabilidad")
   #for s in d.sust [

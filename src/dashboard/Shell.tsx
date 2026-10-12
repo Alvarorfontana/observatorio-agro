@@ -7,7 +7,7 @@
 import React from "react";
 import {
   LayoutDashboard, Layers, Satellite, Sprout, Waves, CircleDot, Beef, CloudSun,
-  Flame, Gauge, FileText, Network, Thermometer, CloudRain, Sigma, BellRing, Leaf, Wheat, ChevronsLeft, X, Hexagon,
+  Flame, Gauge, FileText, Network, Thermometer, CloudRain, Sigma, BellRing, Leaf, Wheat, Truck, ChevronsLeft, X, Hexagon,
 } from "lucide-react";
 
 export type NavItem = {
@@ -40,6 +40,7 @@ export function buildNav(go: (k: string) => void, draw: () => void, pdf: () => v
     ]},
     { title: "Salidas", items: [
       { key: "alertas", label: "Alertas", icon: <BellRing />, onClick: () => go("alertas") },
+      { key: "costos", label: "Costos y logística", icon: <Truck />, onClick: () => go("costos") },
       { key: "sustentabilidad", label: "Deforestación y carbono", icon: <Leaf />, onClick: () => go("sustentabilidad") },
       { key: "plataformas", label: "Fuentes y APIs", icon: <Network />, onClick: () => go("plataformas") },
       { key: "__pdf", label: "Informe PDF", icon: <FileText />, onClick: pdf },

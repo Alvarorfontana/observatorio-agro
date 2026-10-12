@@ -44,11 +44,24 @@ def interpolate(series, days):
 
 
 def radiation(lat, lon, days=92):
-    env = c.external('https://api.open-meteo.com/v1/forecast', {
-        'latitude': lat, 'longitude': lon, 'timezone': 'auto', 'past_days': days, 'forecast_days': 1,
-        'daily': 'shortwave_radiation_sum'}, scope='radiación global diaria', organism='Open-Meteo')
-    d = env['data'].get('daily') or {}
-    return {date.fromisoformat(t): v for t, v in zip(d.get('time') or [], d.get('shortwave_radiation_sum') or []) if v is not None}
+    """(radiación global diaria MJ/m², fuente). Open-Meteo; si no responde, NASA POWER (ALLSKY_SFC_SW_DWN)."""
+    try:
+        env = c.external('https://api.open-meteo.com/v1/forecast', {
+            'latitude': lat, 'longitude': lon, 'timezone': 'auto', 'past_days': days, 'forecast_days': 1,
+            'daily': 'shortwave_radiation_sum'}, scope='radiación global diaria', organism='Open-Meteo')
+        d = env['data'].get('daily') or {}
+        out = {date.fromisoformat(t): v for t, v in zip(d.get('time') or [], d.get('shortwave_radiation_sum') or []) if v is not None}
+        if out:
+            return out, 'Open-Meteo'
+    except Exception:
+        pass
+    end = c._now().date() - timedelta(days=2); start = end - timedelta(days=days)
+    env = c.external('https://power.larc.nasa.gov/api/temporal/daily/point', {
+        'parameters': 'ALLSKY_SFC_SW_DWN', 'community': 'AG', 'latitude': lat, 'longitude': lon,
+        'start': start.strftime('%Y%m%d'), 'end': end.strftime('%Y%m%d'), 'format': 'JSON'},
+        scope='radiación global diaria (respaldo)', organism='NASA POWER')
+    vals = (((env['data'] or {}).get('properties') or {}).get('parameter') or {}).get('ALLSKY_SFC_SW_DWN') or {}
+    return {date(int(k[:4]), int(k[4:6]), int(k[6:8])): v for k, v in vals.items() if v is not None and v > -900}, 'NASA POWER'
 
 
 def estimate(ndvi_series, rad, area_ha, kind='pastizal', use=DEFAULT_USE, heads=None):
@@ -113,8 +126,9 @@ def forage(lat, lon, polygon=None, ndvi=None, kind='pastizal', use=DEFAULT_USE, 
     pts = veg.require_polygon(polygon)
     area = veg.area_ha(pts)
     if not ndvi or not ndvi.get('series'):
-        ndvi = veg.ndvi_open(pts, days=120, scenes=8)['data']
-    rad = radiation(lat, lon)
+        ndvi = veg.ndvi_best(pts, days=120, scenes=8)['data']
+    rad, rad_src = radiation(lat, lon)
     data = estimate(ndvi.get('series'), rad, area, kind, use, heads)
+    data['sources'] = {'ndvi': ndvi.get('sensor') or 'Sentinel-2', 'radiation': rad_src}
     return c.envelope(data, 'https://api.open-meteo.com/v1/forecast', 'producción de pasto y carga',
-                      'DOTS · Sentinel-2 + Open-Meteo (modelo de Monteith)')
+                      f"DOTS · {'MODIS' if ndvi.get('fallback') else 'Sentinel-2'} + {rad_src} (modelo de Monteith)")

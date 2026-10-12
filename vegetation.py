@@ -107,7 +107,7 @@ def scene_ndvi(item, feature):
     clear_frac = float(clear.get('mean') or 0)
     row = {'item': item['id'], 'datetime': item['properties'].get('datetime'),
            'scene_cloud_pct': item['properties'].get('eo:cloud_cover'),
-           'clear_fraction_lot': round(clear_frac, 3), 'expression': expr,
+           'clear_fraction_lot': round(clear_frac, 3), 'expression': expr, 'tile_coverage': item.get('_coverage'),
            'processing_baseline': item['properties'].get('s2:processing_baseline')}
     if clear_frac < MIN_CLEAR:
         row.update(status='nublada', note=f'Sólo {clear_frac:.0%} del lote despejado; no se interpreta')
@@ -173,10 +173,45 @@ def extra_indices(item, feature):
     return out
 
 
+def _in_ring(x, y, ring):
+    inside = False
+    for i in range(len(ring)):
+        x1, y1 = ring[i][:2]; x2, y2 = ring[i - 1][:2]
+        if (y1 > y) != (y2 > y) and x < (x2 - x1) * (y - y1) / ((y2 - y1) or 1e-12) + x1:
+            inside = not inside
+    return inside
+
+
+def footprint_coverage(item, pts):
+    """Fracción de puntos de muestra del lote (vértices, puntos medios y centro) dentro de la huella de la escena."""
+    g = item.get('geometry') or {}
+    polys = [g.get('coordinates')] if g.get('type') == 'Polygon' else (g.get('coordinates') or []) if g.get('type') == 'MultiPolygon' else []
+    if not polys:
+        return 1.0
+    sample = list(pts) + [((pts[i][0] + pts[i - 1][0]) / 2, (pts[i][1] + pts[i - 1][1]) / 2) for i in range(len(pts))]
+    sample.append((sum(p[0] for p in pts) / len(pts), sum(p[1] for p in pts) / len(pts)))
+    hit = sum(1 for lat, lon in sample if any(_in_ring(lon, lat, poly[0]) for poly in polys if poly))
+    return hit / len(sample)
+
+
+def best_tiles(items, pts):
+    """Una escena por fecha de toma: la tesela que mejor cubre el lote. Evita promediar píxeles fuera de la tesela."""
+    best = {}
+    for it in items:
+        pr = it.get('properties') or {}
+        key = (str(pr.get('datetime') or '')[:10], pr.get('platform') or it['id'][:3])
+        cov = footprint_coverage(it, pts)
+        if key not in best or cov > best[key][0]:
+            best[key] = (cov, it)
+    out = [(cov, it) for cov, it in best.values() if cov >= 0.5]
+    out.sort(key=lambda x: (x[1].get('properties') or {}).get('datetime') or '', reverse=True)
+    return [it | {'_coverage': round(cov, 2)} for cov, it in out]
+
+
 def ndvi_open(polygon, days=120, scenes=6):
     pts = require_polygon(polygon)
     feature = {'type': 'Feature', 'properties': {}, 'geometry': geojson_polygon(pts)}
-    items = search_s2(pts, days=days, limit=max(scenes, 1))[:scenes]
+    items = best_tiles(search_s2(pts, days=days, limit=min(max(scenes, 1) * 3, 30)), pts)[:scenes]
     if not items:
         raise ValueError(f'Sin escenas Sentinel-2 con <60 % de nubes en {days} días')
     rows = []
@@ -206,6 +241,66 @@ def ndvi_open(polygon, days=120, scenes=6):
         'Microsoft Planetary Computer · ESA Copernicus',
         'recibido' if valid else 'sin dato',
         None if valid else 'Ninguna escena con el lote suficientemente despejado')
+
+
+ORNL_MODIS = 'https://modis.ornl.gov/rst/api/v1/MOD13Q1/subset'
+
+
+def ndvi_modis(polygon, days=120):
+    """Respaldo sin credencial y de otro proveedor: NDVI MODIS MOD13Q1 (250 m, compuestos de 16 días)
+    del servicio web de NASA ORNL DAAC. Promedia los píxeles de una ventana centrada en el lote,
+    de tamaño menor o igual al lote. Más grueso que Sentinel-2 pero independiente de Planetary Computer."""
+    import math
+    pts = require_polygon(polygon)
+    lat = sum(p[0] for p in pts) / len(pts); lon = sum(p[1] for p in pts) / len(pts)
+    h_km = (max(p[0] for p in pts) - min(p[0] for p in pts)) * 110.54
+    w_km = (max(p[1] for p in pts) - min(p[1] for p in pts)) * 111.32 * math.cos(math.radians(lat))
+    k = max(0, min(2, int((min(h_km, w_km) - 1) / 2)))   # ventana de 2k+1 km que entra en el lote
+    end = c._now().date(); start = end - timedelta(days=days)
+    r = c._get(ORNL_MODIS, {'latitude': round(lat, 5), 'longitude': round(lon, 5), 'band': '250m_16_days_NDVI',
+                            'startDate': f'A{start.year}{start.timetuple().tm_yday:03d}',
+                            'endDate': f'A{end.year}{end.timetuple().tm_yday:03d}',
+                            'kmAboveBelow': k, 'kmLeftRight': k}, headers={'Accept': 'application/json'}, timeout=40)
+    js = r.json()
+    scale = float(js.get('scale') or 0.0001)
+    rows = []
+    for sub in js.get('subset') or []:
+        vals = [v * scale for v in sub.get('data') or [] if v is not None and -2000 <= v <= 10000]
+        row = {'item': f"MOD13Q1 {sub.get('modis_date')}", 'datetime': f"{sub.get('calendar_date')}T00:00:00Z", 'pixels': len(vals)}
+        if vals:
+            row.update(status='válida', ndvi_mean=_r(sum(vals) / len(vals)), ndvi_p2=_r(min(vals)), ndvi_p98=_r(max(vals)))
+        else:
+            row.update(status='sin dato', note='Sin píxeles válidos en el compuesto')
+        rows.append(row)
+    rows.sort(key=lambda r: r['datetime'])
+    valid = [r for r in rows if r['status'] == 'válida']
+    return c.envelope({
+        'capability': 'ANALYSIS', 'index': 'NDVI', 'sensor': 'MODIS Terra MOD13Q1 (250 m, 16 días)',
+        'area_ha': area_ha(pts), 'latest': valid[-1] if valid else None, 'series': rows, 'valid_scenes': len(valid),
+        'fallback': True, 'window_km': 2 * k + 1 if k else 0.25,
+        'interpretation_scope': ('Respaldo: ' + (f'promedio de píxeles MODIS de 250 m en una ventana de {2 * k + 1} km centrada en el lote.' if k
+                                 else 'píxel MODIS de 250 m del centro del lote.'))},
+        ORNL_MODIS, 'NDVI MODIS por lote (respaldo)', 'NASA ORNL DAAC · MODIS',
+        'recibido' if valid else 'sin dato', None if valid else 'MODIS no devolvió compuestos válidos')
+
+
+def ndvi_best(polygon, days=120, scenes=6):
+    """Sentinel-2 por Planetary Computer; si falla o no hay escenas despejadas, MODIS de NASA ORNL."""
+    reason = None
+    try:
+        env = ndvi_open(polygon, days, scenes)
+        if env['data'].get('valid_scenes'):
+            return env
+        reason = 'Sentinel-2 sin escenas despejadas'
+    except ValueError as e:
+        if 'Dibujá' in str(e) or 'polígono' in str(e).lower():
+            raise
+        reason = str(e)
+    except Exception as e:
+        reason = f'Planetary Computer no respondió ({type(e).__name__})'
+    env = ndvi_modis(polygon, max(days, 64))
+    env['data']['fallback_reason'] = reason
+    return env
 
 
 def ndvi_png(item_id, polygon, processing_baseline=None, mode='ndvi'):

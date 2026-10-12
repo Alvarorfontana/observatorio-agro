@@ -119,6 +119,7 @@ const SOURCES = [
   ["estadistica", "Probabilidades y tendencias", "Conjuntos ECMWF/GFS · ERA5 · SEAS5"],
   ["alertas", "Alertas del lote", "Reglas declaradas sobre fuentes verificadas"],
   ["forraje", "Pasto y carga", "Sentinel-2 + radiación · modelo de Monteith"],
+  ["costos", "Costos y logística", "OSRM · OpenStreetMap · DolarAPI · valores del productor"],
   ["sustentabilidad", "Deforestación y carbono", "Impact Observatory · ESA WorldCover · SoilGrids · IPCC"],
   ["teleconexiones", "El Niño y teleconexiones", "NOAA PSL · ENSO, SOI, AAO, TSA, PDO"],
   ["rios", "Ríos y caudales", "GloFAS / Open-Meteo"],
@@ -558,6 +559,39 @@ function Observatory({onHome}:{onHome:()=>void}) {
       setSources(p => ({ ...p, forraje: { status: "recibido", payload: j } }));
     } catch (e) { setSources(p => ({ ...p, forraje: { status: "sin dato", error: (e as Error).message } })); }
   };
+  const COST_FIELDS: [string, string, string][] = [
+    ["heads","Cabezas a vender",""],["sale_kg","Peso de venta","kg/cab"],["price_kg","Precio","$/kg vivo"],
+    ["shrink_pct","Desbaste","%"],["commission_pct","Comisión","%"],["health_head","Sanidad","$/cab/año"],
+    ["feed_head","Suplemento","$/cab/año"],["other_head","Otros por cabeza","$/cab/año"],["labor_month","Mano de obra","$/mes"],
+    ["rent_ha","Arrendamiento","$/ha/año"],["structure_ha","Estructura","$/ha/año"],["freight_km","Tarifa de flete","$/km por jaula"],["truck_heads","Capacidad de la jaula","cabezas"]];
+  const [costParams, setCostParams] = useState<Record<string, string>>(() => { try { return JSON.parse(localStorage.getItem("dots-costs") || "{}"); } catch { return {}; } });
+  const [costDest, setCostDest] = useState<string>(() => { try { return localStorage.getItem("dots-cost-dest") || ""; } catch { return ""; } });
+  const setCost = (k: string, v: string) => setCostParams(p => { const n = { ...p, [k]: v }; try { localStorage.setItem("dots-costs", JSON.stringify(n)); } catch {} return n; });
+  const loadCosts = async () => {
+    setSources(p => ({ ...p, costos: { status: "consultando" } }));
+    try {
+      const params: Record<string, number> = {};
+      Object.entries(costParams).forEach(([k, v]) => { if (v !== "" && v != null && Number.isFinite(Number(v))) params[k] = Number(v); });
+      if (params.heads == null && herdHeads) params.heads = herdHeads;
+      if (lotAreaHa) params.area_ha = Math.round(lotAreaHa * 10) / 10;
+      const r = await fetch("/api/fuentes/costos", { method: "POST", headers: { "Content-Type": "application/json" }, signal: AbortSignal.timeout(45000),
+        body: JSON.stringify({ lat: point[0], lon: point[1], destination: costDest || null, params }) });
+      const j = await r.json();
+      if (!r.ok) throw Error(j.error || "No se pudo calcular");
+      setSources(p => ({ ...p, costos: { status: j.status, payload: j } }));
+    } catch (e) { setSources(p => ({ ...p, costos: { status: "sin dato", error: (e as Error).message } })); }
+  };
+  const routeLine = useRef<L.Polyline | null>(null);
+  useEffect(() => {
+    routeLine.current?.remove(); routeLine.current = null;
+    const lg = (sources.costos?.payload as any)?.data?.logistics;
+    if (!mapRef.current || view !== "costos" || !lg?.line?.length) return;
+    const pl = L.polyline(lg.line, { color: "#f79009", weight: 4, opacity: .9, dashArray: lg.estimated ? "8 8" : undefined }).addTo(mapRef.current);
+    L.circleMarker([lg.destination.lat, lg.destination.lon], { radius: 7, color: "#b54708", fillColor: "#f79009", fillOpacity: 1 }).bindTooltip(lg.destination.name).addTo(pl as any);
+    mapRef.current.fitBounds(pl.getBounds(), { padding: [30, 30] });
+    routeLine.current = pl;
+    return () => { pl.remove(); };
+  }, [sources.costos, view]);
   const [estName, setEstName] = useState<string>(() => { try { return localStorage.getItem("dots-establishment") || ""; } catch { return ""; } });
   const [coverYear, setCoverYear] = useState<number | null>(null);
   const [eudrBusy, setEudrBusy] = useState(false);
@@ -596,7 +630,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
   useEffect(() => {
     ndviOverlay.current?.remove(); ndviOverlay.current = null;
     const latest = (sources.ndvi?.payload as any)?.data?.latest;
-    if (!mapRef.current || !showNdvi || view !== "ndvi" || !latest?.item || vertices.length < 3) return;
+    if (!mapRef.current || !showNdvi || view !== "ndvi" || !String(latest?.item||"").startsWith("S2") || vertices.length < 3) return;
     const lats = vertices.map(v=>v[0]), lons = vertices.map(v=>v[1]);
     const bounds: L.LatLngBoundsExpression = [[Math.min(...lats), Math.min(...lons)], [Math.max(...lats), Math.max(...lons)]];
     const url = "/api/fuentes/ndvi-imagen?" + new URLSearchParams({lat:String(point[0]),lon:String(point[1]),item:latest.item,baseline:String(latest.processing_baseline||""),mode:overlayMode,polygon:JSON.stringify(vertices)});
@@ -609,7 +643,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
     // Always refresh: source results are spatial/temporal and must follow the currently selected lot.
     // Reusing an old payload after changing polygon was a functional bug in earlier versions.
     setView(key);
-    if (key === "alertas") { void loadAlerts(); } else if (key === "forraje") { void loadForage(); } else void load(key);
+    if (key === "alertas") { void loadAlerts(); } else if (key === "forraje") { void loadForage(); } else if (key === "costos") { void loadCosts(); } else void load(key);
     requestAnimationFrame(() => { const el = document.getElementById("dots-detail"); const side = el?.closest(".sidebar") as HTMLElement | null; if (el && side) side.scrollTo({ top: Math.max(0, el.offsetTop - side.offsetTop - 16), behavior: "smooth" }); });
   };
   const addFieldMarker = (type = markerType) => {
@@ -756,7 +790,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
     try {
       const r = await fetch("/api/fuentes/agentic", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lat: point[0], lon: point[1], prompt, polygon: poly.current ? vertices : null, inaSeries, waterAssets, fieldMarkers }),
+        body: JSON.stringify({ lat: point[0], lon: point[1], prompt, polygon: poly.current ? vertices : null, inaSeries, waterAssets, fieldMarkers, known: reportExtras() }),
         signal: AbortSignal.timeout(60000),
       });
       const data = await r.json().catch(() => ({}));
@@ -773,6 +807,8 @@ function Observatory({onHome}:{onHome:()=>void}) {
     return {
       lot: l ? { name: l.name, areaHa: l.areaHa, perimeterKm: l.perimeterKm, compactness: l.compactness, ftw: l.ftw, vertices: l.vertices } : null,
       ndvi: data("ndvi"), indices: data("indices"), telecon: data("teleconexiones"), clima: data("variables"), lluvia: data("lluvia")?.spi ? data("lluvia") : null, estadistica: data("estadistica"),
+      alertas: alertsData, forraje: data("forraje")?.growth_rate_30d!=null ? data("forraje") : null,
+      sustentabilidad: data("sustentabilidad"), costos: data("costos")?.margin ? data("costos") : null,
       place: placeLabel,
     };
   };
@@ -1030,6 +1066,31 @@ function Observatory({onHome}:{onHome:()=>void}) {
                   <p className="footnote">{Object.values(payload.assumptions||{}).join(" · ")}. {payload.note}</p>
                 </>}
               </>}
+              {view==="costos" && <>
+                <label className="small" style={{display:"block",marginBottom:8}}>Destino de la hacienda<input value={costDest} placeholder="ej. Mercado Agroganadero Cañuelas, Corrientes, frigorífico…" onChange={e=>{setCostDest(e.target.value);try{localStorage.setItem("dots-cost-dest",e.target.value)}catch{}}}/></label>
+                <div className="cost-form">{COST_FIELDS.map(([k,l,u])=><label key={k}>{l}{u&&<small> · {u}</small>}<input type="number" min={0} value={costParams[k]??""} placeholder={k==="heads"&&herdHeads?String(herdHeads):""} onChange={e=>setCost(k,e.target.value)}/></label>)}</div>
+                <button className="primary" style={{width:"100%",marginTop:8}} onClick={()=>void loadCosts()}>Calcular costos y ruta</button>
+                <p className="footnote">Los precios y costos los cargás vos y quedan guardados en este navegador. DOTS aporta la distancia por camino, el tiempo de viaje y el dólar del día. Referencias: Mercado Agroganadero de Cañuelas (precios), CATAC (tarifas de flete).</p>
+                {payload?.logistics && <>
+                  <div className="lot-vars-title" style={{marginTop:10}}>Logística</div>
+                  <div className="wx-grid">
+                    <div><span>Distancia</span><b>{fmt(payload.logistics.km,0)}<small> km</small></b></div>
+                    <div><span>Viaje</span><b>{payload.logistics.hours!=null?fmt(payload.logistics.hours,1):"—"}<small> h</small></b></div>
+                    {payload.margin?.trips!=null && <div><span>Viajes de jaula</span><b>{payload.margin.trips}</b></div>}
+                    {payload.margin?.freight!=null && <div><span>Flete total</span><b>$ {fmt(payload.margin.freight,0)}</b></div>}
+                    {payload.margin?.freight_per_kg!=null && <div><span>Flete por kg</span><b>$ {fmt(payload.margin.freight_per_kg,1)}</b></div>}
+                  </div>
+                  <p className="footnote">{payload.logistics.destination?.name} · {payload.logistics.method}</p>
+                </>}
+                {payload?.margin?.gross!=null && <>
+                  <div className={"verdict "+((payload.margin.net??0)>=0?"ok":"warn")}><span>Margen bruto estimado</span><b>$ {fmt(payload.margin.net,0)}{payload.margin.net_usd!=null?` · US$ ${fmt(payload.margin.net_usd,0)}`:""}</b><small>{payload.margin.net_ha!=null?`$ ${fmt(payload.margin.net_ha,0)}/ha`:""}{payload.margin.net_ha_usd!=null?` · US$ ${fmt(payload.margin.net_ha_usd,1)}/ha`:""}{payload.margin.net_head!=null?` · $ ${fmt(payload.margin.net_head,0)}/cabeza`:""}</small></div>
+                  {payload.margin.breakeven_price_kg!=null && <p className="small" style={{marginTop:6}}>Precio de equilibrio: <b>$ {fmt(payload.margin.breakeven_price_kg,0)}/kg</b>{payload.margin.breakeven_usd_kg!=null?` (US$ ${fmt(payload.margin.breakeven_usd_kg,2)}/kg)`:""}</p>}
+                  <div className="cost-lines">{payload.margin.lines.map((l:Data)=><div key={l.label}><span>{l.label}</span><b className={l.value<0?"neg":""}>{l.value<0?"− ":""}$ {fmt(Math.abs(l.value),0)}</b></div>)}</div>
+                </>}
+                {payload?.exchange?.oficial_venta && <p className="footnote">Dólar oficial ${fmt(payload.exchange.oficial_venta,2)}{payload.exchange.mayorista_venta?` · mayorista $${fmt(payload.exchange.mayorista_venta,2)}`:""} · {payload.exchange.source}</p>}
+                {payload?.missing?.length>0 && <p className="footnote warn-note">Para completar el cálculo falta: {payload.missing.join(", ")}.</p>}
+                {payload?.method && <p className="footnote">{payload.method}</p>}
+              </>}
               {view==="sustentabilidad" && <>
                 <label className="small" style={{display:"block",marginBottom:8}}>Cabezas en el lote (para emisiones)<div className="row" style={{marginTop:6}}><input type="number" min={0} value={herdHeads||""} placeholder="ej. 250" onChange={e=>{const v=Math.max(0,Number(e.target.value)||0);setHerdHeads(v);try{localStorage.setItem("dots-heads",String(v))}catch{}}}/><button onClick={()=>void load("sustentabilidad")}>Calcular</button></div></label>
                 {payload?.deforestation && (()=>{const d=payload.deforestation;const ok=String(d.verdict).startsWith("sin pérdida");return <div className={"verdict "+(ok?"ok":d.verdict==="sin dato"?"":"warn")}><span>Libre de deforestación · corte {d.cutoff}</span><b>{d.verdict}</b><small>Árboles en el lote: {d.baseline_year} {fmt((d.series.find((r:Data)=>r.year===d.baseline_year)?.trees??0)*100,1)} % → {d.last_year} {fmt((d.series.find((r:Data)=>r.year===d.last_year)?.trees??0)*100,1)} % · pérdida estimada {fmt(d.tree_loss_ha,1)} ha</small></div>})()}
@@ -1104,6 +1165,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
                 </div>}
                 {payload?.latest?.indices && <div className="idx-cards">{["evi","savi","ndmi","ndwi"].map(k=>{const x=payload.latest.indices[k];return x?<div className="idx-card" key={k} title={x.meaning}><span>{x.name}</span><b>{fmt(x.mean,2)}</b><small>{x.meaning}</small></div>:null})}{payload.latest.indices.water_fraction!=null&&<div className="idx-card" title="Fracción de píxeles con NDWI positivo"><span>Agua en superficie</span><b>{fmt(payload.latest.indices.water_fraction*100,1)} %</b><small>del lote con agua libre o anegado</small></div>}</div>}
                 {payload?.latest && <p className="footnote">Última escena válida: {(payload.latest.datetime||payload.latest.from||"").slice(0,10)} · {payload.area_ha} ha · {payload.latest.pixels??"s/d"} píxeles · {payload.sensor}</p>}
+                {payload?.fallback && <p className="footnote warn-note">Fuente de respaldo: {payload.fallback_reason ? `${payload.fallback_reason}. ` : ""}Se usó NDVI MODIS de NASA (250 m), más grueso que Sentinel-2. {payload.interpretation_scope}</p>}
                 {(payload?.series||[]).slice().reverse().map((r:Data,i:number)=><div className="soil" key={i}><span>{(r.datetime||r.from||"").slice(0,10)}<small style={{display:"block"}}>{r.status}{r.clear_fraction_lot!=null?` · ${Math.round(r.clear_fraction_lot*100)} % despejado`:""}</small></span><strong>{r.status==="válida"?fmt(r.ndvi_mean,2):"—"}</strong></div>,2)}
                 {view==="ndvi" && payload?.latest && <div className="overlay-switch"><span>Sobre el lote · {String(payload.latest.datetime||"").slice(0,10)}</span>{[["ndvi","NDVI"],["rgb","Color real"],["off","Ninguna"]].map(([k,l])=><button key={k} className={(k==="off"?!showNdvi:showNdvi&&overlayMode===k)?"active":""} onClick={()=>{if(k==="off"){setShowNdvi(false)}else{setShowNdvi(true);setOverlayMode(k as any)}}}>{l}</button>)}</div>}
                 <p className="footnote">Escala: menos de 0,2 suelo desnudo o agua · 0,2–0,5 vegetación rala o pastura seca · más de 0,5 vegetación activa. No reemplaza la recorrida a campo.</p>
@@ -1355,7 +1417,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
                   </a>
                 </p>
               )}
-              {view!=="alertas" && view!=="forraje" && <button
+              {view!=="alertas" && view!=="forraje" && view!=="costos" && <button
                 style={{ width: "100%", marginTop: 13 }}
                 onClick={() => void load(view)}
               >
@@ -1606,6 +1668,8 @@ function Observatory({onHome}:{onHome:()=>void}) {
           {view==="forraje" && payload?.daily ? <>
             <section className="panel chart"><h2>Crecimiento diario del pasto</h2><p className="small">kg MS/ha/día · {payload.kind_label} · últimos 60 días</p><Chart dates={payload.daily.map((d:Data)=>d.date.slice(5))} unit="kg MS/ha/día" series={[{name:"Crecimiento",values:payload.daily.map((d:Data)=>d.ppna),color:"#19b98a"}]}/></section>
             <section className="panel chart"><h2>Producción por mes</h2><p className="small">kg MS/ha acumulados en cada mes</p><Chart dates={payload.monthly.map((m:Data)=>m.month)} unit="kg MS/ha" series={[{name:"Producción",values:payload.monthly.map((m:Data)=>m.total),type:"bar",color:"#22c55e"}]}/></section>
+          </> : view==="costos" && payload?.sensitivity ? <>
+            <section className="panel chart"><h2>Margen según el precio de venta</h2><p className="small">$ totales · precio −20 % a +20 % · con la tarifa de flete actual y con +25 %</p><Chart dates={payload.sensitivity.map((r:Data)=>`${Math.round((r.price_factor-1)*100)>0?"+":""}${Math.round((r.price_factor-1)*100)} %`)} unit="$" series={[{name:"Margen",values:payload.sensitivity.map((r:Data)=>r.net),type:"bar",color:"#22c55e"},...(payload.sensitivity[0].net_freight_up!=null?[{name:"Flete +25 %",values:payload.sensitivity.map((r:Data)=>r.net_freight_up),color:"#f79009"}]:[])]}/></section>
           </> : view==="sustentabilidad" && payload?.deforestation?.series?.length ? <>
             <section className="panel chart"><h2>Cobertura del lote por año</h2><p className="small">Impact Observatory 10 m · % del lote · árboles, pastizal y cultivo · corte EUDR 2020</p><Chart dates={payload.deforestation.series.map((r:Data)=>String(r.year))} unit="%" series={[{name:"Árboles",values:payload.deforestation.series.map((r:Data)=>r.trees!=null?r.trees*100:null),color:"#22c55e"},{name:"Pastizal",values:payload.deforestation.series.map((r:Data)=>r.rangeland!=null?r.rangeland*100:null),color:"#e9bd72"},{name:"Cultivo",values:payload.deforestation.series.map((r:Data)=>r.crops!=null?r.crops*100:null),color:"#a7a5ff"}]}/></section>
           </> : view==="estadistica" && payload?.climatology ? <>

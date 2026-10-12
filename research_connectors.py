@@ -141,10 +141,46 @@ SOIL_LABELS = {'nitrogen': 'Nitrógeno total', 'soc': 'Carbono orgánico', 'phh2
                'wv1500': 'Agua en punto de marchitez'}
 
 
+SOILGRIDS = 'https://rest.isric.org/soilgrids/v2.0/properties/query'
+
+
+def _soil_has_values(js):
+    for layer in ((js or {}).get('properties') or {}).get('layers') or []:
+        for d in layer.get('depths') or []:
+            if any(v is not None for v in (d.get('values') or {}).values()):
+                return True
+    return False
+
+
+def soilgrids(lat, lon, props, depths, values, scope):
+    """SoilGrids con espera larga y, si el punto no tiene dato (agua, bañado, borde de río),
+    hasta dos puntos vecinos a ~500 m. Devuelve envelope con el punto efectivamente usado."""
+    tries = [(lat, lon, None), (lat + 0.0045, lon, 'vecino a ~500 m al norte'), (lat, lon + 0.005, 'vecino a ~500 m al este')]
+    last = None
+    for i, (la, lo, note) in enumerate(tries):
+        try:
+            r = _get(SOILGRIDS, {'lat': round(la, 5), 'lon': round(lo, 5), 'property': props, 'depth': depths, 'value': values}, timeout=45)
+            js = r.json()
+        except Exception as e:
+            last = e
+            if i == 0:
+                continue
+            break
+        if _soil_has_values(js):
+            env = envelope(js, SOILGRIDS, scope, 'ISRIC SoilGrids')
+            env['point_used'] = {'lat': round(la, 5), 'lon': round(lo, 5), 'note': note}
+            return env
+        last = None
+    if last is not None:
+        raise last
+    return envelope(None, SOILGRIDS, scope, 'ISRIC SoilGrids', 'sin dato',
+                    'SoilGrids no tiene estimación en el punto ni en sus vecinos (agua, bañado o zona sin modelo)')
+
+
 def soil_full(lat, lon):
-    env = external('https://rest.isric.org/soilgrids/v2.0/properties/query',
-                   {'lat': lat, 'lon': lon, 'property': SOIL_PROPS, 'depth': SOIL_DEPTHS, 'value': 'mean'},
-                   scope='suelo modelado 0-60 cm (no sustituye laboratorio)', organism='ISRIC SoilGrids')
+    env = soilgrids(lat, lon, SOIL_PROPS, SOIL_DEPTHS, 'mean', 'suelo modelado 0-60 cm (no sustituye laboratorio)')
+    if env['data'] is None:
+        return env
     rows, by = [], {}
     for layer in ((env['data'] or {}).get('properties') or {}).get('layers') or []:
         name = layer.get('name'); um = layer.get('unit_measure') or {}

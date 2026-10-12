@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 import io, math
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import research_connectors as c
+import agentic_rules
 
 QUICK = {
     'integral': 'Informe integral del estado del campo',
@@ -48,7 +49,7 @@ def _quality(source_count, warnings):
     score = min(95, 48 + source_count * 9 - max(0, len(warnings) - 1) * 4)
     return max(20, score)
 
-def analyze(lat, lon, prompt='', polygon=None, ina_id=None, water_assets=None, field_markers=None):
+def analyze(lat, lon, prompt='', polygon=None, ina_id=None, water_assets=None, field_markers=None, known=None):
     intent = _intent(prompt)
     bundle = c.research_bundle(lat, lon, ina_id)
     extra = {}
@@ -338,6 +339,12 @@ def analyze(lat, lon, prompt='', polygon=None, ina_id=None, water_assets=None, f
 
     score = _quality(received, warnings)
 
+    mod = agentic_rules.evaluate(known)
+    findings = mod['findings'] + findings
+    metrics = mod['metrics'] + metrics
+    prio = {1: 'Prioridad alta', 2: 'Prioridad media', 3: 'Para considerar'}
+    recommendations[:0] = [f"{prio[r['priority']]}: {r['text']} ({r['why']})" for r in mod['recommendations']]
+
     if sum(rain) < 5 and sum(et) > 15:
         recommendations.append(
             'Seguir la evolución del balance lluvia–ET₀; el pronóstico muestra demanda atmosférica superior al aporte de lluvia.'
@@ -346,7 +353,7 @@ def analyze(lat, lon, prompt='', polygon=None, ina_id=None, water_assets=None, f
         recommendations.append('Mantener seguimiento; no surge una recomendación operativa fuerte con las variables verificadas disponibles.')
 
     return {
-        'version': 'DOTS Agentic 0.7',
+        'version': 'DOTS Agentic 0.8',
         'generated_at': datetime.now(timezone.utc).isoformat(),
         'point': [lat, lon],
         'polygon': polygon or None,
@@ -358,7 +365,10 @@ def analyze(lat, lon, prompt='', polygon=None, ina_id=None, water_assets=None, f
             'received_sources': received,
             'failed_sources': len(failed)
         },
-        'summary': f'Análisis {intent} construido con {received} fuentes recibidas. Confianza {score}/100.',
+        'summary': (f'Análisis {intent} construido con {received} fuentes recibidas'
+                    + (f" y {len(mod['modules'])} módulos del lote ({', '.join(mod['modules'])})" if mod['modules'] else '')
+                    + f'. Confianza {score}/100.'),
+        'modules': mod['modules'],
         'findings': findings,
         'metrics': metrics,
         'recommendations': recommendations,

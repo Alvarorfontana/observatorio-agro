@@ -35,3 +35,14 @@ def test_errors():
     with pytest.raises(ValueError): fg.estimate(SER, RAD, 10, kind='x')
     with pytest.raises(ValueError): fg.estimate(SER, RAD, 10, use=0.95)
     with pytest.raises(ValueError): fg.estimate(SER, {}, 10)
+
+
+def test_radiation_falls_back_to_nasa_power(monkeypatch):
+    import research_connectors as c
+    def ext(url, params=None, **k):
+        if 'open-meteo' in url:
+            raise ConnectionError('caído')
+        return c.envelope({'properties': {'parameter': {'ALLSKY_SFC_SW_DWN': {'20260901': 18.5, '20260902': -999}}}}, url, 's', 'o')
+    monkeypatch.setattr(c, 'external', ext)
+    rad, src = fg.radiation(-28.5, -59.0)
+    assert src == 'NASA POWER' and rad == {date(2026, 9, 1): 18.5}

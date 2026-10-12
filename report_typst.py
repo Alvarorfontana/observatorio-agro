@@ -227,6 +227,25 @@ def build_data(result, name='Lote DOTS', extras=None):
         h = cb['herd']
         sust.append({'label': f"Emisiones del rodeo · {h['heads']} cabezas", 'value': f"{num(h['co2e_t_year'], 0)} t CO₂e/año",
                      'detail': f"{num(h['ch4_t_year'], 1)} t CH₄/año · {h['method']}", 'tone': 'idle'})
+    co = extras.get('costos') or {}
+    cm, cl = co.get('margin') or {}, co.get('logistics') or {}
+    costs_cards, costs_lines = [], []
+    if cl.get('km') is not None:
+        costs_cards.append({'label': 'Distancia al destino', 'value': num(cl['km'], 0), 'unit': 'km'})
+        if cl.get('hours') is not None:
+            costs_cards.append({'label': 'Tiempo de viaje', 'value': num(cl['hours'], 1), 'unit': 'h'})
+    if cm.get('freight') is not None:
+        costs_cards.append({'label': f"Flete · {cm.get('trips')} viajes", 'value': '$ ' + num(cm['freight'], 0), 'unit': ''})
+    if cm.get('net') is not None:
+        costs_cards.append({'label': 'Margen bruto', 'value': ('− $ ' if cm['net'] < 0 else '$ ') + num(abs(cm['net']), 0),
+                            'unit': f"US$ {num(cm.get('net_ha_usd'), 1)}/ha" if cm.get('net_ha_usd') is not None else ''})
+    if cm.get('breakeven_price_kg') is not None:
+        costs_cards.append({'label': 'Precio de equilibrio', 'value': '$ ' + num(cm['breakeven_price_kg'], 0), 'unit': '/kg'})
+    costs_lines = [{'label': l['label'], 'value': ('− $ ' if l['value'] < 0 else '$ ') + num(abs(l['value']), 0)} for l in cm.get('lines') or []]
+    fx = co.get('exchange') or {}
+    costs_note = ((f"Destino: {(cl.get('destination') or {}).get('name', '')} · {cl.get('method', '')}. " if cl else '')
+                  + (f"Dólar oficial $ {num(fx.get('oficial_venta'), 2)} ({fx.get('source')}). " if fx.get('oficial_venta') else '')
+                  + 'Precios y costos cargados por el productor. ' + str(co.get('method') or '')) if costs_cards else ''
     ev = result.get('evidence') or []
     ok = sum(1 for e in ev if e.get('status') == 'recibido')
     return {
@@ -252,6 +271,7 @@ def build_data(result, name='Lote DOTS', extras=None):
         'telecon': tl,
         'spi': spi_rows,
         'forage': forage_cards, 'forage_note': forage_note, 'sust': sust,
+        'costs': costs_cards, 'costs_lines': costs_lines, 'costs_note': costs_note,
         'alerts': alerts_rows, 'alerts_note': alerts_note,
         'prob': prob, 'seasonal': seas, 'trends': trd, 'stat_note': stat_note,
         'spi_note': (f"CHIRPS v2 (~5 km), promedio sobre el lote. Último mes completo: {lluvia.get('last_month', '')}. Normal: mediana 1991-2020. SPI menor a −1 indica sequía.") if spi_rows else '',
@@ -264,6 +284,7 @@ def build_data(result, name='Lote DOTS', extras=None):
         'attributions': ('Datos: Open-Meteo / ERA5 (Copernicus), NASA POWER, ISRIC SoilGrids, ESA Sentinel-2 vía Microsoft Planetary Computer, '
                          'NOAA PSL y CPC, NASA FIRMS, conjuntos ECMWF IFS y GFS y ECMWF SEAS5 vía Open-Meteo, CHIRPS (Climate Hazards Center, UCSB) vía ClimateSERV'
                          + ('; cobertura: Impact Observatory y ESA WorldCover vía Microsoft Planetary Computer (CC-BY 4.0)' if sust else '')
+                         + ('; rutas: OSRM con datos OpenStreetMap (ODbL); dólar: DolarAPI' if costs_cards else '')
                          + ('; límites de lote: Fields of the World / PRUE (Robinson et al. 2026), CC-BY-4.0' if ftw else '')
                          + '. Tipografía IBM Plex (SIL OFL). Documento compuesto con Typst.'),
     }
@@ -321,7 +342,9 @@ def eudr_data(lot, establishment, sust, generated=None):
     tb = next((r for r in ser if r.get('year') == base_y), {}); tl = next((r for r in ser if r.get('year') == last_y), {})
     pct = lambda v: '—' if v is None else num(v * 100, 1) + ' %'
     detail = (f"Árboles en el lote: {pct(tb.get('trees'))} en {base_y} y {pct(tl.get('trees'))} en {last_y}. "
-              f"Pérdida estimada {num(de.get('tree_loss_ha'), 2)} ha ({num(de.get('tree_change_pp'), 1)} puntos de cobertura).") if ser else \
+              f"Pérdida estimada {num(de.get('tree_loss_ha'), 2)} ha ({num(de.get('tree_change_pp'), 1)} puntos de cobertura)."
+              + (f" Variación interanual del mapa antes de 2020: ±{num(de['map_noise_pp'], 1)} puntos." if de.get('map_noise_pp') is not None else '')
+              + (' La pérdida se sostiene en los dos últimos años.' if de.get('loss_persistent') else '')) if ser else \
              'No hubo datos de cobertura suficientes para evaluar el lote.'
     series = [{'year': r['year'], 'cut': r['year'] == 2020, 'trees': pct(r.get('trees')),
                'trees_ha': num((r.get('trees') or 0) * (area or 0), 1) if r.get('trees') is not None and area else '—',
@@ -333,7 +356,8 @@ def eudr_data(lot, establishment, sust, generated=None):
     carbon = []
     if cb.get('soc_t_ha') is not None:
         carbon.append({'label': 'Carbono orgánico del suelo · 0-30 cm', 'value': f"{num(cb['soc_t_ha'], 1)} t C/ha",
-                       'detail': f"Rango probable {num((cb.get('soc_t_ha_range') or [None])[0], 0)}–{num((cb.get('soc_t_ha_range') or [None, None])[1], 0)} t C/ha (SoilGrids, percentiles 5 y 95)"})
+                       'detail': f"Rango probable {num((cb.get('soc_t_ha_range') or [None])[0], 0)}–{num((cb.get('soc_t_ha_range') or [None, None])[1], 0)} t C/ha (SoilGrids, percentiles 5 y 95)"
+                                 + (f" · punto {cb['point_used']['note']}" if (cb.get('point_used') or {}).get('note') else '')})
     if cb.get('soc_total_t'):
         carbon.append({'label': 'Stock del lote', 'value': f"{num(cb['soc_total_t'], 0)} t C",
                        'detail': f"Equivale a {num(cb.get('soc_total_tco2e'), 0)} t CO₂e (factor 44/12)"})
@@ -370,8 +394,8 @@ def eudr_data(lot, establishment, sust, generated=None):
         'worldcover': wc,
         'criteria': [
             ['Sin pérdida detectada', 'Pérdida estimada menor a 0,5 ha o variación de cobertura arbórea mayor a −1 punto entre 2020 y el último año.'],
-            ['Pérdida menor · revisar', 'Pérdida estimada entre 0,5 y 5 ha: puede ser poda, sombra, error de clasificación o desmonte puntual.'],
-            ['Requiere verificación', 'Pérdida estimada de 5 ha o más: se recomienda revisar imágenes de alta resolución y la documentación del establecimiento.'],
+            ['Pérdida menor · revisar', 'Pérdida estimada entre 0,5 y 5 ha, o mayor pero dentro del doble de la variación interanual del mapa, o que no se sostiene en los dos últimos años: puede ser poda, sombra, error de clasificación o desmonte puntual.'],
+            ['Requiere verificación', 'Pérdida de 5 ha o más, mayor que el doble de la variación interanual del mapa antes de 2020 y sostenida en los dos últimos años: se recomienda revisar imágenes de alta resolución y la documentación del establecimiento.'],
         ],
         'carbon': carbon,
         'carbon_note': ('El stock de carbono proviene de un modelo global a 250 m (ISRIC SoilGrids) y sirve como línea de base; un proyecto de bonos '

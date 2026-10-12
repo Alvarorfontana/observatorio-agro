@@ -14,6 +14,7 @@ import contact
 import alerts as alr
 import sustainability as sus
 import forage as fgr
+import costs as cst
 
 research_api=Blueprint('research_api',__name__,url_prefix='/api/fuentes')
 
@@ -24,7 +25,8 @@ def _int(args,key,default,lo,hi):
     return v
 
 VEGETATION={
-  'ndvi':lambda p,a:veg.ndvi_open(p,_int(a,'days',120,15,365),_int(a,'scenes',6,1,10)),
+  'ndvi':lambda p,a:veg.ndvi_best(p,_int(a,'days',120,15,365),_int(a,'scenes',6,1,10)),
+  'ndvi-modis':lambda p,a:veg.ndvi_modis(p,_int(a,'days',120,30,365)),
   'ndvi-imagen':None,
   'sentinel-hub-ndvi':lambda p,a:veg.sentinel_hub_ndvi(p,_int(a,'days',180,15,730)),
   'openeo-ndvi':lambda p,a:veg.openeo_ndvi(p,_int(a,'days',120,15,365)),
@@ -45,6 +47,16 @@ def lot_forage():
                                   str(d.get('kind') or 'pastizal'),float(d.get('use') or fgr.DEFAULT_USE),heads))
     except ValueError as e: return jsonify({'status':'sin dato','error':str(e)}),400
     except Exception as e: return jsonify({'status':'sin dato','error':'No se pudo estimar la producción de pasto','type':type(e).__name__}),502
+
+@research_api.post('/costos')
+def lot_costs():
+    try:
+        d=request.get_json(silent=True) or {}
+        lat,lon=c.coordinates({'lat':[d.get('lat')],'lon':[d.get('lon')]})
+        return jsonify(cst.analyze(lat,lon,d.get('destination'),d.get('dest_lat'),d.get('dest_lon'),
+                                   d.get('params') if isinstance(d.get('params'),dict) else {}))
+    except ValueError as e: return jsonify({'status':'sin dato','error':str(e)}),400
+    except Exception as e: return jsonify({'status':'sin dato','error':'No se pudieron calcular costos y logística','type':type(e).__name__}),502
 
 @research_api.post('/eudr/pdf')
 def eudr_pdf():
@@ -180,7 +192,7 @@ def report():
     try:
         d=request.get_json(silent=True) or {}
         lat,lon=c.coordinates({'lat':[d.get('lat')],'lon':[d.get('lon')]})
-        result=agentic.analyze(lat,lon,str(d.get('prompt','Informe integral del lote')),d.get('polygon'),d.get('inaSeries'),d.get('waterAssets'),d.get('fieldMarkers'))
+        result=agentic.analyze(lat,lon,str(d.get('prompt','Informe integral del lote')),d.get('polygon'),d.get('inaSeries'),d.get('waterAssets'),d.get('fieldMarkers'),_known(d))
         pdf,engine=rt.pdf(result,str(d.get('nombre','Lote DOTS')),d.get('extras') if isinstance(d.get('extras'),dict) else None)
         return Response(pdf,mimetype='application/pdf',headers={'Content-Disposition':'attachment; filename=DOTS-informe-territorial.pdf','X-DOTS-Report-Engine':engine})
     except ValueError as e:return jsonify({'error':str(e)}),400
@@ -213,12 +225,17 @@ def agentic_status():
       'regla':'Una fuente caída se reporta como faltante y no impide que las demás produzcan el análisis.'
     })
 
+def _known(d):
+    """Resultados de módulos que el panel ya calculó (extras/known): el motor los lee y los cruza."""
+    k=d.get('known') if isinstance(d.get('known'),dict) else d.get('extras') if isinstance(d.get('extras'),dict) else {}
+    return {key:k[key] for key in ('ndvi','forraje','lluvia','estadistica','alertas','sustentabilidad','costos','lot') if isinstance(k.get(key),dict)}
+
 @research_api.post('/agentic')
 def agentic_analyze():
     try:
         d=request.get_json(silent=True) or {}
         lat,lon=c.coordinates({'lat':[d.get('lat')],'lon':[d.get('lon')]})
-        result=agentic.analyze(lat,lon,str(d.get('prompt','')),d.get('polygon'),d.get('inaSeries'),d.get('waterAssets'),d.get('fieldMarkers'))
+        result=agentic.analyze(lat,lon,str(d.get('prompt','')),d.get('polygon'),d.get('inaSeries'),d.get('waterAssets'),d.get('fieldMarkers'),_known(d))
         # Raw payloads remain available through existing endpoints; keep conversational response compact.
         if not d.get('include_raw'):
             result.pop('raw',None)
@@ -235,7 +252,7 @@ def agentic_pdf():
         if isinstance(supplied,dict) and supplied.get('findings') is not None and supplied.get('point'):
             result=supplied
         else:
-            result=agentic.analyze(lat,lon,str(d.get('prompt','')),d.get('polygon'),d.get('inaSeries'),d.get('waterAssets'),d.get('fieldMarkers'))
+            result=agentic.analyze(lat,lon,str(d.get('prompt','')),d.get('polygon'),d.get('inaSeries'),d.get('waterAssets'),d.get('fieldMarkers'),_known(d))
         pdf,engine=rt.pdf(result,str(d.get('nombre','Lote DOTS')),d.get('extras') if isinstance(d.get('extras'),dict) else None)
         return Response(pdf,mimetype='application/pdf',headers={'Content-Disposition':'attachment; filename=DOTS-informe-agentic.pdf','X-DOTS-Report-Engine':engine})
     except ValueError as e:return jsonify({'error':str(e)}),400

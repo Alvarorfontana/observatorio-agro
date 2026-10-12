@@ -15,6 +15,7 @@ RULES = [
     ('/api/fuentes/contacto', 5, 600),       # 5 consultas cada 10 minutos
     ('/api/fuentes/analizar', 6, 300),       # informes PDF
     ('/api/fuentes/eudr', 10, 300),
+    ('/api/fuentes/costos', 20, 300),       # usa Nominatim, que pide pocas consultas
     ('/api/fuentes/agentic', 12, 300),
     ('/api/fuentes/tile', 600, 60),          # teselas del mapa base
     ('/api/fuentes/ndvi-imagen', 60, 60),
@@ -30,6 +31,12 @@ def client_ip():
 
 
 def check():
+    from flask import current_app
+    limit = current_app.config.get('MAX_CONTENT_LENGTH')
+    if limit and (request.content_length or 0) > limit:
+        resp = jsonify({'status': 'rechazado', 'error': 'El pedido es demasiado grande'})
+        resp.status_code = 413
+        return resp
     if os.environ.get('DOTS_DISABLE_RATE_LIMIT') == '1':
         return None
     path = request.path
@@ -59,6 +66,9 @@ def headers(resp):
     resp.headers.setdefault('X-Content-Type-Options', 'nosniff')
     resp.headers.setdefault('Referrer-Policy', 'strict-origin-when-cross-origin')
     resp.headers.setdefault('X-Frame-Options', 'DENY')
+    resp.headers.setdefault('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
+    resp.headers.setdefault('Permissions-Policy', 'camera=(), microphone=(), geolocation=(self)')
+    resp.headers.setdefault('Cross-Origin-Opener-Policy', 'same-origin')
     if resp.mimetype == 'application/json':
         resp.headers.setdefault('Cache-Control', 'no-store')
     return resp

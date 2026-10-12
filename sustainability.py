@@ -80,13 +80,21 @@ def deforestation(polygon):
     io.sort(key=lambda r: r['year'])
     base = next((r for r in io if r['year'] == CUTOFF_YEAR and r.get('trees') is not None), None)
     last = next((r for r in reversed(io) if r.get('trees') is not None), None)
-    verdict, loss_ha, change_pp = 'sin dato', None, None
+    verdict, loss_ha, change_pp, noise_pp, persistent = 'sin dato', None, None, None, None
     if base and last and last['year'] > CUTOFF_YEAR:
         change_pp = round((last['trees'] - base['trees']) * 100, 2)
         loss_ha = round(max(0.0, (base['trees'] - last['trees'])) * area, 2)
+        # ruido del mapa: variación interanual antes del corte, cuando no se espera cambio sistemático
+        pre = [r['trees'] for r in io if r['year'] <= CUTOFF_YEAR and r.get('trees') is not None]
+        if len(pre) >= 3:
+            m = sum(pre) / len(pre)
+            noise_pp = round((sum((v - m) ** 2 for v in pre) / (len(pre) - 1)) ** 0.5 * 100, 2)
+        post = [r['trees'] for r in io if r['year'] > CUTOFF_YEAR and r.get('trees') is not None]
+        persistent = len(post) >= 2 and all(v < base['trees'] for v in post[-2:])
+        beyond_noise = noise_pp is None or -change_pp > 2 * noise_pp
         if loss_ha < 0.5 or change_pp > -1:
             verdict = 'sin pérdida de cobertura arbórea detectada'
-        elif loss_ha < 5:
+        elif loss_ha < 5 or not beyond_noise or not persistent:
             verdict = 'pérdida menor detectada · revisar'
         else:
             verdict = 'pérdida de cobertura arbórea detectada · requiere verificación'
@@ -95,6 +103,9 @@ def deforestation(polygon):
     return c.envelope({
         'capability': 'ANALYSIS', 'area_ha': area, 'cutoff': f'31/12/{CUTOFF_YEAR}',
         'verdict': verdict, 'tree_change_pp': change_pp, 'tree_loss_ha': loss_ha,
+        'map_noise_pp': noise_pp, 'loss_persistent': persistent,
+        'verdict_rule': ('Pérdida = cobertura arbórea 2020 menos el último año. Se marca para verificación sólo si supera 5 ha, '
+                         'es mayor que el doble de la variación interanual del mapa antes de 2020 y se sostiene los dos últimos años.'),
         'baseline_year': base['year'] if base else None, 'last_year': last['year'] if last else None,
         'series': io, 'worldcover': wc, 'worldcover_tree_2020': wc_trees.get(2020), 'worldcover_tree_2021': wc_trees.get(2021),
         'errors': errors,
@@ -105,9 +116,7 @@ def deforestation(polygon):
 
 
 def carbon(lat, lon, area_ha=None, heads=None, ef=EF_CH4_HEAD, gwp=GWP_CH4):
-    env = c.external('https://rest.isric.org/soilgrids/v2.0/properties/query',
-                     {'lat': lat, 'lon': lon, 'property': 'ocs', 'depth': '0-30cm', 'value': ['Q0.05', 'mean', 'Q0.95']},
-                     scope='stock de carbono orgánico del suelo 0-30 cm', organism='ISRIC SoilGrids')
+    env = c.soilgrids(lat, lon, 'ocs', '0-30cm', ['Q0.05', 'mean', 'Q0.95'], 'stock de carbono orgánico del suelo 0-30 cm')
     soc = lo = hi = None
     for layer in ((env['data'] or {}).get('properties') or {}).get('layers') or []:
         if layer.get('name') != 'ocs':
@@ -116,7 +125,7 @@ def carbon(lat, lon, area_ha=None, heads=None, ef=EF_CH4_HEAD, gwp=GWP_CH4):
         vals = ((layer.get('depths') or [{}])[0].get('values') or {})
         to = lambda k: None if vals.get(k) is None else round(vals[k] / f, 1)
         soc, lo, hi = to('mean'), to('Q0.05'), to('Q0.95')
-    out = {'soc_t_ha': soc, 'soc_t_ha_range': [lo, hi], 'unit': 't C/ha (0-30 cm)'}
+    out = {'soc_t_ha': soc, 'soc_t_ha_range': [lo, hi], 'unit': 't C/ha (0-30 cm)', 'point_used': env.get('point_used')}
     if soc is not None and area_ha:
         out['soc_total_t'] = round(soc * area_ha, 0)
         out['soc_total_tco2e'] = round(soc * area_ha * C_TO_CO2, 0)

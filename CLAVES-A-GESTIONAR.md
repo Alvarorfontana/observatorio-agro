@@ -43,3 +43,21 @@ Nota sobre la lista externa recibida: Sentinel Hub ya no se gestiona en sentinel
 - NASA FIRMS: `FIRMS_MAP_KEY`
 
 Los botones protegidos están programados para informar `requiere credencial` hasta que Vercel tenga las variables. Tener la variable configurada no equivale todavía a certificar el dato: la fuente pasa a OPERATIVA sólo después de una consulta real válida.
+
+## Alternativas gratuitas y sin clave (ya funcionando)
+
+Mientras no estén las claves, DOTS obtiene las mismas variables de fuentes abiertas. Las claves suman resolución o historia, no son imprescindibles.
+
+| Variable | Fuente con clave | Alternativa sin clave en uso | Respaldo automático |
+|---|---|---|---|
+| NDVI, EVI, SAVI, NDMI, NDWI por lote (10 m) | Copernicus Sentinel Hub / openEO | Microsoft Planetary Computer (Sentinel-2 L2A) | NASA ORNL DAAC · MODIS MOD13Q1 250 m |
+| Color real del lote | Copernicus | Planetary Computer (Sentinel-2 TCI) | — |
+| Serie larga de NDVI (20 años) | Google Earth Engine | NASA ORNL DAAC · MODIS (desde 2000) | — |
+| Clima pasado (ERA5) | Copernicus CDS | Open-Meteo Archive (ERA5) | NASA POWER |
+| Radiación para forraje | — | Open-Meteo | NASA POWER |
+| Lluvia satelital | — | CHIRPS vía ClimateSERV (NASA/SERVIR) | ERA5 |
+| Cobertura y deforestación | Global Forest Watch | Impact Observatory + ESA WorldCover (Planetary Computer) | — |
+| Suelo y carbono | — | ISRIC SoilGrids | puntos vecinos a ~500 m |
+| Focos de calor | NASA FIRMS (clave gratuita, 1 minuto) | — | — |
+
+Licencias: Open-Meteo y el plan Hobby de Vercel son de uso no comercial. Alcanza mientras DOTS no cobre; al empezar a cobrar, pasar a Open-Meteo API comercial y Vercel Pro.

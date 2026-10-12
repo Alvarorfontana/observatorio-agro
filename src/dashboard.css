@@ -897,3 +897,11 @@
 .ta-shell .dots-legend-inline i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
 .ta-shell .eudr-actions { display: grid; gap: 8px; margin: 12px 0; }
 .ta-shell .eudr-actions label { display: grid; gap: 4px; }
+
+.footnote.warn-note{color:#b54708;background:#fffaeb;border:1px solid #fedf89;border-radius:8px;padding:6px 10px}
+.cost-form{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cost-form label{font-size:11px;color:var(--muted,#667085);display:flex;flex-direction:column;gap:3px}
+.cost-form input{width:100%}
+.cost-lines{margin-top:8px;border-top:1px solid #e4e7ec}
+.cost-lines div{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:1px solid #f2f4f7}
+.cost-lines b.neg{color:#b42318}
