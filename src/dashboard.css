@@ -28,7 +28,7 @@
   --panel: var(--ta-card-solid);
   --muted: var(--ta-text-2);
   --cyan: var(--ta-brand);
-  font-family: Outfit, Inter, system-ui, sans-serif;
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
   background: var(--ta-bg);
   color: var(--ta-text);
   min-height: 100dvh;
@@ -246,7 +246,7 @@
   border: 0;
   border-bottom: 1px solid var(--ta-border);
   border-radius: 0;
-  background: rgba(16, 24, 40, 0.92);
+  background: rgba(28, 28, 28, 0.94);
   backdrop-filter: blur(12px);
   box-shadow: none;
 }
@@ -270,7 +270,7 @@
   display: flex;
   flex: 1;
   min-width: 0;
-  font-family: Outfit, Inter, sans-serif;
+  font-family: "IBM Plex Sans", sans-serif;
   font-size: 13px;
   letter-spacing: 0.02em;
 }
@@ -286,7 +286,7 @@
   border: 0;
   border-radius: 999px;
   padding: 6px 12px;
-  font: 600 12px Outfit, Inter, sans-serif;
+  font: 600 12px "IBM Plex Sans", sans-serif;
   background: var(--ta-brand-soft);
   color: var(--ta-brand);
   white-space: nowrap;
@@ -418,7 +418,7 @@
   max-width: none;
   z-index: 850;
   border-radius: 12px;
-  background: rgba(16, 24, 40, 0.88);
+  background: rgba(28, 28, 28, 0.9);
   backdrop-filter: blur(10px);
 }
 .ta-shell .ta-map-card .toolbar button.active {
@@ -555,7 +555,7 @@
     position: fixed;
     inset: 0;
     z-index: 1150;
-    background: rgba(12, 17, 29, 0.6);
+    background: rgba(22, 22, 22, 0.6);
     backdrop-filter: blur(2px);
   }
   .ta-main,
@@ -749,7 +749,7 @@
   border-radius: 50% 50% 50% 4px;
   transform: rotate(-45deg);
   background: var(--pin);
-  border: 2px solid #0c111d;
+  border: 2px solid #161616;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45), 0 0 0 2px rgba(255, 255, 255, 0.85);
   display: grid;
   place-items: center;
@@ -766,7 +766,7 @@
   gap: 5px;
   padding: 10px 12px;
   border-radius: 12px;
-  background: rgba(16, 24, 40, 0.88);
+  background: rgba(28, 28, 28, 0.9);
   backdrop-filter: blur(8px);
   border: 1px solid #1d2939;
   font-size: 11px;
@@ -897,3 +897,16 @@
 .ta-shell .dots-legend-inline i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
 .ta-shell .eudr-actions { display: grid; gap: 8px; margin: 12px 0; }
 .ta-shell .eudr-actions label { display: grid; gap: 4px; }
+
+/* Relieve y anegamiento (DEM en el navegador) */
+.leaflet-image-layer.pixel-layer { image-rendering: pixelated; image-rendering: crisp-edges; }
+.ta-shell .terrain-bar { display: flex; height: 10px; border-radius: 6px; overflow: hidden; margin-top: 12px; background: var(--ta-border); }
+.ta-shell .terrain-bar i { display: block; height: 100%; }
+/* Línea de tiempo NDVI */
+.ta-shell .ndvi-timeline { display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: center; margin-top: 10px; }
+.ta-shell .ndvi-timeline input[type=range] { width: 100%; }
+.ta-shell .ndvi-timeline small { grid-column: 1 / -1; font-size: 11px; color: var(--ta-text-2); }
+/* Importar / exportar lotes */
+.ta-shell .lot-io { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.ta-shell .lot-io > * { flex: 1 1 auto; font-size: 12px; text-align: center; cursor: pointer; }
+.ta-shell .lot-io input[type=file] { display: none; }

@@ -58,7 +58,7 @@
   margin-bottom: 24px;
 }
 .module-num {
-  font: 600 13px "JetBrains Mono", monospace;
+  font: 600 13px "IBM Plex Mono", monospace;
   color: #148b6b;
   letter-spacing: 0.12em;
 }
@@ -109,7 +109,7 @@
 .module-grid article:hover::before { opacity: 1; }
 .module-grid span {
   display: block;
-  font: 700 10px "JetBrains Mono", monospace;
+  font: 700 10px "IBM Plex Mono", monospace;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: #148b6b;
@@ -292,7 +292,7 @@
 .eudr-badge span { color: #9fb3ba; font-size: 13px; }
 .eudr-steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: #d3ddd8; }
 .eudr-steps article { background: #fff; padding: 30px; }
-.eudr-steps span { font: 700 12px "JetBrains Mono", monospace; color: #148b6b; letter-spacing: .12em; }
+.eudr-steps span { font: 700 12px "IBM Plex Mono", monospace; color: #148b6b; letter-spacing: .12em; }
 .eudr-steps h3 { font-size: 20px; margin: 10px 0; color: #10222b; }
 .eudr-steps p { color: #52656c; line-height: 1.6; font-size: 14.5px; }
 @media (max-width: 1000px) { .eudr-feature, .eudr-hero { grid-template-columns: 1fr; } .eudr-steps { grid-template-columns: 1fr 1fr; } }
