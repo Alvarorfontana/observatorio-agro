@@ -120,3 +120,17 @@ def test_soil_only_errors_raises(monkeypatch):
     monkeypatch.setattr(c, '_get', lambda *a, **k: (_ for _ in ()).throw(ConnectionError()))
     with pytest.raises(ConnectionError):
         c.soil_full(-28.5, -59.0)
+
+
+def test_soil_full_probes_light_then_asks_once(monkeypatch):
+    calls = []
+    def get(url, params=None, timeout=None, **k):
+        calls.append((params['lat'], params['property']))
+        if params['property'] == 'soc':
+            return R(_soil_js(None) if len(calls) == 1 else {'properties': {'layers': [{'name': 'soc', 'depths': [{'values': {'mean': 50}}]}]}})
+        return R({'properties': {'layers': [{'name': 'clay', 'unit_measure': {'d_factor': 10, 'target_units': '%'},
+                                             'depths': [{'label': '0-5cm', 'values': {'mean': 200}}]}]}})
+    monkeypatch.setattr(c, '_get', get)
+    env = c.soil_full(-28.5, -59.04)
+    assert [p for _, p in calls] == ['soc', 'soc', c.SOIL_PROPS] and 'norte' in env['point_used']['note']
+    assert env['data']['dots_summary']['rows'][0]['by_depth']['0-5cm'] == 20.0

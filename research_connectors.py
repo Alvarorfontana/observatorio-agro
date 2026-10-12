@@ -153,31 +153,41 @@ def _soil_has_values(js):
 
 
 def soilgrids(lat, lon, props, depths, values, scope):
-    """SoilGrids con espera larga y, si el punto no tiene dato (agua, bañado, borde de río),
-    hasta cuatro puntos vecinos a ~500 m, dentro de 50 s en total. Devuelve envelope con el punto efectivamente usado."""
+    """SoilGrids con tiempo total acotado (Vercel corta a los 60 s).
+    Si el punto no tiene dato o da error (agua, ciudad, bañado), prueba hasta cuatro vecinos a ~500 m.
+    Para consultas pesadas, primero ubica un punto con dato con una consulta mínima y después pide todo una sola vez."""
+    import time as _t
     tries = [(lat, lon, None), (lat + 0.0045, lon, 'vecino a ~500 m al norte'), (lat, lon + 0.005, 'vecino a ~500 m al este'),
              (lat - 0.0045, lon, 'vecino a ~500 m al sur'), (lat, lon - 0.005, 'vecino a ~500 m al oeste')]
-    import time as _t
-    last, answered, t0, budget = None, False, _t.monotonic(), 50.0   # Vercel corta a los 60 s
-    for i, (la, lo, note) in enumerate(tries):
-        left = budget - (_t.monotonic() - t0)
-        if left < 8:
+    t0, budget = _t.monotonic(), 50.0
+    left = lambda: budget - (_t.monotonic() - t0)
+    heavy = isinstance(props, (list, tuple)) and len(props) > 1
+
+    def ask(la, lo, p, d, v, timeout):
+        return _get(SOILGRIDS, {'lat': round(la, 5), 'lon': round(lo, 5), 'property': p, 'depth': d, 'value': v}, timeout=timeout).json()
+
+    last, answered = None, False
+    for la, lo, note in tries:
+        if left() < 8:
             break
         try:
-            r = _get(SOILGRIDS, {'lat': round(la, 5), 'lon': round(lo, 5), 'property': props, 'depth': depths, 'value': values}, timeout=min(35, left))
-            js = r.json()
+            js = ask(la, lo, 'soc' if heavy else props, '0-5cm' if heavy else depths, 'mean' if heavy else values,
+                     min(12 if heavy else 30, left()))
         except Exception as e:
-            last = e          # puede ser un error puntual del píxel (agua, ciudad): se prueba el vecino
+            last = e
             continue
-        if _soil_has_values(js):
-            env = envelope(js, SOILGRIDS, scope, 'ISRIC SoilGrids')
-            env['point_used'] = {'lat': round(la, 5), 'lon': round(lo, 5), 'note': note}
-            return env
         answered = True
+        if not _soil_has_values(js):
+            continue
+        if heavy:
+            js = ask(la, lo, props, depths, values, max(5, left() - 2))
+        env = envelope(js, SOILGRIDS, scope, 'ISRIC SoilGrids')
+        env['point_used'] = {'lat': round(la, 5), 'lon': round(lo, 5), 'note': note}
+        return env
     if last is not None and not answered:
         raise last
     return envelope(None, SOILGRIDS, scope, 'ISRIC SoilGrids', 'sin dato',
-                    'SoilGrids no tiene estimación en el punto ni en sus vecinos (agua, bañado o zona sin modelo)')
+                    'SoilGrids no tiene estimación en el punto ni en sus vecinos (agua, ciudad, bañado o zona sin modelo)')
 
 
 def soil_full(lat, lon):
