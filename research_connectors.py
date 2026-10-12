@@ -153,13 +153,13 @@ def _soil_has_values(js):
 
 
 def soilgrids(lat, lon, props, depths, values, scope):
-    """SoilGrids con tiempo total acotado (Vercel corta a los 60 s).
+    """SoilGrids con tiempo total acotado (Vercel corta a los 60 s; se responde en menos de 30).
     Si el punto no tiene dato o da error (agua, ciudad, bañado), prueba hasta cuatro vecinos a ~500 m.
     Para consultas pesadas, primero ubica un punto con dato con una consulta mínima y después pide todo una sola vez."""
     import time as _t
     tries = [(lat, lon, None), (lat + 0.0045, lon, 'vecino a ~500 m al norte'), (lat, lon + 0.005, 'vecino a ~500 m al este'),
              (lat - 0.0045, lon, 'vecino a ~500 m al sur'), (lat, lon - 0.005, 'vecino a ~500 m al oeste')]
-    t0, budget = _t.monotonic(), 50.0
+    t0, budget = _t.monotonic(), 28.0   # respuesta en menos de ~30 s aunque la fuente esté lenta
     left = lambda: budget - (_t.monotonic() - t0)
     heavy = isinstance(props, (list, tuple)) and len(props) > 1
 
@@ -168,11 +168,11 @@ def soilgrids(lat, lon, props, depths, values, scope):
 
     last, answered = None, False
     for la, lo, note in tries:
-        if left() < 8:
+        if left() < 4:
             break
         try:
             js = ask(la, lo, 'soc' if heavy else props, '0-5cm' if heavy else depths, 'mean' if heavy else values,
-                     min(12 if heavy else 30, left()))
+                     min(6 if heavy else 15, left()))
         except Exception as e:
             last = e
             continue
