@@ -102,3 +102,21 @@ def test_noisy_small_loss_is_review_not_alarm(monkeypatch):
     d = su.deforestation(LOT)['data']
     assert d['map_noise_pp'] > 0 and d['loss_persistent'] is True
     assert d['tree_change_pp'] == -2.04
+
+
+def test_soil_error_on_point_then_neighbor_ok(monkeypatch):
+    n = []
+    def get(url, params=None, timeout=None, **k):
+        n.append(1)
+        if len(n) == 1: raise ConnectionError('500 en píxel de agua')
+        return R(_soil_js(None if len(n) < 4 else 300))
+    monkeypatch.setattr(c, '_get', get)
+    d = su.carbon(-28.5, -59.04)['data']
+    assert d['soc_t_ha'] == 30.0 and 'sur' in d['point_used']['note']
+
+
+def test_soil_only_errors_raises(monkeypatch):
+    import pytest
+    monkeypatch.setattr(c, '_get', lambda *a, **k: (_ for _ in ()).throw(ConnectionError()))
+    with pytest.raises(ConnectionError):
+        c.soil_full(-28.5, -59.0)
