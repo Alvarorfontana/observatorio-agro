@@ -180,7 +180,16 @@ def soilgrids(lat, lon, props, depths, values, scope):
         if not _soil_has_values(js):
             continue
         if heavy:
-            js = ask(la, lo, props, depths, values, max(5, left() - 2))
+            try:
+                js = ask(la, lo, props, depths, values, max(5, left() - 2))
+            except Exception as e:
+                code = getattr(getattr(e, 'response', None), 'status_code', None)
+                why = f'HTTP {code}' if code else type(e).__name__
+                env = envelope(None, SOILGRIDS, scope, 'ISRIC SoilGrids', 'sin dato',
+                               f'SoilGrids no completó la consulta de todas las propiedades ({why}). '
+                               + ('Superó su límite de consultas por minuto; probá de nuevo en un minuto.' if code == 429 else 'Probá de nuevo en unos minutos.'))
+                env['point_used'] = {'lat': round(la, 5), 'lon': round(lo, 5), 'note': note}
+                return env
         env = envelope(js, SOILGRIDS, scope, 'ISRIC SoilGrids')
         env['point_used'] = {'lat': round(la, 5), 'lon': round(lo, 5), 'note': note}
         return env
