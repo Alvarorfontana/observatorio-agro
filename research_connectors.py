@@ -142,6 +142,7 @@ SOIL_LABELS = {'nitrogen': 'Nitrógeno total', 'soc': 'Carbono orgánico', 'phh2
 
 
 SOILGRIDS = 'https://rest.isric.org/soilgrids/v2.0/properties/query'
+_SOIL_CACHE = {}
 
 
 def _soil_has_values(js):
@@ -164,7 +165,18 @@ def soilgrids(lat, lon, props, depths, values, scope):
     heavy = isinstance(props, (list, tuple)) and len(props) > 1
 
     def ask(la, lo, p, d, v, timeout):
-        return _get(SOILGRIDS, {'lat': round(la, 5), 'lon': round(lo, 5), 'property': p, 'depth': d, 'value': v}, timeout=timeout).json()
+        key = (round(la, 4), round(lo, 4), str(p), str(d), str(v))
+        hit = _SOIL_CACHE.get(key)
+        if hit and _t.monotonic() - hit[0] < 86400:      # el suelo no cambia: un día de memoria
+            return hit[1]
+        js = _get(SOILGRIDS, {'lat': round(la, 5), 'lon': round(lo, 5), 'property': p, 'depth': d, 'value': v}, timeout=timeout).json()
+        if len(_SOIL_CACHE) > 2000:
+            _SOIL_CACHE.clear()
+        _SOIL_CACHE[key] = (_t.monotonic(), js)
+        return js
+
+    def busy(e):
+        return getattr(getattr(e, 'response', None), 'status_code', None) == 429
 
     last, answered = None, False
     for la, lo, note in tries:
@@ -174,6 +186,9 @@ def soilgrids(lat, lon, props, depths, values, scope):
             js = ask(la, lo, 'soc' if heavy else props, '0-5cm' if heavy else depths, 'mean' if heavy else values,
                      min(6 if heavy else 15, left()))
         except Exception as e:
+            if busy(e):
+                return envelope(None, SOILGRIDS, scope, 'ISRIC SoilGrids', 'sin dato',
+                                'SoilGrids alcanzó su límite de consultas por minuto. Probá de nuevo en un minuto.')
             last = e
             continue
         answered = True

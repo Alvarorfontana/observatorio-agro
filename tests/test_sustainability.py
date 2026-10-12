@@ -51,6 +51,7 @@ def _soil_js(mean):
 
 
 def test_carbon_and_herd(monkeypatch):
+    c._SOIL_CACHE.clear()
     def get(url, params=None, timeout=None, **k):
         assert params['property'] == 'ocs' and params['depth'] == '0-30cm'
         return R(_soil_js(520))
@@ -63,6 +64,7 @@ def test_carbon_and_herd(monkeypatch):
 
 
 def test_carbon_uses_neighbor_when_point_is_null(monkeypatch):
+    c._SOIL_CACHE.clear()
     calls = []
     def get(url, params=None, timeout=None, **k):
         calls.append(params['lat'])
@@ -73,6 +75,7 @@ def test_carbon_uses_neighbor_when_point_is_null(monkeypatch):
 
 
 def test_soil_all_null_is_sin_dato(monkeypatch):
+    c._SOIL_CACHE.clear()
     monkeypatch.setattr(c, '_get', lambda url, params=None, timeout=None, **k: R(_soil_js(None)))
     env = c.soil_full(-28.5, -59.0)
     assert env['status'] == 'sin dato' and env['data'] is None
@@ -105,6 +108,7 @@ def test_noisy_small_loss_is_review_not_alarm(monkeypatch):
 
 
 def test_soil_error_on_point_then_neighbor_ok(monkeypatch):
+    c._SOIL_CACHE.clear()
     n = []
     def get(url, params=None, timeout=None, **k):
         n.append(1)
@@ -116,6 +120,7 @@ def test_soil_error_on_point_then_neighbor_ok(monkeypatch):
 
 
 def test_soil_only_errors_raises(monkeypatch):
+    c._SOIL_CACHE.clear()
     import pytest
     monkeypatch.setattr(c, '_get', lambda *a, **k: (_ for _ in ()).throw(ConnectionError()))
     with pytest.raises(ConnectionError):
@@ -123,6 +128,7 @@ def test_soil_only_errors_raises(monkeypatch):
 
 
 def test_soil_full_probes_light_then_asks_once(monkeypatch):
+    c._SOIL_CACHE.clear()
     calls = []
     def get(url, params=None, timeout=None, **k):
         calls.append((params['lat'], params['property']))
@@ -134,3 +140,26 @@ def test_soil_full_probes_light_then_asks_once(monkeypatch):
     env = c.soil_full(-28.5, -59.04)
     assert [p for _, p in calls] == ['soc', 'soc', c.SOIL_PROPS] and 'norte' in env['point_used']['note']
     assert env['data']['dots_summary']['rows'][0]['by_depth']['0-5cm'] == 20.0
+
+
+def test_soil_rate_limited_stops_and_says_so(monkeypatch):
+    import requests
+    c._SOIL_CACHE.clear()
+    n = []
+    def get(*a, **k):
+        n.append(1)
+        resp = requests.Response(); resp.status_code = 429
+        raise requests.HTTPError(response=resp)
+    monkeypatch.setattr(c, '_get', get)
+    env = c.soil_full(-28.5, -59.0)
+    assert len(n) == 1 and env['status'] == 'sin dato' and 'límite' in env['error']
+
+
+def test_soil_cache_avoids_second_call(monkeypatch):
+    c._SOIL_CACHE.clear()
+    n = []
+    def get(url, params=None, timeout=None, **k):
+        n.append(1); return R(_soil_js(500))
+    monkeypatch.setattr(c, '_get', get)
+    su.carbon(-27.1, -58.1); su.carbon(-27.1, -58.1)
+    assert len(n) == 1
