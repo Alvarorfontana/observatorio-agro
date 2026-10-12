@@ -36,6 +36,11 @@ VEGETATION={
 
 @research_api.get('/monitor')
 def sources_monitor():
+    if request.args.get('suelo'):
+        try: lat,lon=(float(x) for x in request.args['suelo'].split(','))
+        except ValueError: return jsonify({'error':'suelo=lat,lon'}),400
+        c.coordinates({'lat':[lat],'lon':[lon]})
+        return jsonify(mon.soil_trace(lat,lon))
     return jsonify(mon.check())
 
 @research_api.get('/contacto/canal')

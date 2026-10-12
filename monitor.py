@@ -53,3 +53,18 @@ def check(timeout=40):
                        'slow': [r['source'] for r in rows if r['ok'] and r['ms'] > 8000]},
                       'multi', 'estado de las fuentes externas', 'DOTS · monitor',
                       'recibido' if up else 'sin dato', None if up else 'Ninguna fuente respondió')
+
+
+def soil_trace(lat, lon):
+    """Corre el análisis de suelo completo en un punto y devuelve tiempo, estado o el error exacto (sin claves: SoilGrids es abierta)."""
+    t0 = time.monotonic()
+    try:
+        env = c.soil_full(lat, lon)
+        d = env.get('data') or {}
+        return {'ok': True, 'ms': round((time.monotonic() - t0) * 1000), 'status': env.get('status'), 'error': env.get('error'),
+                'point_used': env.get('point_used'), 'rows': len((d.get('dots_summary') or {}).get('rows') or [])}
+    except Exception as e:
+        import traceback
+        tb = traceback.extract_tb(e.__traceback__)[-1]
+        return {'ok': False, 'ms': round((time.monotonic() - t0) * 1000), 'error': type(e).__name__,
+                'detail': str(e)[:240], 'at': f'{tb.name}:{tb.lineno}'}
