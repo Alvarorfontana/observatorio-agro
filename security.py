@@ -15,7 +15,8 @@ RULES = [
     ('/api/fuentes/contacto', 5, 600),       # 5 consultas cada 10 minutos
     ('/api/fuentes/analizar', 6, 300),       # informes PDF
     ('/api/fuentes/eudr', 10, 300),
-    ('/api/fuentes/costos', 20, 300),       # usa Nominatim, que pide pocas consultas
+    ('/api/fuentes/costos', 20, 300),
+    ('/api/fuentes/monitor', 6, 300),       # consulta 11 servicios por vez       # usa Nominatim, que pide pocas consultas
     ('/api/fuentes/agentic', 12, 300),
     ('/api/fuentes/tile', 600, 60),          # teselas del mapa base
     ('/api/fuentes/ndvi-imagen', 60, 60),

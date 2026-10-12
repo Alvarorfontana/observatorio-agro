@@ -15,6 +15,7 @@ import alerts as alr
 import sustainability as sus
 import forage as fgr
 import costs as cst
+import monitor as mon
 
 research_api=Blueprint('research_api',__name__,url_prefix='/api/fuentes')
 
@@ -32,6 +33,10 @@ VEGETATION={
   'openeo-ndvi':lambda p,a:veg.openeo_ndvi(p,_int(a,'days',120,15,365)),
   'gee-ndvi':lambda p,a:veg.gee_ndvi(p,_int(a,'ndvi_years',10,1,25)),
 }
+
+@research_api.get('/monitor')
+def sources_monitor():
+    return jsonify(mon.check())
 
 @research_api.get('/contacto/canal')
 def contact_channel():

@@ -156,10 +156,14 @@ def soilgrids(lat, lon, props, depths, values, scope):
     """SoilGrids con espera larga y, si el punto no tiene dato (agua, bañado, borde de río),
     hasta dos puntos vecinos a ~500 m. Devuelve envelope con el punto efectivamente usado."""
     tries = [(lat, lon, None), (lat + 0.0045, lon, 'vecino a ~500 m al norte'), (lat, lon + 0.005, 'vecino a ~500 m al este')]
-    last = None
+    import time as _t
+    last, t0, budget = None, _t.monotonic(), 50.0   # Vercel corta a los 60 s
     for i, (la, lo, note) in enumerate(tries):
+        left = budget - (_t.monotonic() - t0)
+        if left < 8:
+            break
         try:
-            r = _get(SOILGRIDS, {'lat': round(la, 5), 'lon': round(lo, 5), 'property': props, 'depth': depths, 'value': values}, timeout=45)
+            r = _get(SOILGRIDS, {'lat': round(la, 5), 'lon': round(lo, 5), 'property': props, 'depth': depths, 'value': values}, timeout=min(35, left))
             js = r.json()
         except Exception as e:
             last = e
