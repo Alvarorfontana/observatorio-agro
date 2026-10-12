@@ -65,24 +65,43 @@ const WORDS: [string, string][] = [
   ["Grilla", "La malla de cuadrados en la que un modelo divide el territorio. Un lote chico puede caer en un solo cuadrado."],
 ];
 
+const AUDIENCE: [string, string, string][] = [
+  ["Productores", "Saber esta semana si al potrero le falta agua, si el pasto viene bien y si el calor va a castigar a la hacienda.", "Y llevarse un informe para el banco, el comprador o el asesor."],
+  ["Estudiantes", "Ver en un caso real cómo se mide la vegetación desde el espacio, qué es un modelo del tiempo o cómo se forma un bajo.", "Cada dato dice de dónde sale: sirve para aprender y para citar."],
+  ["Profesionales", "Ingenieros, veterinarios y técnicos: una primera lectura del lote antes de ir a campo, con fuente, fecha y método.", "Para llegar a la recorrida sabiendo dónde mirar."],
+  ["Periodistas y divulgadores", "Contar una sequía, una inundación o un desmonte con datos de satélite verificables, no con impresiones.", "Cada gráfico se puede rastrear hasta su fuente original."],
+];
+
 export function GuideContent({ onDemo }: { onDemo: () => void }) {
   return (
     <>
+      <section className="guide-hook">
+        <p className="guide-hook-big">Ahora mismo, a 786 kilómetros de altura, un satélite europeo está fotografiando el campo argentino. Vuelve a pasar por el mismo lugar cada cinco días.</p>
+        <p>Esa foto dice cuánto vigor tiene el pasto, potrero por potrero. Y no está sola: modelos del tiempo, sensores de lluvia, radares que midieron cada loma del país y satélites que detectan un fuego desde el espacio también tienen algo que decir sobre ese pedazo de tierra.</p>
+        <p><b>DOTS junta todo eso y te lo cuenta en idioma claro.</b> Desde el navegador, sin instalar nada, y diciendo siempre de dónde salió cada número.</p>
+      </section>
+
+      <section className="guide-audience">
+        <span className="section-tag">PARA QUIÉN ES</span>
+        <h2>No hace falta ser ingeniero.</h2>
+        <div className="guide-four">{AUDIENCE.map(([t, a, b]) => <article key={t}><h3>{t}</h3><p>{a}</p><small>{b}</small></article>)}</div>
+      </section>
+
       <section className="guide-intro">
         <div>
           <span className="section-tag">QUÉ ES DOTS</span>
           <h2>Datos, Observación, Territorio y Satélite.</h2>
         </div>
         <div>
-          <p>DOTS junta en un solo lugar lo que hoy está desparramado: el satélite, el pronóstico, la lluvia, el suelo, el agua y los riesgos de tu campo. Y lo ordena alrededor de lo que vos manejás todos los días: <b>el lote o potrero</b>.</p>
-          <p>No reemplaza la recorrida ni al ingeniero. Te muestra qué está pasando, de dónde sale cada dato y qué tan confiable es. Si algo falta, lo dice. Nunca inventa un número.</p>
+          <p>DOTS junta en un solo lugar lo que hoy está desparramado: el satélite, el pronóstico, la lluvia, el suelo, el agua y los riesgos de un campo. Y lo ordena alrededor de la unidad con la que se trabaja todos los días en el campo: <b>el lote o potrero</b>.</p>
+          <p>No reemplaza la recorrida ni al especialista. Muestra qué está pasando, de dónde sale cada dato y qué tan confiable es. Si algo falta, lo dice. Nunca inventa un número.</p>
         </div>
       </section>
 
       <section className="guide-lot">
         <span className="section-tag">EL LOTE, LA UNIDAD DE TODO</span>
         <h2>Todo empieza en el contorno de tu potrero.</h2>
-        <p>Cada consulta, cada gráfico y cada informe se calcula sobre el lote que elegiste: no sobre la provincia ni sobre un punto suelto. Por eso lo primero es delimitarlo. Hay tres formas:</p>
+        <p>Cada consulta, cada gráfico y cada informe se calcula sobre el lote que elegiste: no sobre la provincia ni sobre un punto suelto. Puede ser tu campo, el de un caso que estás estudiando o el de una nota que estás escribiendo. Lo primero es delimitarlo. Hay tres formas:</p>
         <div className="guide-three">
           <article><b>Dibujarlo</b><p>Marcás las esquinas en el mapa: triángulo, rectángulo o polígono libre.</p></article>
           <article><b>Automático</b><p>Tocás dentro de un lote y DOTS toma el contorno de un mapa mundial de lotes detectados por satélite. Verde: contorno confiable. Ámbar: revisá el borde.</p></article>
@@ -127,7 +146,7 @@ export function GuideContent({ onDemo }: { onDemo: () => void }) {
 
       <section className="guide-use">
         <span className="section-tag">CÓMO USARLO</span>
-        <h2>Seis pasos para empezar.</h2>
+        <h2>Seis pasos para empezar. Probalo con cualquier campo del país.</h2>
         <ol>{USE.map(([t, d], i) => <li key={t}><b>{i + 1}. {t}</b><span>{d}</span></li>)}</ol>
         <button onClick={onDemo}>Abrir el Observatorio →</button>
       </section>
