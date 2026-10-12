@@ -23,6 +23,7 @@ def _probes():
         'NASA POWER': ('get', 'https://power.larc.nasa.gov/api/temporal/daily/point', {'parameters': 'T2M', 'community': 'AG', 'latitude': LAT, 'longitude': LON, 'start': a.strftime('%Y%m%d'), 'end': a.strftime('%Y%m%d'), 'format': 'JSON'}),
         'NASA ORNL MODIS': ('get', 'https://modis.ornl.gov/rst/api/v1/MOD13Q1/dates', {'latitude': LAT, 'longitude': LON}),
         'ISRIC SoilGrids': ('get', 'https://rest.isric.org/soilgrids/v2.0/properties/query', {'lat': LAT, 'lon': LON, 'property': 'ocs', 'depth': '0-30cm', 'value': 'mean'}),
+        'ISRIC SoilGrids · consulta completa': ('get', 'https://rest.isric.org/soilgrids/v2.0/properties/query', {'lat': LAT, 'lon': LON, 'property': c.SOIL_PROPS, 'depth': c.SOIL_DEPTHS, 'value': 'mean'}),
         'NOAA PSL (ONI)': ('get', 'https://psl.noaa.gov/data/correlation/oni.data', None),
         'CHIRPS · ClimateSERV': ('get', 'https://climateserv.servirglobal.net/api/getClimateScenarioInfo/', None),
         'OSRM rutas': ('get', f'https://router.project-osrm.org/route/v1/driving/{LON},{LAT};-58.83,-27.47', {'overview': 'false'}),
@@ -43,7 +44,7 @@ def _probe(name, spec, timeout):
         return {'source': name, 'ok': False, 'http': None, 'ms': round((time.monotonic() - t0) * 1000), 'error': type(e).__name__}
 
 
-def check(timeout=25):
+def check(timeout=40):
     probes = _probes()
     with ThreadPoolExecutor(max_workers=len(probes)) as pool:
         rows = list(pool.map(lambda kv: _probe(kv[0], kv[1], timeout), probes.items()))

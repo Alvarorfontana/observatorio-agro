@@ -16,5 +16,5 @@ def test_monitor_reports_each_source(monkeypatch):
     d = monitor.check()['data']
     by = {r['source']: r for r in d['sources']}
     assert by['ISRIC SoilGrids']['error'] == 'TimeoutError' and by['OSRM rutas']['http'] == 503
-    assert d['up'] == d['total'] - 2
+    assert d['up'] == d['total'] - 3
     assert all('key' not in r['source'].lower() for r in d['sources'])
