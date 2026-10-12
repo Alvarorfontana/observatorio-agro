@@ -50,6 +50,7 @@ import { terrainForLot, terrainImage, DEM_ATTRIBUTION, DEM_SOURCE_URL, type Terr
 import { RISK_COLORS, DRAIN_COLOR } from "./dashboard/terrainCore";
 import { VariablesPanel } from "./dashboard/VariablesPanel";
 import { LotDashboard } from "./dashboard/LotDashboard";
+import { GuideContent } from "./site/GuideContent";
 import { readLotFile, lotsToGeoJSON, lotsToKML } from "./dashboard/lotFiles";
 echarts.use([
   MarkLineComponent,
@@ -1009,7 +1010,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
                   ? <select value={selectedLotId || ""} onChange={e => selectLot(e.target.value)} aria-label="Elegir lote">{!l && <option value="">Elegí un lote</option>}{lots.map(x => <option key={x.id} value={x.id}>{x.name}</option>)}</select>
                   : <h1>{l ? l.name : "Sin lote seleccionado"}</h1>}
               </div>
-              <span className="lot-bar-meta">{l ? `${fmt(l.areaHa,1)} ha · ${fmt(l.perimeterKm,2)} km de perímetro · ${l.ftw ? "límite automático FTW" : "límite dibujado"} · ${placeLabel}` : `${placeLabel} · dibujá, tomá automático o importá tus lotes`}</span>
+              <a className="lot-bar-help" href="/guia" target="_blank" rel="noreferrer">¿Cómo se calcula cada dato?</a><span className="lot-bar-meta">{l ? `${fmt(l.areaHa,1)} ha · ${fmt(l.perimeterKm,2)} km de perímetro · ${l.ftw ? "límite automático FTW" : "límite dibujado"} · ${placeLabel}` : `${placeLabel} · dibujá, tomá automático o importá tus lotes`}</span>
             </div>
             <div className="lot-bar-week">
               {chips.map(c => <button key={c.k} className={"week-chip tone-" + c.tone} onClick={() => changeView(c.go)}>
@@ -1972,7 +1973,7 @@ function SiteLink({to,children,className=""}:{to:string;children:React.ReactNode
   return <a href={to} className={className} onClick={(e)=>{e.preventDefault();history.pushState({},"",to);window.dispatchEvent(new PopStateEvent("popstate"));window.scrollTo({top:0,behavior:"smooth"});}}>{children}</a>
 }
 function Brand(){return <SiteLink to="/" className="site-brand"><img className="brand-logo" src="/dots-logo.svg" alt="DOTS Campo"/><span><b>DOTS <em>CAMPO</em></b><small>DATOS · OBSERVACIÓN · TERRITORIO · SATÉLITE</small></span></SiteLink>}
-function PublicHeader({onDemo}:{onDemo:()=>void}){return <header className="site-header"><Brand/><nav><SiteLink to="/que-es-dots">Qué es DOTS</SiteLink><SiteLink to="/libre-deforestacion" className="nav-highlight">Libre de deforestación</SiteLink><SiteLink to="/modulos">Módulos</SiteLink><SiteLink to="/panel">Panel regional</SiteLink><SiteLink to="/tecnologia">Fuentes y datos</SiteLink><SiteLink to="/conexiones">APIs y accesos</SiteLink><button className="nav-demo" onClick={onDemo}>Demo</button></nav><div className="site-head-actions"><SiteLink to="/acceso" className="ghost-link">Ingresar</SiteLink><button className="demo-btn" onClick={onDemo}>Abrir Observatorio →</button></div></header>}
+function PublicHeader({onDemo}:{onDemo:()=>void}){return <header className="site-header"><Brand/><nav><SiteLink to="/que-es-dots">Qué es DOTS</SiteLink><SiteLink to="/guia">Cómo funciona</SiteLink><SiteLink to="/libre-deforestacion" className="nav-highlight">Libre de deforestación</SiteLink><SiteLink to="/modulos">Módulos</SiteLink><SiteLink to="/panel">Panel regional</SiteLink><SiteLink to="/tecnologia">Fuentes y datos</SiteLink><SiteLink to="/conexiones">APIs y accesos</SiteLink><button className="nav-demo" onClick={onDemo}>Demo</button></nav><div className="site-head-actions"><SiteLink to="/acceso" className="ghost-link">Ingresar</SiteLink><button className="demo-btn" onClick={onDemo}>Abrir Observatorio →</button></div></header>}
 const sourceGroups=[
  ["ARGENTINA",["CONAE · SAOCOM","SMN","INA"]],
  ["EUROPA",["Copernicus · Sentinel","ECMWF · C3S","EUMETSAT","DLR · Alemania","CNES · Francia"]],
@@ -2150,6 +2151,7 @@ function Deforestation({onDemo}:{onDemo:()=>void}){
     <section className="demo-call"><div><span className="section-tag">PARA QUIÉN</span><h2>Productores, frigoríficos, consignatarias y exportadores.</h2><p>Verificación por lote en el Observatorio, o por lotes completos de proveedores para empresas. Consultanos por volumen.</p></div><button onClick={onDemo}>Abrir Observatorio →</button></section>
   </main><SiteFooter/></div>;
 }
+function Guide({onDemo}:{onDemo:()=>void}){return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner guide"><PageHero eyebrow="CÓMO FUNCIONA DOTS" title="Lo que el satélite ve de un campo, contado para todos." lead="Para productores, estudiantes, profesionales, periodistas y curiosos: qué es DOTS, de qué satélite sale cada dato, cómo se procesa la información de un lote y cómo usarlo en cinco minutos."/><GuideContent onDemo={onDemo}/></main><SiteFooter/></div>}
 function PageHero({eyebrow,title,lead}:{eyebrow:string;title:string;lead:string}){return <section className="page-hero"><span className="section-tag">{eyebrow}</span><h1>{title}</h1><p>{lead}</p></section>}
 const cards={producto:[["01","Territorio primero","Todo análisis comienza en el polígono real del lote o potrero."],["02","Observación multifuente","Satélites, estaciones, modelos y bases territoriales se consultan por lugar y fecha."],["03","Interpretación trazable","Cada variable indica fuente, unidad, fecha, método, estado y alcance."],["04","Decisión y seguimiento","DOTS reúne hallazgos, recomendaciones, tareas e informe en una sola lectura."]],soluciones:[["Lotes y potreros","Superficie, perímetro, centroides, historial y análisis por unidad de manejo."],["Pasturas","Escenas y evolución espectral cuando existe procesamiento raster verificable."],["Agua","Lluvia, balance, ríos e infraestructura hídrica declarada o detectada con su nivel de evidencia."],["Suelos","Humedad, temperatura, relieve y propiedades modeladas con profundidad y fuente declaradas."],["Ganado","THI, carga y rotación cuando existe inventario o dato aportado por el productor."],["Riesgos","FIRMS, calor, sequía y exceso hídrico sin convertir ausencia de detección en ausencia de riesgo."]],ganaderia:[["Potrero como unidad","Cada lectura parte de un límite territorial y su historia."],["Agua para el rodeo","Cobertura, distancias y estado de la infraestructura hídrica."],["Pastura y carga","Condición vegetal cruzada con ocupación y presión de pastoreo cuando hay datos."],["Bienestar térmico","THI y meteorología para anticipar condiciones de estrés por calor."],["Rotación","Entrada, salida, descanso y recuperación del potrero."],["Tareas","Del diagnóstico a inspecciones, movimientos y acciones verificables."]]};
 function InstitutionalDepth({kind}:{kind:"producto"|"soluciones"|"ganaderia"}){
@@ -2236,7 +2238,7 @@ function Contact({onDemo}:{onDemo:()=>void}){
       {ch?.email_enabled===false && <p className="form-status">El envío se habilita cuando el correo de destino esté configurado. No simulamos envíos.</p>}
     </form></section></main><SiteFooter/></div>}
 function Access({onDemo}:{onDemo:()=>void}){return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner access-page"><PageHero eyebrow="ACCESO" title="Observatorio DOTS" lead="La autenticación real se incorporará con permisos por establecimiento. La demostración no simula una cuenta de usuario."/><button className="big-demo" onClick={onDemo}>Entrar a la demostración →</button></main><SiteFooter/></div>}
-function SiteFooter(){return <footer className="site-footer"><Brand/><p>Inteligencia territorial para la gestión ganadera.</p><div><SiteLink to="/producto">Cómo funciona</SiteLink><SiteLink to="/tecnologia">Fuentes</SiteLink><SiteLink to="/conexiones">APIs</SiteLink><SiteLink to="/demo">Demo</SiteLink><SiteLink to="/contacto">Contacto</SiteLink></div></footer>}
+function SiteFooter(){return <footer className="site-footer"><Brand/><p>Inteligencia territorial para la gestión ganadera.</p><div><SiteLink to="/guia">Guía: cómo funciona</SiteLink><SiteLink to="/producto">Cómo funciona</SiteLink><SiteLink to="/tecnologia">Fuentes</SiteLink><SiteLink to="/conexiones">APIs</SiteLink><SiteLink to="/demo">Demo</SiteLink><SiteLink to="/contacto">Contacto</SiteLink></div></footer>}
 
 function App(){
   const [path,setPath]=useState(window.location.pathname);
@@ -2249,6 +2251,7 @@ function App(){
   if(path==="/soluciones")return <InfoPage kind="soluciones" onDemo={openDemo}/>;
   if(path==="/ganaderia")return <InfoPage kind="ganaderia" onDemo={openDemo}/>;
   if(path==="/que-es-dots")return <About onDemo={openDemo}/>;
+  if(path==="/guia"||path==="/como-funciona")return <Guide onDemo={openDemo}/>;
   if(path==="/libre-deforestacion")return <Deforestation onDemo={openDemo}/>;
   if(path==="/modulos")return <Modules onDemo={openDemo}/>;
   if(path==="/panel")return <RegionalPanel onDemo={openDemo}/>;
