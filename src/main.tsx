@@ -843,6 +843,8 @@ function Observatory({onHome}:{onHome:()=>void}) {
     return {
       lot: l ? { name: l.name, areaHa: l.areaHa, perimeterKm: l.perimeterKm, compactness: l.compactness, ftw: l.ftw, vertices: l.vertices } : null,
       ndvi: data("ndvi"), indices: data("indices"), telecon: data("teleconexiones"), clima: data("variables"), lluvia: data("lluvia")?.spi ? data("lluvia") : null, estadistica: data("estadistica"),
+      alertas: alertsData, forraje: data("forraje")?.growth_rate_30d != null ? data("forraje") : null, sustentabilidad: data("sustentabilidad"),
+      relieve: data("relieve")?.lot === JSON.stringify(vertices) ? data("relieve") : null,
       place: placeLabel,
     };
   };
