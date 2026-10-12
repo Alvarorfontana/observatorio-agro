@@ -172,23 +172,39 @@ function Chart({
   useEffect(() => {
     if (!ref.current) return;
     const chart = echarts.init(ref.current, undefined, { renderer: "canvas" });
+    // Colores desde el tema (claro u oscuro) y paleta DOTS unificada para todos los gráficos
+    const css = getComputedStyle(ref.current);
+    const v = (n: string, d: string) => css.getPropertyValue(n).trim() || d;
+    const txt = v("--ta-text-2", "#c6c6c6"), txt3 = v("--ta-text-3", "#8d8d8d"), grid = v("--ta-border", "#333333"),
+      tipBg = v("--ta-layer-2", "#393939"), tipTx = v("--ta-text", "#f4f4f4");
+    const light = css.getPropertyValue("--ta-is-light").trim() === "1";
+    const PAL: Record<string, [string, string]> = { // color viejo → [oscuro, claro]
+      "#06b6d4": ["#33b1ff", "#0072c3"], "#19b98a": ["#3ddbd9", "#007d79"], "#22c55e": ["#42be65", "#198038"],
+      "#e9bd72": ["#ff7eb6", "#d02670"], "#a7a5ff": ["#be95ff", "#8a3ffc"], "#b7c989": ["#8d8d8d", "#a8a8a8"],
+      "#93c5fd": ["#78a9ff", "#4589ff"], "#57dce0": ["#3ddbd9", "#007d79"], "#f0b974": ["#ff7eb6", "#d02670"], "#fd9c91": ["#ff8389", "#da1e28"], "#e7a0db": ["#ff7eb6", "#9f1853"],
+    };
+    const col = (c: string) => (PAL[c?.toLowerCase()] || [c, c])[light ? 1 : 0];
+    const many = dates.length > 24;
     chart.setOption({
       animation: false,
-      textStyle: { fontFamily: "IBM Plex Sans", color: "#a8a8a8" },
+      textStyle: { fontFamily: "IBM Plex Sans", color: txt },
       tooltip: {
         trigger: "axis",
-        backgroundColor: "#132734",
-        borderColor: "#42616c",
-        textStyle: { color: "#e7f1f5" },
-        valueFormatter: (v: any) =>
-          v === null ? "Sin dato" : fmt(v) + " " + unit,
+        backgroundColor: tipBg,
+        borderWidth: 0,
+        padding: [8, 10],
+        textStyle: { color: tipTx, fontSize: 12 },
+        axisPointer: { type: series.some(s => s.type === "bar") ? "shadow" : "line", lineStyle: { color: txt3 }, shadowStyle: { color: light ? "rgba(0,0,0,.05)" : "rgba(255,255,255,.05)" } },
+        valueFormatter: (val: any) =>
+          val === null || val === undefined ? "Sin dato" : fmt(val) + " " + unit,
       },
-      grid: { left: 42, right: 15, top: 12, bottom: 27 },
+      legend: series.length > 1 ? { top: 0, right: 0, icon: "rect", itemWidth: 10, itemHeight: 10, itemGap: 14, textStyle: { color: txt, fontSize: 11 } } : undefined,
+      grid: { left: 44, right: 12, top: series.length > 1 ? 36 : 16, bottom: 28 },
       xAxis: {
         type: "category",
         data: dates,
-        axisLabel: { color: "#a8a8a8", fontSize: 11, hideOverlap: true },
-        axisLine: { lineStyle: { color: "#525252" } },
+        axisLabel: { color: txt3, fontSize: 11, hideOverlap: true },
+        axisLine: { lineStyle: { color: grid } },
         axisTick: { show: false },
       },
       yAxis: {
@@ -196,19 +212,22 @@ function Chart({
         scale: true,
         splitNumber: 4,
         name: unit,
-        nameTextStyle: { fontSize: 10, color: "#8d8d8d" },
-        axisLabel: { color: "#a8a8a8", fontSize: 11 },
-        splitLine: { lineStyle: { color: "#333333" } },
+        nameTextStyle: { fontSize: 10, color: txt3, align: "left" },
+        axisLabel: { color: txt3, fontSize: 11 },
+        splitLine: { lineStyle: { color: grid } },
       },
       series: series.map((s) => ({
         name: s.name,
         type: s.type || "line",
         data: s.values,
         connectNulls: false,
+        showSymbol: !many,
         symbolSize: 5,
         lineStyle: { width: 2 },
-        itemStyle: { color: s.color },
-        barMaxWidth: 16,
+        itemStyle: { color: col(s.color) },
+        ...(s.type !== "bar" && series.length === 1 ? { areaStyle: { color: col(s.color), opacity: 0.12 } } : {}),
+        barMaxWidth: 18,
+        emphasis: { focus: "series" },
       })),
     });
     const observer = new ResizeObserver(() => chart.resize());
@@ -599,6 +618,10 @@ function Observatory({onHome}:{onHome:()=>void}) {
   const [ftwMode, setFtwMode] = useState(false);
   const [herdHeads, setHerdHeads] = useState<number>(() => { try { return Number(localStorage.getItem("dots-heads") || 0); } catch { return 0; } });
   const [ftwBusy, setFtwBusy] = useState(false);
+  const [sideTab, setSideTab] = useState<"lote" | "datos" | "asistente">("lote");
+  const [srcQuery, setSrcQuery] = useState("");
+  const [theme, setTheme] = useState<"oscuro" | "claro">(() => { try { return localStorage.getItem("dots-theme") === "claro" ? "claro" : "oscuro"; } catch { return "oscuro"; } });
+  useEffect(() => { try { localStorage.setItem("dots-theme", theme); } catch {} }, [theme]);
   const ndviOverlay = useRef<L.ImageOverlay | null>(null);
   // Línea de tiempo NDVI (como el Time Slider de GeoLibre): recorre las escenas válidas del lote.
   const ndviValid: Data[] = ((sources.ndvi?.payload as any)?.data?.series || []).filter((r: Data) => r.status === "válida" && r.item);
@@ -660,6 +683,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
     // Always refresh: source results are spatial/temporal and must follow the currently selected lot.
     // Reusing an old payload after changing polygon was a functional bug in earlier versions.
     setView(key);
+    setSideTab("datos");
     if (key === "alertas") { void loadAlerts(); } else if (key === "forraje") { void loadForage(); } else if (key === "relieve") { void loadTerrain(); } else void load(key);
     requestAnimationFrame(() => { const el = document.getElementById("dots-detail"); const side = el?.closest(".sidebar") as HTMLElement | null; if (el && side) side.scrollTo({ top: Math.max(0, el.offsetTop - side.offsetTop - 16), behavior: "smooth" }); });
   };
@@ -757,6 +781,12 @@ function Observatory({onHome}:{onHome:()=>void}) {
       if (ok) mapRef.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
       notify(`${ok} lote${ok === 1 ? "" : "s"} importado${ok === 1 ? "" : "s"} de ${file.name}${bad ? ` · ${bad} con lados cruzados no se cargaron` : ""}.`);
     } catch (e) { notify((e as Error).message || "No se pudo leer el archivo."); }
+  };
+  const selectLot = (id: string) => {
+    const l = lots.find(x => x.id === id); if (!l) return;
+    setSelectedLotId(l.id); setVertices(l.vertices); currentPoints.current = l.vertices; poly.current = lotLayers.current[l.id];
+    setPoint(l.center); setCoords(l.center.map(v => v.toFixed(6)));
+    mapRef.current?.fitBounds(lotLayers.current[l.id].getBounds(), { padding: [40, 40] });
   };
   const exportLots = (kind: "geojson" | "kml") => {
     if (!lots.length) { notify("Todavía no hay lotes para descargar."); return; }
@@ -928,7 +958,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
     ),
     depth = nitrogen?.depths?.[0];
   return (
-    <div className={"whole ta-shell"+(navCollapsed?" nav-collapsed":"")}>
+    <div className={"whole ta-shell"+(navCollapsed?" nav-collapsed":"")} data-theme={theme}>
       <ObsSidebar groups={buildNav(changeView,()=>startDraw("free"),()=>void agentPdf())} active={view} collapsed={navCollapsed} mobileOpen={navOpen} onCollapse={()=>setNavCollapsed(c=>!c)} onCloseMobile={()=>setNavOpen(false)} onHome={onHome}/>
       <div className="ta-main">
       <header className="panel ta-header">
@@ -940,6 +970,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
           </b>
           <span>WGS84</span>
         </div>
+        <button className="theme-toggle" onClick={()=>setTheme(t=>t==="oscuro"?"claro":"oscuro")} title="Cambiar entre tema claro y oscuro" aria-label="Cambiar tema">{theme==="oscuro"?"Claro":"Oscuro"}</button>
         <button className={"ta-bell"+(alertsData?.alerts?.some((a:any)=>a.level==="alta")?" hot":alertsData?.alerts?.length?" warm":"")} onClick={()=>{setView("alertas");void loadAlerts();}} title="Alertas del lote">
           <TriangleAlert/>{alertsData?.alerts?.length ? <b>{alertsData.alerts.length}</b> : null}
         </button>
@@ -949,6 +980,40 @@ function Observatory({onHome}:{onHome:()=>void}) {
         </span>
       </header>
       <main className="app ta-content">
+        {(()=>{
+          const l = lots.find(x => x.id === selectedLotId);
+          const rain7 = (daily.precipitation_sum||[]).reduce((a:number,b:number)=>a+(Number(b)||0),0);
+          const et7 = (daily.et0_fao_evapotranspiration||[]).reduce((a:number,b:number)=>a+(Number(b)||0),0);
+          const bal = daily.precipitation_sum && daily.et0_fao_evapotranspiration ? rain7 - et7 : null;
+          const nl:any = (sources.ndvi?.payload as any)?.data?.latest;
+          const nd = nl?.ndvi_mean != null ? Number(nl.ndvi_mean) : null;
+          const chips = [
+            { k: "Agua", tone: bal==null?"idle":bal<-30?"risk":bal<-15?"warn":"ok", word: bal==null?"Sin dato":bal<-30?"Déficit marcado":bal<-15?"Balance negativo":bal<10?"Equilibrado":"Excedente", val: bal==null?"":`${bal>0?"+":""}${fmt(bal,0)} mm en 7 días`, go: "variables" },
+            { k: "Pasto", tone: nd==null?"idle":nd>=0.5?"ok":nd>=0.3?"warn":"risk", word: nd==null?(vertices.length>=3?"Calcular NDVI":"Sin lote"):nd>=0.5?"Vigor alto":nd>=0.3?"Vigor medio":"Vigor bajo", val: nd==null?"":`NDVI ${fmt(nd,2)}`, go: "ndvi" },
+            { k: "Calor y rodeo", tone: thi==null?"idle":thi>=79?"risk":thi>=72?"warn":"ok", word: thi==null?"Sin dato":thi>=79?"Peligro":thi>=72?"Alerta":"Sin estrés", val: thi==null?"":`THI ${fmt(thi)}`, go: "variables" },
+          ];
+          return <section className="lot-bar" aria-label="Tablero del lote">
+            <div className="lot-bar-id">
+              <span className="lot-bar-kicker">Tablero del lote</span>
+              <div className="lot-bar-title">
+                {lots.length > 1
+                  ? <select value={selectedLotId || ""} onChange={e => selectLot(e.target.value)} aria-label="Elegir lote">{!l && <option value="">Elegí un lote</option>}{lots.map(x => <option key={x.id} value={x.id}>{x.name}</option>)}</select>
+                  : <h1>{l ? l.name : "Sin lote seleccionado"}</h1>}
+              </div>
+              <span className="lot-bar-meta">{l ? `${fmt(l.areaHa,1)} ha · ${fmt(l.perimeterKm,2)} km de perímetro · ${l.ftw ? "límite automático FTW" : "límite dibujado"} · ${placeLabel}` : `${placeLabel} · dibujá, tomá automático o importá tus lotes`}</span>
+            </div>
+            <div className="lot-bar-week">
+              {chips.map(c => <button key={c.k} className={"week-chip tone-" + c.tone} onClick={() => changeView(c.go)}>
+                <span>{c.k}</span><b>{c.word}</b>{c.val && <small>{c.val}</small>}
+              </button>)}
+            </div>
+            <div className="lot-bar-actions">
+              {!l && <button onClick={() => { setSideTab("lote"); startDraw("free"); }}>Dibujar lote</button>}
+              {!l && <button onClick={() => { setSideTab("lote"); startFtw(); }}>Automático</button>}
+              <button className="primary" onClick={() => void pdf()} disabled={pdfBusy}><FileText className="icon" />{pdfBusy ? "Generando…" : "Informe PDF"}</button>
+            </div>
+          </section>;
+        })()}
         {(()=>{
           const nl:any = (sources.ndvi?.payload as any)?.data?.latest;
           const rain = (daily.precipitation_sum||[]).reduce((a:number,b:number)=>a+(Number(b)||0),0);
@@ -963,7 +1028,10 @@ function Observatory({onHome}:{onHome:()=>void}) {
           ]}/>;
         })()}
         <aside className="sidebar">
-          <section className="panel block">
+          <nav className="side-tabs" role="tablist" aria-label="Secciones del tablero">
+            {([["lote","Lote"],["datos","Datos"],["asistente","Asistente"]] as const).map(([k,t])=><button key={k} role="tab" aria-selected={sideTab===k} className={sideTab===k?"active":""} onClick={()=>setSideTab(k)}>{t}</button>)}
+          </nav>
+          <section className="panel block" hidden={sideTab!=="lote"}>
             <div className="tag">01 / ÁREA E INFORMES</div>
             <h1>Lectura del campo</h1>
             <p className="small location">{placeLabel}. Buscá cualquier localidad o paraje y luego delimitá el lote.</p>
@@ -1019,7 +1087,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
               {!!waterAssets.length && <div className="water-list">{waterAssets.map((a,i)=><span key={i}>{i+1}. {a.type}</span>)}</div>}
             </div>
           </section>
-          <section className="panel block agentic-box">
+          <section className="panel block agentic-box" hidden={sideTab!=="asistente"}>
             <div className="tag">02 / DOTS AGENTIC</div>
             <h2>Preguntarle a DOTS</h2>
             <p className="small">El orquestador selecciona las fuentes disponibles, conserva los faltantes y audita lo que puede afirmar.</p>
@@ -1043,21 +1111,25 @@ function Observatory({onHome}:{onHome:()=>void}) {
               <button className="primary" onClick={()=>void agentPdf()} disabled={pdfBusy}><FileText className="icon" />{pdfBusy?"Generando…":"Descargar PDF técnico"}</button>
             </div>}
           </section>
-          <section className="panel block">
+          <section className="panel block" hidden={sideTab!=="datos"}>
             <div className="tag" style={{ marginBottom: 10 }}>
               03 / FUENTES Y VARIABLES
             </div>
-            {SOURCES.filter(([key]) => !NATIONAL.includes(key) && key !== "metnorway" && !RESEARCH.includes(key)).map(([key, label]) => (
+            <input className="src-search" type="search" value={srcQuery} onChange={e=>setSrcQuery(e.target.value)} placeholder="Buscar dato o fuente…" aria-label="Buscar dato o fuente"/>
+            <div className="src-list">
+            {SOURCES.filter(([key]) => !NATIONAL.includes(key) && key !== "metnorway" && !RESEARCH.includes(key))
+              .filter(([, label, by]) => !srcQuery || (label + " " + by).toLowerCase().includes(srcQuery.toLowerCase())).map(([key, label, by]) => (
               <button
                 key={key}
                 className={"data-button " + (view === key ? "active" : "")}
                 onClick={() => changeView(key)}
                 aria-pressed={view === key}
               >
-                {label}
-                <span>{sources[key]?.status.toUpperCase() || "CONSULTAR"}</span>
+                <span className="src-name">{label}<small>{by}</small></span>
+                <span className={"src-state st-" + (sources[key]?.status || "consultar").replace(" ", "-")}>{sources[key]?.status || "consultar"}</span>
               </button>
             ))}
+            </div>
             <details style={{marginTop:12}}><summary className="small">Agencias directas · 6 conexiones</summary><div style={{marginTop:10}}>{SOURCES.filter(([key])=>NATIONAL.includes(key)||key==="metnorway").map(([key,label])=><button key={key} className={"data-button "+(view===key?"active":"")} onClick={()=>changeView(key)} aria-pressed={view===key}>{label}<span>{sources[key]?.status.toUpperCase()||"CONSULTAR"}</span></button>)}</div></details>
             <details style={{marginTop:12}}><summary className="small">Conectores globales · abiertos y con credencial</summary><div style={{marginTop:10}}>{SOURCES.filter(([key])=>RESEARCH.includes(key)).map(([key,label])=><button key={key} className={"data-button "+(view===key?"active":"")} onClick={()=>changeView(key)}>{label}<span>{sources[key]?.status.toUpperCase()||"CONSULTAR"}</span></button>)}</div></details>
             <a className="small" href="/CONEXIONES-INVESTIGACION.md" target="_blank" rel="noreferrer">Matriz de 20 servicios y activación</a>
@@ -1391,7 +1463,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
               </button>}
             </div>
           </section>
-          <section className="panel block">
+          <section className="panel block" hidden={sideTab!=="datos"}>
             <div className="section-title">FUENTES DEL MUNDO</div>
             <p className="footnote">
               Brasil, Argentina, Chile, Colombia, Venezuela, México, EE.UU.,
@@ -1408,10 +1480,10 @@ function Observatory({onHome}:{onHome:()=>void}) {
               Ver registro de fuentes y acceso ↗
             </a>
           </section>
-          <section className="panel block lot-manager">
+          <section className="panel block lot-manager" hidden={sideTab!=="lote"}>
             <div className="section-title">LOTES DEL ESTABLECIMIENTO</div>
             <p className="footnote">Cada polígono conserva límites, superficie y contexto de análisis. Seleccioná un lote para consultar todas las fuentes sobre ese territorio.</p>
-            <div className="lot-list">{lots.length===0?<span className="small">Todavía no hay lotes delimitados.</span>:lots.map(l=><button key={l.id} className={selectedLotId===l.id?"active":""} onClick={()=>{setSelectedLotId(l.id);setVertices(l.vertices);currentPoints.current=l.vertices;poly.current=lotLayers.current[l.id];setPoint(l.center);setCoords(l.center.map(v=>v.toFixed(6)));mapRef.current?.fitBounds(lotLayers.current[l.id].getBounds(),{padding:[40,40]})}}><strong>{l.name}</strong><span>{l.areaHa.toFixed(2)} ha</span></button>)}</div>
+            <div className="lot-list">{lots.length===0?<span className="small">Todavía no hay lotes delimitados.</span>:lots.map(l=><button key={l.id} className={selectedLotId===l.id?"active":""} onClick={()=>selectLot(l.id)}><strong>{l.name}</strong><span>{l.areaHa.toFixed(2)} ha</span></button>)}</div>
             {(()=>{const l=lots.find(x=>x.id===selectedLotId); if(!l) return null; const c=l.compactness; const nb=l.ftw?.neighborhood; return <div className="lot-vars">
               <div className="lot-vars-title">Variables del lote</div>
               <div className="lot-var"><span>Superficie</span><b>{fmt(l.areaHa,1)} ha</b></div>
@@ -1434,7 +1506,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
             </div>
             {selectedLotId&&<button className="primary" style={{width:"100%",marginTop:10}} onClick={()=>void askDots("Analizá integralmente el lote seleccionado: clima, agua, suelo, vegetación, riesgos, ENSO y trazabilidad. No inventes variables faltantes.")}>{agentBusy?"Analizando fuentes…":"Analizar lote seleccionado"}</button>}
           </section>
-          <section className="panel block operations">
+          <section className="panel block operations" hidden={sideTab!=="lote"}>
             <div className="tag">OPERACIONES DEL LOTE</div>
             <div className="draw-chooser"><button onClick={()=>startDraw("triangle")}><Triangle className="icon"/>Triángulo</button><button onClick={()=>startDraw("rectangle")}><Square className="icon"/>Rectángulo</button><button onClick={()=>startDraw("free")}><Layers className="icon"/>Polígono libre</button><button className="ftw-btn" onClick={startFtw} title="Lote automático desde el mapa global Fields of the World (gratis)"><Sprout className="icon"/>Automático · FTW</button></div>
             <p className="footnote">Cada informe queda vinculado al polígono cerrado: superficie, perímetro, centroide y límites.</p>
@@ -1636,7 +1708,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
             </p>
           </section>
         </aside>
-        <section className="charts">
+        <section className="charts" key={theme}>
           {view==="relieve" && payload?.histogram && payload?.lot===lotKey ? <>
             <section className="panel chart"><h2>Distribución de cotas del lote</h2><p className="small">Copernicus DEM 30 m · % del lote por franja de altura · m s. n. m.</p><Chart dates={payload.histogram.map((h:Data)=>`${fmt(h.from,1)}–${fmt(h.to,1)}`)} unit="% del lote" series={[{name:"Superficie",values:payload.histogram.map((h:Data)=>h.pct),type:"bar",color:"#06b6d4"}]}/></section>
             <section className="panel chart"><h2>Propensión a anegarse</h2><p className="small">% del lote por clase · bajos cerrados y humedad topográfica</p><Chart dates={["Baja","Media","Alta"]} unit="% del lote" series={[{name:"Superficie",values:[payload.riskPct.bajo,payload.riskPct.medio,payload.riskPct.alto],type:"bar",color:"#e9bd72"}]}/></section>
@@ -1826,16 +1898,6 @@ function Observatory({onHome}:{onHome:()=>void}) {
                     },
                   ]}
                 />
-                <div className="chart-legend">
-                  <span>
-                    <i />
-                    Mínima
-                  </span>
-                  <span className="second">
-                    <i />
-                    Máxima
-                  </span>
-                </div>
               </section>
               <section className="panel chart">
                 <h2>Agua · precipitación y ET₀</h2>
@@ -1860,16 +1922,6 @@ function Observatory({onHome}:{onHome:()=>void}) {
                     },
                   ]}
                 />
-                <div className="chart-legend">
-                  <span>
-                    <i />
-                    Precipitación
-                  </span>
-                  <span className="et">
-                    <i />
-                    ET₀
-                  </span>
-                </div>
               </section>
             </>
           )}
