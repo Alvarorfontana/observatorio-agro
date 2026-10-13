@@ -445,7 +445,7 @@ def local_data(d, sid, today=None):
         'flow': flow, 'nino': nino_out, 'actions': actions,
         'country': _country(sid), 'phones': PHONES[_country(sid)],
         'lags_period': (cc.load_normals().get('lags_period') or '20 años'),
-        'picture': None,
+        'picture': None, 'flood': None,
         'url': 'observatorio-agro.vercel.app/alertas',
     }
 
@@ -488,15 +488,20 @@ def _pc_search(collection, feat, pts, today, days, query=None):
 
 
 def _pc_png(collection, item_id, feat, params):
+    """PNG recortado al recuadro, en lat/lon (EPSG:4326) para que la máscara de GFM calce exacta; si la API no acepta la
+    reproyección, se pide en la proyección nativa."""
     import vegetation as veg
-    r = veg.c.SESSION.post(f'{veg.PC_DATA}/item/feature.png', json=feat, timeout=40,
-                           params={'collection': collection, 'item': item_id, 'max_size': 1024, **params})
-    return r.content if (r.ok and r.content[:8] == b'\x89PNG\r\n\x1a\n' and len(r.content) > 5000) else None
+    base = {'collection': collection, 'item': item_id, 'max_size': 1024, **params}
+    for extra in ({'dst_crs': 'epsg:4326'}, {}):
+        r = veg.c.SESSION.post(f'{veg.PC_DATA}/item/feature.png', json=feat, timeout=40, params={**base, **extra})
+        if r.ok and r.content[:8] == b'\x89PNG\r\n\x1a\n' and len(r.content) > 5000:
+            return r.content
+    return None
 
 
-def _pic(png, day, today, sensor, clear, caption):
+def _pic(png, day, today, sensor, clear, caption, bbox=None):
     return {'image': list(png), 'date': dm(day) + '/' + day[:4], 'sensor': sensor, 'clear': clear,
-            'age': (today - date.fromisoformat(day)).days, 'caption': caption}
+            'age': (today - date.fromisoformat(day)).days, 'caption': caption, 'bbox': bbox}
 
 
 def optical_picture(s, today=None, days=OPTICAL_DAYS, tries=4):
@@ -527,7 +532,7 @@ def optical_picture(s, today=None, days=OPTICAL_DAYS, tries=4):
                 png = _pc_png('sentinel-2-l2a', it['id'], feat, {'assets': 'visual', 'asset_bidx': 'visual|1,2,3', 'nodata': 0})
                 if png:
                     return _pic(png, day, today, 'Sentinel-2 (ESA · Copernicus), 10 m', round(100 * clear),
-                                f'Sentinel-2 L2A en color real, {round(100 * clear)} % del recuadro sin nubes (máscara SCL). Recuadro de {BOX_TXT}.')
+                                f'Sentinel-2 L2A en color real, {round(100 * clear)} % del recuadro sin nubes (máscara SCL). Recuadro de {BOX_TXT}.', _box(s, S2_BOX))
             else:
                 png = _pc_png('landsat-c2-l2', it['id'], feat, {'assets': ['red', 'green', 'blue'], 'nodata': 0,
                                                                'color_formula': 'gamma RGB 2.7, saturation 1.5, sigmoidal RGB 15 0.55'})
@@ -535,7 +540,7 @@ def optical_picture(s, today=None, days=OPTICAL_DAYS, tries=4):
                     clear = round(100 - float(it['properties'].get('eo:cloud_cover') or 0))
                     sat = it['properties'].get('platform', 'landsat').replace('landsat-', 'Landsat ')
                     return _pic(png, day, today, f'{sat} (USGS · NASA), 30 m', clear,
-                                f'{sat} Collection 2 en color real; nubosidad de la escena {100 - clear} %. Recuadro de {BOX_TXT}.')
+                                f'{sat} Collection 2 en color real; nubosidad de la escena {100 - clear} %. Recuadro de {BOX_TXT}.', _box(s, S2_BOX))
         except Exception:
             continue
     return None
@@ -553,7 +558,7 @@ def radar_picture(s, today=None, days=RADAR_DAYS):
             day = str(it['properties'].get('datetime', ''))[:10]
             return _pic(png, day, today, 'Sentinel-1 radar (ESA · Copernicus), 10 m', 100,
                         f'Radar Sentinel-1 (VV, corregido por terreno): atraviesa las nubes. El agua quieta y las zonas anegadas se ven negras; '
-                        f'ciudades y monte, claros. Se usó porque no hubo toma óptica despejada en los últimos {OPTICAL_DAYS} días. Recuadro de {BOX_TXT}.')
+                        f'ciudades y monte, claros. Se usó porque no hubo toma óptica despejada en los últimos {OPTICAL_DAYS} días. Recuadro de {BOX_TXT}.', _box(s, S2_BOX))
     return None
 
 
@@ -600,7 +605,7 @@ def daily_picture(s, today=None, days=DAILY_DAYS):
     score, day, name, img = best
     pct = round(100 * (1 - score))
     note = ('' if score < 0.25 else f" Ningún día de los últimos {days} estuvo despejado: esta es la toma con menos nubes ({pct} % del recuadro visible).")
-    return {'image': list(img), 'date': dm(day) + '/' + day[:4], 'sensor': f'{name}, 250-375 m', 'clear': pct,
+    return {'image': list(img), 'date': dm(day) + '/' + day[:4], 'sensor': f'{name}, 250-375 m', 'clear': pct, 'bbox': box,
             'age': (today - date.fromisoformat(day)).days,
             'caption': f"{name} en color real vía NASA GIBS, ~180 × 130 km alrededor de la localidad. Con cielo despejado se ve el cauce "
                        f"y el agua fuera de él." + note}
@@ -624,6 +629,42 @@ def local_picture(s, today=None):
                                       'Volvé a descargarlo en unos minutos o consultá worldview.earthdata.nasa.gov.'}
 
 
+def local_flood(s, picture=None, today=None):
+    """Agua de crecida de Copernicus GFM sobre el mismo recuadro de la foto. Siempre devuelve un dict."""
+    import gfm
+    if os.environ.get('DOTS_REPORT_IMAGERY', '1') == '0':
+        return {'ok': False, 'missing': 'Imágenes satelitales desactivadas en esta instalación.'}
+    pic = picture or {}
+    bbox = pic.get('bbox') or _box(s, S2_BOX)
+    try:
+        f = gfm.flood_at(tuple(bbox), today)
+    except Exception as e:
+        return {'ok': False, 'missing': f'Copernicus GFM no respondió al generar el informe ({type(e).__name__}). '
+                                        f'Se puede consultar en global-flood.emergency.copernicus.eu.'}
+    out = {'ok': True, 'missing': '', 'date': dm(f['date']) + '/' + f['date'][:4], 'age': f['age'], 'flood_km2': num(f['flood_km2'], 1),
+           'flood_pct': num(f['flood_pct'], 1), 'water_km2': num(f['water_km2'], 1) if f['water_km2'] is not None else '—',
+           'box_km2': num(f['box_km2']), 'has_flood': f['flood_km2'] >= 0.5, 'overlaid': False, 'mask': None}
+    if pic.get('image'):
+        try:
+            pic['image'] = list(gfm.overlay(bytes(pic['image']), f['mask']))
+            out['overlaid'] = True
+        except Exception:
+            pass
+    if not out['overlaid']:
+        try:
+            from io import BytesIO
+            from PIL import Image
+            bg = Image.new('RGB', (900, 620), (232, 236, 240)); buf = BytesIO(); bg.save(buf, 'PNG')
+            out['mask'] = list(gfm.overlay(buf.getvalue(), f['mask']))
+        except Exception:
+            pass
+    out['summary'] = ((f"Copernicus GFM detectó agua de crecida en {out['flood_km2']} km² alrededor de la localidad "
+                       f"({out['flood_pct']} % del recuadro de {out['box_km2']} km², fuera del cauce normal), con el radar del {dm(f['date'])}.")
+                      if out['has_flood'] else
+                      f"Copernicus GFM no detectó agua fuera del cauce alrededor de la localidad en la última pasada de radar ({dm(f['date'])}).")
+    return out
+
+
 def local_pdf(d, sid, today=None):
     import typst
     ld = local_data(d, sid, today)
@@ -632,6 +673,9 @@ def local_pdf(d, sid, today=None):
         ld['picture'] = local_picture(s, today) if s else None
     except Exception as e:
         ld['picture'] = {'image': None, 'missing': f'No se pudo obtener imagen satelital ({type(e).__name__}).'}
+    ld['flood'] = local_flood(s, ld['picture'], today) if s else None
+    if (ld['flood'] or {}).get('summary'):
+        ld['summary'].insert(min(2, len(ld['summary'])), ld['flood']['summary'])
     data = json.dumps(ld, ensure_ascii=False, default=str)
     out = typst.compile(LOCAL_TEMPLATE, root=BASE, font_paths=[FONTS], ignore_system_fonts=True, sys_inputs={'data': data})
     if out[:5] != b'%PDF-':

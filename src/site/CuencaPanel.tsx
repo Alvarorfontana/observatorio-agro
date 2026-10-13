@@ -302,10 +302,19 @@ function Locality({ stations, alerts, actions }: { stations: Data[]; alerts: Dat
 // Mapa de alertas: localidades pintadas por nivel
 function AlertMap({ stations, onPick }: { stations: Data[]; onPick?: (id: string) => void }) {
   const ref = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<L.Map | null>(null);
+  const floodRef = useRef<L.TileLayer.WMS | null>(null);
+  const [gfm, setGfm] = useState<Data | null>(null);
+  const [showFlood, setShowFlood] = useState(true);
+  useEffect(() => {
+    fetch("/api/fuentes/gfm-capas", { signal: AbortSignal.timeout(30000) }).then(r => r.json()).then(j => { if (j.status === "recibido") setGfm(j.data); }).catch(() => { /* sin GFM */ });
+  }, []);
   useEffect(() => {
     if (!ref.current) return;
     const map = L.map(ref.current, { scrollWheelZoom: false, attributionControl: true }).setView([-28.5, -57.5], 5);
+    mapRef.current = map;
     L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}", { maxZoom: 13, attribution: "Esri, HERE, Garmin, © OpenStreetMap" }).addTo(map);
+    map.createPane("flood"); map.getPane("flood")!.style.zIndex = "350";
     const pts: L.LatLngExpression[] = [];
     stations.forEach(s => {
       if (s.lat == null) return;
@@ -316,11 +325,21 @@ function AlertMap({ stations, onPick }: { stations: Data[]; onPick?: (id: string
       pts.push([s.lat, s.lon]);
     });
     if (pts.length) map.fitBounds(L.latLngBounds(pts).pad(0.15));
-    return () => { map.remove(); };
+    return () => { map.remove(); mapRef.current = null; floodRef.current = null; };
   }, [stations]);
+  // Agua de crecida de Copernicus GFM: el navegador pide el mapa directo a EODC
+  useEffect(() => {
+    const map = mapRef.current;
+    floodRef.current?.remove(); floodRef.current = null;
+    if (!map || !gfm?.flood || !showFlood) return;
+    const opts: any = { layers: gfm.flood, format: "image/png", transparent: true, opacity: 0.85, pane: "flood", attribution: "Copernicus GFM (EMS) · EODC" };
+    if (gfm.date) opts.time = gfm.date;
+    floodRef.current = L.tileLayer.wms(gfm.wms, opts).addTo(map);
+  }, [gfm, showFlood, stations]);
   return <div className="cp-block">
     <h3>Mapa de alertas <small>34 localidades pintadas por nivel · tocá un punto para ver el detalle</small></h3>
     <div className="cp-mapbox"><div ref={ref} className="cp-leaflet" /><div className="cp-map-legend">{["Normal", "Atención", "Alerta", "Evacuación"].map(l => <span key={l}><i style={{ background: LEVEL_COLOR[l] }} />{l}</span>)}</div></div>
+    {gfm?.flood && <p className="cp-note"><label style={{ cursor: "pointer" }}><input type="checkbox" checked={showFlood} onChange={e => setShowFlood(e.target.checked)} /> Mostrar agua de crecida detectada por radar (Copernicus GFM{gfm.date ? `, ${dm(gfm.date)}` : ""})</label>. Acercá el mapa para verla: marca el agua fuera de su lugar habitual a 20 m de resolución.</p>}
   </div>;
 }
 

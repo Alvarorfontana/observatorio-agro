@@ -181,6 +181,27 @@
     #for p in d.phones [#text(size: 13pt, weight: "bold", fill: risk)[#p.at(0)] #h(3pt) #text(size: 8.5pt)[#p.at(1)] #linebreak()]
   ])
 
+#if d.flood != none or d.picture != none [
+  #sec("Imagen satelital y zona inundada")
+  #if d.flood != none and d.flood.ok [
+    #block(sticky: true, below: 6pt, grid(columns: (1fr, 1fr, 1fr), column-gutter: 7pt,
+      card(fill: if d.flood.has_flood { risk.transparentize(90%) } else { soft }, stroke: none)[#text(size: 7.4pt, fill: muted)[Agua de crecida (GFM)] #linebreak() #text(size: 15pt, weight: "bold", fill: if d.flood.has_flood { risk } else { ink })[#d.flood.flood_km2 km²] #linebreak() #text(size: 7.4pt, fill: ink2)[#d.flood.flood_pct % del recuadro]],
+      card(fill: soft, stroke: none)[#text(size: 7.4pt, fill: muted)[Agua permanente (cauce, lagunas)] #linebreak() #text(size: 15pt, weight: "bold")[#d.flood.water_km2 km²] #linebreak() #text(size: 7.4pt, fill: ink2)[recuadro de #d.flood.box_km2 km²]],
+      card(fill: soft, stroke: none)[#text(size: 7.4pt, fill: muted)[Última pasada de radar] #linebreak() #text(size: 15pt, weight: "bold")[#d.flood.date] #linebreak() #text(size: 7.4pt, fill: ink2)[hace #d.flood.age días · Sentinel-1]]))
+  ]
+  #if d.picture != none and d.picture.image != none [
+    #block(width: 100%, radius: 6pt, clip: true, breakable: false, image(bytes(d.picture.image), width: 100%))
+    #note[#d.picture.sensor · #d.picture.clear % sin nubes · tomada el #d.picture.date (hace #d.picture.age días). #d.picture.caption #if d.flood != none and d.flood.ok and d.flood.overlaid [En rojo: agua de crecida detectada por Copernicus GFM con el radar del #d.flood.date.]]
+  ] else if d.flood != none and d.flood.ok and d.flood.mask != none [
+    #block(width: 100%, radius: 6pt, clip: true, breakable: false, image(bytes(d.flood.mask), width: 100%))
+    #note[En rojo: agua de crecida detectada por Copernicus GFM con el radar del #d.flood.date. #if d.picture != none [#d.picture.missing]]
+  ] else if d.picture != none [
+    #card(fill: soft, stroke: none)[#text(size: 8.6pt, fill: ink2)[#d.picture.missing]]
+  ]
+  #if d.flood != none and not d.flood.ok and d.flood.missing != "" [#note[#d.flood.missing]]
+  #if d.flood != none and d.flood.ok [#note[Copernicus GFM (Servicio de Gestión de Emergencias) mapea a 20 m el agua que aparece fuera de su lugar habitual en cada pasada del radar Sentinel-1, con tres algoritmos independientes, y publica unas 8 horas después de la toma. El radar ve a través de las nubes; puede fallar en ciudades densas, monte cerrado y arenales.]]
+]
+
 #if d.basins.len() > 0 [
   #sec("De dónde viene el agua: lluvia en las cabeceras")
   #table(columns: (1.5fr, 1.7fr, auto, auto, auto, auto, 1fr), stroke: (x, y) => (bottom: if y == 0 { 0.6pt + ink2.transparentize(55%) } else { 0.4pt + line-c }), inset: (x: 5pt, y: 4.5pt),
@@ -241,17 +262,6 @@
     align(horizon, text(size: 8.8pt)[#d.nino.effect #linebreak() #note[Anomalía semanal NOAA CPC (OISST) contra 1991-2020. El estado oficial se declara con el ONI trimestral.]]))
 ]
 
-#if d.picture != none [
-  #if d.picture.image != none [
-    #sec("Imagen satelital · " + d.picture.date)
-    #block(width: 100%, radius: 6pt, clip: true, breakable: false, image(bytes(d.picture.image), width: 100%))
-    #note[#d.picture.sensor · #d.picture.clear % sin nubes · tomada hace #d.picture.age días. #d.picture.caption]
-  ] else [
-    #sec("Imagen satelital")
-    #card(fill: soft, stroke: none)[#text(size: 8.6pt, fill: ink2)[#d.picture.missing]]
-  ]
-]
-
 #if d.record != "" or d.discharge != "" [
   #v(6pt)
   #text(size: 7.6pt, fill: muted)[#if d.record != "" [Récord de altura de los últimos 20 años: #d.record. ] #if d.discharge != "" [Caudal estimado hoy: #d.discharge.] Las alturas se miden sobre el cero de cada escala: no son comparables entre puertos.]
@@ -265,6 +275,7 @@
   [*Lluvia en cabeceras*], [ECMWF IFS y NOAA GFS por conjunto, vía Open-Meteo; normales de NASA POWER.],
   [*Caudal*], [Copernicus GloFAS vía Open-Meteo; normales y crecidas de retorno calculadas sobre 2001-2020.],
   [*Represas*], [ONS Brasil, datos abiertos (CC-BY 4.0).],
+  [*Zona inundada*], [Copernicus Global Flood Monitoring (GFM), vía EODC: agua de crecida observada con Sentinel-1.],
   [*El Niño e imagen*], [NOAA CPC (OISST semanal) · Sentinel-2 y Sentinel-1 (Copernicus) y Landsat 8/9 (USGS), vía Microsoft Planetary Computer · NASA GIBS (VIIRS, MODIS).],
   [*Oficiales para consultar*], [Argentina: INA, Prefectura, Defensa Civil · Brasil: ANA, SGB · Paraguay: DMH · Bolivia: SENAMHI · Uruguay: INUMET, CTM Salto Grande · Regional: CIC Plata.])
 #v(4pt)
