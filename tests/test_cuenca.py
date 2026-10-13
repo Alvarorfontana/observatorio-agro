@@ -361,3 +361,12 @@ def test_foto_satelital_obligatoria(monkeypatch):
     monkeypatch.setattr(cr, '_image', lambda *a, **k: None)
     p = cr.local_picture(s, today)
     assert p['image'] is None and 'Sentinel-2' in p['missing'] and 'radar' in p['missing'] and 'VIIRS/MODIS' in p['missing']
+
+
+def test_carbono_soilgrids_en_t_ha(monkeypatch):
+    import sustainability as sus
+    raw = {'type': 'Feature', 'properties': {'layers': [{'name': 'ocs', 'unit_measure': {'d_factor': 10, 'mapped_units': 't/ha', 'target_units': 'kg/m²'},
+           'depths': [{'label': '0-30cm', 'values': {'mean': 35, 'Q0.05': 20, 'Q0.95': 52}}]}]}}
+    monkeypatch.setattr(sus.c, 'soilgrids', lambda *a, **k: {'data': raw, 'point_used': None, 'source_url': 'x'})
+    d = sus.carbon(-29.2, -59.04, area_ha=100)['data']
+    assert d['soc_t_ha'] == 35 and d['soc_t_ha_range'] == [20, 52] and d['soc_total_t'] == 3500

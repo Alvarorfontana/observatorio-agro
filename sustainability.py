@@ -121,9 +121,12 @@ def carbon(lat, lon, area_ha=None, heads=None, ef=EF_CH4_HEAD, gwp=GWP_CH4):
     for layer in ((env['data'] or {}).get('properties') or {}).get('layers') or []:
         if layer.get('name') != 'ocs':
             continue
-        f = (layer.get('unit_measure') or {}).get('d_factor') or 1
+        # SoilGrids entrega `ocs` en sus unidades de mapa (t/ha); dividido por d_factor queda en kg/m², y 1 kg/m² = 10 t/ha.
+        um = layer.get('unit_measure') or {}
+        f = um.get('d_factor') or 1
+        a_tha = 10 / f if str(um.get('target_units', '')).startswith('kg') else 1 / f
         vals = ((layer.get('depths') or [{}])[0].get('values') or {})
-        to = lambda k: None if vals.get(k) is None else round(vals[k] / f, 1)
+        to = lambda k: None if vals.get(k) is None else round(vals[k] * a_tha, 1)
         soc, lo, hi = to('mean'), to('Q0.05'), to('Q0.95')
     out = {'soc_t_ha': soc, 'soc_t_ha_range': [lo, hi], 'unit': 't C/ha (0-30 cm)', 'point_used': env.get('point_used')}
     if soc is not None and area_ha:
