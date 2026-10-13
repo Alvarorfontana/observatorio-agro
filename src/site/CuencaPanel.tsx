@@ -313,18 +313,31 @@ function AlertMap({ stations, onPick }: { stations: Data[]; onPick?: (id: string
     if (!ref.current) return;
     const map = L.map(ref.current, { scrollWheelZoom: false, attributionControl: true }).setView([-28.5, -57.5], 5);
     mapRef.current = map;
-    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}", { maxZoom: 13, attribution: "Esri, HERE, Garmin, © OpenStreetMap" }).addTo(map);
+    // Fondo: mapa con relieve, ríos, rutas y ciudades; o satélite con nombres encima
+    const esri = (svc: string) => `https://server.arcgisonline.com/ArcGIS/rest/services/${svc}/MapServer/tile/{z}/{y}/{x}`;
+    const topo = L.tileLayer(esri("World_Topo_Map"), { maxZoom: 16, attribution: "Esri, HERE, Garmin, USGS, © OpenStreetMap" });
+    const sat = L.layerGroup([
+      L.tileLayer(esri("World_Imagery"), { maxZoom: 17, attribution: "Esri, Maxar, Earthstar Geographics" }),
+      L.tileLayer(esri("Reference/World_Boundaries_and_Places"), { maxZoom: 17 }),
+    ]);
+    topo.addTo(map);
+    L.control.layers({ "Mapa": topo, "Satélite": sat }, undefined, { position: "topright", collapsed: false }).addTo(map);
+    // Nombres: siempre los que están en atención o peor; todos al acercar
+    const showAll = () => ref.current?.classList.toggle("cp-labels-all", map.getZoom() >= 7);
+    map.on("zoomend", showAll);
     map.createPane("flood"); map.getPane("flood")!.style.zIndex = "350";
     const pts: L.LatLngExpression[] = [];
     stations.forEach(s => {
       if (s.lat == null) return;
       const lvl = levelOf(s) || "Normal"; const i = s.ina || {};
       const m = L.circleMarker([s.lat, s.lon], { radius: lvl === "Normal" ? 6 : 9, color: "#fff", weight: 2, fillColor: LEVEL_COLOR[lvl] || "#98a2b3", fillOpacity: 0.95 }).addTo(map);
-      m.bindTooltip(`<b>${s.place}</b> · río ${s.river}<br>${lvl}${i.height != null ? ` · ${nf(i.height, 2)} m (alerta ${nf(i.alert, 2)})` : ""}`, { direction: "top" });
+      m.bindPopup(`<b>${s.place}</b> · río ${s.river}<br>${lvl}${i.height != null ? ` · ${nf(i.height, 2)} m (alerta ${nf(i.alert, 2)})` : ""}`);
+      m.bindTooltip(s.place, { permanent: true, direction: "right", offset: [8, 0], className: `cp-lbl${lvl === "Normal" ? " cp-lbl-normal" : ""}` });
       if (onPick) m.on("click", () => onPick(s.id));
       pts.push([s.lat, s.lon]);
     });
     if (pts.length) map.fitBounds(L.latLngBounds(pts).pad(0.15));
+    showAll();
     return () => { map.remove(); mapRef.current = null; floodRef.current = null; };
   }, [stations]);
   // Agua de crecida de Copernicus GFM: el navegador pide el mapa directo a EODC
@@ -337,7 +350,7 @@ function AlertMap({ stations, onPick }: { stations: Data[]; onPick?: (id: string
     floodRef.current = L.tileLayer.wms(gfm.wms, opts).addTo(map);
   }, [gfm, showFlood, stations]);
   return <div className="cp-block">
-    <h3>Mapa de alertas <small>34 localidades pintadas por nivel · tocá un punto para ver el detalle</small></h3>
+    <h3>Mapa de alertas <small>34 localidades pintadas por nivel · acercá para ver todos los nombres · tocá un punto para ver el detalle</small></h3>
     <div className="cp-mapbox"><div ref={ref} className="cp-leaflet" /><div className="cp-map-legend">{["Normal", "Atención", "Alerta", "Evacuación"].map(l => <span key={l}><i style={{ background: LEVEL_COLOR[l] }} />{l}</span>)}</div></div>
     {gfm?.flood && <p className="cp-note"><label style={{ cursor: "pointer" }}><input type="checkbox" checked={showFlood} onChange={e => setShowFlood(e.target.checked)} /> Mostrar agua de crecida detectada por radar (Copernicus GFM{gfm.date ? `, ${dm(gfm.date)}` : ""})</label>. Acercá el mapa para verla: marca el agua fuera de su lugar habitual a 20 m de resolución.</p>}
   </div>;
