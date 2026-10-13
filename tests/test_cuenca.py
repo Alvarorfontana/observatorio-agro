@@ -61,14 +61,15 @@ def test_resumen_de_rios_con_normales():
     today = date(2026, 10, 13)
     t = [(today + timedelta(days=i - 7)).isoformat() for i in range(37)]
     q = [1500.0] * 7 + [4500.0] + [5000.0 + 100 * i for i in range(29)]
-    resp = [{'daily': {'time': t, 'river_discharge': q, 'river_discharge_median': q}}] + [{}] * (len(cc.STATIONS) - 1)
+    ix = [x['id'] for x in cc.STATIONS].index('iguazu-cataratas')
+    resp = [{}] * len(cc.STATIONS); resp[ix] = {'daily': {'time': t, 'river_discharge': q, 'river_discharge_median': q}}
     clim = {'min': 500, 'p10': 800, 'p25': 1000, 'p50': 1500, 'p75': 2200, 'p90': 3500, 'p97': 6000, 'max': 20000}
     normals = {'iguazu-cataratas': {'doy': {'10-10': clim, '11-10': clim}}}
     out = cc.rivers_summary(resp, normals, today)
-    ig = out[0]
+    ig = out[ix]
     assert ig['discharge'] == 4500 and ig['ratio'] == 3.0 and ig['level'] == 'muy alto'
     assert ig['change_7d_pct'] == 200 and ig['peak'] == 7800 and ig['peak_date'] == t[-1] and ig['peak_level'] == 'muy alto'
-    assert out[1]['status'] == 'sin dato'
+    assert out[0]['status'] == 'sin dato'
 
 
 def test_normales_por_ventana():
@@ -113,15 +114,15 @@ def test_desfase_y_crecidas_de_retorno():
 
 
 def test_tiempo_de_traslado_y_llegada():
-    st = [{'id': 'iguazu-cataratas', 'place': 'Cataratas', 'river': 'Iguazú', 'peak_date': '2026-10-20', 'peak_danger': 'Alerta'},
-          {'id': 'parana-posadas', 'place': 'Posadas', 'river': 'Paraná'},
-          {'id': 'parana-corrientes', 'place': 'Corrientes', 'river': 'Paraná', 'danger': 'Atención'}]
-    normals = {'lags': {'iguazu-cataratas>parana-posadas': {'days': 2, 'corr': 0.7},
-                        'parana-posadas>parana-corrientes': {'days': 4, 'corr': 0.8}}}
+    st = [{'id': 'iguazu-andresito', 'place': 'Andresito', 'river': 'Iguazú', 'peak_date': '2026-10-20', 'peak_danger': 'Alerta'},
+          {'id': 'iguazu-cataratas', 'place': 'Cataratas', 'river': 'Iguazú'},
+          {'id': 'parana-eldorado', 'place': 'Eldorado', 'river': 'Paraná', 'danger': 'Atención'}]
+    normals = {'lags': {'iguazu-andresito>iguazu-cataratas': {'days': 2, 'corr': 0.7},
+                        'iguazu-cataratas>parana-eldorado': {'days': 4, 'corr': 0.8}}}
     ch = cc.travel(st, normals)[0]
     rows = {r['id']: r for r in ch['rows']}
-    assert rows['parana-corrientes']['days_from_head'] == 6 and rows['parana-corrientes']['arrival'] == '2026-10-26'
-    assert rows['parana-goya']['days_from_head'] is None and ch['head_level'] == 'Alerta'
+    assert rows['parana-eldorado']['days_from_head'] == 6 and rows['parana-eldorado']['arrival'] == '2026-10-26'
+    assert rows['parana-posadas']['days_from_head'] is None and ch['head_level'] == 'Alerta'
 
 
 def test_represas_ons():
@@ -147,7 +148,8 @@ def test_alerta_temprana_por_lluvia_en_cabeceras():
     stations = [{'id': 'iguazu-cataratas', 'place': 'Cataratas', 'river': 'Iguazú', 'level': 'alto'},
                 {'id': 'parana-posadas', 'place': 'Posadas', 'river': 'Paraná'}, {'id': 'parana-corrientes', 'place': 'Corrientes', 'river': 'Paraná'}]
     dams = [{'name': 'Salto Caxias', 'river': 'Iguazú', 'level': 'normal'}]
-    normals = {'lags': {'iguazu-cataratas>parana-posadas': {'days': 2, 'corr': .7}, 'parana-posadas>parana-corrientes': {'days': 4, 'corr': .8}}}
+    normals = {'lags': {'iguazu-cataratas>parana-eldorado': {'days': 1, 'corr': .7}, 'parana-eldorado>parana-posadas': {'days': 1, 'corr': .7},
+                        'parana-posadas>parana-ituzaingo': {'days': 1, 'corr': .8}, 'parana-ituzaingo>parana-corrientes': {'days': 3, 'corr': .8}}}
     al = cc.early_warning(basins, stations, dams, normals)
     ig = al[0]
     assert ig['basin'] == 'alto-iguazu' and ig['level'] == 'Peligro'           # Alerta por lluvia + río ya alto
@@ -185,3 +187,66 @@ def test_informe_pdf_de_la_cuenca(monkeypatch):
     assert r.status_code == 200 and r.data[:5] == b'%PDF-' and 'attachment' in r.headers['Content-Disposition']
     d = cr.build_data(fake['data'])
     assert d['worst'] == 'Alerta' and 'Alto Iguazú' in d['summary'][1] and d['pictures'] == []
+
+
+def test_niveles_por_altura_oficial_e_ina_merge():
+    lv = {'alert': 6.5, 'evac': 7.0}
+    assert [cc.height_level(h, lv, 'Paraná') for h in (4.0, 5.6, 6.6, 7.1)] == ['Normal', 'Atención', 'Alerta', 'Evacuación']
+    assert cc.height_level(8.6, {'alert': 10.5, 'evac': 13.5}, 'Iguazú') == 'Atención'
+    st = [{'id': 'parana-corrientes', 'river': 'Paraná', 'place': 'Corrientes', 'danger': 'Normal'}]
+    ina = {'levels': {'parana-corrientes': {'alert': 6.5, 'evac': 7, 'low': 1.83}},
+           'heights': {'parana-corrientes': [('2026-10-05', 4.6), ('2026-10-12', 4.99)]},
+           'forecast': {'by_site': {'parana-corrientes': [{'date': '2026-10-20', 'min': 5.2, 'central': 5.67, 'max': 6.0}]}}}
+    out = cc.merge_ina(st, ina)[0]
+    assert out['ina']['height'] == 4.99 and out['ina']['change_7d'] == 0.39 and out['ina']['to_alert'] == 1.51
+    assert out['ina']['level'] == 'Normal' and out['ina']['forecast_level'] == 'Atención' and out['peak_danger'] == 'Atención'
+    assert cc.ina_url('datos', siteCode=19, varId=2).endswith('/datos&siteCode=19&varId=2')
+
+
+def test_prediccion_lluvia_crecida_en_altura():
+    basins = [{'id': 'alto-iguazu', 'name': 'Alto Iguazú', 'where': 'w', 'status': 'recibido', 'p_ge100': 45, 'p_ge200': 0, 'ratio': 1.2,
+               'median_mm': 110, 'rain10_mm': 100, 'rain_center': '2026-10-17'}]
+    stations = [{'id': 'iguazu-cataratas', 'place': 'Puerto Iguazú', 'river': 'Iguazú',
+                 'ina': {'height': 18.0, 'alert': 25, 'evac': 28, 'level': 'Normal'}}]
+    normals = {'rain_rise': {'iguazu-cataratas': {'height': {'per10mm': 0.8, 'r': 0.6, 'cases': 140, 'rain_alert_mm': 120, 'rain_evac_mm': 190}}}}
+    a = cc.early_warning(basins, stations, [], normals)[0]
+    p = a['prediction']
+    assert p['kind'] == 'altura' and p['rise_m'] == 8.0 and p['to_m'] == 26.0 and p['level'] == 'Alerta'
+    assert a['level'] == 'Alerta' and any('20 años' in w for w in a['why'])
+
+
+def test_relacion_lluvia_crecida_sintetica():
+    import random
+    import normales_cuenca as nc
+    random.seed(2)
+    n = 3000
+    rain = [0.0] * n
+    for t0 in range(40, n - 20, 45):                       # una tormenta de 3 días cada 45 días
+        for k in range(3):
+            rain[t0 + k] = random.uniform(15, 50)
+    q = []
+    for t in range(n):                                     # embalse lineal con 3 días de demora: 30 m³/s por mm
+        q.append(1000 + sum(30 * rain[s] * 0.85 ** (t - 3 - s) for s in range(max(0, t - 60), t - 2)))
+    r = nc.rain_rise(rain, q, (2, 8), {'q5': 4000})
+    assert r and 100 < r['per10mm'] < 800 and r['r'] > 0.5 and r['cases'] >= 20
+
+
+def test_compute_arma_cifras_de_referencia():
+    import random
+    import normales_cuenca as nc
+    random.seed(4)
+    n = 20 * 365
+    rain = [0.0] * n
+    for t0 in range(30, n - 20, 40):
+        for k in range(3):
+            rain[t0 + k] = random.uniform(15, 50)
+    q = [round(1500 + sum(40 * rain[s] * 0.85 ** (t - 3 - s) for s in range(max(0, t - 50), t - 2))) for t in range(n)]
+    h = [round(100 * (5 + (v - 1500) / 1500)) for v in q]
+    cache = {'start': '2005-01-01', 'cells': {}, 'q': {'iguazu-cataratas': q, 'parana-eldorado': [None, None] + q[:-2]},
+             'h': {'iguazu-cataratas': h}, 'rain': {'alto-iguazu': [round(10 * r) for r in rain], 'medio-iguazu': [round(10 * r) for r in rain]}}
+    d = nc.compute(cache)
+    st = d['stations']['iguazu-cataratas']
+    assert st['return_periods']['q2'] < st['return_periods']['q20'] and st['height_record']['value'] > 5
+    assert d['lags']['iguazu-cataratas>parana-eldorado']['days'] == 2
+    rr = d['rain_rise']['iguazu-cataratas']
+    assert rr['discharge']['per10mm'] > 0 and rr['height']['per10mm'] > 0

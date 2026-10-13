@@ -535,3 +535,11 @@
 .cp-nino-wrap .cp-map { margin-top: 0; }
 .cp-nino-wrap .cp-nino { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 @media (max-width: 900px) { .cp-nino-wrap { grid-template-columns: 1fr; } }
+.cp-ref { margin-bottom: 12px; }
+.cp-ref .cp-table td.strong { font-weight: 700; font-size: 14px; }
+.cp-sub-note { display: block; font-size: 11px; color: #77868b; font-weight: 400; }
+.cp-red { color: #b42318; }
+.cp-pred { background: #f3f8fb; border-radius: 12px; padding: 10px 12px; }
+.cp-pred > span { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #1f5f99; margin-bottom: 4px; }
+.cp-pred p { font-size: 14px; color: #10222b; font-weight: 600; line-height: 1.45; margin: 0; }
+.cp-pred small { display: block; font-size: 12px; color: #52656c; margin-top: 4px; line-height: 1.45; }

@@ -137,6 +137,14 @@
         [#text(size: 11.5pt, weight: "bold")[#a.name] #h(4pt) #text(size: 7.5pt, fill: muted)[#a.where]], pill(a.level, tone(a.tone)))
       v(2pt)
       text(weight: "semibold")[#a.rain]
+      if a.prediction != "" {
+        v(3pt)
+        block(fill: rgb("#f3f8fb"), radius: 5pt, inset: 7pt, width: 100%, {
+          kicker("Cálculo lluvia → crecida", fill: sea); linebreak()
+          text(weight: "semibold", size: 9pt)[#a.prediction]; linebreak()
+          text(size: 7.3pt, fill: muted)[#a.basis]
+        })
+      }
       v(3pt)
       grid(columns: (1.3fr, 1fr), column-gutter: 14pt,
         [#kicker("Por qué", fill: muted) #v(1pt) #set text(size: 8pt); #for w in a.why [• #w #linebreak()]],
@@ -183,10 +191,18 @@
     ..d.dams.map(x => (text(weight: "medium")[#x.name], x.river, text(weight: "semibold")[#x.out], x.in, x.change, x.ratio, x.level, x.date)).flatten())
 ]
 #if d.rivers.len() > 0 [
-  #section("Los ríos hoy y su pico en 30 días", sub: [Caudal GloFAS (Copernicus) · m³/s · comparado con lo normal para la fecha · peligro por crecidas de 2, 5 y 20 años])
-  #table(columns: (1.6fr, auto, auto, 1fr, auto, 1.2fr, auto), ..table-style, align: (left, right, right, left, right, right, left),
-    ..thead("Río · lugar", "Hoy", "vs normal", "Estado", "7 días", "Pico", "Peligro"),
-    ..d.rivers.map(s => ([*#s.river* · #s.place], text(weight: "semibold")[#s.now], s.ratio, s.level, s.change, s.peak, if s.danger == "—" [—] else { pill(s.danger, tone(s.tone)) })).flatten())
+  #section("Cifras de referencia por localidad", sub: [Altura del río (INA, escalas de Prefectura) contra los niveles oficiales · pronóstico INA del #d.ina_issued · caudal GloFAS contra lo normal])
+  #{
+    set text(size: 7.8pt)
+    table(columns: (1.5fr, auto, auto, auto, auto, auto, auto, 1.2fr, 1.1fr, auto), ..table-style,
+      align: (left, right, right, right, right, right, right, left, right, left),
+      ..thead("Localidad", "Hoy", "7 días", "Bajas", "Alerta / evac.", "Falta", "INA prono", "Récord 20 años", "Caudal · normal", "Nivel"),
+      ..d.rivers.map(g => (table.cell(colspan: 10, fill: soft, text(size: 7.3pt, weight: "bold", fill: brand-dark)[RÍO #upper(g.name)]),
+        ..g.rows.map(r => (text(weight: "medium")[#r.place], [#text(weight: "bold")[#r.h] #if r.h_date != "" [#text(size: 6.2pt, fill: muted)[#r.h_date]]],
+          r.d7, r.low, [#r.alert / #r.evac], if r.to_alert == "superado" { text(fill: risk, weight: "bold")[superado] } else { r.to_alert },
+          r.fc, text(size: 7pt)[#r.record], r.q, if r.level == "—" [—] else { pill(r.level, tone(r.tone)) })).flatten())).flatten())
+  }
+  #note[Alturas en metros sobre el cero de cada escala (no son comparables entre puertos); "7 días": cuánto subió o bajó en la semana; "Falta": metros hasta el nivel de alerta. Alerta y evacuación son los niveles oficiales que publica el INA para las escalas de la Prefectura. "Atención": a menos de 1 m del nivel de alerta (2 m en el Iguazú y el Uruguay). Donde no hay escala, el nivel sale del caudal (crecidas de 2, 5 y 20 años). Caudal en m³/s y veces lo normal para la fecha.]
 ]
 
 // ───────────────────────────── 7. traslado y acciones ─────────────────────────────

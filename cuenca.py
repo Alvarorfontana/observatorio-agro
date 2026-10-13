@@ -38,29 +38,53 @@ BASINS = [
     {'id': 'jejui', 'group': 'Paraguay', 'name': 'Jejuí y Manduvirá', 'where': 'San Pedro y Canindeyú (Paraguay)', 'outlet': 'paraguay-asuncion', 'response': (3, 8), 'travel': 'a Asunción en 3 a 8 días', 'points': [(-24.65, -56.44), (-24.47, -55.7)]},
     {'id': 'tebicuary', 'group': 'Paraguay', 'name': 'Tebicuary', 'where': 'Guairá, Caazapá y Misiones (Paraguay)', 'outlet': 'paraguay-pilar', 'response': (3, 10), 'travel': 'a Pilar en 3 a 10 días', 'points': [(-25.75, -56.43), (-26.67, -57.15)]},
     {'id': 'pilcomayo', 'group': 'Bermejo y Pilcomayo', 'name': 'Pilcomayo', 'where': 'Potosí, Chuquisaca y Tarija (Bolivia) · norte de Salta', 'outlet': 'paraguay-asuncion', 'response': (20, 60), 'travel': 'se pierde en bañados; aporte lento al Paraguay', 'points': [(-19.58, -65.75), (-21.26, -63.47)]},
-    {'id': 'bermejo-bolivia', 'group': 'Bermejo y Pilcomayo', 'name': 'Bermejo superior', 'where': 'Tarija (Bolivia)', 'outlet': 'parana-corrientes', 'response': (10, 25), 'travel': 'al Paraguay inferior y Corrientes en 10 a 25 días', 'points': [(-21.53, -64.73), (-22.73, -64.34)]},
-    {'id': 'bermejo-salta', 'group': 'Bermejo y Pilcomayo', 'name': 'Bermejo · Salta y Jujuy', 'where': 'Orán, San Francisco y Ledesma (Argentina)', 'outlet': 'parana-corrientes', 'response': (8, 20), 'travel': 'al Paraguay inferior y Corrientes en 8 a 20 días', 'points': [(-23.13, -64.33), (-23.83, -64.79)]},
-    {'id': 'pelotas-canoas', 'group': 'Uruguay', 'name': 'Pelotas y Canoas', 'where': 'sierra de Santa Catarina y Rio Grande do Sul (Brasil)', 'outlet': 'uruguay-libres', 'response': (5, 9), 'travel': 'a Paso de los Libres en 5 a 9 días', 'points': [(-27.82, -50.33), (-28.51, -50.93)]},
-    {'id': 'uruguay-medio', 'group': 'Uruguay', 'name': 'Uruguay medio', 'where': 'Chapecó, Erechim y Joaçaba (Brasil)', 'outlet': 'uruguay-libres', 'response': (4, 7), 'travel': 'a Paso de los Libres en 4 a 7 días', 'points': [(-27.1, -52.62), (-27.17, -51.5)]},
-    {'id': 'peperi', 'group': 'Uruguay', 'name': 'Peperi-Guaçu y Misiones', 'where': 'oeste de Santa Catarina y Misiones', 'outlet': 'uruguay-libres', 'response': (2, 5), 'travel': 'a Paso de los Libres en 2 a 5 días', 'points': [(-26.73, -53.52), (-27.3, -54.2)]},
-    {'id': 'ijui', 'group': 'Uruguay', 'name': 'Ijuí y Piratinim', 'where': 'noroeste de Rio Grande do Sul (Brasil)', 'outlet': 'uruguay-libres', 'response': (2, 5), 'travel': 'a Paso de los Libres en 2 a 5 días', 'points': [(-28.39, -53.91), (-28.3, -54.26)]},
-    {'id': 'ibicui', 'group': 'Uruguay', 'name': 'Ibicuí', 'where': 'centro-oeste de Rio Grande do Sul (Brasil)', 'outlet': 'uruguay-concordia', 'response': (3, 8), 'travel': 'entra abajo de Uruguaiana; a Concordia en 3 a 8 días', 'points': [(-29.69, -53.81), (-29.78, -55.79)]},
-    {'id': 'cuareim-arapey', 'group': 'Uruguay', 'name': 'Cuareim y Arapey', 'where': 'norte de Uruguay y frontera con Brasil', 'outlet': 'uruguay-concordia', 'response': (2, 5), 'travel': 'a Concordia en 2 a 5 días', 'points': [(-30.4, -56.47), (-30.95, -57.0)]},
+    {'id': 'bermejo-bolivia', 'group': 'Bermejo y Pilcomayo', 'name': 'Bermejo superior', 'where': 'Tarija (Bolivia)', 'outlet': 'bermejo-elcolorado', 'response': (8, 18), 'travel': 'a El Colorado en 1 a 3 semanas y luego al Paraguay', 'points': [(-21.53, -64.73), (-22.73, -64.34)]},
+    {'id': 'bermejo-salta', 'group': 'Bermejo y Pilcomayo', 'name': 'Bermejo · Salta y Jujuy', 'where': 'Orán, San Francisco y Ledesma (Argentina)', 'outlet': 'bermejo-elcolorado', 'response': (5, 12), 'travel': 'a El Colorado en 5 a 12 días y luego al Paraguay', 'points': [(-23.13, -64.33), (-23.83, -64.79)]},
+    {'id': 'pelotas-canoas', 'group': 'Uruguay', 'name': 'Pelotas y Canoas', 'where': 'sierra de Santa Catarina y Rio Grande do Sul (Brasil)', 'outlet': 'uruguay-soberbio', 'response': (4, 8), 'travel': 'a El Soberbio en 4 a 8 días', 'points': [(-27.82, -50.33), (-28.51, -50.93)]},
+    {'id': 'uruguay-medio', 'group': 'Uruguay', 'name': 'Uruguay medio', 'where': 'Chapecó, Erechim y Joaçaba (Brasil)', 'outlet': 'uruguay-soberbio', 'response': (3, 6), 'travel': 'a El Soberbio en 3 a 6 días', 'points': [(-27.1, -52.62), (-27.17, -51.5)]},
+    {'id': 'peperi', 'group': 'Uruguay', 'name': 'Peperi-Guaçu y Misiones', 'where': 'oeste de Santa Catarina y Misiones', 'outlet': 'uruguay-soberbio', 'response': (1, 4), 'travel': 'a El Soberbio en 1 a 4 días', 'points': [(-26.73, -53.52), (-27.3, -54.2)]},
+    {'id': 'ijui', 'group': 'Uruguay', 'name': 'Ijuí y Piratinim', 'where': 'noroeste de Rio Grande do Sul (Brasil)', 'outlet': 'uruguay-santotome', 'response': (2, 5), 'travel': 'a Santo Tomé en 2 a 5 días', 'points': [(-28.39, -53.91), (-28.3, -54.26)]},
+    {'id': 'ibicui', 'group': 'Uruguay', 'name': 'Ibicuí', 'where': 'centro-oeste de Rio Grande do Sul (Brasil)', 'outlet': 'uruguay-libres', 'response': (3, 8), 'travel': 'a Paso de los Libres en 3 a 8 días', 'points': [(-29.69, -53.81), (-29.78, -55.79)]},
+    {'id': 'cuareim-arapey', 'group': 'Uruguay', 'name': 'Cuareim y Arapey', 'where': 'norte de Uruguay y frontera con Brasil', 'outlet': 'uruguay-montecaseros', 'response': (2, 5), 'travel': 'a Monte Caseros en 2 a 5 días', 'points': [(-30.4, -56.47), (-30.95, -57.0)]},
 ]
 
 
 # Ríos: punto sobre el cauce principal (la celda GloFAS elegida se guarda en las normales).
 STATIONS = [
-    {'id': 'iguazu-cataratas', 'river': 'Iguazú', 'place': 'Cataratas', 'lat': -25.60, 'lon': -54.38},
-    {'id': 'parana-posadas', 'river': 'Paraná', 'place': 'Posadas', 'lat': -27.36, 'lon': -55.90},
+    {'id': 'iguazu-andresito', 'river': 'Iguazú', 'place': 'Andresito', 'lat': -25.58, 'lon': -53.99},
+    {'id': 'iguazu-cataratas', 'river': 'Iguazú', 'place': 'Puerto Iguazú · Cataratas', 'lat': -25.6, 'lon': -54.38},
+    {'id': 'parana-eldorado', 'river': 'Paraná', 'place': 'Eldorado', 'lat': -26.4, 'lon': -54.69},
+    {'id': 'parana-posadas', 'river': 'Paraná', 'place': 'Posadas', 'lat': -27.36, 'lon': -55.9},
+    {'id': 'parana-ituzaingo', 'river': 'Paraná', 'place': 'Ituzaingó', 'lat': -27.58, 'lon': -56.69},
     {'id': 'parana-corrientes', 'river': 'Paraná', 'place': 'Corrientes', 'lat': -27.46, 'lon': -58.85},
-    {'id': 'parana-goya', 'river': 'Paraná', 'place': 'Goya', 'lat': -29.14, 'lon': -59.30},
-    {'id': 'parana-santafe', 'river': 'Paraná', 'place': 'Santa Fe · Paraná', 'lat': -31.70, 'lon': -60.55},
+    {'id': 'parana-bellavista', 'river': 'Paraná', 'place': 'Bella Vista', 'lat': -28.51, 'lon': -59.05},
+    {'id': 'parana-goya', 'river': 'Paraná', 'place': 'Goya', 'lat': -29.14, 'lon': -59.3},
+    {'id': 'parana-reconquista', 'river': 'Paraná', 'place': 'Reconquista', 'lat': -29.24, 'lon': -59.58},
+    {'id': 'parana-esquina', 'river': 'Paraná', 'place': 'Esquina', 'lat': -30.01, 'lon': -59.55},
+    {'id': 'parana-lapaz', 'river': 'Paraná', 'place': 'La Paz', 'lat': -30.74, 'lon': -59.65},
+    {'id': 'parana-santafe', 'river': 'Paraná', 'place': 'Santa Fe · Paraná', 'lat': -31.7, 'lon': -60.55},
+    {'id': 'parana-diamante', 'river': 'Paraná', 'place': 'Diamante', 'lat': -32.07, 'lon': -60.64},
     {'id': 'parana-rosario', 'river': 'Paraná', 'place': 'Rosario', 'lat': -32.95, 'lon': -60.62},
+    {'id': 'parana-sannicolas', 'river': 'Paraná', 'place': 'San Nicolás', 'lat': -33.33, 'lon': -60.2},
+    {'id': 'parana-sanpedro', 'river': 'Paraná', 'place': 'San Pedro', 'lat': -33.68, 'lon': -59.65},
+    {'id': 'parana-zarate', 'river': 'Paraná', 'place': 'Zárate', 'lat': -34.09, 'lon': -59.02},
+    {'id': 'paraguay-bahianegra', 'river': 'Paraguay', 'place': 'Bahía Negra', 'lat': -20.23, 'lon': -58.17},
+    {'id': 'paraguay-concepcion', 'river': 'Paraguay', 'place': 'Concepción', 'lat': -23.41, 'lon': -57.45},
     {'id': 'paraguay-asuncion', 'river': 'Paraguay', 'place': 'Asunción', 'lat': -25.28, 'lon': -57.65},
+    {'id': 'paraguay-formosa', 'river': 'Paraguay', 'place': 'Formosa · Alberdi', 'lat': -26.18, 'lon': -58.16},
     {'id': 'paraguay-pilar', 'river': 'Paraguay', 'place': 'Pilar', 'lat': -26.86, 'lon': -58.32},
+    {'id': 'paraguay-humaita', 'river': 'Paraguay', 'place': 'Humaitá', 'lat': -27.07, 'lon': -58.52},
+    {'id': 'bermejo-embarcacion', 'river': 'Bermejo', 'place': 'Embarcación', 'lat': -23.21, 'lon': -64.1},
+    {'id': 'bermejo-elcolorado', 'river': 'Bermejo', 'place': 'El Colorado', 'lat': -26.31, 'lon': -59.37},
+    {'id': 'uruguay-soberbio', 'river': 'Uruguay', 'place': 'El Soberbio', 'lat': -27.3, 'lon': -54.2},
+    {'id': 'uruguay-albaposse', 'river': 'Uruguay', 'place': 'Alba Posse', 'lat': -27.57, 'lon': -54.68},
+    {'id': 'uruguay-santotome', 'river': 'Uruguay', 'place': 'Santo Tomé', 'lat': -28.55, 'lon': -56.04},
     {'id': 'uruguay-libres', 'river': 'Uruguay', 'place': 'Paso de los Libres', 'lat': -29.71, 'lon': -57.08},
-    {'id': 'uruguay-concordia', 'river': 'Uruguay', 'place': 'Concordia', 'lat': -31.39, 'lon': -58.02},
+    {'id': 'uruguay-montecaseros', 'river': 'Uruguay', 'place': 'Monte Caseros', 'lat': -30.25, 'lon': -57.64},
+    {'id': 'uruguay-concordia', 'river': 'Uruguay', 'place': 'Concordia · Salto', 'lat': -31.39, 'lon': -58.02},
+    {'id': 'uruguay-colon', 'river': 'Uruguay', 'place': 'Colón', 'lat': -32.22, 'lon': -58.14},
+    {'id': 'uruguay-cdeluruguay', 'river': 'Uruguay', 'place': 'Concepción del Uruguay', 'lat': -32.48, 'lon': -58.22},
+    {'id': 'uruguay-fraybentos', 'river': 'Uruguay', 'place': 'Fray Bentos', 'lat': -33.12, 'lon': -58.31},
 ]
 
 MODELS = 'ecmwf_ifs025,gfs025'
@@ -200,8 +224,9 @@ def basin_rain(responses, basins=BASINS, normals=None, days=15):
             if tot and cum >= tot / 2:
                 center = j; break
         heavy = [j for j, v in enumerate(med_day) if v and v >= 10]
+        r10 = max((sum(v or 0 for v in med_day[j:j + 10]) for j in range(max(1, days - 9))), default=None)
         out.append({'id': b['id'], 'group': b.get('group'), 'name': b['name'], 'where': b['where'], 'travel': b['travel'], 'status': 'recibido',
-                    'daily_median': med_day, 'dates': times[:days],
+                    'daily_median': med_day, 'dates': times[:days], 'rain10_mm': _r(r10),
                     'rain_center': times[center] if center is not None and center < len(times) else None,
                     'rain_from': times[heavy[0]] if heavy and heavy[0] < len(times) else None,
                     'rain_to': times[heavy[-1]] if heavy and heavy[-1] < len(times) else None,
@@ -259,7 +284,7 @@ def rivers_summary(responses, normals=None, today=None, past=7):
         med = d.get('river_discharge_median') or q
         hi = d.get('river_discharge_p75') or []
         if not t or not q:
-            out.append({**_st(st), 'status': 'sin dato'}); continue
+            out.append({**_st(st), 'status': 'sin dato', 'height_record': (normals.get(st['id']) or {}).get('height_record')}); continue
         iso = today.isoformat()
         k = t.index(iso) if iso in t else min(past, len(t) - 1)
         now = q[k] if q[k] is not None else med[k]
@@ -280,7 +305,7 @@ def rivers_summary(responses, normals=None, today=None, past=7):
                     'peak_date': peak[0] if peak else None, 'peak': _r(peak[1]) if peak else None,
                     'peak_percentile': pk_pct, 'peak_level': river_level(pk_pct),
                     'danger': danger(now, norm.get('return_periods')), 'peak_danger': danger(peak[1] if peak else None, norm.get('return_periods')),
-                    'thresholds': norm.get('return_periods'),
+                    'thresholds': norm.get('return_periods'), 'height_record': norm.get('height_record'),
                     'series': {'dates': t, 'discharge': [_r(v) for v in q], 'median': [_r(v) for v in med], 'p75': [_r(v) for v in hi]}})
     return out
 
@@ -298,7 +323,14 @@ def rivers():
     data = data if isinstance(data, list) else [data]
     allnorm = load_normals()
     st_out = rivers_summary(data, normals)
+    ina = None
+    try:
+        ina = ina_all()
+    except Exception:
+        pass
+    st_out = merge_ina(st_out, ina)
     return {'stations': st_out, 'normals': bool(normals), 'travel': travel(st_out, allnorm), 'actions': ACTIONS,
+            'ina_forecast_issued': ((ina or {}).get('forecast') or {}).get('issued'),
             'lags_period': allnorm.get('lags_period'), 'source': FLOOD,
             'note': 'Caudal simulado por GloFAS (Copernicus) en grilla de ~5 km. Se compara con su propia serie 2001-2020; '
                     'para alturas oficiales en puertos, ver Prefectura Naval e INA.'}
@@ -307,9 +339,10 @@ def rivers():
 # ───────────────────────────── 4. tiempos de traslado y peligro ─────────────────────────────
 # Tramos encadenados del cauce principal: la onda de crecida baja de una estación a la siguiente.
 CHAINS = [
-    {'id': 'iguazu-parana', 'name': 'Del Iguazú al Paraná', 'stations': ['iguazu-cataratas', 'parana-posadas', 'parana-corrientes', 'parana-goya', 'parana-santafe', 'parana-rosario']},
-    {'id': 'paraguay', 'name': 'Del Paraguay al Paraná', 'stations': ['paraguay-asuncion', 'paraguay-pilar', 'parana-corrientes', 'parana-goya', 'parana-santafe', 'parana-rosario']},
-    {'id': 'uruguay', 'name': 'Río Uruguay', 'stations': ['uruguay-libres', 'uruguay-concordia']},
+    {'id': 'iguazu-parana', 'name': 'Del Iguazú al Paraná', 'stations': ['iguazu-andresito', 'iguazu-cataratas', 'parana-eldorado', 'parana-posadas', 'parana-ituzaingo', 'parana-corrientes', 'parana-bellavista', 'parana-goya', 'parana-reconquista', 'parana-esquina', 'parana-lapaz', 'parana-santafe', 'parana-diamante', 'parana-rosario', 'parana-sannicolas', 'parana-sanpedro', 'parana-zarate']},
+    {'id': 'paraguay', 'name': 'Río Paraguay', 'stations': ['paraguay-bahianegra', 'paraguay-concepcion', 'paraguay-asuncion', 'paraguay-formosa', 'paraguay-pilar', 'paraguay-humaita', 'parana-corrientes']},
+    {'id': 'bermejo', 'name': 'Río Bermejo', 'stations': ['bermejo-embarcacion', 'bermejo-elcolorado', 'paraguay-humaita']},
+    {'id': 'uruguay', 'name': 'Río Uruguay', 'stations': ['uruguay-soberbio', 'uruguay-albaposse', 'uruguay-santotome', 'uruguay-libres', 'uruguay-montecaseros', 'uruguay-concordia', 'uruguay-colon', 'uruguay-cdeluruguay', 'uruguay-fraybentos']},
 ]
 
 LEVELS = ['Normal', 'Atención', 'Alerta', 'Peligro']
@@ -370,8 +403,8 @@ DAMS = [
     {'id': 'salto-caxias', 'outlet': 'iguazu-cataratas', 'match': ['SALTO CAXIAS'], 'name': 'Salto Caxias', 'river': 'Iguazú', 'note': 'última gran represa antes de Cataratas · ~1 día'},
     {'id': 'itaipu', 'outlet': 'parana-posadas', 'match': ['ITAIPU'], 'name': 'Itaipú', 'river': 'Paraná', 'note': 'lo que suelta llega a Posadas en ~1 a 2 días'},
     {'id': 'porto-primavera', 'outlet': 'parana-posadas', 'match': ['PORTO PRIMAVERA', 'ENG SERGIO MOTTA'], 'name': 'Porto Primavera', 'river': 'Paraná', 'note': 'Alto Paraná, antes de Itaipú'},
-    {'id': 'foz-chapeco', 'outlet': 'uruguay-libres', 'match': ['FOZ DO CHAPECO'], 'name': 'Foz do Chapecó', 'river': 'Uruguay', 'note': 'Alto Uruguay · a Paso de los Libres en ~3 a 5 días'},
-    {'id': 'ita', 'outlet': 'uruguay-libres', 'match': ['ITA'], 'exact': True, 'name': 'Itá', 'river': 'Uruguay', 'note': 'Alto Uruguay, Santa Catarina'},
+    {'id': 'foz-chapeco', 'outlet': 'uruguay-soberbio', 'match': ['FOZ DO CHAPECO'], 'name': 'Foz do Chapecó', 'river': 'Uruguay', 'note': 'Alto Uruguay · a Paso de los Libres en ~3 a 5 días'},
+    {'id': 'ita', 'outlet': 'uruguay-soberbio', 'match': ['ITA'], 'exact': True, 'name': 'Itá', 'river': 'Uruguay', 'note': 'Alto Uruguay, Santa Catarina'},
 ]
 
 
@@ -479,6 +512,10 @@ def rain_level(b):
     return lvl, why
 
 
+def nf_m(v):
+    return '—' if v is None else f'{v:.2f}'.replace('.', ',')
+
+
 def _bump(lvl):
     return ORDER[min(len(ORDER) - 1, ORDER.index(lvl) + 1)]
 
@@ -503,13 +540,42 @@ def early_warning(basins, stations, dams_list=None, normals=None):
         outlet = st.get(cfg['outlet']) or {}
         # agravantes: río de salida ya alto o represa aguas arriba soltando mucho (sube a lo sumo un escalón)
         bump = []
-        if outlet.get('level') in ('alto', 'muy alto', 'extraordinario'):
+        il = (outlet.get('ina') or {}).get('level')
+        if il in ('Atención', 'Alerta', 'Evacuación'):
+            bump.append(f"el río en {outlet.get('place')} ya está en {il.lower()} ({nf_m((outlet.get('ina') or {}).get('height'))} m)")
+        elif outlet.get('level') in ('alto', 'muy alto', 'extraordinario'):
             bump.append(f"el río en {outlet.get('place')} ya viene {outlet['level']}: el suelo y el cauce están cargados")
         for d in dams_list:
             if d.get('outlet') == cfg['outlet'] and d.get('level') in ('muy alto', 'extraordinario') and cfg['response'][0] < 20:
                 bump.append(f"la represa {d['name']} ya suelta un caudal {d['level']}"); break
         if lvl != 'Normal' and bump:
             lvl = _bump(lvl); why.extend(bump)
+        # cálculo lluvia → crecida (20 años): cuánto podría subir el río de salida con la lluvia pronosticada
+        pred = None
+        rr = ((normals or {}).get('rain_rise') or {}).get(cfg['outlet']) or {}
+        r10 = b.get('rain10_mm')
+        ina = outlet.get('ina') or {}
+        if r10:
+            hr = rr.get('height'); qr = rr.get('discharge')
+            if hr and ina.get('height') is not None:
+                rise = hr['per10mm'] * r10 / 10
+                ph = round(ina['height'] + rise, 2)
+                plv = height_level(ph, {'alert': ina.get('alert'), 'evac': ina.get('evac')}, outlet.get('river'))
+                pred = {'kind': 'altura', 'place': outlet.get('place'), 'rain10_mm': r10, 'rise_m': round(rise, 2), 'from_m': ina['height'], 'to_m': ph,
+                        'alert_m': ina.get('alert'), 'evac_m': ina.get('evac'), 'level': plv, 'per10mm_m': hr['per10mm'], 'r': hr['r'], 'cases': hr['cases'],
+                        'rain_alert_mm': hr.get('rain_alert_mm'), 'rain_evac_mm': hr.get('rain_evac_mm')}
+            elif qr and outlet.get('discharge') is not None:
+                rise = qr['per10mm'] * r10 / 10
+                pq = round(outlet['discharge'] + rise)
+                rp = outlet.get('thresholds')
+                pred = {'kind': 'caudal', 'place': outlet.get('place'), 'rain10_mm': r10, 'rise_q': round(rise), 'from_q': outlet['discharge'], 'to_q': pq,
+                        'level': danger(pq, rp), 'per10mm_q': qr['per10mm'], 'r': qr['r'], 'cases': qr['cases'],
+                        'rain_alert_mm': qr.get('rain_q5_mm'), 'rain_evac_mm': qr.get('rain_q20_mm')}
+            if pred and pred.get('level'):
+                target = {'Evacuación': 'Peligro'}.get(pred['level'], pred['level'])
+                if target in ORDER and ORDER.index(target) > ORDER.index(lvl):
+                    lvl = target
+                    why.append(f"el cálculo lluvia-crecida de 20 años indica nivel {pred['level'].lower()} en {pred['place']}")
         start = b.get('rain_center') or b.get('rain_from')
         lo, hi = cfg['response']
         arrivals = []
@@ -525,7 +591,7 @@ def early_warning(basins, stations, dams_list=None, normals=None):
                     acc += lg['days']
                     s2 = st.get(dn) or {}
                     arrivals.append({'place': s2.get('place') or dn, 'river': s2.get('river'), 'window': _span(start, lo + acc, hi + acc)})
-        out.append({'basin': b['id'], 'group': cfg.get('group'), 'name': b['name'], 'where': b['where'], 'level': lvl, 'why': why,
+        out.append({'basin': b['id'], 'group': cfg.get('group'), 'name': b['name'], 'where': b['where'], 'level': lvl, 'why': why, 'prediction': pred,
                     'rain_from': b.get('rain_from'), 'rain_to': b.get('rain_to'), 'median_mm': b.get('median_mm'),
                     'p_ge100': b.get('p_ge100'), 'arrivals': arrivals, 'actions': ACTIONS.get(lvl, [])})
     out.sort(key=lambda a: -ORDER.index(a['level']))
@@ -585,6 +651,154 @@ def maps(alerts=None, today=None):
                  'overlay': gibs_url('Coastlines_15m', PLATA_BBOX, None, 840, 800),
                  'caption': 'GPM IMERG (NASA) vía GIBS: intensidad de lluvia estimada por satélite, sobre la imagen del día.'},
     }
+
+
+# ───────────────────────────── 8. INA: alturas, niveles oficiales y pronóstico ─────────────────────────────
+INA = 'https://alerta.ina.gob.ar/pub/datos'
+# Localidad → sitecode INA (escalas de Prefectura). Niveles oficiales (m) leídos de INA el 13/10/2026;
+# se refrescan en vivo desde /estaciones y estos quedan sólo de respaldo.
+INA_SITES = {
+    'iguazu-andresito': (8, 10.5, 13.5, 0.16), 'iguazu-cataratas': (9, 25, 28, 9.4), 'parana-eldorado': (11, 23, 25, 7.5),
+    'parana-posadas': (14, 11, 12, 9.8), 'parana-ituzaingo': (15, 3.5, 4, 0.81), 'parana-corrientes': (19, 6.5, 7, 1.83),
+    'parana-bellavista': (22, 6, 6.4, 3), 'parana-goya': (23, 5.2, 5.7, 2.23), 'parana-reconquista': (24, 5.1, 5.3, 2.18),
+    'parana-esquina': (25, 5, 5.4, 2.2), 'parana-lapaz': (26, 5.8, 6.15, 2.38), 'parana-santafe': (29, 4.7, 5, 1.61),
+    'parana-diamante': (31, 5.3, 5.5, 2.4), 'parana-rosario': (34, 5, 5.25, 1.64), 'parana-sannicolas': (36, 4.2, 5, 1.35),
+    'parana-sanpedro': (38, 3.4, 3.6, 0.84), 'parana-zarate': (40, 2, 2.2, 0.25),
+    'paraguay-asuncion': (55, 5.35, 6, 1.4), 'paraguay-formosa': (57, 7.8, 8.3, 1.6), 'paraguay-humaita': (58, 6.5, 7, None),
+    'uruguay-soberbio': (61, None, None, None), 'uruguay-santotome': (68, 11.5, 12.5, 1.32), 'uruguay-libres': (72, 7.5, 8.5, 0.9),
+    'uruguay-montecaseros': (74, 7.5, 8.5, 0.8), 'uruguay-concordia': (79, 11, 12.5, 0.88), 'uruguay-colon': (80, 7.1, 7.9, 0.9),
+    'uruguay-cdeluruguay': (81, 5.3, 6.3, 0.8),
+}
+INA_NAMES = {'iguazu-cataratas': 'escala Puerto Iguazú (río Paraná)', 'paraguay-asuncion': 'escala Puerto Pilcomayo (frente a Asunción)',
+             'paraguay-humaita': 'escala Puerto Bermejo', 'parana-santafe': 'escala Paraná'}
+INA_PRONO_CAL = 289          # "tabprono_central": pronóstico oficial del INA para el Paraná (Corrientes a Rosario)
+ATTENTION_M = {'Iguazú': 2.0, 'Uruguay': 2.0}   # metros antes del nivel de alerta para pasar a Atención (resto: 1 m)
+
+
+def ina_url(endpoint, **params):
+    """La API del INA lee los parámetros con '&' después del recurso (como en su documentación)."""
+    from urllib.parse import urlencode
+    return f'{INA}/{endpoint}&{urlencode(params)}'
+
+
+def ina_get(endpoint, timeout=20, **params):
+    r = c.SESSION.get(ina_url(endpoint, **params), timeout=timeout)
+    r.raise_for_status()
+    j = r.json()
+    if isinstance(j, dict) and j.get('mensaje') and 'data' not in j:
+        raise ValueError(f"INA: {j['mensaje']}")
+    return j
+
+
+def ina_levels():
+    """Niveles oficiales vigentes por sitecode (alerta, evacuación, aguas bajas). Respaldo: la tabla fija."""
+    out = {sid: {'alert': a, 'evac': e, 'low': lw} for sid, (sc, a, e, lw) in INA_SITES.items()}
+    try:
+        rows = ina_get('estaciones', norte=-20, sur=-34.5, este=-53.5, oeste=-61, format='json', timeout=25)
+        rows = rows.get('data', rows) if isinstance(rows, dict) else rows
+        by = {int(r['sitecode']): r for r in rows if str(r.get('sitecode', '')).isdigit()}
+        for sid, (sc, *_rest) in INA_SITES.items():
+            r = by.get(sc)
+            if r:
+                out[sid] = {'alert': r.get('nivel_de_alerta'), 'evac': r.get('nivel_de_evacuacion'), 'low': r.get('nivel_de_aguas_bajas')}
+    except Exception:
+        pass
+    return out
+
+
+def ina_heights(sid, today=None, days=15):
+    today = today or c._now().date()
+    sc = INA_SITES[sid][0]
+    j = ina_get('datos', timeStart=(today - timedelta(days=days)).isoformat(), timeEnd=(today + timedelta(days=1)).isoformat(),
+                siteCode=sc, varId=2, format='json')
+    rows = sorted((str(r['timestart'])[:10], float(r['valor'])) for r in j.get('data') or [] if r.get('valor') is not None)
+    by_day = {}
+    for d, v in rows:
+        by_day[d] = v                       # último valor del día
+    return sorted(by_day.items())
+
+
+def ina_forecast(today=None):
+    """Pronóstico oficial del INA (tabprono): por localidad, fechas con mínimo, central y máximo."""
+    today = today or c._now().date()
+    meta = ina_get('seriesProno', varId=2, calId=INA_PRONO_CAL, format='json')
+    meta = meta.get('data', meta) if isinstance(meta, dict) else meta
+    sites = {int(m['sitecode']): m for m in meta if str(m.get('sitecode', '')).isdigit()}
+    issued = max((str(m.get('forecastdate', ''))[:10] for m in sites.values()), default=None)
+    inv = {v[0]: k for k, v in INA_SITES.items()}
+    out = {}
+    def one(sc):
+        j = ina_get('datosProno', timeStart=(issued or today.isoformat()), timeEnd=(today + timedelta(days=45)).isoformat(),
+                    siteCode=sc, varId=2, calId=INA_PRONO_CAL, format='json')
+        by = {}
+        for r in j.get('data') or []:
+            if r.get('valor') is not None:
+                by.setdefault(str(r['timestart'])[:10], []).append(float(r['valor']))
+        return [{'date': d, 'min': min(v), 'central': sorted(v)[len(v) // 2], 'max': max(v)} for d, v in sorted(by.items()) if d >= today.isoformat()]
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        jobs = {inv[sc]: pool.submit(one, sc) for sc in sites if sc in inv}
+        for sid, f in jobs.items():
+            try:
+                out[sid] = f.result()
+            except Exception:
+                pass
+    return {'issued': issued, 'by_site': out, 'model': 'INA · pronóstico tabprono'}
+
+
+def height_level(h, lv, river=None):
+    """Nivel por altura contra los niveles oficiales: Evacuación, Alerta, Atención (1-2 m antes) o Normal."""
+    if h is None or not lv or lv.get('alert') is None:
+        return None
+    if lv.get('evac') is not None and h >= lv['evac']: return 'Evacuación'
+    if h >= lv['alert']: return 'Alerta'
+    if h >= lv['alert'] - ATTENTION_M.get(river, 1.0): return 'Atención'
+    return 'Normal'
+
+
+def ina_all(today=None):
+    today = today or c._now().date()
+    levels = ina_levels()
+    heights = {}
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        jobs = {sid: pool.submit(ina_heights, sid, today) for sid in INA_SITES}
+        for sid, f in jobs.items():
+            try:
+                heights[sid] = f.result()
+            except Exception:
+                heights[sid] = []
+    try:
+        prono = ina_forecast(today)
+    except Exception:
+        prono = {'issued': None, 'by_site': {}}
+    return {'levels': levels, 'heights': heights, 'forecast': prono}
+
+
+def merge_ina(stations, ina):
+    """Suma a cada localidad la altura del INA, los niveles oficiales, el nivel y el pronóstico oficial."""
+    if not ina:
+        return stations
+    for s in stations:
+        sid = s['id']
+        if sid not in INA_SITES:
+            continue
+        hs = ina['heights'].get(sid) or []
+        lv = ina['levels'].get(sid) or {}
+        fc = (ina.get('forecast') or {}).get('by_site', {}).get(sid) or []
+        h = hs[-1][1] if hs else None
+        wk = [v for d, v in hs if d <= (date.fromisoformat(hs[-1][0]) - timedelta(days=7)).isoformat()] if hs else []
+        fmax = max((x['max'] for x in fc), default=None)
+        s['ina'] = {'site': INA_SITES[sid][0], 'gauge': INA_NAMES.get(sid), 'height': h, 'date': hs[-1][0] if hs else None,
+                    'change_7d': round(h - wk[-1], 2) if h is not None and wk else None,
+                    'alert': lv.get('alert'), 'evac': lv.get('evac'), 'low': lv.get('low'),
+                    'to_alert': round(lv['alert'] - h, 2) if h is not None and lv.get('alert') is not None else None,
+                    'level': height_level(h, lv, s.get('river')),
+                    'forecast': fc, 'forecast_level': height_level(fmax, lv, s.get('river')),
+                    'series': [{'date': d, 'h': v} for d, v in hs]}
+        if s['ina']['level']:
+            s['danger'] = s['ina']['level']; s['danger_source'] = 'INA'
+        if s['ina']['forecast_level']:
+            s['peak_danger'] = s['ina']['forecast_level']
+    return stations
 
 
 # ───────────────────────────── todo junto ─────────────────────────────

@@ -34,6 +34,40 @@ def sign(v, d=1):
     return '—' if v is None else ('+' if v > 0 else '') + num(v, d)
 
 
+MONTHS_SHORT = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
+
+
+def my(iso):
+    return f"{MONTHS_SHORT[int(iso[5:7]) - 1]} {iso[:4]}" if iso and len(iso) >= 7 else ''
+
+
+def m2(v):
+    return '—' if v is None else f'{num(v, 2)} m'
+
+
+def pred_text(p):
+    if not p:
+        return ''
+    if p.get('kind') == 'altura':
+        ref = f" (alerta {num(p.get('alert_m'), 2)} m, evacuación {num(p.get('evac_m'), 2)} m)" if p.get('alert_m') is not None else ''
+        return (f"Con {num(p.get('rain10_mm'))} mm en 10 días, el río en {p.get('place')} podría subir unos {num(p.get('rise_m'), 1)} m: "
+                f"de {num(p.get('from_m'), 2)} a {num(p.get('to_m'), 2)} m{ref}.")
+    return (f"Con {num(p.get('rain10_mm'))} mm en 10 días, el caudal en {p.get('place')} podría subir unos {num(p.get('rise_q'))} m³/s: "
+            f"de {num(p.get('from_q'))} a {num(p.get('to_q'))} m³/s.")
+
+
+def pred_basis(p):
+    if not p:
+        return ''
+    per = f"{num(p.get('per10mm_m'), 2)} m" if p.get('kind') == 'altura' else f"{num(p.get('per10mm_q'))} m³/s"
+    out = f"{per} por cada 10 mm · {p.get('cases')} episodios en 20 años"
+    if p.get('rain_alert_mm'):
+        out += f" · en el pasado, con ~{num(p['rain_alert_mm'])} mm pasó el nivel de alerta"
+    if p.get('rain_evac_mm'):
+        out += f" y con ~{num(p['rain_evac_mm'])} mm el de evacuación"
+    return out + '.'
+
+
 def _image(urls, timeout=12):
     """Primer URL que devuelva una imagen válida (PNG o JPEG). None si ninguna responde."""
     if os.environ.get('DOTS_REPORT_IMAGERY', '1') == '0':
@@ -61,6 +95,25 @@ def fetch_images(maps):
         return {key: f.result() for key, f in jobs.items()}
 
 
+def _ref_row(s):
+    i = s.get('ina') or {}
+    fc = (i.get('forecast') or [])[-1:] or [None]
+    fc = fc[0]
+    lvl = s.get('danger') or s.get('peak_danger')
+    rec = s.get('height_record')
+    th = s.get('thresholds') or {}
+    def m2(v):
+        return '—' if v is None else num(v, 2)
+    return {'place': s['place'], 'h': m2(i.get('height')), 'h_date': dm(i.get('date')) if i.get('date') else '',
+            'd7': sign(i.get('change_7d'), 2) if i.get('change_7d') is not None else '—',
+            'low': m2(i.get('low')), 'alert': m2(i.get('alert')), 'evac': m2(i.get('evac')),
+            'to_alert': ('superado' if i.get('to_alert') is not None and i['to_alert'] <= 0 else m2(i.get('to_alert'))),
+            'fc': (f"{num(fc['central'], 2)} · {dm(fc['date'])}") if fc else '—',
+            'record': (f"{num(rec['value'], 2)} m · {my(rec['date'])}") if rec else ((f"{num(th['max'])} m³/s · {my(th.get('max_date'))}") if th.get('max') else 'en cálculo'),
+            'q': (f"{num(s.get('discharge'))} · {num(s.get('ratio'), 1)}×" if s.get('ratio') is not None else num(s.get('discharge'))) if s.get('status') == 'recibido' else '—',
+            'level': lvl or '—', 'tone': TONE.get({'Evacuación': 'Peligro'}.get(lvl, lvl) or '', 'idle')}
+
+
 def build_data(d, images=None, today=None):
     today = today or date.today()
     images = images or {}
@@ -82,9 +135,9 @@ def build_data(d, images=None, today=None):
             lines.append('Otras cuencas con aviso: ' + ', '.join(f"{x['name']} ({x['level'].lower()})" for x in active[1:5]) + '.')
     else:
         lines.append('Sin alertas por lluvia en las cabeceras para los próximos 15 días.')
-    high = [s for s in rv.get('stations') or [] if s.get('level') in ('alto', 'muy alto', 'extraordinario')]
+    high = [s for s in rv.get('stations') or [] if (s.get('ina') or {}).get('level') in ('Atención', 'Alerta', 'Evacuación')]
     if high and len(lines) < 3:
-        lines.append('Ríos por encima de lo normal: ' + ', '.join(f"{s['river']} en {s['place']} ({num(s.get('ratio'), 1)}×)" for s in high[:4]) + '.')
+        lines.append('Puertos cerca o sobre el nivel de alerta: ' + ', '.join(f"{s['place']} {num((s.get('ina') or {}).get('height'), 2)} m ({(s.get('ina') or {}).get('level', '').lower()})" for s in high[:4]) + '.')
 
     def img(key, part='main'):
         b = images.get((key, part))
@@ -127,6 +180,7 @@ def build_data(d, images=None, today=None):
         'alerts': [{'name': a['name'], 'where': a['where'], 'level': a['level'], 'tone': TONE.get(a['level']),
                     'rain': (f"{num(a.get('median_mm'))} mm en 15 días" + (f" · lluvia fuerte del {dm(a.get('rain_from'))} al {dm(a.get('rain_to'))}" if a.get('rain_from') else '')),
                     'why': a.get('why') or [], 'actions': a.get('actions') or [],
+                    'prediction': pred_text(a.get('prediction')), 'basis': pred_basis(a.get('prediction')),
                     'arrivals': [{'place': x['place'], 'window': f"{dm(x['window'][0])} al {dm(x['window'][1])}" if x.get('window') else '—'} for x in a.get('arrivals') or []]}
                    for a in active],
         'calm': [a['name'] for a in alerts if a.get('level') == 'Normal'],
@@ -136,11 +190,9 @@ def build_data(d, images=None, today=None):
                   'change': f"{sign(x.get('change_7d_pct'), 0)} %" if x.get('change_7d_pct') is not None else '—',
                   'ratio': f"{num(x.get('ratio'), 1)}×" if x.get('ratio') is not None else '—', 'level': x.get('level') or '—',
                   'date': dm(x.get('date'))} for x in dams.get('dams') or [] if x.get('status') == 'recibido'],
-        'rivers': [{'river': s['river'], 'place': s['place'], 'now': num(s.get('discharge')), 'ratio': f"{num(s.get('ratio'), 1)}×" if s.get('ratio') is not None else '—',
-                    'level': s.get('level') or '—', 'change': f"{sign(s.get('change_7d_pct'), 0)} %" if s.get('change_7d_pct') is not None else '—',
-                    'peak': f"{num(s.get('peak'))} · {dm(s.get('peak_date'))}" if s.get('peak') else '—',
-                    'danger': s.get('peak_danger') or s.get('danger') or '—', 'tone': TONE.get(s.get('peak_danger') or s.get('danger') or '', 'idle')}
-                   for s in rv.get('stations') or [] if s.get('status') == 'recibido'],
+        'rivers': [{'name': rn, 'rows': [_ref_row(s) for s in rv.get('stations') or [] if s.get('river') == rn]}
+                   for rn in ['Iguazú', 'Paraná', 'Paraguay', 'Bermejo', 'Uruguay'] if any(s.get('river') == rn for s in rv.get('stations') or [])],
+        'ina_issued': dm(rv.get('ina_forecast_issued')),
         'travel': [{'name': ch['name'], 'rows': [{'place': r['place'], 'days': ('cabecera' if i == 0 else f"+{num(r['days_from_head'])} días" if r.get('days_from_head') is not None else 'en cálculo'),
                                                  'arrival': dm(r.get('arrival')) if r.get('arrival') else '—'} for i, r in enumerate(ch['rows'])]}
                    for ch in rv.get('travel') or []],

@@ -5,7 +5,14 @@ type Data = Record<string, any>;
 const nf = (v: unknown, d = 0) => v == null || !Number.isFinite(Number(v)) ? "—" : Number(v).toLocaleString("es-AR", { minimumFractionDigits: d, maximumFractionDigits: d });
 const dm = (iso?: string | null) => iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}` : "—";
 const sign = (v: number | null | undefined, d = 1) => v == null ? "—" : `${v > 0 ? "+" : ""}${nf(v, d)}`;
-const LEVEL_TONE: Record<string, string> = { Normal: "ok", "Atención": "warn", Alerta: "alert", Peligro: "risk" };
+const LEVEL_TONE: Record<string, string> = { Normal: "ok", "Atención": "warn", Alerta: "alert", Peligro: "risk", "Evacuación": "risk" };
+const m2 = (v: unknown) => v == null ? "—" : `${nf(v, 2)} m`;
+const my = (iso?: string | null) => iso ? `${["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"][Number(iso.slice(5, 7)) - 1]} ${iso.slice(0, 4)}` : "";
+export function predText(p: Data | null | undefined) {
+  if (!p) return "";
+  if (p.kind === "altura") return `Con ${nf(p.rain10_mm)} mm en 10 días, el río en ${p.place} podría subir unos ${nf(p.rise_m, 1)} m: de ${nf(p.from_m, 2)} a ${nf(p.to_m, 2)} m${p.alert_m != null ? ` (alerta ${nf(p.alert_m, 2)} m, evacuación ${nf(p.evac_m, 2)} m)` : ""}.`;
+  return `Con ${nf(p.rain10_mm)} mm en 10 días, el caudal en ${p.place} podría subir unos ${nf(p.rise_q)} m³/s: de ${nf(p.from_q)} a ${nf(p.to_q)} m³/s.`;
+}
 const STATE_TONE = (s?: string | null) => !s ? "" : /extra|muy alto/.test(s) ? "risk" : /alto/.test(s) ? "warn" : /bajo/.test(s) ? "low" : "ok";
 
 function Spark({ values, height = 44 }: { values: (number | null)[]; height?: number }) {
@@ -39,6 +46,7 @@ function ProbBar({ label, value }: { label: string; value: number | null | undef
   return <div className="cp-prob"><span>{label}</span><i><b style={{ width: `${Math.max(0, Math.min(100, value ?? 0))}%` }} /></i><em>{nf(value)} %</em></div>;
 }
 
+const RIVER_ORDER = ["Iguazú", "Paraná", "Paraguay", "Bermejo", "Uruguay"];
 const GROUPS = ["Iguazú", "Uruguay", "Paraná", "Paraguay", "Bermejo y Pilcomayo"];
 const OFFICIAL: [string, [string, string, string][]][] = [
   ["Argentina", [["INA · Sistema de Alerta", "pronósticos de altura del Paraná, Paraguay, Uruguay e Iguazú", "https://www.ina.gob.ar/alerta/"],
@@ -66,7 +74,7 @@ export function CuencaPanel() {
   const nino = res?.nino, hw = res?.headwaters, rv = res?.rivers, dm2 = res?.dams, al: Data[] = res?.alerts || [];
   const active = al.filter(a => a.level !== "Normal");
   const levels: string[] = [...(rv?.stations || []).flatMap((s: Data) => [s.danger, s.peak_danger]), ...al.map(a => a.level)].filter(Boolean);
-  const worst = ["Peligro", "Alerta", "Atención", "Normal"].find(l => levels.includes(l));
+  const worst = ["Peligro", "Alerta", "Atención", "Normal"].find(l => levels.map(x => x === "Evacuación" ? "Peligro" : x).includes(l));
 
   return <section className="cp" aria-label="Cuenca del Plata">
     <div className="cp-intro">
@@ -83,6 +91,8 @@ export function CuencaPanel() {
       {active.length ? <div className="cp-alert-list">{active.map(a => <article key={a.basin} className={LEVEL_TONE[a.level]}>
         <div className="cp-head"><span className={`cp-chip ${LEVEL_TONE[a.level]}`}>{a.level}</span><b>{a.name}</b><small>{a.where}</small></div>
         <p className="cp-alert-rain">{a.median_mm != null ? `${nf(a.median_mm)} mm esperados en 15 días` : ""}{a.rain_from ? ` · lluvia fuerte entre el ${dm(a.rain_from)} y el ${dm(a.rain_to)}` : ""}</p>
+        {a.prediction && <div className="cp-pred"><span>Cálculo lluvia → crecida</span><p>{predText(a.prediction)}</p>
+          <small>{a.prediction.kind === "altura" ? `${nf(a.prediction.per10mm_m, 2)} m por cada 10 mm` : `${nf(a.prediction.per10mm_q)} m³/s por cada 10 mm`} · {a.prediction.cases} episodios en 20 años{a.prediction.rain_alert_mm ? ` · en el pasado, con ~${nf(a.prediction.rain_alert_mm)} mm pasó el nivel de alerta` : ""}{a.prediction.rain_evac_mm ? ` y con ~${nf(a.prediction.rain_evac_mm)} mm el de evacuación` : ""}.</small></div>}
         <ul className="cp-why">{a.why.map((w: string) => <li key={w}>{w}</li>)}</ul>
         {a.arrivals?.length > 0 && <div className="cp-arrivals"><span>Cuándo llegaría la crecida</span>
           <ol>{a.arrivals.map((x: Data) => <li key={x.place}><b>{x.place}</b><em>{x.window ? `${dm(x.window[0])} al ${dm(x.window[1])}` : "—"}</em></li>)}</ol></div>}
@@ -148,21 +158,23 @@ export function CuencaPanel() {
     </div>}
 
     {rv && <div className="cp-block">
-      <h3>Los ríos hoy y en 30 días <small>Caudal GloFAS (Copernicus) · m³/s · comparado con lo normal para la fecha</small></h3>
-      <div className="cp-table-wrap"><table className="cp-table">
-        <thead><tr><th>Río · lugar</th><th>Hoy</th><th>vs normal</th><th>Estado</th><th>7 días</th><th>Pico próximo</th><th>Peligro</th></tr></thead>
-        <tbody>{rv.stations.map((s: Data) => s.status !== "recibido" ? <tr key={s.id}><td><b>{s.river}</b> · {s.place}</td><td colSpan={6} className="cp-muted">Sin dato</td></tr> :
-          <tr key={s.id}>
-            <td><b>{s.river}</b> · {s.place}</td>
-            <td>{nf(s.discharge)}</td>
-            <td>{s.ratio != null ? `${nf(s.ratio, 1)}×` : "—"}</td>
-            <td><span className={`cp-chip ${STATE_TONE(s.level)}`}>{s.level || "sin normal"}</span></td>
-            <td>{s.change_7d_pct != null ? `${sign(s.change_7d_pct, 0)} %` : "—"}</td>
-            <td>{s.peak ? `${nf(s.peak)} · ${dm(s.peak_date)}` : "—"}</td>
-            <td>{s.peak_danger || s.danger ? <span className={`cp-chip ${LEVEL_TONE[s.peak_danger || s.danger]}`}>{s.peak_danger || s.danger}</span> : "—"}</td>
-          </tr>)}</tbody>
-      </table></div>
-      {!rv.normals && <p className="cp-note">Las normales, los umbrales de peligro y los tiempos de traslado se están calculando por primera vez. Mientras tanto se muestran caudal y pronóstico.</p>}
+      <h3>Cifras de referencia por localidad <small>Altura del río (INA, escalas de Prefectura) contra los niveles oficiales · caudal (GloFAS) contra lo normal · {rv.stations.length} localidades</small></h3>
+      {RIVER_ORDER.map(rn => { const rows = rv.stations.filter((s: Data) => s.river === rn); if (!rows.length) return null;
+        return <div className="cp-table-wrap cp-ref" key={rn}><table className="cp-table">
+          <thead><tr><th>Río {rn}</th><th>Altura hoy</th><th>7 días</th><th>Aguas bajas</th><th>Alerta</th><th>Evacuación</th><th>Falta para alerta</th><th>Pronóstico INA</th><th>Récord 20 años</th><th>Caudal hoy · normal</th><th>Nivel</th></tr></thead>
+          <tbody>{rows.map((s: Data) => { const i = s.ina || {}; const fc = (i.forecast || []).slice(-1)[0]; const lvl = s.danger || s.peak_danger;
+            return <tr key={s.id}>
+              <td><b>{s.place}</b>{i.gauge && <span className="cp-sub-note">{i.gauge}</span>}</td>
+              <td className="strong">{m2(i.height)}{i.date && <span className="cp-sub-note">{dm(i.date)}</span>}</td>
+              <td>{i.change_7d != null ? `${sign(i.change_7d, 2)} m` : "—"}</td>
+              <td>{m2(i.low)}</td><td>{m2(i.alert)}</td><td>{m2(i.evac)}</td>
+              <td>{i.to_alert != null ? (i.to_alert <= 0 ? <b className="cp-red">superado</b> : `${nf(i.to_alert, 2)} m`) : "—"}</td>
+              <td>{fc ? <>{nf(fc.central, 2)} m<span className="cp-sub-note">{dm(fc.date)} · {nf(fc.min, 2)}–{nf(fc.max, 2)}</span></> : "—"}</td>
+              <td>{s.height_record ? <>{m2(s.height_record.value)}<span className="cp-sub-note">{my(s.height_record.date)}</span></> : s.thresholds?.max ? <>{nf(s.thresholds.max)} m³/s<span className="cp-sub-note">{my(s.thresholds.max_date)}</span></> : "en cálculo"}</td>
+              <td>{s.status === "recibido" ? <>{nf(s.discharge)}<span className="cp-sub-note">{s.normal != null ? `normal ${nf(s.normal)} · ${nf(s.ratio, 1)}×` : "normal en cálculo"}</span></> : "—"}</td>
+              <td>{lvl ? <span className={`cp-chip ${LEVEL_TONE[lvl]}`}>{lvl}</span> : "—"}</td>
+            </tr>; })}</tbody></table></div>; })}
+      <p className="cp-note">Alturas en metros sobre el cero de cada escala (no son comparables entre puertos). Niveles de alerta y evacuación: oficiales, publicados por el INA para las escalas de la Prefectura. "Atención" = a menos de 1 m del nivel de alerta (2 m en el Iguazú y el Uruguay, que crecen más rápido). Pronóstico INA del {dm(rv.ina_forecast_issued)}: valor central y rango. Donde no hay escala del INA, el nivel sale del caudal: crecidas de 2, 5 y 20 años del propio río.</p>
     </div>}
 
     {rv?.travel && <div className="cp-block">
