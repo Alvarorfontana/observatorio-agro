@@ -338,7 +338,7 @@ def test_foto_satelital_obligatoria(monkeypatch):
         def json(self): return self._j
     seen = []
     def post(url, body, timeout=30):
-        seen.append(body['collections'][0]); assert body['datetime'] >= '2026-10-01'
+        seen.append(body['collections'][0]); assert body['datetime'] >= '2026-09-28'
         return J({'features': items[body['collections'][0]]})
     monkeypatch.setattr(veg.c, '_post', post)
     monkeypatch.setattr(veg, '_pc_stats', lambda iid, f, e: {'mean': 0.3 if iid.endswith('_0') else 0.95})
@@ -350,8 +350,9 @@ def test_foto_satelital_obligatoria(monkeypatch):
     monkeypatch.setattr(veg, '_pc_stats', lambda *a: {'mean': 0.2})
     p = cr.local_picture(s, today)
     assert p['sensor'].startswith('Sentinel-1') and p['age'] == 2
-    # 3) sin radar: VIIRS/MODIS del día menos nublado
+    # 3) sin radar ni mosaico de referencia: VIIRS/MODIS del día menos nublado
     items['sentinel-1-rtc'] = []
+    monkeypatch.setattr(cr, 'reference_picture', lambda *a, **k: None)
     clear_day = (today - timedelta(days=2)).isoformat()
     monkeypatch.setattr(cr, '_image', lambda urls, timeout=12: _jpeg((40, 90, 60)) if clear_day in urls[0] and 'Terra' in urls[0] else _jpeg((240, 240, 240)))
     p = cr.local_picture(s, today)

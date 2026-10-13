@@ -197,7 +197,7 @@
         if d.flood != none and d.flood.ok and d.flood.mask != none { place(top + left, image(bytes(d.flood.mask), width: size.width, height: h, fit: "stretch")) }
       })
     }))
-    #note[#d.picture.sensor · #d.picture.clear % sin nubes · tomada el #d.picture.date (hace #d.picture.age días). #d.picture.caption #if d.flood != none and d.flood.ok and d.flood.overlaid [En rojo: agua de crecida detectada por Copernicus GFM con el radar del #d.flood.date.]]
+    #note[#if d.picture.at("reference", default: false) [#d.picture.sensor.] else [#d.picture.sensor · #d.picture.clear % sin nubes · tomada el #d.picture.date (hace #d.picture.age días).] #d.picture.caption #if d.flood != none and d.flood.ok and d.flood.overlaid [En rojo: agua de crecida detectada por Copernicus GFM con el radar del #d.flood.date.]]
   ] else if d.flood != none and d.flood.ok and d.flood.mask != none [
     #block(width: 100%, radius: 6pt, clip: true, breakable: false, fill: rgb("#e8ecf0"), image(bytes(d.flood.mask), width: 100%))
     #note[En rojo: agua de crecida detectada por Copernicus GFM con el radar del #d.flood.date. #if d.picture != none [#d.picture.missing]]

@@ -460,7 +460,7 @@ def local_data(d, sid, today=None):
 #   4) si nada responde, el informe lo dice. Todo abierto y sin clave.
 S2_BOX = (0.16, 0.11)          # medio ancho en grados (lon, lat): ~33 × 24 km, se ve la ciudad, el cauce y la planicie
 WIDE_BOX = (0.9, 0.6)          # ~180 × 130 km para VIIRS/MODIS
-OPTICAL_DAYS, RADAR_DAYS, DAILY_DAYS = 10, 12, 5
+OPTICAL_DAYS, RADAR_DAYS, DAILY_DAYS = 10, 14, 5
 S2_BAD = (0, 1, 3, 8, 9, 10)   # SCL: sin dato, saturado, sombra de nube, nube media, nube alta, cirro
 DAILY = [('VIIRS_SNPP_CorrectedReflectance_TrueColor', 'VIIRS (Suomi NPP)'), ('VIIRS_NOAA20_CorrectedReflectance_TrueColor', 'VIIRS (NOAA-20)'),
          ('MODIS_Terra_CorrectedReflectance_TrueColor', 'MODIS (Terra)'), ('MODIS_Aqua_CorrectedReflectance_TrueColor', 'MODIS (Aqua)')]
@@ -609,6 +609,23 @@ def radar_picture(s, today=None, days=RADAR_DAYS):
     return None
 
 
+def reference_picture(s, today=None):
+    """Mosaico satelital de referencia de Esri (sin nubes, sin fecha única) para el recuadro local. Sirve de fondo para
+    ubicar la mancha de GFM cuando no hubo toma óptica ni radar reciente."""
+    from report_typst import IMAGERY
+    today = today or date.today()
+    box = _box(s, S2_BOX)
+    w, so, e, n = box
+    r = cc.c.SESSION.get(IMAGERY, timeout=15, params={'bbox': f'{w},{so},{e},{n}', 'bboxSR': 4326, 'imageSR': 4326,
+                                                      'size': '900,620', 'format': 'jpg', 'f': 'image'})
+    if not (r.ok and r.content[:3] == b'\xff\xd8\xff' and len(r.content) > 5000):
+        return None
+    return {'image': list(r.content), 'date': 'mosaico de referencia', 'sensor': 'Esri World Imagery (Maxar, Earthstar Geographics)',
+            'clear': 100, 'age': None, 'bbox': box, 'reference': True,
+            'caption': f'Imagen de referencia sin nubes, armada con tomas de distintas fechas: sirve para ubicar el cauce, la ciudad y los campos. '
+                       f'No hubo toma óptica despejada en los últimos {OPTICAL_DAYS} días ni pasada de radar completa en los últimos {RADAR_DAYS}. Recuadro de {BOX_TXT}.'}
+
+
 def cloud_fraction(png):
     """Fracción de píxeles blancos y poco saturados (nube) en una miniatura PNG color real. None si no se puede leer."""
     import pngmini
@@ -666,7 +683,7 @@ def local_picture(s, today=None):
         return {'image': None, 'missing': 'Imágenes satelitales desactivadas en esta instalación.'}
     tried = []
     for fn, label in ((optical_picture, f'Sentinel-2 y Landsat ({OPTICAL_DAYS} días)'), (radar_picture, f'radar Sentinel-1 ({RADAR_DAYS} días)'),
-                      (daily_picture, f'VIIRS/MODIS ({DAILY_DAYS} días)')):
+                      (reference_picture, 'mosaico de referencia Esri'), (daily_picture, f'VIIRS/MODIS ({DAILY_DAYS} días)')):
         try:
             p = fn(s, today)
             if p:
