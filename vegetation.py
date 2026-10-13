@@ -421,7 +421,13 @@ def openeo_ndvi(polygon, days=120):
     end = c._now(); start = end - timedelta(days=days)
     r = c.SESSION.post(OPENEO + '/result', json=openeo_graph(pts, f'{start:%Y-%m-%d}', f'{end:%Y-%m-%d}'),
                        headers={'Authorization': f'Bearer oidc/CDSE/{tok}'}, timeout=55)
-    r.raise_for_status()
+    if r.status_code >= 400:
+        try:
+            e = r.json(); msg = f"{e.get('code', '')}: {e.get('message', '')}"[:300]
+        except ValueError:
+            msg = r.text[:200]
+        return c.envelope(None, OPENEO + '/result', 'NDVI zonal · openEO', 'Copernicus Data Space openEO', 'sin dato',
+                          f'openEO respondió HTTP {r.status_code} · {msg}')
     raw = r.json()
     rows = []
     for date, vals in sorted((raw or {}).items()):
