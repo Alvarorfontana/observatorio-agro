@@ -19,7 +19,7 @@ TIMEOUT = 20
 SESSION = requests.Session()
 SESSION.headers.update({'User-Agent': UA})
 
-AGENCIES = ['smn', 'inmet', 'dmc', 'eccc', 'nws']
+AGENCIES = ['smn', 'nws']   # INMET (Brasil), DMC (Chile) y ECCC (Canadá): pendientes de registro, ver CLAVES-A-GESTIONAR.md
 
 
 # ───────────────────────────── utilidades ─────────────────────────────
@@ -244,6 +244,36 @@ def soil_full(lat, lon):
     env['data']['dots_summary'] = {'rows': rows, 'depths': SOIL_DEPTHS, 'available_water_mm_0_60': awc,
                                    'note': 'SoilGrids 250 m, modelo global. Agua útil = (capacidad de campo − marchitez) × espesor, 0–60 cm.'}
     return env
+
+
+_PROJ_CACHE = {}
+
+
+def projection(lat, lon):
+    """Proyección climática 2031-2040 (CMIP6 MPI-ESM1-2-XR vía Open-Meteo Climate API).
+    Es una consulta pesada para Open-Meteo: se guarda un día en memoria y se reintenta una vez si la fuente pide esperar."""
+    import time as _t
+    key = (round(lat, 2), round(lon, 2))
+    hit = _PROJ_CACHE.get(key)
+    if hit and _t.monotonic() - hit[0] < 86400:
+        return hit[1]
+    url = 'https://climate-api.open-meteo.com/v1/climate'
+    params = {'latitude': lat, 'longitude': lon, 'start_date': '2031-01-01', 'end_date': '2040-12-31',
+              'models': 'MPI_ESM1_2_XR', 'daily': 'temperature_2m_mean,precipitation_sum'}
+    for attempt in range(2):
+        try:
+            env = envelope(_get(url, params, timeout=30).json(), url, 'proyección climática 2031-2040', 'Open-Meteo / CMIP6')
+            if len(_PROJ_CACHE) > 500:
+                _PROJ_CACHE.clear()
+            _PROJ_CACHE[key] = (_t.monotonic(), env)
+            return env
+        except requests.HTTPError as e:
+            code = getattr(e.response, 'status_code', None)
+            if code in (429, 502, 503, 504) and attempt == 0:
+                _t.sleep(2.5); continue
+            return envelope(None, url, 'proyección climática 2031-2040', 'Open-Meteo / CMIP6', 'sin dato',
+                            f'La API climática de Open-Meteo respondió HTTP {code}.'
+                            + (' Llegó a su límite de consultas; probá de nuevo en un minuto.' if code == 429 else ' Probá de nuevo más tarde.'))
 
 
 def historical(lat, lon, days=60):

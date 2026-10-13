@@ -11,7 +11,7 @@ S = requests.Session(); S.headers['User-Agent'] = 'DOTS-chequeo-vivo/1.0'
 
 GET = ['variables', 'modelos', 'historico', 'escenas', 'rios', 'aire', 'elevacion', 'ndvi', 'ndvi-modis', 'indices',
        'teleconexiones', 'estadistica', 'enso', 'suelo', 'serie', 'proyeccion', 'sustentabilidad', 'plataformas',
-       'smn', 'inmet', 'nasa-power-30', 'landsat', 'radar', 'copernicus-stac', 'firms', 'ina', 'monitor']
+       'smn', 'inmet', 'nasa-power-30', 'landsat', 'radar', 'copernicus-stac', 'firms', 'ina']
 POST = {
     'forraje': {'lat': LAT, 'lon': LON, 'polygon': LOT, 'kind': 'pastizal', 'use': 0.5, 'heads': 120},
     'alertas': {'lat': LAT, 'lon': LON, 'polygon': LOT},
@@ -49,7 +49,7 @@ print(f'Chequeo en vivo de {BASE}\n')
 for name in GET:
     t0 = time.monotonic()
     try:
-        r = S.get(f'{BASE}/api/fuentes/{name}', params=Q, timeout=65)
+        r = S.get(f'{BASE}/api/fuentes/{name}', params=dict(Q, series='22') if name == 'ina' else Q, timeout=65)
         codes[name] = show(name, r, t0)
     except Exception as e:
         codes[name] = 599; out(f"ERR  {round((time.monotonic()-t0)*1000):>6} ms  {name:<16} {type(e).__name__}")

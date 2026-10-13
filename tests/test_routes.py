@@ -90,8 +90,9 @@ def test_smn_dentro_de_argentina(client):
 
 
 def test_agencia_no_implementada_es_honesta(client):
+    # INMET/DMC/ECCC se quitaron hasta tener registro: no se ofrecen ni se sustituyen
     r = client.get(f'/api/fuentes/inmet{Q}')
-    assert r.status_code == 400 and 'no está implementado' in r.json['error']
+    assert r.status_code == 404
 
 
 def test_firms_sin_clave_409(client):
@@ -140,3 +141,17 @@ def test_agentic_y_pdf(client):
     assert p.status_code == 200 and p.data[:5] == b'%PDF-'
     p2 = client.post('/api/fuentes/agentic/pdf', json=body)
     assert p2.data[:5] == b'%PDF-'
+
+
+def test_proyeccion_429_reintenta_y_explica(monkeypatch):
+    import requests, research_connectors as c
+    c._PROJ_CACHE.clear()
+    calls = []
+    def get(url, params=None, headers=None, timeout=None):
+        calls.append(1)
+        resp = requests.Response(); resp.status_code = 429
+        raise requests.HTTPError(response=resp)
+    monkeypatch.setattr(c, '_get', get)
+    monkeypatch.setattr('time.sleep', lambda s: None)
+    env = c.projection(-28.5, -58.7)
+    assert len(calls) == 2 and env['status'] == 'sin dato' and '429' in env['error']

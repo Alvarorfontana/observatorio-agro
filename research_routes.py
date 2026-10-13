@@ -124,7 +124,7 @@ def research_data(name):
         try: return jsonify(c.ogc_capabilities('inta-suelos-wms'))
         except Exception as e: return jsonify({'status':'sin dato','error':'INTA WMS no respondió válidamente','type':type(e).__name__}),502
     if name=='estado':
-        return jsonify({'public_adapters':['smn','inmet','dmc','eccc','nws','metnorway','aire','elevacion','ina','usgs','nasa-catalogo','productos-nasa','landsat','radar','copernicus-stac','cnes-stac','dlr-stac','deafrica-stac'], 'new_open_stac':['Copernicus Data Space','CNES GEODES','DLR EOC','Digital Earth Africa'], 'firms': 'credencial configurada' if os.environ.get('FIRMS_MAP_KEY') else 'pendiente de clave gratuita', 'protocol':'botón → conector → API → dato → procesamiento → visualización → informe', 'scope':'Catálogo, raster y variable procesada se informan como estados distintos; nunca se sustituyen faltantes.'})
+        return jsonify({'public_adapters':['smn','nws','metnorway','aire','elevacion','ina','usgs','nasa-catalogo','productos-nasa','landsat','radar','copernicus-stac','cnes-stac','dlr-stac','deafrica-stac'], 'new_open_stac':['Copernicus Data Space','CNES GEODES','DLR EOC','Digital Earth Africa'], 'firms': 'credencial configurada' if os.environ.get('FIRMS_MAP_KEY') else 'pendiente de clave gratuita', 'protocol':'botón → conector → API → dato → procesamiento → visualización → informe', 'scope':'Catálogo, raster y variable procesada se informan como estados distintos; nunca se sustituyen faltantes.'})
     try:
         q={key:[value] for key,value in request.args.items()}
         if name=='tile':
@@ -179,7 +179,7 @@ def research_data(name):
           'rios':lambda:c.external('https://flood-api.open-meteo.com/v1/flood',{'latitude':lat,'longitude':lon,'daily':'river_discharge','forecast_days':7}),
           'suelo':lambda:c.soil_full(lat,lon),
           'serie':lambda:c.external('https://archive-api.open-meteo.com/v1/archive',{'latitude':lat,'longitude':lon,'start_date':f'{endyear-years+1}-01-01','end_date':f'{endyear}-12-31','daily':'temperature_2m_mean,precipitation_sum','models':'era5','timezone':'UTC'}),
-          'proyeccion':lambda:c.external('https://climate-api.open-meteo.com/v1/climate',{'latitude':lat,'longitude':lon,'start_date':'2031-01-01','end_date':'2040-12-31','models':'MPI_ESM1_2_XR','daily':'temperature_2m_mean,precipitation_sum'}),
+          'proyeccion':lambda:c.projection(lat,lon),
           'estadistica':lambda:fst.analyze(lat,lon),
           'indices':lambda:ci.agro_indices(lat,lon,_int(request.args,'index_years',10,3,30)),'teleconexiones':lambda:ci.psl_indices(),
           'nws':lambda:c.nws(lat,lon),'metnorway':lambda:c.met_norway(lat,lon),

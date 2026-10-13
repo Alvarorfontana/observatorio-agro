@@ -83,7 +83,7 @@ const GIBS_LAYERS: [string,string,string,string?][] = [
   ["GOES-East_ABI_Band13_Clean_Infrared","Nubes GOES-East · infrarrojo · 10 min","Satélite meteorológico geoestacionario: topes nubosos fríos = tormentas. Última imagen disponible."],
   [WORLDCOVER,"Cobertura ESA WorldCover · 10 m","Árboles, pastizal, cultivo, agua y humedales (2021). Fuente: ESA / VITO Terrascope, CC-BY 4.0.","https://titiler.terrascope.be/wms"],
 ];
-const NATIONAL = ["smn", "inmet", "dmc", "eccc", "nws"];
+const NATIONAL = ["smn", "nws"];
 const SOURCES = [
   ["plataformas","Matriz de conexiones","REST · STAC · WMS/WMTS · OAuth"],
   ["inta-suelos-wms","INTA Suelos · WMS","Argentina · conexión OGC"],
@@ -139,9 +139,6 @@ const SOURCES = [
   ["serie", "Clima de 20–30 años", "ERA5 / Open-Meteo"],
   ["proyeccion", "Proyección 2031–2040", "CMIP6 / MPI-ESM1-2-XR"],
   ["smn", "Estaciones · Argentina", "SMN / WIS2"],
-  ["inmet", "Estaciones · Brasil", "INMET / WIS2"],
-  ["dmc", "Estaciones · Chile", "DMC / WIS2"],
-  ["eccc", "Estaciones · Canadá", "ECCC GeoMet"],
   ["nws", "Estaciones · EE.UU.", "NOAA / NWS"],
   ["metnorway", "Pronóstico · Noruega", "MET Norway directo"],];
 const fmt = (v: unknown, n = 1) =>

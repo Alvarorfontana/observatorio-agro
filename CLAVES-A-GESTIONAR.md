@@ -12,6 +12,7 @@ No compartir contraseñas por chat. Cargar secretos directamente en Vercel.
 - Google Earth Engine: `GOOGLE_CLOUD_PROJECT`, `GOOGLE_APPLICATION_CREDENTIALS_JSON`
 
 ## Prioridad 2
+- Estaciones de países vecinos (no conectadas todavía; se quitaron del menú hasta tenerlas): INMET Brasil (token de apitempo.inmet.gov.br), DMC Chile (usuario y token de climatologia.meteochile.gob.cl)
 - OpenAQ v3: `OPENAQ_API_KEY`
 - Global Forest Watch: `GFW_API_KEY`
 - AEMET OpenData: `AEMET_API_KEY`
