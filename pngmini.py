@@ -39,16 +39,16 @@ def decode(data):
             idat.append(body)
         elif typ == b'IEND':
             break
-    if depth != 8 or inter:
+    if inter or (depth != 8 and not (depth in (1, 2, 4) and ctype in (0, 3))):
         raise ValueError('PNG no soportado')
     bpp = {0: 1, 2: 3, 3: 1, 4: 2, 6: 4}[ctype]
     raw = zlib.decompress(b''.join(idat))
-    stride = w * bpp
+    stride = w * bpp if depth == 8 else (w * depth + 7) // 8
     prev = bytearray(stride); rows = []; i = 0
     for _ in range(h):
         f = raw[i]; line = bytearray(raw[i + 1:i + 1 + stride]); i += 1 + stride
         if f == 1:
-            for x in range(bpp, stride): line[x] = (line[x] + line[x - bpp]) & 255
+            for x in range(bpp if depth == 8 else 1, stride): line[x] = (line[x] + line[x - bpp]) & 255
         elif f == 2:
             for x in range(stride): line[x] = (line[x] + prev[x]) & 255
         elif f == 3:
@@ -59,6 +59,16 @@ def decode(data):
                 p = a + b - c; pa, pb, pc = abs(p - a), abs(p - b), abs(p - c)
                 line[x] = (line[x] + (a if pa <= pb and pa <= pc else b if pb <= pc else c)) & 255
         prev = line
+        if depth < 8:                                   # paleta o gris de 1, 2 o 4 bits: se desempaqueta a 1 byte por píxel
+            per, mask = 8 // depth, (1 << depth) - 1
+            vals = [(line[x // per] >> (8 - depth * (x % per + 1))) & mask for x in range(w)]
+            if ctype == 0:
+                scale = 255 // mask
+                key = struct.unpack('>H', trns)[0] if trns and len(trns) == 2 else None
+                px = [(v * scale,) * 3 + (0 if v == key else 255,) for v in vals]
+            else:
+                px = [plte[v] + ((trns[v] if trns and v < len(trns) else 255),) for v in vals]
+            rows.append(px); continue
         if ctype == 6:
             px = [tuple(line[k:k + 4]) for k in range(0, stride, 4)]
         elif ctype == 2:

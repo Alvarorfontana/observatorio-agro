@@ -552,22 +552,60 @@ def optical_picture(s, today=None, days=OPTICAL_DAYS, tries=4):
     return None
 
 
-def radar_picture(s, today=None, days=RADAR_DAYS):
-    """Sentinel-1 RTC (polarización VV, en dB) más reciente: no depende de las nubes. Agua tranquila = oscuro."""
+def _grid_cov(items, w, so, e, n, k=6):
+    """Fracción del recuadro cubierta por la unión de las huellas (grilla de k × k puntos)."""
     import vegetation as veg
+    polys = []
+    for it in items:
+        g = it.get('geometry') or {}
+        polys += [g['coordinates']] if g.get('type') == 'Polygon' else (g.get('coordinates') or []) if g.get('type') == 'MultiPolygon' else []
+    if not polys:
+        return 1.0
+    pts = [(so + (n - so) * (i + .5) / k, w + (e - w) * (j + .5) / k) for i in range(k) for j in range(k)]
+    return sum(1 for lat, lon in pts if any(veg._in_ring(lon, lat, p[0]) for p in polys if p)) / len(pts)
+
+
+def radar_picture(s, today=None, days=RADAR_DAYS):
+    """Sentinel-1 RTC (VV, en dB) de la pasada más reciente que cubra al menos el 60 % del recuadro, uniendo los tramos
+    de esa misma pasada. No depende de las nubes: el agua quieta y lo anegado se ven negros."""
+    import vegetation as veg, pngmini
     today = today or date.today()
-    pts = _box_poly(_box(s, S2_BOX))
+    box = _box(s, S2_BOX); pts = _box_poly(box)
     feat = {'type': 'Feature', 'properties': {}, 'geometry': veg.geojson_polygon(pts)}
-    items = _pc_search('sentinel-1-rtc', feat, pts, today, days, min_cov=0.5)
-    items.sort(key=lambda it: (str(it['properties'].get('datetime', ''))[:10], it['_cov']), reverse=True)
-    for it in items[:2]:
-        png = _pc_png('sentinel-1-rtc', it['id'], feat, {'expression': '10*log10(vv)', 'asset_as_band': 'true', 'rescale': '-24,0', 'nodata': 0})
-        if png:
-            day = str(it['properties'].get('datetime', ''))[:10]
-            return _pic(png, day, today, 'Sentinel-1 radar (ESA · Copernicus), 10 m', 100,
-                        f'Radar Sentinel-1 (VV, corregido por terreno): atraviesa las nubes. El agua quieta y las zonas anegadas se ven negras; '
-                        f'ciudades y monte, claros. Se usó porque no hubo toma óptica despejada en los últimos {OPTICAL_DAYS} días. Recuadro de {BOX_TXT}'
-                        + ('.' if it['_cov'] >= 0.95 else f'; la pasada cubre el {round(100 * it["_cov"])} % del recuadro (el resto queda en blanco).'), _box(s, S2_BOX))
+    items = _pc_search('sentinel-1-rtc', feat, pts, today, days, min_cov=0.1)
+    by_day = {}
+    for it in items:
+        by_day.setdefault(str(it['properties'].get('datetime', ''))[:10], []).append(it)
+    for day in sorted(by_day, reverse=True):
+        group = sorted(by_day[day], key=lambda it: -it['_cov'])[:3]
+        cov = _grid_cov(group, *box)
+        if cov < 0.6:
+            continue
+        params = {'expression': '10*log10(vv)', 'asset_as_band': 'true', 'rescale': '-24,0', 'nodata': 0, 'max_size': 800}
+        pngs = [p for p in (_pc_png('sentinel-1-rtc', it['id'], feat, params) for it in group) if p]
+        if not pngs:
+            continue
+        png = pngs[0]
+        if len(pngs) > 1:
+            try:
+                dec = [pngmini.decode(p) for p in pngs]
+                w, h = dec[0][0], dec[0][1]
+                rows = [list(r) for r in dec[0][2]]
+                for (w2, h2, r2) in dec[1:]:
+                    if (w2, h2) != (w, h):
+                        continue
+                    for y in range(h):
+                        row, other = rows[y], r2[y]
+                        for x in range(w):
+                            if row[x][3] == 0 and other[x][3]:
+                                row[x] = other[x]
+                png = pngmini.encode_rgba(w, h, rows)
+            except Exception:
+                png = pngs[0]
+        return _pic(png, day, today, 'Sentinel-1 radar (ESA · Copernicus), 10 m', 100,
+                    f'Radar Sentinel-1 (VV, corregido por terreno): atraviesa las nubes. El agua quieta y las zonas anegadas se ven negras; '
+                    f'ciudades y monte, claros. Se usó porque no hubo toma óptica despejada en los últimos {OPTICAL_DAYS} días. Recuadro de {BOX_TXT}'
+                    + ('.' if cov >= 0.95 else f'; la pasada cubre el {round(100 * cov)} % del recuadro (el resto queda en blanco).'), box)
     return None
 
 
