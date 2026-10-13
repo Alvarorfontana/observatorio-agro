@@ -308,6 +308,10 @@ function centroid(v: Point[]): Point {
   if (Math.abs(a) < 1e-10) throw Error("El lote no tiene superficie");
   return [y / (3 * a), x / (3 * a) / cos];
 }
+function untangle(v: Point[]): Point[] {
+  const cy = v.reduce((a, p) => a + p[0], 0) / v.length, cx = v.reduce((a, p) => a + p[1], 0) / v.length;
+  return [...v].sort((a, b) => Math.atan2(a[0] - cy, a[1] - cx) - Math.atan2(b[0] - cy, b[1] - cx));
+}
 function crosses(v: Point[]) {
   const o = (a: Point, b: Point, c: Point) =>
     (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
@@ -381,6 +385,9 @@ function Observatory({onHome}:{onHome:()=>void}) {
     vertexMarkers = useRef<L.CircleMarker[]>([]),
     currentPoints = useRef<Point[]>([]),
     drawingRef = useRef(false),
+    drawModeRef = useRef<"free"|"triangle"|"rectangle">("free"),
+    finishRef = useRef<(() => void) | null>(null),
+    sketchRef = useRef<(() => void) | null>(null),
     generation = useRef(0),
     controllers = useRef<Record<string, AbortController>>({}),
     noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null),
@@ -502,17 +509,18 @@ function Observatory({onHome}:{onHome:()=>void}) {
         return;
       }
       if (!drawingRef.current) return;
-      currentPoints.current = [...currentPoints.current,[e.latlng.lat,e.latlng.lng]];
+      const pts = currentPoints.current, here = map.latLngToContainerPoint(e.latlng);
+      const px = (p: Point) => map.latLngToContainerPoint(L.latLng(p[0], p[1])).distanceTo(here);
+      // tocar el primer punto cierra el lote; un clic encima del último (doble clic) no suma un vértice repetido
+      if (pts.length >= 3 && px(pts[0]) < 16) { finishRef.current?.(); return; }
+      if (pts.length && px(pts[pts.length - 1]) < 8) return;
+      currentPoints.current = [...pts, [e.latlng.lat, e.latlng.lng]];
       setVertices([...currentPoints.current]);
-      const vm=L.circleMarker(e.latlng,{radius:6,color:"#071820",weight:2,fillColor:"#57dce0",fillOpacity:1}).addTo(map);
-      vm.bindTooltip(String(currentPoints.current.length),{permanent:true,direction:"center",className:"vertex-label"});
-      vertexMarkers.current.push(vm);
-      line.current?.remove();
-      line.current = L.polyline(currentPoints.current, {
-        color: "#57dce0",
-        dashArray: "5,5",
-      }).addTo(map);
+      sketchRef.current?.();
+      const n = currentPoints.current.length, mode = drawModeRef.current;
+      if ((mode === "triangle" && n === 3) || (mode === "rectangle" && n === 2)) finishRef.current?.();
     });
+    map.on("dblclick", () => { if (drawingRef.current && currentPoints.current.length >= 3) finishRef.current?.(); });
     const observer = new ResizeObserver(() => map.invalidateSize());
     observer.observe(mapEl.current);
     return () => {
@@ -798,9 +806,41 @@ function Observatory({onHome}:{onHome:()=>void}) {
     const det=(sources.firms?.payload as any)?.data?.detections; if(!Array.isArray(det))return;
     setFieldMarkers(prev=>{const manual=prev.filter((m:any)=>m.source!=="NASA FIRMS"); const auto=det.slice(0,150).map((r:any,i:number)=>({id:`firms-${r.latitude}-${r.longitude}-${i}`,type:"incendio",lat:Number(r.latitude),lon:Number(r.longitude),status:`${r.inside_lot===true?"DENTRO DEL LOTE":"ENTORNO"} · ${r.satellite||r.instrument||"VIIRS"} · ${r.acq_date||""} ${r.acq_time||""} · FRP ${r.frp||"s/d"}`,source:"NASA FIRMS",provenance:"SATELITAL",confidence:r.confidence||"s/d",observed_at:`${r.acq_date||""} ${r.acq_time||""}`})).filter((m:any)=>Number.isFinite(m.lat)&&Number.isFinite(m.lon)); return [...manual,...auto]});
   },[sources.firms]);
+  // Boceto en vivo: el lote se ve cerrado desde el tercer punto; el primer punto, grande, cierra al tocarlo
+  const drawSketch = () => {
+    const map = mapRef.current; if (!map) return;
+    line.current?.remove(); line.current = null;
+    vertexMarkers.current.forEach(m => m.remove()); vertexMarkers.current = [];
+    const pts = currentPoints.current;
+    if (pts.length >= 3) line.current = L.polygon(pts, { color: "#57dce0", weight: 2, dashArray: "6,5", fillColor: "#57dce0", fillOpacity: 0.15 }).addTo(map) as unknown as L.Polyline;
+    else if (pts.length === 2) line.current = L.polyline(pts, { color: "#57dce0", weight: 2, dashArray: "6,5" }).addTo(map);
+    pts.forEach((p, i) => {
+      const first = i === 0 && pts.length >= 3;
+      const vm = L.circleMarker(L.latLng(p[0], p[1]), { radius: first ? 10 : 6, color: "#071820", weight: 2, fillColor: first ? "#ffd166" : "#57dce0", fillOpacity: 1 }).addTo(map);
+      vm.bindTooltip(first ? "Tocá acá para cerrar" : String(i + 1), { permanent: true, direction: first ? "top" : "center", className: first ? "vertex-close" : "vertex-label" });
+      if (first) vm.on("click", (ev) => { L.DomEvent.stop(ev); finishRef.current?.(); });
+      vertexMarkers.current.push(vm);
+    });
+  };
+  sketchRef.current = drawSketch;
+  const undoPoint = () => {
+    if (!currentPoints.current.length) return;
+    currentPoints.current = currentPoints.current.slice(0, -1);
+    setVertices([...currentPoints.current]); drawSketch();
+  };
+  useEffect(() => {
+    if (!drawing) return;
+    const k = (e: KeyboardEvent) => {
+      if (e.key === "Backspace" || (e.key.toLowerCase() === "z" && (e.ctrlKey || e.metaKey))) { e.preventDefault(); undoPoint(); }
+      else if (e.key === "Enter" && currentPoints.current.length >= 3) finishRef.current?.();
+      else if (e.key === "Escape") stopDraw();
+    };
+    addEventListener("keydown", k); return () => removeEventListener("keydown", k);
+  }, [drawing]);
   const startDraw = (mode:"free"|"triangle"|"rectangle"="free") => {
     setMainView("mapa");
-    setDrawMode(mode);
+    setDrawMode(mode); drawModeRef.current = mode;
+    mapRef.current?.doubleClickZoom.disable();
     poly.current = null;
     setSelectedLotId(null);
     line.current?.remove();
@@ -816,6 +856,8 @@ function Observatory({onHome}:{onHome:()=>void}) {
     drawingRef.current = false;
     line.current?.remove();
     line.current = null;
+    vertexMarkers.current.forEach(m => m.remove()); vertexMarkers.current = [];
+    mapRef.current?.doubleClickZoom.enable();
     if (mapRef.current) mapRef.current.getContainer().style.cursor = "";
   };
   const drawLotLayer = (id: string, name: string, points: Point[], center: Point) => {
@@ -890,14 +932,14 @@ function Observatory({onHome}:{onHome:()=>void}) {
       if(!given && drawMode==="triangle" && points.length!==3) throw Error("Triángulo: marcá exactamente 3 vértices.");
       if(!given && drawMode==="rectangle" && points.length!==2 && points.length!==4) throw Error("Rectángulo: marcá 2 esquinas opuestas o 4 vértices.");
       if(!given && drawMode==="rectangle" && points.length===2){const a=points[0],b=points[1];points=[a,[a[0],b[1]],b,[b[0],a[1]]];currentPoints.current=points;setVertices(points);}
+      let reordered = false;
+      points = points.filter((p, i) => points.findIndex(q => q[0] === p[0] && q[1] === p[1]) === i);   // sin vértices repetidos
       if(points.length<3) throw Error("Marcá al menos 3 vértices para cerrar el lote.");
-      if (
-        crosses(points) ||
-        new Set(points.map((p) => p.join(","))).size !== points.length
-      )
-        throw Error(
-          "Hay lados cruzados o vértices repetidos. Cancelá y delimitá nuevamente.",
-        );
+      if (crosses(points)) {
+        const fixed = untangle(points);
+        if (crosses(fixed)) throw Error("Los lados se cruzan. Usá «Deshacer punto» y marcá las esquinas en orden, recorriendo el borde.");
+        points = fixed; currentPoints.current = points; setVertices(points); reordered = true;
+      }
       const center = centroid(points);
       const areaHa = (()=>{ const R=6378137,lat0=points.reduce((a,p)=>a+p[0],0)/points.length*Math.PI/180,xy=points.map(([la,lo])=>[R*lo*Math.PI/180*Math.cos(lat0),R*la*Math.PI/180]);let a=0;for(let i=0;i<xy.length;i++){const j=(i+1)%xy.length;a+=xy[i][0]*xy[j][1]-xy[j][0]*xy[i][1]}return Math.abs(a)/2/10000;})();
       const perimeterKm = (()=>{const rad=(x:number)=>x*Math.PI/180,R=6371;let d=0;for(let i=0;i<points.length;i++){const a=points[i],b=points[(i+1)%points.length],dl=rad(b[0]-a[0]),dn=rad(b[1]-a[1]);const h=Math.sin(dl/2)**2+Math.cos(rad(a[0]))*Math.cos(rad(b[0]))*Math.sin(dn/2)**2;d+=2*R*Math.asin(Math.sqrt(h))}return d;})();
@@ -912,11 +954,13 @@ function Observatory({onHome}:{onHome:()=>void}) {
       stopDraw();
       setCoords(center.map((v) => v.toFixed(6)));
       setPoint(center);
-      notify(`${name} guardado · ${areaHa.toFixed(2)} ha · ${perimeterKm.toFixed(2)} km de perímetro.`);
+      notify(`${name} guardado · ${areaHa.toFixed(2)} ha · ${perimeterKm.toFixed(2)} km de perímetro.${reordered ? " Reordené los puntos para que los lados no se crucen: revisá el contorno." : ""}`);
     } catch (e) {
       notify((e as Error).message);
     }
   };
+  finishRef.current = () => finish();
+
   const importLots = async (file?: File | null) => {
     if (!file || !mapRef.current) return;
     try {
@@ -1826,7 +1870,9 @@ function Observatory({onHome}:{onHome:()=>void}) {
         )}
         {drawing && (
           <div className="panel message show">
-            <p>{vertices.length} vértices. {drawMode==="rectangle"?"Marcá 2 esquinas opuestas o 4 vértices.":"Marcá al menos tres puntos."}</p>
+            <p><b>{drawMode==="rectangle"?"Rectángulo":drawMode==="triangle"?"Triángulo":"Polígono libre"}</b> · {vertices.length} {vertices.length===1?"punto":"puntos"}<br/>
+              {drawMode==="rectangle"?"Tocá dos esquinas opuestas: el lote se cierra solo.":drawMode==="triangle"?"Tocá tres esquinas: el lote se cierra solo.":
+                vertices.length<3?"Tocá las esquinas del lote siguiendo el borde.":"Para cerrar: tocá el punto amarillo, hacé doble clic o tocá Finalizar."}</p>
             <div className="row">
               <button
                 className="primary"
@@ -1835,6 +1881,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
               >
                 Finalizar
               </button>
+              <button onClick={undoPoint} disabled={!vertices.length}>Deshacer punto</button>
               <button onClick={stopDraw}>Cancelar</button>
             </div>
           </div>
