@@ -1,6 +1,6 @@
 /**
  * DOTS · Informe de cultivo (módulo agrícola, basado en AgroClima v3).
- * Por localidad, cultivo y fecha de siembra: lluvia y evapotranspiración de los últimos 30 días y los próximos 7,
+ * Por localidad, cultivo y fecha de siembra (incluye las alertas de la página de alertas de AgroClima): lluvia y evapotranspiración de los últimos 30 días y los próximos 7,
  * temperaturas con umbral de helada del cultivo, grados día desde la siembra, alertas y carilla interpretativa.
  * Datos: Open-Meteo (ERA5 + modelos de pronóstico), consultados desde el navegador. Sin datos simulados.
  */
@@ -10,6 +10,8 @@ import * as echarts from "echarts/core";
 type Data = Record<string, any>;
 const nf = (v: unknown, d = 0) => v == null || !Number.isFinite(Number(v)) ? "—" : Number(v).toLocaleString("es-AR", { minimumFractionDigits: d, maximumFractionDigits: d });
 const dm = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
+const dmS = dm;
+const lista = (xs: string[]) => xs.length === 1 ? xs[0] : `${xs.slice(0, -1).join(", ")} y ${xs[xs.length - 1]}`;
 
 export const CULTIVOS: Record<string, { nombre: string; tbase: number; helada: number }> = {
   maiz: { nombre: "Maíz", tbase: 10, helada: 2 },
@@ -19,7 +21,7 @@ export const CULTIVOS: Record<string, { nombre: string; tbase: number; helada: n
   sorgo: { nombre: "Sorgo", tbase: 10, helada: 2 },
   arroz: { nombre: "Arroz", tbase: 12, helada: 5 },
 };
-const UMBRAL = { calor: 35, calorFuerte: 38, lluvia: 30, lluviaFuerte: 50, deficit: -20, exceso: 40 };
+const UMBRAL = { calor: 35, calorFuerte: 38, lluvia: 30, lluviaFuerte: 50, deficit: -20, exceso: 40, viento: 30, hongosHR: 85, vpd: 2.5 };
 
 type Alerta = { nivel: "Peligro" | "Alerta" | "Atención" | "Normal"; titulo: string; texto: string; reco: string };
 
@@ -41,14 +43,30 @@ export function analizar(d: Data, cultivo: string, siembra: string, hoy = new Da
   const gddHoy = gdd.filter(g => !g.pron).slice(-1)[0]?.v ?? 0, gddFin = gdd.slice(-1)[0]?.v ?? 0;
   const sinceArchive = siembra && siembra < t[0];
   const al: Alerta[] = [];
-  if (fut.tmin < c.helada) al.push({ nivel: fut.tmin < c.helada - 2 ? "Peligro" : "Alerta", titulo: "Helada", texto: `Mínima pronosticada de ${nf(fut.tmin, 1)} °C; el umbral de daño para ${c.nombre.toLowerCase()} es ${c.helada} °C.`, reco: "Seguir el pronóstico diario y evitar labores que expongan el cultivo; evaluar el estado después del evento." });
-  if (fut.tmax >= UMBRAL.calorFuerte) al.push({ nivel: "Alerta", titulo: "Calor extremo", texto: `Máxima pronosticada de ${nf(fut.tmax, 1)} °C.`, reco: "Riesgo de estrés térmico, más grave en floración. Priorizar el agua disponible." });
+  if (fut.tmin < c.helada) al.push({ nivel: fut.tmin < c.helada - 2 ? "Peligro" : "Alerta", titulo: "Helada", texto: `Mínima pronosticada de ${nf(fut.tmin, 1)} °C el ${lista(t.slice(k).filter((_, j) => TN[k + j] < c.helada).map(dm))}; el umbral de daño para ${c.nombre.toLowerCase()} es ${c.helada} °C.`, reco: "Seguir el pronóstico diario y evitar labores que expongan el cultivo; evaluar el estado después del evento." });
+  if (fut.tmax >= UMBRAL.calorFuerte) al.push({ nivel: "Alerta", titulo: "Calor extremo", texto: `Máxima pronosticada de ${nf(fut.tmax, 1)} °C el ${lista(t.slice(k).filter((_, j) => TX[k + j] >= UMBRAL.calorFuerte).map(dm))}.`, reco: "Riesgo de estrés térmico, más grave en floración. Priorizar el agua disponible." });
   else if (fut.tmax >= UMBRAL.calor) al.push({ nivel: "Atención", titulo: "Temperaturas altas", texto: `Máxima pronosticada de ${nf(fut.tmax, 1)} °C.`, reco: "Monitorear el estrés térmico en las horas de más calor." });
   if (fut.lluvia >= UMBRAL.lluviaFuerte) al.push({ nivel: "Alerta", titulo: "Lluvia abundante", texto: `${nf(fut.lluvia)} mm pronosticados en 7 días.`, reco: "Riesgo de anegamiento y de piso para la maquinaria. Revisar drenajes y caminos." });
   else if (fut.lluvia >= UMBRAL.lluvia) al.push({ nivel: "Atención", titulo: "Lluvia importante", texto: `${nf(fut.lluvia)} mm pronosticados en 7 días.`, reco: "Planificar las labores en torno a la ventana de lluvia." });
   if (bal30 <= UMBRAL.deficit && bal7 <= 0) al.push({ nivel: bal30 <= 2 * UMBRAL.deficit ? "Alerta" : "Atención", titulo: "Déficit de agua", texto: `En 30 días llovieron ${nf(obs.lluvia)} mm contra ${nf(obs.et0)} mm de demanda atmosférica (balance ${nf(bal30)} mm), y la semana que viene no lo compensa.`, reco: "Revisar la humedad del perfil antes de sembrar o fertilizar." });
   if (bal30 >= UMBRAL.exceso) al.push({ nivel: "Atención", titulo: "Exceso de agua", texto: `Balance de 30 días de +${nf(bal30)} mm.`, reco: "Suelos saturados: cuidar el tránsito de maquinaria y los bajos." });
+  // días del pronóstico con cada condición (fechas exactas)
+  const fdias = (pred: (i: number) => boolean) => t.slice(k).map((f, j) => pred(k + j) ? dmS(f) : null).filter(Boolean) as string[];
+  const W: number[] = d.daily.wind_speed_10m_max || [], HX: number[] = d.daily.relative_humidity_2m_max || [], HN: number[] = d.daily.relative_humidity_2m_min || [];
+  const ventoso = fdias(i => (W[i] ?? 0) >= UMBRAL.viento);
+  if (ventoso.length) al.push({ nivel: "Atención", titulo: "Viento fuerte", texto: `Viento máximo de ${UMBRAL.viento} km/h o más el ${lista(ventoso)} (pico de ${nf(Math.max(...W.slice(k)))} km/h).`, reco: "Evitar pulverizar esos días por deriva; buscar ventanas de viento calmo, temprano a la mañana." });
+  const lluviosos = t.slice(k).filter((_, j) => (P[k + j] ?? 0) > 1).length;
+  const humedos = fdias(i => (HX[i] ?? 0) >= UMBRAL.hongosHR && (P[i] ?? 0) > 1);
+  if (lluviosos >= 3 && humedos.length >= 2) al.push({ nivel: "Atención", titulo: "Riesgo de enfermedades fúngicas", texto: `${lluviosos} días con lluvia y humedad alta (más de ${UMBRAL.hongosHR} %) el ${lista(humedos)}: ambiente favorable para hongos foliares.`, reco: "Monitorear royas y manchas foliares; evaluar un fungicida preventivo según el estado del cultivo." });
+  // VPD de la tarde: temperatura máxima con la humedad mínima del día
+  const vpd = (i: number) => { const T = TX[i], H = HN[i]; if (T == null || H == null) return 0; const es = 0.6108 * Math.exp(17.27 * T / (T + 237.3)); return es * (1 - H / 100); };
+  const secos = fdias(i => vpd(i) >= UMBRAL.vpd);
+  if (secos.length) al.push({ nivel: "Atención", titulo: "Aire muy seco (VPD alto)", texto: `Déficit de presión de vapor de la tarde de ${nf(UMBRAL.vpd, 1)} kPa o más el ${lista(secos)} (máximo ${nf(Math.max(...t.slice(k).map((_, j) => vpd(k + j))), 1)} kPa).`, reco: "Las plantas cierran estomas y frenan el crecimiento; si coincide con floración, el riesgo para el rinde es mayor." });
+  const fuego = fdias(i => (TX[i] ?? 0) >= 30 && (HN[i] ?? 100) <= 30 && (W[i] ?? 0) >= 25 && (P[i] ?? 0) < 1);
+  if (fuego.length) al.push({ nivel: "Alerta", titulo: "Condiciones de incendio", texto: `Calor (30 °C o más), aire seco (humedad de 30 % o menos) y viento (25 km/h o más) sin lluvia el ${lista(fuego)}.`, reco: "No hacer quemas; preparar cortafuegos y avisar a bomberos ante cualquier foco." });
   if (!al.length) al.push({ nivel: "Normal", titulo: "Sin alertas", texto: "No hay heladas, calor extremo ni lluvias fuertes en el pronóstico de 7 días.", reco: "Seguir el calendario planificado." });
+  const orden = ["Peligro", "Alerta", "Atención", "Normal"];
+  al.sort((a, b) => orden.indexOf(a.nivel) - orden.indexOf(b.nivel));
   return { c, k, t, obs, fut, bal30, bal7, gdd, gddHoy, gddFin, desde, sinceArchive, alertas: al };
 }
 
@@ -93,7 +111,7 @@ export function CultivosPanel() {
     try {
       const today = new Date().toISOString().slice(0, 10);
       const past = siembra && siembra < today ? Math.min(92, Math.ceil((Date.parse(today) - Date.parse(siembra)) / 864e5) + 1) : 31;
-      const u = `https://api.open-meteo.com/v1/forecast?latitude=${place.lat}&longitude=${place.lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,et0_fao_evapotranspiration,wind_speed_10m_max,relative_humidity_2m_mean&past_days=${Math.max(31, past)}&forecast_days=7&timezone=America%2FArgentina%2FBuenos_Aires`;
+      const u = `https://api.open-meteo.com/v1/forecast?latitude=${place.lat}&longitude=${place.lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,et0_fao_evapotranspiration,wind_speed_10m_max,relative_humidity_2m_mean,relative_humidity_2m_max,relative_humidity_2m_min&past_days=${Math.max(31, past)}&forecast_days=7&timezone=America%2FArgentina%2FBuenos_Aires`;
       const r = await fetch(u, { signal: AbortSignal.timeout(30000) });
       if (!r.ok) throw new Error();
       const d = await r.json();
