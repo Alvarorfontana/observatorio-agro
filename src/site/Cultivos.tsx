@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from "react";
 import * as echarts from "echarts/core";
 import { Labores } from "./Labores";
 import { Planificacion } from "./Planificacion";
+import { Avanzado } from "./Avanzado";
 
 type Data = Record<string, any>;
 const nf = (v: unknown, d = 0) => v == null || !Number.isFinite(Number(v)) ? "—" : Number(v).toLocaleString("es-AR", { minimumFractionDigits: d, maximumFractionDigits: d });
@@ -199,6 +200,7 @@ function Informe({ r }: { r: Data }) {
     </section>
     <Labores place={place} cultivo={r.cultivo} />
     <Planificacion place={place} cultivo={r.cultivo} />
+    <Avanzado place={place} cultivo={r.cultivo} />
     <p className="cp-note">Sombreado violeta: pronóstico. Fuente: Open-Meteo (ERA5 y modelos de pronóstico), CC-BY 4.0. Grados día: (máxima + mínima) / 2 − temperatura base del cultivo. La ET₀ es la demanda de una pastura de referencia, no el consumo real del cultivo. Basado en AgroClima v3. Información orientativa: no reemplaza el monitoreo a campo.</p>
   </article>;
 }
