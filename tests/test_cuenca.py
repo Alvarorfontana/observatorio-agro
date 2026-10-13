@@ -98,6 +98,8 @@ def test_ruta_cuenca_tolera_fallas(monkeypatch):
 
 
 def test_desfase_y_crecidas_de_retorno():
+    import pytest
+    pytest.importorskip("numpy")
     import math, random
     import normales_cuenca as nc
     random.seed(1)
@@ -216,6 +218,8 @@ def test_prediccion_lluvia_crecida_en_altura():
 
 
 def test_relacion_lluvia_crecida_sintetica():
+    import pytest
+    pytest.importorskip("numpy")
     import random
     import normales_cuenca as nc
     random.seed(2)
@@ -232,6 +236,8 @@ def test_relacion_lluvia_crecida_sintetica():
 
 
 def test_compute_arma_cifras_de_referencia():
+    import pytest
+    pytest.importorskip("numpy")
     import random
     import normales_cuenca as nc
     random.seed(4)
