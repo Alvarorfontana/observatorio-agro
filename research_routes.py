@@ -135,6 +135,13 @@ def research_data(name):
     if name=='cuenca':
         try: return jsonify(cca.analyze())
         except Exception as e: return _upstream_error(e)
+    if name=='carbono-suelo':
+        try:
+            lat=float(request.args.get('lat','')); lon=float(request.args.get('lon',''))
+            if not (-60<=lat<=15 and -90<=lon<=-30): return jsonify({'status':'sin dato','error':'Fuera de Sudamérica'}),400
+            return jsonify(sus.carbon(lat,lon))
+        except ValueError: return jsonify({'status':'sin dato','error':'Coordenadas inválidas'}),400
+        except Exception as e: return _upstream_error(e)
     if name=='gfm-capas':
         try:
             import gfm

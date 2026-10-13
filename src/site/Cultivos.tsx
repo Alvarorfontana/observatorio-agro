@@ -7,6 +7,7 @@
 import { useEffect, useRef, useState } from "react";
 import * as echarts from "echarts/core";
 import { Labores } from "./Labores";
+import { Planificacion } from "./Planificacion";
 
 type Data = Record<string, any>;
 const nf = (v: unknown, d = 0) => v == null || !Number.isFinite(Number(v)) ? "—" : Number(v).toLocaleString("es-AR", { minimumFractionDigits: d, maximumFractionDigits: d });
@@ -99,7 +100,7 @@ export function CultivosPanel() {
     try {
       const r = await fetch("/api/fuentes/geocode?q=" + encodeURIComponent(q.trim()), { signal: AbortSignal.timeout(20000) });
       const j = await r.json();
-      const rows = (j.results || []).map((x: Data) => ({ lat: +x.lat, lon: +x.lon, name: String(x.display_name || "").split(",").slice(0, 3).join(",") }));
+      const rows = (j.results || []).map((x: Data) => ({ lat: +x.lat, lon: +x.lon, name: String(x.display_name || "").split(",").slice(0, 3).join(","), cc: x.address?.country_code }));
       if (!rows.length) setErr("No encontré esa localidad. Probá con otro nombre o con coordenadas (lat, lon).");
       else if (rows.length === 1) setPlace(rows[0]); else setPlaces(rows);
     } catch { setErr("El buscador no respondió. Probá de nuevo o escribí coordenadas."); }
@@ -197,6 +198,7 @@ function Informe({ r }: { r: Data }) {
       <div><h4>Humedad y viento</h4><Chart option={hum} /></div>
     </section>
     <Labores place={place} cultivo={r.cultivo} />
+    <Planificacion place={place} cultivo={r.cultivo} />
     <p className="cp-note">Sombreado violeta: pronóstico. Fuente: Open-Meteo (ERA5 y modelos de pronóstico), CC-BY 4.0. Grados día: (máxima + mínima) / 2 − temperatura base del cultivo. La ET₀ es la demanda de una pastura de referencia, no el consumo real del cultivo. Basado en AgroClima v3. Información orientativa: no reemplaza el monitoreo a campo.</p>
   </article>;
 }
