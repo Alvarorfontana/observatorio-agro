@@ -12,12 +12,17 @@ jobs:
           def get(u, data=None, t=60):
               req = urllib.request.Request(u, data=json.dumps(data).encode() if data else None, headers={'Content-Type':'application/json','User-Agent':'dots'})
               with urllib.request.urlopen(req, timeout=t) as r: return r.status, r.read()
-          # TerraClimate NCSS
-          for host in ['http://thredds.northwestknowledge.net:8080','https://thredds.northwestknowledge.net']:
-              u = host + '/thredds/ncss/agg_terraclimate_def_1958_CurrentYear_GLOBE.nc?var=def&latitude=-28.55&longitude=-58.7&time_start=2024-01-01T00:00:00Z&time_end=2026-12-31T00:00:00Z&accept=csv'
+          # TerraClimate NCSS (variantes)
+          base='http://thredds.northwestknowledge.net:8080/thredds/'
+          for path in ['ncss/agg_terraclimate_def_1958_CurrentYear_GLOBE.nc?var=def&latitude=-28.55&longitude=-58.7&time_start=2023-01-01T00:00:00Z&time_end=2025-12-01T00:00:00Z&accept=csv',
+                       'ncss/grid/agg_terraclimate_def_1958_CurrentYear_GLOBE.nc?var=def&latitude=-28.55&longitude=-58.7&time_start=2023-01-01T00:00:00Z&time_end=2025-12-01T00:00:00Z&accept=csv',
+                       'ncss/point/agg_terraclimate_def_1958_CurrentYear_GLOBE.nc?var=def&latitude=-28.55&longitude=-58.7&time_start=2023-01-01T00:00:00Z&time_end=2025-12-01T00:00:00Z&accept=csv',
+                       'ncss/agg_terraclimate_def_1958_CurrentYear_GLOBE.nc/dataset.xml',
+                       'catalog/TERRACLIMATE_ALL/data/catalog.html']:
               try:
-                  s, b = get(u); print('TC', host, s, b[:400].decode(errors='replace'))
-              except Exception as e: print('TC', host, 'ERR', e)
+                  s, b = get(base+path); print('TC', path[:60], s, len(b), b[:300].decode(errors='replace').replace('\n',' | '))
+              except Exception as e: print('TC', path[:60], 'ERR', e)
+          raise SystemExit
           # Sentinel-1 RTC
           body = {'collections':['sentinel-1-rtc'],'intersects':{'type':'Point','coordinates':[-58.7,-28.55]},'limit':3,'sortby':[{'field':'properties.datetime','direction':'desc'}]}
           s, b = get('https://planetarycomputer.microsoft.com/api/stac/v1/search', body); js = json.loads(b)
