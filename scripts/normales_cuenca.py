@@ -195,8 +195,8 @@ def pick_cells(stations):
             for dx in (-STEP, 0, STEP):
                 cand.append((st['id'], round(st['lat'] + dy, 3), round(st['lon'] + dx, 3)))
     best = {}
-    for i in range(0, len(cand), 90):
-        part = cand[i:i + 90]
+    for i in range(0, len(cand), 30):
+        part = cand[i:i + 30]
         data = get(FLOOD, {'latitude': ','.join(str(c[1]) for c in part), 'longitude': ','.join(str(c[2]) for c in part),
                            'daily': 'river_discharge', 'past_days': 31, 'forecast_days': 1})
         for (sid, la, lo), resp in zip(part, data if isinstance(data, list) else [data]):
@@ -340,8 +340,15 @@ def main(path):
         print('[normales] completas para este año: nada que hacer.', flush=True)
         return
     cache = load_cache()
+    errors = []
+    def note(what, e):
+        msg = f'{what}: {type(e).__name__} {str(e)[:160]}'
+        errors.append(msg); print(f'[normales] {msg}', flush=True)
     if not cache['cells']:
-        cache['cells'] = pick_cells(cuenca.STATIONS); save_cache(cache)
+        try:
+            cache['cells'] = pick_cells(cuenca.STATIONS); save_cache(cache)
+        except Exception as e:
+            note('celdas GloFAS', e)
     # alturas del INA (sin límite de consultas): todas las localidades que tienen escala
     for sid, (site, *_r) in cuenca.INA_SITES.items():
         if sid not in cache['h']:
@@ -349,7 +356,7 @@ def main(path):
                 cache['h'][sid] = fetch_ina_heights(site); save_cache(cache)
                 print(f'[normales] alturas INA {sid}: listas', flush=True)
             except Exception as e:
-                print(f'[normales] alturas INA {sid}: {type(e).__name__}', flush=True)
+                note(f'alturas INA {sid}', e)
     # lluvia de las subcuencas (NASA POWER)
     for b in cuenca.BASINS:
         if b['id'] not in cache['rain']:
@@ -357,7 +364,7 @@ def main(path):
                 cache['rain'][b['id']] = fetch_basin_rain(b); save_cache(cache)
                 print(f'[normales] lluvia {b["name"]}: lista', flush=True)
             except Exception as e:
-                print(f'[normales] lluvia {b["id"]}: {type(e).__name__}', flush=True)
+                note(f'lluvia {b["id"]}', e)
     # caudales GloFAS: hasta MAX_POR_CORRIDA por día (límites gratuitos de Open-Meteo)
     pending = [s for s in cuenca.STATIONS if s['id'] not in cache['q']]
     for st in pending[:MAX_POR_CORRIDA]:
@@ -365,23 +372,27 @@ def main(path):
             cache['q'][st['id']] = fetch_station(cache['cells'].get(st['id'], st)); save_cache(cache)
             print(f'[normales] caudal {st["river"]} · {st["place"]}: listo', flush=True)
         except Exception as e:
-            print(f'[normales] caudal {st["id"]}: {type(e).__name__}', flush=True)
+            note(f'caudal {st["id"]}', e)
         time.sleep(PAUSE)
-    data = compute(cache)
+    try:
+        data = compute(cache)
+    except Exception as e:
+        note('cálculo', e); data = {'stations': {}, 'lags': {}, 'rain_rise': {}}
     basins = prev.get('basins') or {}
     for b in cuenca.BASINS:
         if b['id'] not in basins:
             try:
                 basins[b['id']] = {'rain15_by_month': power_rain15(b), 'source': 'NASA POWER climatología (PRECTOTCORR, mm/día × 15)'}
             except Exception as e:
-                print(f'[normales] normal de lluvia {b["id"]}: {type(e).__name__}', flush=True)
+                note(f'normal de lluvia {b["id"]}', e)
     data['basins'] = basins
     data['dams'] = prev.get('dams') or {}
     if not data['dams']:
         try:
             data['dams'] = dams()
         except Exception as e:
-            print(f'[normales] represas: {type(e).__name__}', flush=True)
+            note('represas', e)
+    data['errors'] = errors[:20] + (errors[-20:] if len(errors) > 20 else [])
     data['updated'] = date.today().isoformat()
     data['complete'] = len(cache['q']) == len(cuenca.STATIONS)
     data['progress'] = f"{len(cache['q'])} de {len(cuenca.STATIONS)} localidades con caudal"
