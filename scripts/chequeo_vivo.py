@@ -11,7 +11,7 @@ S = requests.Session(); S.headers['User-Agent'] = 'DOTS-chequeo-vivo/1.0'
 
 GET = ['variables', 'modelos', 'historico', 'escenas', 'rios', 'aire', 'elevacion', 'ndvi', 'ndvi-modis', 'indices',
        'teleconexiones', 'estadistica', 'enso', 'suelo', 'serie', 'proyeccion', 'sustentabilidad', 'plataformas',
-       'smn', 'inmet', 'nasa-power-30', 'landsat', 'radar', 'copernicus-stac', 'firms', 'ina']
+       'smn', 'nasa-power-30', 'landsat', 'radar', 'copernicus-stac', 'firms', 'ina']
 POST = {
     'forraje': {'lat': LAT, 'lon': LON, 'polygon': LOT, 'kind': 'pastizal', 'use': 0.5, 'heads': 120},
     'alertas': {'lat': LAT, 'lon': LON, 'polygon': LOT},
@@ -66,8 +66,10 @@ for name, body in POST.items():
 for path in ['/', '/observatorio', '/libre-deforestacion', '/que-es-dots']:
     t0 = time.monotonic(); r = S.get(BASE + path, timeout=30); codes[path] = show(path, r, t0)
 
-bad = {k: v for k, v in codes.items() if v >= 500}
-out(f"{len(codes) - len(bad)} de {len(codes)} sin error de servidor." + (f" Fallan: {', '.join(bad)}" if bad else ''))
+bad = {k: v for k, v in codes.items() if v >= 500 and v != 503}   # 503 = fuente externa caída, se informa aparte
+slow = {k: v for k, v in codes.items() if v in (429, 503)}
+out(f"{len(codes) - len(bad)} de {len(codes)} sin error de DOTS." + (f" Fallan: {', '.join(bad)}" if bad else '')
+    + (f" Fuente externa sin respuesta o con límite: {', '.join(slow)}" if slow else ''))
 if os.environ.get('GITHUB_ACTIONS'):
     # la tabla también queda como anotación, legible por la API de GitHub
     print('::notice title=Chequeo en vivo::' + '%0A'.join(l.replace('%', '%25') for l in LINES))

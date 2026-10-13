@@ -33,9 +33,31 @@ def envelope(data, url, scope, organism, status='recibido', error=None):
             'scope': scope, 'organism': organism}
 
 
+# Datos que no cambian en el día (series históricas, reanálisis, proyecciones): se guardan en memoria.
+_DAY_CACHE_HOSTS = ('archive-api.open-meteo.com', 'climate-api.open-meteo.com', 'power.larc.nasa.gov/api/temporal/monthly')
+_DAY_CACHE = {}
+RETRY_CODES = (429, 502, 503, 504)
+
+
 def _get(url, params=None, headers=None, timeout=TIMEOUT):
-    r = SESSION.get(url, params=params or {}, headers=headers or {}, timeout=timeout)
+    """GET con un reintento ante límite de consultas o falla pasajera, y memoria de un día para datos históricos."""
+    import time as _t
+    cache_key = None
+    if any(h in url for h in _DAY_CACHE_HOSTS):
+        cache_key = (url, repr(sorted((params or {}).items())))
+        hit = _DAY_CACHE.get(cache_key)
+        if hit and _t.monotonic() - hit[0] < 86400:
+            return hit[1]
+    for attempt in range(2):
+        r = SESSION.get(url, params=params or {}, headers=headers or {}, timeout=timeout)
+        if r.status_code in RETRY_CODES and attempt == 0:
+            _t.sleep(min(float(r.headers.get('Retry-After') or 2.5), 5)); continue
+        break
     r.raise_for_status()
+    if cache_key:
+        if len(_DAY_CACHE) > 300:
+            _DAY_CACHE.clear()
+        _DAY_CACHE[cache_key] = (_t.monotonic(), r)
     return r
 
 

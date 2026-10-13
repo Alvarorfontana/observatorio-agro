@@ -155,3 +155,33 @@ def test_proyeccion_429_reintenta_y_explica(monkeypatch):
     monkeypatch.setattr('time.sleep', lambda s: None)
     env = c.projection(-28.5, -58.7)
     assert len(calls) == 2 and env['status'] == 'sin dato' and '429' in env['error']
+
+
+def test_get_reintenta_y_guarda_historicos(monkeypatch):
+    import research_connectors as c
+    c._DAY_CACHE.clear()
+    seq = [429, 200]
+    class Resp:
+        def __init__(self, code): self.status_code = code; self.headers = {}
+        def raise_for_status(self):
+            if self.status_code >= 400: raise AssertionError('no debía fallar')
+        def json(self): return {'ok': 1}
+    calls = []
+    def get(url, params=None, headers=None, timeout=None):
+        calls.append(1); return Resp(seq.pop(0) if seq else 200)
+    monkeypatch.setattr(c.SESSION, 'get', get)
+    monkeypatch.setattr('time.sleep', lambda s: None)
+    u = 'https://archive-api.open-meteo.com/v1/archive'
+    assert c._get(u, {'a': 1}).json() == {'ok': 1} and len(calls) == 2
+    c._get(u, {'a': 1})
+    assert len(calls) == 2      # segunda vez sale de memoria
+
+
+def test_limite_de_fuente_se_explica(client, monkeypatch):
+    import requests, research_connectors as c
+    def boom(*a, **k):
+        resp = requests.Response(); resp.status_code = 429
+        raise requests.HTTPError(response=resp)
+    monkeypatch.setattr(c, 'external', boom)
+    r = client.get(f'/api/fuentes/modelos{Q}')
+    assert r.status_code == 429 and 'minuto' in r.json['error']

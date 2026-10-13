@@ -19,6 +19,15 @@ import monitor as mon
 
 research_api=Blueprint('research_api',__name__,url_prefix='/api/fuentes')
 
+def _upstream_error(e):
+    """Error de una fuente externa explicado: límite de consultas (429), fuente caída (503) o respuesta inválida (502)."""
+    code=getattr(getattr(e,'response',None),'status_code',None)
+    if code==429:
+        return jsonify({'status':'sin dato','error':'La fuente llegó a su límite de consultas. Probá de nuevo en un minuto.','upstream':429}),429
+    if code in (500,502,503,504) or type(e).__name__ in ('ConnectTimeout','ReadTimeout','ConnectionError','Timeout'):
+        return jsonify({'status':'sin dato','error':'La fuente externa no está respondiendo ahora. Probá de nuevo en unos minutos.','upstream':code,'type':type(e).__name__}),503
+    return jsonify({'status':'sin dato','error':'La fuente no respondió válidamente','upstream':code,'type':type(e).__name__}),502
+
 def _int(args,key,default,lo,hi):
     try: v=int(args.get(key,default))
     except (TypeError,ValueError): raise ValueError(f'{key} inválido')
@@ -196,7 +205,7 @@ def research_data(name):
         return jsonify(jobs[name]())
     except PermissionError as e:return jsonify({'status':'requiere credencial','error':str(e)}),409
     except ValueError as e:return jsonify({'status':'sin dato','error':str(e)}),400
-    except Exception as e:return jsonify({'status':'sin dato','error':'La fuente no respondió válidamente','type':type(e).__name__}),502
+    except Exception as e:return _upstream_error(e)
 
 @research_api.post('/analizar')
 def report():
