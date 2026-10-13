@@ -450,17 +450,122 @@ def local_data(d, sid, today=None):
     }
 
 
-def local_picture(s, today=None):
-    """Imagen VIIRS color real del día anterior alrededor de la localidad (NASA GIBS). None si no hay."""
+# ───────────────────────────── foto satelital de la localidad ─────────────────────────────
+# Cadena obligatoria: 1) Sentinel-2 (10 m) despejado de los últimos 60 días; 2) VIIRS/MODIS (250-375 m) del día menos
+# nublado de los últimos 10; 3) si nada responde, el informe lo dice. Todo abierto y sin clave.
+S2_BOX = (0.16, 0.11)          # medio ancho en grados (lon, lat): ~33 × 24 km, se ve la ciudad, el cauce y la planicie
+WIDE_BOX = (0.9, 0.6)          # ~180 × 130 km para VIIRS/MODIS
+S2_BAD = (0, 1, 3, 8, 9, 10)   # SCL: sin dato, saturado, sombra de nube, nube media, nube alta, cirro
+DAILY = [('VIIRS_SNPP_CorrectedReflectance_TrueColor', 'VIIRS (Suomi NPP)'), ('VIIRS_NOAA20_CorrectedReflectance_TrueColor', 'VIIRS (NOAA-20)'),
+         ('MODIS_Terra_CorrectedReflectance_TrueColor', 'MODIS (Terra)'), ('MODIS_Aqua_CorrectedReflectance_TrueColor', 'MODIS (Aqua)')]
+
+
+def _box(s, half):
+    return (round(s['lon'] - half[0], 3), round(s['lat'] - half[1], 3), round(s['lon'] + half[0], 3), round(s['lat'] + half[1], 3))
+
+
+def _box_poly(b):
+    w, so, e, n = b
+    return [[so, w], [so, e], [n, e], [n, w]]
+
+
+def sentinel2_picture(s, today=None, days=60, tries=5):
+    """Escena Sentinel-2 L2A más reciente con ≥85 % de píxeles despejados dentro del recuadro (máscara SCL)."""
+    import vegetation as veg
+    from datetime import datetime, time as dtime
     today = today or date.today()
-    day = (today - timedelta(days=1)).isoformat()
-    bbox = (round(s['lon'] - 0.9, 2), round(s['lat'] - 0.6, 2), round(s['lon'] + 0.9, 2), round(s['lat'] + 0.6, 2))
-    main = _image([cc.gibs_url('VIIRS_SNPP_CorrectedReflectance_TrueColor', bbox, day, 900, 600, 'image/jpeg'),
-                   cc.gibs_url('MODIS_Terra_CorrectedReflectance_TrueColor', bbox, day, 900, 600, 'image/jpeg')])
-    if not main:
+    box = _box(s, S2_BOX); pts = _box_poly(box)
+    feat = {'type': 'Feature', 'properties': {}, 'geometry': veg.geojson_polygon(pts)}
+    end = datetime.combine(today, dtime(23, 59)); start = end - timedelta(days=days)
+    body = {'collections': ['sentinel-2-l2a'], 'intersects': feat['geometry'], 'limit': 20,
+            'datetime': f'{start:%Y-%m-%dT%H:%M:%SZ}/{end:%Y-%m-%dT%H:%M:%SZ}', 'query': {'eo:cloud_cover': {'lt': 40}},
+            'sortby': [{'field': 'properties.datetime', 'direction': 'desc'}]}
+    items = [it for it in veg.c._post(veg.PC_STAC + '/search', body, timeout=25).json().get('features', [])
+             if veg.footprint_coverage(it, pts) >= 0.99]
+    clear_expr = 'where(' + '|'.join(f'(SCL=={v})' for v in S2_BAD) + ',0,1)'
+    for it in items[:tries]:
+        try:
+            clear = float(veg._pc_stats(it['id'], feat, clear_expr).get('mean') or 0)
+        except Exception:
+            continue
+        if clear < 0.85:
+            continue
+        r = veg.c.SESSION.post(f'{veg.PC_DATA}/item/feature.png', json=feat, timeout=40,
+                               params={'collection': 'sentinel-2-l2a', 'item': it['id'], 'assets': 'visual',
+                                       'asset_bidx': 'visual|1,2,3', 'nodata': 0, 'max_size': 1024})
+        if r.ok and r.content[:8] == b'\x89PNG\r\n\x1a\n' and len(r.content) > 5000:
+            day = str(it['properties'].get('datetime', ''))[:10]
+            return {'image': list(r.content), 'date': dm(day) + '/' + day[:4], 'sensor': 'Sentinel-2 (ESA · Copernicus), 10 m',
+                    'clear': round(100 * clear), 'age': (today - date.fromisoformat(day)).days,
+                    'caption': f"Sentinel-2 L2A en color real, {round(100 * clear)} % del recuadro sin nubes (máscara SCL). Recuadro de ~33 × 24 km "
+                               f"centrado en la localidad. Vía Microsoft Planetary Computer (datos abiertos de Copernicus)."}
+    return None
+
+
+def cloud_fraction(jpeg):
+    """Fracción de píxeles blancos y poco saturados (nube) en una imagen color real. None si no se puede leer."""
+    try:
+        from io import BytesIO
+        from PIL import Image
+        im = Image.open(BytesIO(jpeg)).convert('RGB').resize((180, 120))
+    except Exception:
         return None
-    return {'image': list(main), 'date': dm(day), 'caption': 'VIIRS (Suomi NPP) color real, NASA GIBS, ~1,8 × 1,2 grados alrededor de la localidad. '
-                                                            'Con cielo despejado se ve el cauce y el agua fuera de él; con nubes, sólo la cobertura nubosa.'}
+    raw = im.tobytes(); px = [tuple(raw[k:k + 3]) for k in range(0, len(raw), 3)]
+    data = [p for p in px if max(p) > 8]                 # descarta franjas sin dato (negras)
+    if len(data) < 0.6 * len(px):
+        return 1.0                                       # más de 40 % sin dato: como si estuviera tapado
+    cloudy = sum(1 for r, g, b in data if min(r, g, b) > 165 and max(r, g, b) - min(r, g, b) < 35)
+    return cloudy / len(data)
+
+
+def daily_picture(s, today=None, days=10):
+    """VIIRS/MODIS del día menos nublado de los últimos `days`; se queda con el primero bajo 25 % de nubes."""
+    today = today or date.today()
+    box = _box(s, WIDE_BOX)
+    best = None
+    for start in range(1, days + 1, 3):                  # de a tres días, todos los sensores en paralelo
+        jobs = []
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            for k in range(start, min(start + 3, days + 1)):
+                day = (today - timedelta(days=k)).isoformat()
+                for layer, name in DAILY:
+                    jobs.append((day, name, pool.submit(_image, [cc.gibs_url(layer, box, day, 900, 600, 'image/jpeg')])))
+            got = [(day, name, f.result()) for day, name, f in jobs]
+        for day, name, img in got:
+            if not img:
+                continue
+            cf = cloud_fraction(img)
+            score = 1.0 if cf is None else cf
+            if best is None or score < best[0] or (score == best[0] and day > best[1]):
+                best = (score, day, name, img)
+        if best and best[0] < 0.25:
+            break
+    if not best:
+        return None
+    score, day, name, img = best
+    pct = round(100 * (1 - score))
+    note = ('' if score < 0.25 else f" Ningún día de los últimos {days} estuvo despejado: esta es la toma con menos nubes ({pct} % del recuadro visible).")
+    return {'image': list(img), 'date': dm(day) + '/' + day[:4], 'sensor': f'{name}, 250-375 m', 'clear': pct,
+            'age': (today - date.fromisoformat(day)).days,
+            'caption': f"{name} en color real vía NASA GIBS, ~180 × 130 km alrededor de la localidad. Con cielo despejado se ve el cauce "
+                       f"y el agua fuera de él." + note}
+
+
+def local_picture(s, today=None):
+    """Foto obligatoria: siempre devuelve un dict. Si no hay imagen, 'image' es None y 'missing' explica por qué."""
+    if os.environ.get('DOTS_REPORT_IMAGERY', '1') == '0':
+        return {'image': None, 'missing': 'Imágenes satelitales desactivadas en esta instalación.'}
+    tried = []
+    for fn, label in ((sentinel2_picture, 'Sentinel-2'), (daily_picture, 'VIIRS/MODIS')):
+        try:
+            p = fn(s, today)
+            if p:
+                return p
+            tried.append(f'{label}: sin toma despejada')
+        except Exception as e:
+            tried.append(f'{label}: {type(e).__name__}')
+    return {'image': None, 'missing': 'No se pudo obtener imagen satelital al generar el informe (' + '; '.join(tried) + '). '
+                                      'Volvé a descargarlo en unos minutos o consultá worldview.earthdata.nasa.gov.'}
 
 
 def local_pdf(d, sid, today=None):
@@ -469,8 +574,8 @@ def local_pdf(d, sid, today=None):
     s = next((x for x in cc.STATIONS if x['id'] == sid), None)
     try:
         ld['picture'] = local_picture(s, today) if s else None
-    except Exception:
-        ld['picture'] = None
+    except Exception as e:
+        ld['picture'] = {'image': None, 'missing': f'No se pudo obtener imagen satelital ({type(e).__name__}).'}
     data = json.dumps(ld, ensure_ascii=False, default=str)
     out = typst.compile(LOCAL_TEMPLATE, root=BASE, font_paths=[FONTS], ignore_system_fonts=True, sys_inputs={'data': data})
     if out[:5] != b'%PDF-':

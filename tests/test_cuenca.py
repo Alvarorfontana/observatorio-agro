@@ -291,6 +291,7 @@ def test_informe_de_localidad(monkeypatch):
                        'forecast': {'by_site': {'parana-goya': [{'date': '2026-10-20', 'min': 5.7, 'central': 6.0, 'max': 6.3}]}}})
     fake = {'status': 'recibido', 'data': {'rivers': {'stations': st, 'actions': cc.ACTIONS}, 'alerts': [], 'maps': {}, 'errors': {}}}
     monkeypatch.setattr(cc, 'analyze', lambda: fake)
+    monkeypatch.setenv('DOTS_REPORT_IMAGERY', '0')
     c = app.test_client()
     r = c.get('/api/fuentes/localidad-informe?id=parana-goya')
     assert r.status_code == 200 and r.data[:5] == b'%PDF-' and 'Goya' in r.headers['Content-Disposition']
@@ -314,3 +315,39 @@ def test_informe_de_localidad_ampliado():
     assert [x['name'] for x in d['dams']] == ['Itaipú']
     assert any(u['place'] == 'Bella Vista' for u in d['upstream']) and d['downstream'][0]['place'] == 'Reconquista'
     assert d['nino']['phase'] == 'Niño fuerte' and any('cabeceras' in l for l in d['summary'])
+
+
+def _jpeg(color):
+    from io import BytesIO
+    from PIL import Image
+    b = BytesIO(); Image.new('RGB', (90, 60), color).save(b, 'JPEG'); return b.getvalue() + b'0' * 2000
+
+
+def test_foto_satelital_obligatoria(monkeypatch):
+    import cuenca_report as cr
+    import vegetation as veg
+    s = next(x for x in cc.STATIONS if x['id'] == 'parana-goya')
+    today = date(2026, 10, 13)
+    monkeypatch.setenv('DOTS_REPORT_IMAGERY', '1')
+    assert cr.cloud_fraction(_jpeg((240, 240, 240))) > 0.9 and cr.cloud_fraction(_jpeg((40, 90, 60))) < 0.1
+    # 1) Sentinel-2: la primera escena está nublada, la segunda despejada
+    items = [{'id': f'S2A_{k}', 'properties': {'datetime': f'2026-10-{10 - k:02d}T13:50:00Z'}, 'geometry': None} for k in range(2)]
+    class J:
+        def __init__(self, j): self._j = j
+        def json(self): return self._j
+    monkeypatch.setattr(veg.c, '_post', lambda *a, **k: J({'features': items}))
+    monkeypatch.setattr(veg, '_pc_stats', lambda iid, f, e: {'mean': 0.3 if iid.endswith('_0') else 0.95})
+    class R: ok = True; content = b'\x89PNG\r\n\x1a\n' + b'0' * 6000
+    monkeypatch.setattr(veg.c.SESSION, 'post', lambda *a, **k: R())
+    p = cr.local_picture(s, today)
+    assert p['sensor'].startswith('Sentinel-2') and p['date'] == '09/10/2026' and p['clear'] == 95 and p['age'] == 4
+    # 2) sin Sentinel-2 despejado: VIIRS/MODIS del día menos nublado
+    monkeypatch.setattr(veg, '_pc_stats', lambda *a: {'mean': 0.2})
+    clear_day = (today - timedelta(days=2)).isoformat()
+    monkeypatch.setattr(cr, '_image', lambda urls, timeout=12: _jpeg((40, 90, 60)) if clear_day in urls[0] and 'Terra' in urls[0] else _jpeg((240, 240, 240)))
+    p = cr.local_picture(s, today)
+    assert p['sensor'].startswith('MODIS (Terra)') and p['age'] == 2 and p['clear'] > 90
+    # 3) nada responde: el informe lo dice
+    monkeypatch.setattr(cr, '_image', lambda *a, **k: None)
+    p = cr.local_picture(s, today)
+    assert p['image'] is None and 'Sentinel-2' in p['missing'] and 'VIIRS/MODIS' in p['missing']
