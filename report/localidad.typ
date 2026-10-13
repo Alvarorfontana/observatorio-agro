@@ -265,7 +265,7 @@
   [*Lluvia en cabeceras*], [ECMWF IFS y NOAA GFS por conjunto, vía Open-Meteo; normales de NASA POWER.],
   [*Caudal*], [Copernicus GloFAS vía Open-Meteo; normales y crecidas de retorno calculadas sobre 2001-2020.],
   [*Represas*], [ONS Brasil, datos abiertos (CC-BY 4.0).],
-  [*El Niño e imagen*], [NOAA CPC (OISST semanal) · Sentinel-2 L2A (Copernicus, vía Microsoft Planetary Computer) · NASA GIBS (VIIRS, MODIS).],
+  [*El Niño e imagen*], [NOAA CPC (OISST semanal) · Sentinel-2 y Sentinel-1 (Copernicus) y Landsat 8/9 (USGS), vía Microsoft Planetary Computer · NASA GIBS (VIIRS, MODIS).],
   [*Oficiales para consultar*], [Argentina: INA, Prefectura, Defensa Civil · Brasil: ANA, SGB · Paraguay: DMH · Bolivia: SENAMHI · Uruguay: INUMET, CTM Salto Grande · Regional: CIC Plata.])
 #v(4pt)
 #text(size: 7.4pt, fill: muted)[DOTS combina datos públicos con reglas declaradas; no es un organismo oficial. Los tiempos de llegada y las subidas estimadas son orientativos. Ante una evacuación, siguen mandando Defensa Civil y Prefectura.]

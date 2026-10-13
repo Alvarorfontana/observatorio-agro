@@ -451,13 +451,18 @@ def local_data(d, sid, today=None):
 
 
 # ───────────────────────────── foto satelital de la localidad ─────────────────────────────
-# Cadena obligatoria: 1) Sentinel-2 (10 m) despejado de los últimos 60 días; 2) VIIRS/MODIS (250-375 m) del día menos
-# nublado de los últimos 10; 3) si nada responde, el informe lo dice. Todo abierto y sin clave.
+# Cadena obligatoria, siempre lo más fresco posible:
+#   1) óptico de alta resolución despejado de los últimos 10 días: Sentinel-2 (10 m) o Landsat 8/9 (30 m);
+#   2) radar Sentinel-1 de los últimos 12 días (10 m, ve a través de las nubes; el agua se ve oscura);
+#   3) VIIRS/MODIS del día menos nublado de los últimos 5 (250-375 m);
+#   4) si nada responde, el informe lo dice. Todo abierto y sin clave.
 S2_BOX = (0.16, 0.11)          # medio ancho en grados (lon, lat): ~33 × 24 km, se ve la ciudad, el cauce y la planicie
 WIDE_BOX = (0.9, 0.6)          # ~180 × 130 km para VIIRS/MODIS
+OPTICAL_DAYS, RADAR_DAYS, DAILY_DAYS = 10, 12, 5
 S2_BAD = (0, 1, 3, 8, 9, 10)   # SCL: sin dato, saturado, sombra de nube, nube media, nube alta, cirro
 DAILY = [('VIIRS_SNPP_CorrectedReflectance_TrueColor', 'VIIRS (Suomi NPP)'), ('VIIRS_NOAA20_CorrectedReflectance_TrueColor', 'VIIRS (NOAA-20)'),
          ('MODIS_Terra_CorrectedReflectance_TrueColor', 'MODIS (Terra)'), ('MODIS_Aqua_CorrectedReflectance_TrueColor', 'MODIS (Aqua)')]
+BOX_TXT = '~33 × 24 km centrado en la localidad'
 
 
 def _box(s, half):
@@ -469,36 +474,86 @@ def _box_poly(b):
     return [[so, w], [so, e], [n, e], [n, w]]
 
 
-def sentinel2_picture(s, today=None, days=60, tries=5):
-    """Escena Sentinel-2 L2A más reciente con ≥85 % de píxeles despejados dentro del recuadro (máscara SCL)."""
+def _pc_search(collection, feat, pts, today, days, query=None):
     import vegetation as veg
     from datetime import datetime, time as dtime
-    today = today or date.today()
-    box = _box(s, S2_BOX); pts = _box_poly(box)
-    feat = {'type': 'Feature', 'properties': {}, 'geometry': veg.geojson_polygon(pts)}
     end = datetime.combine(today, dtime(23, 59)); start = end - timedelta(days=days)
-    body = {'collections': ['sentinel-2-l2a'], 'intersects': feat['geometry'], 'limit': 20,
-            'datetime': f'{start:%Y-%m-%dT%H:%M:%SZ}/{end:%Y-%m-%dT%H:%M:%SZ}', 'query': {'eo:cloud_cover': {'lt': 40}},
+    body = {'collections': [collection], 'intersects': feat['geometry'], 'limit': 20,
+            'datetime': f'{start:%Y-%m-%dT%H:%M:%SZ}/{end:%Y-%m-%dT%H:%M:%SZ}',
             'sortby': [{'field': 'properties.datetime', 'direction': 'desc'}]}
-    items = [it for it in veg.c._post(veg.PC_STAC + '/search', body, timeout=25).json().get('features', [])
-             if veg.footprint_coverage(it, pts) >= 0.99]
+    if query:
+        body['query'] = query
+    return [it for it in veg.c._post(veg.PC_STAC + '/search', body, timeout=25).json().get('features', [])
+            if veg.footprint_coverage(it, pts) >= 0.99]
+
+
+def _pc_png(collection, item_id, feat, params):
+    import vegetation as veg
+    r = veg.c.SESSION.post(f'{veg.PC_DATA}/item/feature.png', json=feat, timeout=40,
+                           params={'collection': collection, 'item': item_id, 'max_size': 1024, **params})
+    return r.content if (r.ok and r.content[:8] == b'\x89PNG\r\n\x1a\n' and len(r.content) > 5000) else None
+
+
+def _pic(png, day, today, sensor, clear, caption):
+    return {'image': list(png), 'date': dm(day) + '/' + day[:4], 'sensor': sensor, 'clear': clear,
+            'age': (today - date.fromisoformat(day)).days, 'caption': caption}
+
+
+def optical_picture(s, today=None, days=OPTICAL_DAYS, tries=4):
+    """La escena óptica despejada más reciente: Sentinel-2 (≥85 % sin nubes por máscara SCL) o Landsat 8/9 (<15 % de nubes)."""
+    import vegetation as veg
+    today = today or date.today()
+    pts = _box_poly(_box(s, S2_BOX))
+    feat = {'type': 'Feature', 'properties': {}, 'geometry': veg.geojson_polygon(pts)}
+    cands = []
+    try:
+        cands += [('s2', it) for it in _pc_search('sentinel-2-l2a', feat, pts, today, days, {'eo:cloud_cover': {'lt': 40}})[:tries]]
+    except Exception:
+        pass
+    try:
+        cands += [('ls', it) for it in _pc_search('landsat-c2-l2', feat, pts, today, days,
+                                                  {'eo:cloud_cover': {'lt': 15}, 'platform': {'in': ['landsat-8', 'landsat-9']}})[:2]]
+    except Exception:
+        pass
+    cands.sort(key=lambda x: str(x[1]['properties'].get('datetime', '')), reverse=True)   # la más nueva primero
     clear_expr = 'where(' + '|'.join(f'(SCL=={v})' for v in S2_BAD) + ',0,1)'
-    for it in items[:tries]:
+    for kind, it in cands:
+        day = str(it['properties'].get('datetime', ''))[:10]
         try:
-            clear = float(veg._pc_stats(it['id'], feat, clear_expr).get('mean') or 0)
+            if kind == 's2':
+                clear = float(veg._pc_stats(it['id'], feat, clear_expr).get('mean') or 0)
+                if clear < 0.85:
+                    continue
+                png = _pc_png('sentinel-2-l2a', it['id'], feat, {'assets': 'visual', 'asset_bidx': 'visual|1,2,3', 'nodata': 0})
+                if png:
+                    return _pic(png, day, today, 'Sentinel-2 (ESA · Copernicus), 10 m', round(100 * clear),
+                                f'Sentinel-2 L2A en color real, {round(100 * clear)} % del recuadro sin nubes (máscara SCL). Recuadro de {BOX_TXT}.')
+            else:
+                png = _pc_png('landsat-c2-l2', it['id'], feat, {'assets': ['red', 'green', 'blue'], 'nodata': 0,
+                                                               'color_formula': 'gamma RGB 2.7, saturation 1.5, sigmoidal RGB 15 0.55'})
+                if png:
+                    clear = round(100 - float(it['properties'].get('eo:cloud_cover') or 0))
+                    sat = it['properties'].get('platform', 'landsat').replace('landsat-', 'Landsat ')
+                    return _pic(png, day, today, f'{sat} (USGS · NASA), 30 m', clear,
+                                f'{sat} Collection 2 en color real; nubosidad de la escena {100 - clear} %. Recuadro de {BOX_TXT}.')
         except Exception:
             continue
-        if clear < 0.85:
-            continue
-        r = veg.c.SESSION.post(f'{veg.PC_DATA}/item/feature.png', json=feat, timeout=40,
-                               params={'collection': 'sentinel-2-l2a', 'item': it['id'], 'assets': 'visual',
-                                       'asset_bidx': 'visual|1,2,3', 'nodata': 0, 'max_size': 1024})
-        if r.ok and r.content[:8] == b'\x89PNG\r\n\x1a\n' and len(r.content) > 5000:
+    return None
+
+
+def radar_picture(s, today=None, days=RADAR_DAYS):
+    """Sentinel-1 RTC (polarización VV, en dB) más reciente: no depende de las nubes. Agua tranquila = oscuro."""
+    import vegetation as veg
+    today = today or date.today()
+    pts = _box_poly(_box(s, S2_BOX))
+    feat = {'type': 'Feature', 'properties': {}, 'geometry': veg.geojson_polygon(pts)}
+    for it in _pc_search('sentinel-1-rtc', feat, pts, today, days)[:2]:
+        png = _pc_png('sentinel-1-rtc', it['id'], feat, {'expression': '10*log10(vv)', 'asset_as_band': 'true', 'rescale': '-24,0', 'nodata': 0})
+        if png:
             day = str(it['properties'].get('datetime', ''))[:10]
-            return {'image': list(r.content), 'date': dm(day) + '/' + day[:4], 'sensor': 'Sentinel-2 (ESA · Copernicus), 10 m',
-                    'clear': round(100 * clear), 'age': (today - date.fromisoformat(day)).days,
-                    'caption': f"Sentinel-2 L2A en color real, {round(100 * clear)} % del recuadro sin nubes (máscara SCL). Recuadro de ~33 × 24 km "
-                               f"centrado en la localidad. Vía Microsoft Planetary Computer (datos abiertos de Copernicus)."}
+            return _pic(png, day, today, 'Sentinel-1 radar (ESA · Copernicus), 10 m', 100,
+                        f'Radar Sentinel-1 (VV, corregido por terreno): atraviesa las nubes. El agua quieta y las zonas anegadas se ven negras; '
+                        f'ciudades y monte, claros. Se usó porque no hubo toma óptica despejada en los últimos {OPTICAL_DAYS} días. Recuadro de {BOX_TXT}.')
     return None
 
 
@@ -518,15 +573,15 @@ def cloud_fraction(jpeg):
     return cloudy / len(data)
 
 
-def daily_picture(s, today=None, days=10):
+def daily_picture(s, today=None, days=DAILY_DAYS):
     """VIIRS/MODIS del día menos nublado de los últimos `days`; se queda con el primero bajo 25 % de nubes."""
     today = today or date.today()
     box = _box(s, WIDE_BOX)
     best = None
-    for start in range(1, days + 1, 3):                  # de a tres días, todos los sensores en paralelo
+    for start in range(0, days + 1, 2):                  # de a dos días (empieza por hoy), todos los sensores en paralelo
         jobs = []
         with ThreadPoolExecutor(max_workers=8) as pool:
-            for k in range(start, min(start + 3, days + 1)):
+            for k in range(start, min(start + 2, days + 1)):
                 day = (today - timedelta(days=k)).isoformat()
                 for layer, name in DAILY:
                     jobs.append((day, name, pool.submit(_image, [cc.gibs_url(layer, box, day, 900, 600, 'image/jpeg')])))
@@ -556,7 +611,8 @@ def local_picture(s, today=None):
     if os.environ.get('DOTS_REPORT_IMAGERY', '1') == '0':
         return {'image': None, 'missing': 'Imágenes satelitales desactivadas en esta instalación.'}
     tried = []
-    for fn, label in ((sentinel2_picture, 'Sentinel-2'), (daily_picture, 'VIIRS/MODIS')):
+    for fn, label in ((optical_picture, f'Sentinel-2 y Landsat ({OPTICAL_DAYS} días)'), (radar_picture, f'radar Sentinel-1 ({RADAR_DAYS} días)'),
+                      (daily_picture, f'VIIRS/MODIS ({DAILY_DAYS} días)')):
         try:
             p = fn(s, today)
             if p:

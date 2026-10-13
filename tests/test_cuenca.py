@@ -330,24 +330,33 @@ def test_foto_satelital_obligatoria(monkeypatch):
     today = date(2026, 10, 13)
     monkeypatch.setenv('DOTS_REPORT_IMAGERY', '1')
     assert cr.cloud_fraction(_jpeg((240, 240, 240))) > 0.9 and cr.cloud_fraction(_jpeg((40, 90, 60))) < 0.1
-    # 1) Sentinel-2: la primera escena está nublada, la segunda despejada
-    items = [{'id': f'S2A_{k}', 'properties': {'datetime': f'2026-10-{10 - k:02d}T13:50:00Z'}, 'geometry': None} for k in range(2)]
+    # 1) óptico: la Sentinel-2 más nueva está nublada, la anterior despejada; Landsat no hay
+    items = {'sentinel-2-l2a': [{'id': f'S2A_{k}', 'properties': {'datetime': f'2026-10-{10 - k:02d}T13:50:00Z'}, 'geometry': None} for k in range(2)],
+             'landsat-c2-l2': [], 'sentinel-1-rtc': [{'id': 'S1A_x', 'properties': {'datetime': '2026-10-11T09:00:00Z'}, 'geometry': None}]}
     class J:
         def __init__(self, j): self._j = j
         def json(self): return self._j
-    monkeypatch.setattr(veg.c, '_post', lambda *a, **k: J({'features': items}))
+    seen = []
+    def post(url, body, timeout=30):
+        seen.append(body['collections'][0]); assert body['datetime'] >= '2026-10-01'
+        return J({'features': items[body['collections'][0]]})
+    monkeypatch.setattr(veg.c, '_post', post)
     monkeypatch.setattr(veg, '_pc_stats', lambda iid, f, e: {'mean': 0.3 if iid.endswith('_0') else 0.95})
     class R: ok = True; content = b'\x89PNG\r\n\x1a\n' + b'0' * 6000
     monkeypatch.setattr(veg.c.SESSION, 'post', lambda *a, **k: R())
     p = cr.local_picture(s, today)
     assert p['sensor'].startswith('Sentinel-2') and p['date'] == '09/10/2026' and p['clear'] == 95 and p['age'] == 4
-    # 2) sin Sentinel-2 despejado: VIIRS/MODIS del día menos nublado
+    # 2) sin óptico despejado: radar Sentinel-1, que ve a través de las nubes
     monkeypatch.setattr(veg, '_pc_stats', lambda *a: {'mean': 0.2})
+    p = cr.local_picture(s, today)
+    assert p['sensor'].startswith('Sentinel-1') and p['age'] == 2
+    # 3) sin radar: VIIRS/MODIS del día menos nublado
+    items['sentinel-1-rtc'] = []
     clear_day = (today - timedelta(days=2)).isoformat()
     monkeypatch.setattr(cr, '_image', lambda urls, timeout=12: _jpeg((40, 90, 60)) if clear_day in urls[0] and 'Terra' in urls[0] else _jpeg((240, 240, 240)))
     p = cr.local_picture(s, today)
     assert p['sensor'].startswith('MODIS (Terra)') and p['age'] == 2 and p['clear'] > 90
-    # 3) nada responde: el informe lo dice
+    # 4) nada responde: el informe lo dice
     monkeypatch.setattr(cr, '_image', lambda *a, **k: None)
     p = cr.local_picture(s, today)
-    assert p['image'] is None and 'Sentinel-2' in p['missing'] and 'VIIRS/MODIS' in p['missing']
+    assert p['image'] is None and 'Sentinel-2' in p['missing'] and 'radar' in p['missing'] and 'VIIRS/MODIS' in p['missing']
