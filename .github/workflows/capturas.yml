@@ -1,0 +1,19 @@
+name: Capturas del sitio
+on: workflow_dispatch
+permissions:
+  contents: write
+jobs:
+  shots:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: npm i --no-save playwright@1.56.1 && npx playwright install --with-deps chromium
+      - run: mkdir -p capturas && node scripts/capturas.mjs https://observatorio-agro.vercel.app capturas
+      - name: Guardar en la rama capturas
+        run: |
+          cd capturas && git init -q && git checkout -q -b capturas && git add . \
+            && git -c user.name=dots-bot -c user.email=dots-bot@users.noreply.github.com commit -qm "capturas $(date -u +%F_%H%M)" \
+            && git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" capturas
