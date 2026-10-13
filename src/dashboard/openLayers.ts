@@ -211,18 +211,6 @@ export const OPEN_LAYERS: OpenLayer[] = [
   "source": "xyzservices (geopandas, BSD-3)"
  },
  {
-  "id": "TopPlusOpen/Color",
-  "group": "Mapas base",
-  "name": "TopPlusOpen · topográfico mundial (BKG)",
-  "url": "http://sgx.geodatenzentrum.de/wmts_topplus_open/tile/1.0.0/web/default/WEBMERCATOR/{z}/{y}/{x}.png",
-  "overlay": false,
-  "maxZoom": 18,
-  "subdomains": null,
-  "dated": false,
-  "attribution": "Map data: (C) dl-de/by-2-0",
-  "source": "xyzservices (geopandas, BSD-3)"
- },
- {
   "id": "CartoDB/Positron",
   "group": "Mapas base",
   "name": "Carto · claro",

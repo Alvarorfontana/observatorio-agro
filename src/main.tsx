@@ -140,8 +140,8 @@ const SOURCES = [
   ["serie", "Clima de 20–30 años", "ERA5 / Open-Meteo"],
   ["proyeccion", "Proyección 2031–2040", "CMIP6 / MPI-ESM1-2-XR"],
   ["smn", "Estaciones · Argentina", "SMN / WIS2"],
-  ["inmet", "Estaciones · Brasil", "INMET · respaldo NOAA"],
-  ["dmc", "Estaciones · Chile", "DMC · respaldo NOAA"],
+  ["inmet", "Estaciones · Brasil", "INMET · METAR en tiempo real"],
+  ["dmc", "Estaciones · Chile", "DMC · METAR en tiempo real"],
   ["eccc", "Estaciones · Canadá", "ECCC GeoMet"],
   ["nws", "Estaciones · EE.UU.", "NOAA / NWS"],
   ["metnorway", "Pronóstico · Noruega", "MET Norway directo"],];
@@ -1317,7 +1317,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
               {NATIONAL.includes(view) && (
                 <>
                   <p className="footnote">{payload?.agency || "Servicio oficial directo"}. {payload?.scope || "Seleccioná coordenadas dentro del país de la agencia."}</p>
-                  {payload?.source_mode==="respaldo NOAA" && <p className="footnote warn-note">Datos vía NOAA (red mundial de la OMM), con 1 a 2 días de demora. {payload?.native_note||""}</p>}
+                  {payload?.source_mode==="respaldo METAR" && <p className="footnote warn-note">Partes horarios de aeropuertos (METAR) del servicio meteorológico del país, vía NOAA. {payload?.native_note||""}</p>}
                   {sources[view]?.status === "recibido" && !payload?.observations?.length && <p className="error">Sin observaciones en esta ubicación y período. No se sustituyen por datos de otro país.</p>}
                   {(payload?.observations || []).slice(0,35).map((o: Data,i: number)=><div className="soil" key={i}><span style={{fontSize:10,maxWidth:"60%",overflowWrap:"anywhere"}}>{o.variable}<small style={{display:"block"}}>{o.station} · {fmt(o.distance_km)} km</small><small style={{display:"block"}}>{o.observed_at || "Sin fecha"}</small><small style={{display:"block"}}>Calidad: {o.quality ?? "no informada"}</small></span><strong style={{fontSize:12}}>{fmt(o.value)}<small style={{display:"block"}}>{o.unit || "sin unidad"}</small></strong></div>)}
                   <p className="footnote">Se muestran hasta 35 valores; exportá JSON para ver toda la respuesta. La antigüedad y la distancia de cada registro importan.</p>

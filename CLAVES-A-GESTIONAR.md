@@ -69,7 +69,9 @@ Las tres pantallas ya muestran datos. Con las claves pasan a la fuente nativa de
 | País | Sin clave (ya funciona) | Con clave | Cómo registrarse |
 |---|---|---|---|
 | Canadá | ECCC MSC GeoMet, tiempo real, abierta | — | No hace falta |
-| Chile | NOAA ISD (estaciones oficiales DMC vía OMM, 1–2 días de demora) | DMC red EMA en tiempo real: `DMC_USUARIO` (correo) y `DMC_TOKEN` | Crear cuenta en https://climatologia.meteochile.gob.cl (Iniciar sesión → registrarse), entrar a "Web Services" y copiar la API key personal |
-| Brasil | NOAA ISD (estaciones oficiales INMET vía OMM, 1–2 días de demora) | INMET apitempo en tiempo real: `INMET_TOKEN` | Pedir el token a INMET desde https://portal.inmet.gov.br (Serviços → API / Fale conosco), indicando uso no comercial y el proyecto |
+| Chile | METAR de aeropuertos chilenos (DMC, vía NOAA Aviation Weather Center), tiempo real | DMC red EMA en tiempo real: `DMC_USUARIO` (correo) y `DMC_TOKEN` | Crear cuenta en https://climatologia.meteochile.gob.cl (Iniciar sesión → registrarse), entrar a "Web Services" y copiar la API key personal |
+| Brasil | METAR de aeropuertos brasileños (DECEA/REDEMET, vía NOAA Aviation Weather Center), tiempo real | INMET apitempo en tiempo real: `INMET_TOKEN` | Pedir el token a INMET desde https://portal.inmet.gov.br (Serviços → API / Fale conosco), indicando uso no comercial y el proyecto |
 
-Cerca de una frontera se ven las estaciones del país vecino a menos de 300 km, siempre con su distancia: desde Corrientes, por ejemplo, Uruguaiana (Brasil).
+Cerca de una frontera se ven las estaciones del país vecino a menos de 300 km, siempre con su distancia: desde Corrientes, por ejemplo, el aeropuerto de Uruguaiana (Brasil).
+
+Nota: NOAA ISD (Global Hourly) se probó y se descartó como respaldo porque su lista de estaciones dejó de actualizarse en agosto de 2025.

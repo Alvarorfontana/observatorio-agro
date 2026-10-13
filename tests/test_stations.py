@@ -4,53 +4,45 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 import research_connectors as c
 import stations as st
 
-HIST = ('"USAF","WBAN","STATION NAME","CTRY","STATE","ICAO","LAT","LON","ELEV(M)","BEGIN","END"\n'
-        '"839280","99999","URUGUAIANA","BR","","SBUG","-29.783","-57.033","+0074.0","19730101","20991231"\n'
-        '"837000","99999","VIEJA","BR","","","-29.0","-57.5","+0074.0","19730101","20000101"\n'
-        '"855740","99999","SANTIAGO","CI","","SCEL","-33.383","-70.783","+0474.0","19730101","20991231"\n')
-
-
 class R:
-    def __init__(self, js=None, text='', content=b'x'): self._js, self.text, self.content = js, text, content
+    def __init__(self, js=None): self._js = js
     def json(self): return self._js
 
 
-def fake(monkeypatch, rows):
-    st._ISD.update(t=0, rows=[])
-    def get(url, params=None, headers=None, timeout=None):
-        if url == st.ISD_HISTORY: return R(text=HIST)
-        if url == st.ISD_DATA: return R(rows)
-        raise ConnectionError(url)
-    monkeypatch.setattr(c, '_get', get)
+METARS = [
+    {'icaoId': 'SBUG', 'name': 'Uruguaiana/Rubem Berta Intl, RS, BR', 'lat': -29.78, 'lon': -57.04, 'obsTime': 2, 'reportTime': '2026-10-13T01:00:00Z',
+     'temp': 25, 'dewp': 15, 'wspd': 9, 'altim': 1013, 'wxString': None},
+    {'icaoId': 'SBUG', 'name': 'Uruguaiana/Rubem Berta Intl, RS, BR', 'lat': -29.78, 'lon': -57.04, 'obsTime': 1, 'temp': 20, 'dewp': 15},
+    {'icaoId': 'SARP', 'name': 'Posadas, MI, AR', 'lat': -27.39, 'lon': -55.97, 'obsTime': 2, 'temp': 22},
+]
 
 
-def test_brasil_sin_clave_usa_noaa_con_estacion_de_frontera(monkeypatch):
+def test_brasil_sin_clave_usa_metar_de_frontera(monkeypatch):
     monkeypatch.delenv('INMET_TOKEN', raising=False)
-    fake(monkeypatch, [{'STATION': '83928099999', 'DATE': '2026-10-11T12:00:00', 'TMP': '+0251,1', 'DEW': '+0150,1', 'SLP': '10132,1', 'WND': '160,1,N,0046,1'}])
-    env = c.national('inmet', -28.55, -58.70)       # lote en Corrientes
-    d = env['data']
-    assert d['source_mode'] == 'respaldo NOAA' and 'INMET_TOKEN' in d['native_note']
+    seen = {}
+    def get(url, params=None, headers=None, timeout=None):
+        seen.update(params or {}); return R(METARS)
+    monkeypatch.setattr(c, '_get', get)
+    d = c.national('inmet', -28.55, -58.70)['data']       # lote en Corrientes
+    assert d['source_mode'] == 'respaldo METAR' and 'INMET_TOKEN' in d['native_note']
     t = next(o for o in d['observations'] if o['variable'] == 'Temperatura')
-    assert t['value'] == 25.1 and t['station'] == 'Uruguaiana' and 200 < t['distance_km'] < 230
-    assert next(o for o in d['observations'] if o['variable'] == 'Viento')['value'] == 16.6
-    assert [s['name'] for s in d['stations']] == ['Uruguaiana']        # la estación cerrada no aparece
+    assert t['value'] == 25 and 'SBUG' in t['station'] and 200 < t['distance_km'] < 230   # el parte más nuevo
+    assert next(o for o in d['observations'] if o['variable'] == 'Viento')['value'] == 16.7
+    assert [x['id'] for x in d['stations']] == ['SBUG']        # el aeropuerto argentino no entra en "Brasil"
+    assert seen['format'] == 'json'
 
 
 def test_chile_lejos_no_inventa(monkeypatch):
-    fake(monkeypatch, [])
-    env = c.national('dmc', -28.55, -58.70)          # Corrientes está lejos de Chile: no se muestran estaciones chilenas
+    monkeypatch.setattr(c, '_get', lambda *a, **k: R([]))
+    env = c.national('dmc', -28.55, -58.70)
     assert env['data']['observations'] == [] and 'fuera de Chile' in env['data']['scope']
-    env = c.national('dmc', -31.0, -66.5)            # La Rioja: dentro del alcance, pero Santiago queda a >300 km
+    env = c.national('dmc', -31.0, -66.5)
     assert env['status'] == 'sin dato' and env['data']['observations'] == []
 
 
 def test_canada_fuera_de_rango(monkeypatch):
     env = c.national('eccc', -28.55, -58.70)
     assert 'fuera de Canadá' in env['data']['scope'] and env['data']['observations'] == []
-
-
-def test_isd_descarta_datos_faltantes():
-    assert st._isd_val('+9999,9') is None and st._isd_val('+0251,3') is None and st._isd_val('-0035,1') == -3.5
 
 
 def test_eccc_parsea_swob(monkeypatch):

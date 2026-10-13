@@ -3,14 +3,15 @@
 Orden de fuentes por país (la primera que responde con datos):
   * Canadá  · ECCC MSC GeoMet, colección swob-realtime (OGC API, abierta, sin registro).
   * Chile   · DMC, servicio getDatosRecientesRedEma (requiere DMC_USUARIO = correo y DMC_TOKEN, registro gratuito
-              en climatologia.meteochile.gob.cl). Sin clave → NOAA ISD.
-  * Brasil  · INMET apitempo (requiere INMET_TOKEN, se solicita a INMET). Sin clave → NOAA ISD.
-  * Respaldo· NOAA NCEI Global Hourly (ISD): observaciones SYNOP/METAR oficiales que los propios servicios
-              nacionales transmiten por la red de la OMM. Abierto, sin registro, con 1-2 días de demora.
+              en climatologia.meteochile.gob.cl). Sin clave → METAR.
+  * Brasil  · INMET apitempo (requiere INMET_TOKEN, se solicita a INMET). Sin clave → METAR.
+  * Respaldo· METAR de aeropuertos vía NOAA Aviation Weather Center: partes horarios oficiales de cada país,
+              tiempo real, abierto, sin registro. (NOAA ISD se descartó: su lista de estaciones dejó de
+              actualizarse en agosto de 2025 durante la migración de NCEI.)
 
 Nunca se sustituye un país por otro: si el lote está fuera del país, se dice.
 """
-import csv, io, os, time
+import math, os
 from datetime import timedelta
 
 import research_connectors as c
@@ -24,9 +25,6 @@ COUNTRY = {'inmet': ('Brasil', 'BR'), 'dmc': ('Chile', 'CI'), 'eccc': ('Canadá'
 AGENCY = {'inmet': 'Instituto Nacional de Meteorologia (Brasil)', 'dmc': 'Dirección Meteorológica de Chile',
           'eccc': 'Environment and Climate Change Canada · MSC'}
 
-ISD_HISTORY = 'https://www.ncei.noaa.gov/pub/data/noaa/isd-history.csv'
-ISD_DATA = 'https://www.ncei.noaa.gov/access/services/data/v1'
-_ISD = {'t': 0, 'rows': []}
 
 
 MAX_KM = 300
@@ -45,79 +43,51 @@ def _outside(key):
                       '', 'observación', AGENCY[key])
 
 
-# ───────────────────────── NOAA ISD (respaldo mundial sin registro) ─────────────────────────
-def isd_stations(cc):
-    """Estaciones ISD activas del país (lista oficial de NCEI, se guarda un día en memoria)."""
-    if not _ISD['rows'] or time.monotonic() - _ISD['t'] > 86400:
-        txt = c._get(ISD_HISTORY, timeout=40).text
-        recent = (c._now() - timedelta(days=365)).strftime('%Y%m%d')   # la lista de NCEI se actualiza con atraso
-        rows = []
-        for r in csv.DictReader(io.StringIO(txt)):
-            try:
-                if r['END'] < recent or not r['LAT'] or not r['LON']:
-                    continue
-                rows.append({'id': r['USAF'] + r['WBAN'], 'name': r['STATION NAME'].title(), 'cc': r['CTRY'],
-                             'lat': float(r['LAT']), 'lon': float(r['LON']), 'elev': r['ELEV(M)']})
-            except (KeyError, ValueError):
-                continue
-        _ISD.update(t=time.monotonic(), rows=rows)
-    return [r for r in _ISD['rows'] if r['cc'] == cc]
+# ───────────────────────── METAR · NOAA Aviation Weather Center (respaldo sin registro) ─────────────────────────
+# Partes horarios de aeropuertos que elabora el servicio meteorológico de cada país (en Brasil, el DECEA/REDEMET;
+# en Chile, la DMC) y que se publican por la red de la OMM. Tiempo real, abierto, sin clave.
+AWC = 'https://aviationweather.gov/api/data/metar'
+SUFFIX = {'inmet': ', BR', 'dmc': ', CL', 'eccc': ', CA'}
 
 
-def _isd_val(raw, scale=10, missing=('+9999', '9999', '99999', '+99999')):
-    """Campos ISD tipo '+0251,1' → 25.1. Devuelve None si falta o la calidad es dudosa."""
-    if not raw:
-        return None
-    parts = str(raw).split(',')
-    v = parts[0]
-    if v in missing or (len(parts) > 1 and parts[-1] in ('3', '7')):   # 3/7 = dato erróneo según ISD
-        return None
-    try:
-        return round(int(v) / scale, 1)
-    except ValueError:
-        return None
-
-
-def isd(key, lat, lon, n=3):
-    name, cc = COUNTRY[key]
-    st = isd_stations(cc)
-    near = [x for x in sorted(((c._km(lat, lon, s['lat'], s['lon']), s) for s in st), key=lambda x: x[0])[:n] if x[0] <= MAX_KM]
-    if not near:
-        return c.envelope({'agency': AGENCY[key], 'observations': [], 'stations_in_country': len(st),
-                           'scope': f'Sin estaciones activas de {name} a menos de {MAX_KM} km'},
-                          ISD_DATA, 'observación', 'NOAA NCEI', 'sin dato', f'No hay estaciones de {name} a menos de {MAX_KM} km del lote')
-    end = c._now().date(); start = end - timedelta(days=4)
-    r = c._get(ISD_DATA, {'dataset': 'global-hourly', 'stations': ','.join(s['id'] for _, s in near),
-                          'startDate': start.isoformat(), 'endDate': end.isoformat(),
-                          'dataTypes': 'TMP,DEW,SLP,WND', 'format': 'json', 'units': 'metric'}, timeout=40)
-    data = r.json() if r.content else []
-    obs, last = [], {}
-    for row in data if isinstance(data, list) else []:
-        sid = row.get('STATION')
-        if sid and (sid not in last or row.get('DATE', '') > last[sid].get('DATE', '')):
-            last[sid] = row
-    for d, s in near:
-        row = last.get(s['id'])
-        if not row:
-            continue
-        when = row.get('DATE')
-        t, dew, slp = _isd_val(row.get('TMP')), _isd_val(row.get('DEW')), _isd_val(row.get('SLP'))
-        wnd = str(row.get('WND') or '').split(',')
-        ws = None if len(wnd) < 4 or wnd[3] == '9999' else round(int(wnd[3]) / 10 * 3.6, 1)
+def metar(key, lat, lon, n=3):
+    name = COUNTRY[key][0]
+    dlat = MAX_KM / 111.0
+    dlon = MAX_KM / (111.0 * max(0.2, math.cos(math.radians(lat))))
+    js = c._get(AWC, {'bbox': f'{lat - dlat:.2f},{lon - dlon:.2f},{lat + dlat:.2f},{lon + dlon:.2f}',
+                      'format': 'json', 'hours': 3}, timeout=25).json() or []
+    latest = {}
+    for m in js if isinstance(js, list) else []:
+        if not str(m.get('name') or '').endswith(SUFFIX[key]):
+            continue                      # sólo aeropuertos del país elegido
+        sid = m.get('icaoId')
+        if sid and (sid not in latest or (m.get('obsTime') or 0) > (latest[sid].get('obsTime') or 0)):
+            latest[sid] = m
+    near = sorted(((c._km(lat, lon, m['lat'], m['lon']), m) for m in latest.values() if m.get('lat') is not None),
+                  key=lambda x: x[0])
+    near = [x for x in near if x[0] <= MAX_KM][:n]
+    obs = []
+    for d, m in near:
+        when = m.get('reportTime') or m.get('receiptTime')
+        st = f"{str(m.get('name', '')).rsplit(',', 2)[0]} ({m.get('icaoId')})"
+        t, dew = m.get('temp'), m.get('dewp')
         rh = None
-        if t is not None and dew is not None:
-            import math
+        if isinstance(t, (int, float)) and isinstance(dew, (int, float)):
             rh = round(100 * math.exp(17.625 * dew / (243.04 + dew)) / math.exp(17.625 * t / (243.04 + t)))
+        ws = m.get('wspd')
         for var, v, u in (('Temperatura', t, '°C'), ('Punto de rocío', dew, '°C'), ('Humedad (calculada)', rh, '%'),
-                          ('Viento', ws, 'km/h'), ('Presión a nivel del mar', slp, 'hPa')):
-            if v is not None:
-                obs.append(c._obs(var, s['name'], d, v, u, when))
-    return c.envelope({'agency': AGENCY[key], 'via': 'NOAA NCEI Global Hourly (ISD)', 'observations': obs,
-                       'stations': [{'name': s['name'], 'id': s['id'], 'distance_km': round(d, 1)} for d, s in near],
-                       'scope': (f'Observaciones oficiales de estaciones de {name} retransmitidas por la red de la OMM y '
-                                 'archivadas por NOAA. Demora habitual de 1 a 2 días.')},
-                      ISD_DATA, 'observación (respaldo mundial)', 'NOAA NCEI · ' + AGENCY[key],
-                      'recibido' if obs else 'sin dato', None if obs else 'Las estaciones cercanas no publicaron datos recientes')
+                          ('Viento', round(ws * 1.852, 1) if isinstance(ws, (int, float)) else None, 'km/h'),
+                          ('Presión (QNH)', m.get('altim'), 'hPa')):
+            if isinstance(v, (int, float)):
+                obs.append(c._obs(var, st, d, v, u, when))
+        if m.get('wxString'):
+            obs.append(c._obs('Tiempo presente', st, d, m['wxString'], 'código METAR', when))
+    return c.envelope({'agency': AGENCY[key], 'via': 'METAR · NOAA Aviation Weather Center', 'observations': obs,
+                       'stations': [{'name': m.get('name'), 'id': m.get('icaoId'), 'distance_km': round(d, 1)} for d, m in near],
+                       'scope': (f'Partes horarios de aeropuertos de {name} (servicio meteorológico nacional, red OMM), '
+                                 f'3 más cercanos a menos de {MAX_KM} km. Tiempo real.')},
+                      AWC, 'observación aeronáutica (METAR)', 'NOAA AWC · ' + AGENCY[key],
+                      'recibido' if obs else 'sin dato', None if obs else f'No hay aeropuertos de {name} con parte reciente a menos de {MAX_KM} km')
 
 
 # ───────────────────────── Canadá · ECCC GeoMet (abierto) ─────────────────────────
@@ -222,7 +192,7 @@ NATIVE = {'eccc': eccc, 'dmc': dmc, 'inmet': inmet}
 
 
 def national(key, lat, lon):
-    """Fuente nativa del país; si falta la clave o no responde, observaciones oficiales vía NOAA ISD.
+    """Fuente nativa del país; si falta la clave o no responde, partes METAR de aeropuertos del país.
     Sólo estaciones a menos de MAX_KM: cerca de una frontera se ven las del país vecino, con su distancia."""
     if not inside(key, lat, lon):
         return _outside(key)
@@ -237,7 +207,7 @@ def national(key, lat, lon):
         native_err = f'Fuente nativa sin clave cargada ({e})'
     except Exception as e:
         native_err = f'Fuente nativa sin respuesta ({type(e).__name__})'
-    env = isd(key, lat, lon)
-    env['data']['source_mode'] = 'respaldo NOAA'
+    env = metar(key, lat, lon)
+    env['data']['source_mode'] = 'respaldo METAR'
     env['data']['native_note'] = native_err
     return env
