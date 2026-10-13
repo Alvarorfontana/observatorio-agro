@@ -52,6 +52,7 @@ import { VariablesPanel } from "./dashboard/VariablesPanel";
 import { LotDashboard } from "./dashboard/LotDashboard";
 import { OPEN_LAYERS, LAYER_GROUPS } from "./dashboard/openLayers";
 import { GuideContent } from "./site/GuideContent";
+import { CuencaPanel } from "./site/CuencaPanel";
 import { readLotFile, lotsToGeoJSON, lotsToKML } from "./dashboard/lotFiles";
 echarts.use([
   MarkLineComponent,
@@ -136,6 +137,7 @@ const SOURCES = [
   ["sustentabilidad", "Deforestación y carbono", "Impact Observatory · ESA WorldCover · SoilGrids · IPCC"],
   ["teleconexiones", "El Niño y teleconexiones", "NOAA PSL · ENSO, SOI, AAO, TSA, PDO"],
   ["rios", "Ríos y caudales", "GloFAS / Open-Meteo"],
+  ["humedad-nasa", "Humedad del suelo vs lo normal", "NASA POWER · MERRA-2"],
   ["suelo", "Nitrógeno del suelo", "ISRIC SoilGrids"],
   ["serie", "Clima de 20–30 años", "ERA5 / Open-Meteo"],
   ["proyeccion", "Proyección 2031–2040", "CMIP6 / MPI-ESM1-2-XR"],
@@ -753,14 +755,14 @@ function Observatory({onHome}:{onHome:()=>void}) {
   useEffect(() => {
     if (mainView !== "tablero" || vertices.length < 3) return;
     const t = setTimeout(() => {
-      const want = ["ndvi", "lluvia"].filter(k => !sources[k]);
+      const want = ["ndvi", "lluvia", "humedad-nasa"].filter(k => !sources[k]);
       const needTerrain = !sources.relieve && terrainRef.current?.key !== lotKey;
       if (!want.length && !needTerrain) return;
       want.forEach(k => void load(k));
       if (needTerrain) void loadTerrain();
     }, 600);
     return () => clearTimeout(t);
-  }, [mainView, lotKey, !!sources.ndvi, !!sources.lluvia, !!sources.relieve]);
+  }, [mainView, lotKey, !!sources.ndvi, !!sources.lluvia, !!sources.relieve, !!sources["humedad-nasa"]]);
   const changeView = (key: string) => {
     // Always refresh: source results are spatial/temporal and must follow the currently selected lot.
     // Reusing an old payload after changing polygon was a functional bug in earlier versions.
@@ -1028,6 +1030,8 @@ function Observatory({onHome}:{onHome:()=>void}) {
       alertas: alertsData, forraje: data("forraje")?.growth_rate_30d != null ? data("forraje") : null, sustentabilidad: data("sustentabilidad"),
       relieve: data("relieve")?.lot === JSON.stringify(vertices) ? data("relieve") : null,
       agua: selectedLotId && water[selectedLotId]?.status === "recibido" ? water[selectedLotId] : null,
+      humedad: data("humedad-nasa")?.root_pct != null ? data("humedad-nasa") : null,
+      entorno: selectedLotId ? water[selectedLotId]?.entorno || null : null,
       costos: data("costos")?.margin ? data("costos") : null,
       place: placeLabel,
     };
@@ -2251,13 +2255,14 @@ function RegionalPanel({onDemo}:{onDemo:()=>void}){
   const last=idx?.years?.slice(-1)[0];
   const card=(label:string,key:string,unit:string,dec=0)=>{const v=last?.[key],a=idx?.anomaly_last_year?.[key];return <article className="rp-card" key={key}><span>{label}</span><b>{v!=null?fmt(v,dec):"—"}<small> {unit}</small></b><em className={a>0?"up":a<0?"down":""}>{a!=null?`${a>0?"+":""}${fmt(a,dec)} vs. promedio`:"cargando…"}</em></article>};
   return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner regional-panel">
-    <PageHero eyebrow="PANEL REGIONAL" title="El clima de la zona, abierto a todos." lead="El Niño, heladas, calor y lluvia de los últimos diez años para las principales zonas ganaderas. Datos oficiales consultados en el momento."/>
+    <PageHero eyebrow="PANEL REGIONAL" title="El clima de la zona, abierto a todos." lead="El Niño, las crecidas de la Cuenca del Plata, heladas, calor y lluvia de los últimos diez años. Datos oficiales consultados en el momento."/>
     <div className="rp-tabs">{REGIONS.map(r=><button key={r[0]} className={r[0]===reg[0]?"active":""} onClick={()=>setReg(r)}>{r[1]}</button>)}</div>
     {err && <p className="rp-error">{err} No se muestran valores supuestos.</p>}
     <section className="rp-enso">
       <div><span className="section-tag">EL NIÑO · NOAA</span><h2>{tele?.enso_consensus?`Fase ${tele.enso_consensus}`:"Consultando…"}</h2><p>{tele?.enso_agreement?`${tele.enso_agreement} índices del Pacífico coinciden. Último dato: ${tele?.indices?.nino34?.data?.period||""}.`:"Niño 3.4, ONI y MEI v2."}</p></div>
       <div className="rp-telegrid">{Object.entries(tele?.indices||{}).filter(([,e]:any)=>e?.status==="recibido").slice(0,6).map(([k,e]:any)=><article key={k}><span>{e.data.name}</span><b>{fmt(e.data.value,2)}</b><em>{e.data.phase}</em></article>)}</div>
     </section>
+    <CuencaPanel/>
     <section className="rp-cards">{card("Lluvia "+(last?.year||""),"prcptot","mm")}{card("Días con helada","frost_days","días")}{card("Días con máxima ≥ 35 °C","tx35","días")}{card("Racha seca más larga","cdd","días")}</section>
     {idx?.years && <section className="rp-charts">
       <div className="rp-chart"><h3>Lluvia anual · {idx.period?.[0]}–{idx.period?.[1]}</h3><Chart dates={idx.years.map((r:Data)=>String(r.year))} unit="mm" series={[{name:"Lluvia",values:idx.years.map((r:Data)=>r.prcptot),type:"bar",color:"#19b98a"}]}/></div>

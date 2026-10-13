@@ -454,6 +454,23 @@
   )
 ]
 
+#if d.at("soil_nasa", default: none) != none or d.at("surroundings", default: none) != none [
+  #section("Humedad del suelo y entorno del lote")
+  #let sn = d.at("soil_nasa", default: none)
+  #let en = d.at("surroundings", default: none)
+  #let facts-card(title, facts, note) = card[
+    #text(weight: "semibold")[#title]
+    #v(2pt)
+    #table(columns: (1fr, auto), stroke: (x, y) => (bottom: 0.4pt + line-c), inset: (x: 3pt, y: 5pt), align: (left, right),
+      ..facts.map(f => (text(size: 8pt, fill: muted)[#f.at(0)], text(size: 8.5pt, weight: "semibold")[#f.at(1)])).flatten())
+    #v(3pt)
+    #text(size: 6.8pt, fill: muted)[#note]
+  ]
+  #grid(columns: (1fr, 1fr), column-gutter: 10pt,
+    if sn != none { facts-card("Humedad contra lo normal · NASA", sn.facts, sn.note) } else { [] },
+    if en != none { facts-card("Entorno del lote · Overture Maps", en.facts, en.note) } else { [] })
+]
+
 // ─────────────────────────── ÍNDICES, PROBABILIDADES, SUSTENTABILIDAD ───────────────────────────
 #if d.indices.len() > 0 [
   #section("Índices agroclimáticos")

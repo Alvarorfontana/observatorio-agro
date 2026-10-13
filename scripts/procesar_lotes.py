@@ -5,7 +5,8 @@ Para cada lote guardado en el repositorio privado de datos:
   2. Recorta las bandas B2, B3, B4, B8, B11 y B12 al lote más un margen y arma un GeoTIFF de 6 bandas.
   3. Detecta agua con geoai.segment_water (modelo preentrenado OmniWaterMask, corre en CPU).
   4. Calcula dentro del lote: hectáreas de agua, cantidad de cuerpos de agua y NDVI medio.
-  5. Guarda resultados/<id>.json con historial semanal, para la web y el informe.
+  5. Entorno del lote con Overture Maps (caminos, construcciones, departamento), una vez por versión.
+  6. Guarda resultados/<id>.json con historial semanal, para la web y el informe.
 
 Privacidad: el repositorio de código es público y sus registros también. Este script no imprime
 nombres ni coordenadas de lotes, solo conteos. Los datos viven en un repositorio privado.
@@ -17,6 +18,8 @@ import json, math, os, sys, tempfile, time
 from datetime import datetime, timedelta, timezone
 
 import numpy as np
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 STAC = "https://earth-search.aws.element84.com/v1"
 BANDS = ["blue", "green", "red", "nir", "swir16", "swir22"]   # B2 B3 B4 B8 B11 B12 = preset "sentinel2" de geoai
@@ -200,6 +203,25 @@ def merge_history(prev, res, run_date):
     return hist[-HISTORY_MAX:]
 
 
+def entorno(lot, prev, state):
+    """Overture: se recalcula sólo cuando sale una versión nueva. DOTS_OVERTURE=0 lo apaga."""
+    if os.environ.get("DOTS_OVERTURE") == "0":
+        return (prev or {}).get("entorno")
+    try:
+        import overture_lote as ov
+        if "reader" not in state:
+            state["reader"] = ov.Reader(ov.latest_release())
+        reader = state["reader"]
+        old = (prev or {}).get("entorno")
+        if old and old.get("release") == reader.release:
+            return old
+        return ov.lot_context(lot_polygon(lot["vertices"]), reader)
+    except Exception as e:
+        state.setdefault("errors", 0); state["errors"] += 1
+        state["last_error"] = type(e).__name__
+        return (prev or {}).get("entorno")
+
+
 def main(data_dir):
     lots_path = os.path.join(data_dir, "lotes.json")
     if not os.path.exists(lots_path):
@@ -210,6 +232,7 @@ def main(data_dir):
     run_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     ok = fail = 0
     index = {}
+    ov_state = {}
     for lot in lots:
         lid = str(lot.get("id", ""))
         if not lid or not isinstance(lot.get("vertices"), list) or len(lot["vertices"]) < 3:
@@ -225,6 +248,9 @@ def main(data_dir):
             # se conserva el último resultado válido, marcado como anterior
             keep = {k: prev[k] for k in ("scene", "water_ha", "water_pct", "water_bodies", "water_geojson", "ndvi_mean", "lot_ha") if k in prev}
             res.update(keep); res["stale"] = True
+        env = entorno(lot, prev, ov_state)
+        if env:
+            res["entorno"] = env
         res.update({"id": lid, "updated": run_date, "method": "Sentinel-2 L2A (Earth Search) · geoai.segment_water (OmniWaterMask) · NDVI medio en el lote"})
         json.dump(res, open(path, "w"), ensure_ascii=False)
         index[lid] = {"updated": run_date, "status": res["status"], "water_ha": res.get("water_ha"), "scene_date": (res.get("scene") or {}).get("date")}
@@ -232,6 +258,8 @@ def main(data_dir):
         time.sleep(0.5)
     json.dump({"updated": run_date, "lotes": index}, open(os.path.join(out_dir, "index.json"), "w"), ensure_ascii=False)
     log(f"Lotes procesados: {ok} con resultado, {fail} sin dato.")
+    if ov_state.get("errors"):
+        log(f"Overture: {ov_state['errors']} lotes sin entorno ({ov_state.get('last_error')}).")
     return 0
 
 

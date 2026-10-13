@@ -43,6 +43,11 @@ const SOURCES: [string, string, string, string, string][] = [
   ["Nubes en tiempo real", "NOAA GOES-East", "Satélite geoestacionario", "2 km", "Cada 10 minutos"],
   ["Ríos y caudales", "INA (Argentina) y GloFAS (Copernicus)", "Estaciones y modelo hidrológico", "Por estación o río", "Diario"],
   ["El Niño y teleconexiones", "NOAA", "Índices oceánicos", "Escala global", "Mensual"],
+  ["El Niño semanal y mapa del Pacífico", "NOAA CPC y NASA (GHRSST MUR)", "Satélites de temperatura del mar", "Regiones Niño · 1 km", "Semanal y diario"],
+  ["Humedad del suelo contra lo normal", "NASA POWER (MERRA-2)", "Reanálisis", "~50 km", "Diario, con días de demora"],
+  ["Lluvia en las cabeceras y alertas de crecida", "ECMWF y NOAA GFS por conjunto (82 corridas)", "Pronóstico probabilístico", "21 subcuencas", "Cada 6 horas"],
+  ["Represas de Brasil", "ONS (Operador Nacional do Sistema Elétrico)", "Caudal medido", "Por represa", "Diario"],
+  ["Caminos y construcciones del lote", "Overture Maps (OpenStreetMap, Microsoft, Google)", "Mapas abiertos", "Por objeto", "Mensual"],
 ];
 
 const USE: [string, string][] = [
@@ -136,7 +141,7 @@ export function GuideContent({ onDemo }: { onDemo: () => void }) {
         <span className="section-tag">CUÁNTO TRABAJO HAY DETRÁS</span>
         <h2>Lo que pasa cuando abrís un lote.</h2>
         <div className="guide-numbers">
-          <article><b>17</b><span>módulos de datos principales: clima, pasto, lluvia, suelo, relieve, ríos, riesgos y más.</span></article>
+          <article><b>20</b><span>módulos de datos principales: clima, pasto, lluvia, suelo, relieve, ríos, crecidas, El Niño, riesgos y más.</span></article>
           <article><b>6</b><span>servicios meteorológicos nacionales con estaciones: Argentina, Brasil, Chile, Canadá, Estados Unidos y Noruega.</span></article>
           <article><b>+30</b><span>conectores globales (NASA, ESA, NOAA, Copernicus y otros). Algunos todavía esperan credenciales y figuran como pendientes.</span></article>
           <article><b>Miles</b><span>de cálculos por lote: el relieve analiza decenas de miles de celdas de 30 m y el NDVI revisa hasta seis fotos satelitales recientes.</span></article>

@@ -8,3 +8,5 @@ shapely>=2
 pyproj
 geopandas
 numpy
+duckdb>=1.1
+requests
