@@ -15,6 +15,9 @@ import alerts as alr
 import sustainability as sus
 import forage as fgr
 import costs as cst
+import spectral
+import radar as rdr
+import water_balance as wbal
 import monitor as mon
 import soil_wetness as sw
 import cuenca as cca
@@ -46,6 +49,8 @@ VEGETATION={
   'sentinel-hub-ndvi':lambda p,a:veg.sentinel_hub_ndvi(p,_int(a,'days',180,15,730)),
   'openeo-ndvi':lambda p,a:veg.openeo_ndvi(p,_int(a,'days',120,15,365)),
   'gee-ndvi':lambda p,a:veg.gee_ndvi(p,_int(a,'ndvi_years',10,1,25)),
+  'indices-espectrales':lambda p,a:spectral.compute(p,[x.strip() for x in a.get('indices','').split(',') if x.strip()] or None,_int(a,'days',120,15,365)),
+  'radar-agua':lambda p,a:rdr.flooding(p,_int(a,'days',60,12,365)),
 }
 
 @research_api.get('/monitor')
@@ -256,7 +261,7 @@ def research_data(name):
           'variables':lambda:c.variables(lat,lon),'historico':lambda:c.historical(lat,lon),'escenas':lambda:c.scenes(lat,lon,polygon),
           'modelos':lambda:c.external('https://api.open-meteo.com/v1/forecast',{'latitude':lat,'longitude':lon,'hourly':'temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m','models':'gfs_global,ecmwf_ifs025,icon_global,gem_global,jma_gsm,cma_grapes_global,meteofrance_arpege_world','forecast_days':3,'timezone':'auto'}),
           'rios':lambda:c.external('https://flood-api.open-meteo.com/v1/flood',{'latitude':lat,'longitude':lon,'daily':'river_discharge','forecast_days':7}),
-          'suelo':lambda:c.soil_full(lat,lon),
+          'suelo':lambda:c.soil_full(lat,lon),'balance-agua':lambda:wbal.water_balance(lat,lon),'catalogo-indices':lambda:c.envelope(spectral.catalog_summary(),'','catálogo de índices','awesome-spectral-indices'),
           'serie':lambda:c.external('https://archive-api.open-meteo.com/v1/archive',{'latitude':lat,'longitude':lon,'start_date':f'{endyear-years+1}-01-01','end_date':f'{endyear}-12-31','daily':'temperature_2m_mean,precipitation_sum','models':'era5','timezone':'UTC'}),
           'proyeccion':lambda:c.projection(lat,lon),
           'estadistica':lambda:fst.analyze(lat,lon),'humedad-nasa':lambda:sw.analyze(lat,lon),

@@ -135,6 +135,9 @@ const SOURCES = [
   ["estadistica", "Probabilidades y tendencias", "Conjuntos ECMWF/GFS · ERA5 · SEAS5"],
   ["alertas", "Alertas del lote", "Reglas declaradas sobre fuentes verificadas"],
   ["forraje", "Pasto y carga", "Sentinel-2 + radiación · modelo de Monteith"],
+  ["indices-espectrales", "Índices satelitales", "228 índices · Sentinel-2 · awesome-spectral-indices"],
+  ["radar-agua", "Agua por radar", "Sentinel-1 · ve con nubes"],
+  ["balance-agua", "Balance de agua y sequía", "ERA5 desde 1991 · lluvia − evapotranspiración"],
   ["costos", "Costos y logística", "OSRM · OpenStreetMap · DolarAPI · valores del productor"],
   ["sustentabilidad", "Deforestación y carbono", "Impact Observatory · ESA WorldCover · SoilGrids · IPCC"],
   ["teleconexiones", "El Niño y teleconexiones", "NOAA PSL · ENSO, SOI, AAO, TSA, PDO"],
@@ -1391,6 +1394,26 @@ function Observatory({onHome}:{onHome:()=>void}) {
                   <p className="footnote">{Object.values(payload.assumptions||{}).join(" · ")}. {payload.note}</p>
                 </>}
               </>}
+              {view==="indices-espectrales" && <>
+                {vertices.length<3 && <p className="error">Dibujá un lote: los índices se calculan dentro del polígono.</p>}
+                {payload?.indices?.length>0 && <>
+                  <p className="footnote">Escena Sentinel-2 del {String(payload.datetime||"").slice(0,10)} · {Math.round((payload.clear_fraction_lot||0)*100)} % del lote despejado</p>
+                  <div className="cost-lines">{payload.indices.map((x:Data)=><div key={x.name} title={x.formula}><span><b>{x.name}</b> · {x.domain}<small style={{display:"block",color:"#667085"}}>{x.meaning||x.long_name}</small></span><b>{x.mean!=null?fmt(x.mean,3):"—"}</b></div>)}</div>
+                </>}
+                {payload?.catalog && <p className="footnote">{payload.catalog.total} índices disponibles ({Object.entries(payload.catalog.by_domain||{}).map(([k,v])=>`${v} de ${k}`).join(", ")}). Fórmulas del catálogo abierto awesome-spectral-indices (MIT).</p>}
+              </>}
+              {view==="radar-agua" && <>
+                {vertices.length<3 && <p className="error">Dibujá un lote para medir el agua con radar.</p>}
+                {payload?.latest && <>
+                  <div className={"verdict "+(payload.latest.water_fraction>0.1?"warn":"ok")}><span>Agua en el lote · {String(payload.latest.datetime||"").slice(0,10)}</span><b>{fmt(payload.latest.water_fraction*100,1)} % · {fmt(payload.latest.water_ha,1)} ha</b><small>{payload.trend||""}</small></div>
+                  <p className="footnote">{payload.method}</p>
+                </>}
+              </>}
+              {view==="balance-agua" && payload?.spei && <>
+                <div className={"verdict "+(String(payload.spei["3"]?.class).includes("sequía")?"warn":"ok")}><span>Últimos 3 meses · hasta {payload.last_month}</span><b>{payload.spei["3"]?.class}</b><small>Índice {payload.spei["3"]?.index} · balance {payload.spei["3"]?.balance_mm} mm (normal {payload.spei["3"]?.normal_mm} mm)</small></div>
+                <div className="wx-grid">{["1","3","6","12"].map(k=><div key={k}><span>{k} {k==="1"?"mes":"meses"}</span><b>{payload.spei[k]?.index??"—"}<small> {payload.spei[k]?.class}</small></b></div>)}</div>
+                <p className="footnote">{payload.reading} Índice tipo SPEI: menor a −1 es sequía; mayor a 1, exceso de agua.</p>
+              </>}
               {view==="costos" && <>
                 <label className="small" style={{display:"block",marginBottom:8}}>Destino de la hacienda<input value={costDest} placeholder="ej. Mercado Agroganadero Cañuelas, Corrientes, frigorífico…" onChange={e=>{setCostDest(e.target.value);try{localStorage.setItem("dots-cost-dest",e.target.value)}catch{}}}/></label>
                 <div className="cost-form">{COST_FIELDS.map(([k,l,u])=><label key={k}>{l}{u&&<small> · {u}</small>}<input type="number" min={0} value={costParams[k]??""} placeholder={k==="heads"&&herdHeads?String(herdHeads):""} onChange={e=>setCost(k,e.target.value)}/></label>)}</div>
@@ -1977,6 +2000,13 @@ function Observatory({onHome}:{onHome:()=>void}) {
           </> : view==="forraje" && payload?.daily ? <>
             <section className="panel chart"><h2>Crecimiento diario del pasto</h2><p className="small">kg MS/ha/día · {payload.kind_label} · últimos 60 días</p><Chart dates={payload.daily.map((d:Data)=>d.date.slice(5))} unit="kg MS/ha/día" series={[{name:"Crecimiento",values:payload.daily.map((d:Data)=>d.ppna),color:"#19b98a"}]}/></section>
             <section className="panel chart"><h2>Producción por mes</h2><p className="small">kg MS/ha acumulados en cada mes</p><Chart dates={payload.monthly.map((m:Data)=>m.month)} unit="kg MS/ha" series={[{name:"Producción",values:payload.monthly.map((m:Data)=>m.total),type:"bar",color:"#22c55e"}]}/></section>
+          </> : view==="balance-agua" && payload?.recent ? <>
+            <section className="panel chart"><h2>Balance de agua mes a mes</h2><p className="small">ERA5 · lluvia − evapotranspiración de referencia · mm · últimos 12 meses</p><Chart dates={payload.recent.map((r:Data)=>r.period)} unit="mm" series={[{name:"Balance",values:payload.recent.map((r:Data)=>r.balance_mm),type:"bar",color:"#3a8ee6"},{name:"Normal 1991–2020",values:payload.recent.map((r:Data)=>r.normal_balance_mm),color:"#98a2b3"}]}/></section>
+            <section className="panel chart"><h2>Balance anual desde 1991</h2><p className="small">mm por año · negativo = el ambiente pidió más agua de la que llovió</p><Chart dates={payload.annual.map((r:Data)=>String(r.year))} unit="mm" series={[{name:"Balance anual",values:payload.annual.map((r:Data)=>r.balance_mm),type:"bar",color:"#f79009"}]}/></section>
+          </> : view==="radar-agua" && payload?.series?.length ? <>
+            <section className="panel chart"><h2>Agua en el lote por radar</h2><p className="small">Sentinel-1 · % del lote con agua libre en cada pasada</p><Chart dates={payload.series.filter((r:Data)=>r.status==="válida").map((r:Data)=>String(r.datetime).slice(0,10))} unit="%" series={[{name:"Agua",values:payload.series.filter((r:Data)=>r.status==="válida").map((r:Data)=>Math.round(r.water_fraction*1000)/10),type:"bar",color:"#3a8ee6"}]}/></section>
+          </> : view==="indices-espectrales" && payload?.indices?.length ? <>
+            <section className="panel chart"><h2>Índices del lote</h2><p className="small">Media dentro del polígono · última escena despejada</p><Chart dates={payload.indices.map((x:Data)=>x.name)} unit="" series={[{name:"Media",values:payload.indices.map((x:Data)=>x.mean),type:"bar",color:"#19b98a"}]}/></section>
           </> : view==="costos" && payload?.sensitivity ? <>
             <section className="panel chart"><h2>Margen según el precio de venta</h2><p className="small">$ totales · precio −20 % a +20 % · con la tarifa de flete actual y con +25 %</p><Chart dates={payload.sensitivity.map((r:Data)=>`${Math.round((r.price_factor-1)*100)>0?"+":""}${Math.round((r.price_factor-1)*100)} %`)} unit="$" series={[{name:"Margen",values:payload.sensitivity.map((r:Data)=>r.net),type:"bar",color:"#22c55e"},...(payload.sensitivity[0].net_freight_up!=null?[{name:"Flete +25 %",values:payload.sensitivity.map((r:Data)=>r.net_freight_up),color:"#f79009"}]:[])]}/></section>
           </> : view==="sustentabilidad" && payload?.deforestation?.series?.length ? <>
