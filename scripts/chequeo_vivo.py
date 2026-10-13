@@ -10,7 +10,7 @@ Q = {'lat': LAT, 'lon': LON, 'polygon': json.dumps(LOT)}
 S = requests.Session(); S.headers['User-Agent'] = 'DOTS-chequeo-vivo/1.0'
 
 GET = ['variables', 'modelos', 'historico', 'escenas', 'rios', 'aire', 'elevacion', 'ndvi', 'ndvi-modis', 'indices',
-       'teleconexiones', 'estadistica', 'enso', 'suelo', 'serie', 'proyeccion', 'sustentabilidad', 'plataformas',
+       'sentinel-hub-ndvi', 'openeo-ndvi', 'teleconexiones', 'estadistica', 'enso', 'suelo', 'serie', 'proyeccion', 'sustentabilidad', 'plataformas',
        'smn', 'nasa-power-30', 'landsat', 'radar', 'copernicus-stac', 'firms', 'ina']
 POST = {
     'forraje': {'lat': LAT, 'lon': LON, 'polygon': LOT, 'kind': 'pastizal', 'use': 0.5, 'heads': 120},
