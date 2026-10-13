@@ -822,6 +822,38 @@ def merge_ina(stations, ina):
     return stations
 
 
+# ───────────────────────────── resumen liviano (portada) ─────────────────────────────
+def resumen():
+    """Sólo alturas del INA y niveles oficiales: rápido, para la portada. Se guarda 30 minutos."""
+    def run():
+        st = merge_ina([{**_st(s), 'status': 'sin dato'} for s in STATIONS if s['id'] in INA_SITES], ina_all())
+        rows = []
+        for s in st:
+            i = s.get('ina') or {}
+            if i.get('height') is None:
+                continue
+            rows.append({'id': s['id'], 'place': s['place'], 'river': s['river'], 'lat': s['lat'], 'lon': s['lon'],
+                         'height': i['height'], 'date': i.get('date'), 'alert': i.get('alert'), 'evac': i.get('evac'),
+                         'level': i.get('level'), 'trend_m_day': i.get('trend_m_day'), 'days_to_alert': i.get('days_to_alert'),
+                         'pct_alert': round(100 * i['height'] / i['alert']) if i.get('alert') else None,
+                         'forecast_level': i.get('forecast_level')})
+        order = {'Evacuación': 0, 'Alerta': 1, 'Atención': 2, 'Normal': 3, None: 4}
+        rows.sort(key=lambda r: (order.get(r['level'], 4), -(r['pct_alert'] or 0)))
+        counts = {k: sum(1 for r in rows if r['level'] == k) for k in ('Evacuación', 'Alerta', 'Atención', 'Normal')}
+        rising = sum(1 for r in rows if (r['trend_m_day'] or 0) > 0.01)
+        return c.envelope({'stations': rows, 'counts': counts, 'rising': rising, 'total': len(rows)},
+                          INA, 'alturas y niveles oficiales', 'INA · escalas de Prefectura', 'recibido' if rows else 'sin dato',
+                          None if rows else 'El INA no respondió')
+    key = 'resumen'
+    hit = _CACHE.get(key)
+    if hit and time.monotonic() - hit[0] < 1800:
+        return hit[1]
+    res = run()
+    if res['status'] == 'recibido':
+        _CACHE[key] = (time.monotonic(), res)
+    return res
+
+
 # ───────────────────────────── todo junto ─────────────────────────────
 def analyze():
     def run():

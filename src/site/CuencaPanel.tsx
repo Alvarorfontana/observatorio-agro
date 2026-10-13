@@ -206,7 +206,7 @@ function AlertMap({ stations, onPick }: { stations: Data[]; onPick?: (id: string
   useEffect(() => {
     if (!ref.current) return;
     const map = L.map(ref.current, { scrollWheelZoom: false, attributionControl: true }).setView([-28.5, -57.5], 5);
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png", { maxZoom: 12, attribution: "© OpenStreetMap · © CARTO" }).addTo(map);
+    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}", { maxZoom: 13, attribution: "Esri, HERE, Garmin, © OpenStreetMap" }).addTo(map);
     const pts: L.LatLngExpression[] = [];
     stations.forEach(s => {
       if (s.lat == null) return;
@@ -223,6 +223,58 @@ function AlertMap({ stations, onPick }: { stations: Data[]; onPick?: (id: string
     <h3>Mapa de alertas <small>34 localidades pintadas por nivel · tocá un punto para ver el detalle</small></h3>
     <div className="cp-mapbox"><div ref={ref} className="cp-leaflet" /><div className="cp-map-legend">{["Normal", "Atención", "Alerta", "Evacuación"].map(l => <span key={l}><i style={{ background: LEVEL_COLOR[l] }} />{l}</span>)}</div></div>
   </div>;
+}
+
+// Portada: crecidas en vivo (INA) con gráfico de cuánto del nivel de alerta alcanzó cada puerto
+const go = (to: string) => (e: React.MouseEvent) => { e.preventDefault(); history.pushState({}, "", to); dispatchEvent(new PopStateEvent("popstate")); scrollTo(0, 0); };
+export function AlertasPortada() {
+  const [d, setD] = useState<Data | null>(null), [err, setErr] = useState(false);
+  useEffect(() => {
+    let live = true;
+    fetch("/api/fuentes/alertas-resumen").then(r => r.json()).then(j => { if (live) j.status === "recibido" ? setD(j.data) : setErr(true); }).catch(() => live && setErr(true));
+    return () => { live = false; };
+  }, []);
+  const c = d?.counts || {};
+  const head = !d ? (err ? "Sistema de Alerta de Crecidas" : "Consultando los ríos…")
+    : c["Evacuación"] ? `Crecida: ${c["Evacuación"]} ${c["Evacuación"] === 1 ? "localidad" : "localidades"} en evacuación${c.Alerta ? ` y ${c.Alerta} en alerta` : ""}.`
+    : c.Alerta ? `Crecida: ${c.Alerta} ${c.Alerta === 1 ? "localidad" : "localidades"} en alerta${c["Atención"] ? ` y ${c["Atención"]} en atención` : ""}.`
+    : c["Atención"] ? `Ríos en atención en ${c["Atención"]} ${c["Atención"] === 1 ? "localidad" : "localidades"}.` : "Ríos sin alertas por ahora.";
+  const tone = c["Evacuación"] ? "risk" : c.Alerta ? "alert" : c["Atención"] ? "warn" : "ok";
+  const top: Data[] = (d?.stations || []).slice(0, 8);
+  const max = Math.max(130, ...top.map(r => r.evac && r.alert ? Math.round(100 * r.evac / r.alert) + 10 : 0), ...top.map(r => (r.pct_alert || 0) + 5));
+  const last = d?.stations?.map((r: Data) => r.date).sort().slice(-1)[0];
+  return <section className={`ap ap-${tone}`} aria-label="Crecidas en vivo">
+    <div className="ap-copy">
+      <span className="ap-kicker"><i /> EN VIVO · CRECIDAS DE LA CUENCA DEL PLATA</span>
+      <h2>{head}</h2>
+      <p>Altura de los ríos Paraná, Paraguay, Uruguay e Iguazú contra los niveles oficiales de alerta y evacuación, lluvia que viene en Brasil, Paraguay y Bolivia, y cuándo llegaría el agua a cada localidad.</p>
+      {d && <div className="ap-counts">
+        {[["Evacuación", "risk"], ["Alerta", "alert"], ["Atención", "warn"], ["Normal", "ok"]].map(([l, t]) => <span key={l} className={t}><b>{c[l] || 0}</b>{l === "Normal" ? "normales" : l.toLowerCase()}</span>)}
+        <span className="rise"><b>{d.rising}</b>subiendo</span>
+      </div>}
+      <div className="ap-actions">
+        <a href="/alertas" onClick={go("/alertas")} className="primary">Ver el Sistema de Alerta de Crecidas →</a>
+        <a href="/alertas" onClick={go("/alertas")}>¿Cómo está mi localidad?</a>
+        <a href="/api/fuentes/cuenca-informe" download>Informe PDF ↓</a>
+      </div>
+    </div>
+    <div className="ap-chart">
+      <div className="ap-chart-head"><b>Cuánto del nivel de alerta alcanzó cada puerto</b><span>altura de hoy · INA, escalas de Prefectura{last ? ` · ${dm(last)}` : ""}</span></div>
+      {top.length ? <ul>
+        {top.map(r => { const ev = r.evac && r.alert ? (100 * r.evac) / r.alert : null;
+          return <li key={r.id}>
+            <span className="ap-name"><b>{r.place}</b><small>río {r.river}</small></span>
+            <span className="ap-bar">
+              <i className={`fill ${LEVEL_TONE[r.level] || "ok"}`} style={{ width: `${Math.min(100, (100 * (r.pct_alert || 0)) / max)}%` }} />
+              <i className="mk mk-alert" style={{ left: `${(100 * 100) / max}%` }} title="nivel de alerta" />
+              {ev && <i className="mk mk-evac" style={{ left: `${(100 * ev) / max}%` }} title="nivel de evacuación" />}
+            </span>
+            <span className="ap-val"><b>{nf(r.height, 2)} m</b><small>alerta {nf(r.alert, 2)}{r.trend_m_day != null ? ` · ${r.trend_m_day > 0.005 ? "↑" : r.trend_m_day < -0.005 ? "↓" : "→"}` : ""}</small></span>
+          </li>; })}
+      </ul> : <p className="ap-wait">{err ? "El INA no respondió. Abrí el sistema de alertas para ver el resto de los datos." : "Cargando alturas del INA…"}</p>}
+      <div className="ap-legend"><span><i className="mk-alert" /> nivel de alerta</span><span><i className="mk-evac" /> nivel de evacuación</span></div>
+    </div>
+  </section>;
 }
 
 // Aviso compacto para el panel regional: lleva a la página del sistema de alertas

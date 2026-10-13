@@ -210,52 +210,26 @@ export const OPEN_LAYERS: OpenLayer[] = [
   "attribution": "CyclOSM | Map data: (C) OpenStreetMap contributors",
   "source": "xyzservices (geopandas, BSD-3)"
  },
- {
-  "id": "CartoDB/Positron",
+  {
+  "id": "Esri/DarkGray",
   "group": "Mapas base",
-  "name": "Carto · claro",
-  "url": "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
+  "name": "Esri · gris oscuro",
+  "url": "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}",
   "overlay": false,
-  "maxZoom": 20,
-  "subdomains": "abcd",
+  "maxZoom": 16,
   "dated": false,
-  "attribution": "(C) OpenStreetMap contributors (C) CARTO",
+  "attribution": "Esri, HERE, Garmin, (C) OpenStreetMap contributors",
   "source": "xyzservices (geopandas, BSD-3)"
  },
- {
-  "id": "CartoDB/DarkMatter",
-  "group": "Mapas base",
-  "name": "Carto · oscuro",
-  "url": "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
-  "overlay": false,
-  "maxZoom": 20,
-  "subdomains": "abcd",
-  "dated": false,
-  "attribution": "(C) OpenStreetMap contributors (C) CARTO",
-  "source": "xyzservices (geopandas, BSD-3)"
- },
- {
-  "id": "CartoDB/Voyager",
-  "group": "Mapas base",
-  "name": "Carto · Voyager",
-  "url": "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
-  "overlay": false,
-  "maxZoom": 20,
-  "subdomains": "abcd",
-  "dated": false,
-  "attribution": "(C) OpenStreetMap contributors (C) CARTO",
-  "source": "xyzservices (geopandas, BSD-3)"
- },
- {
-  "id": "CartoDB/VoyagerOnlyLabels",
+  {
+  "id": "Esri/LightGrayReference",
   "group": "Etiquetas y redes",
-  "name": "Nombres de lugares (Carto)",
-  "url": "https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}.png",
+  "name": "Esri · solo nombres",
+  "url": "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}",
   "overlay": true,
-  "maxZoom": 20,
-  "subdomains": "abcd",
+  "maxZoom": 16,
   "dated": false,
-  "attribution": "(C) OpenStreetMap contributors (C) CARTO",
+  "attribution": "Esri, HERE, Garmin, (C) OpenStreetMap contributors",
   "source": "xyzservices (geopandas, BSD-3)"
  },
  {
