@@ -2435,6 +2435,57 @@ function InstitutionalDepth({kind}:{kind:"producto"|"soluciones"|"ganaderia"}){
  const a=copy[kind]; return <section className="institutional-depth"><article><span>01</span><h2>{a[0]}</h2><p>{a[1]}</p></article><article><span>02</span><h2>{a[2]}</h2><p>{a[3]}</p></article><article><span>03</span><h2>{a[4]}</h2><p>{a[5]}</p></article></section>;
 }
 function InfoPage({kind,onDemo}:{kind:"producto"|"soluciones"|"ganaderia";onDemo:()=>void}){const cfg:any={producto:["CÓMO FUNCIONA","Un sistema territorial, no una colección de indicadores.","DOTS organiza la información alrededor del establecimiento y de cada potrero: primero territorio, después evidencia, interpretación y decisión."],soluciones:["CAPACIDADES","Las capas del campo, conectadas.","El valor aparece cuando agua, suelo, vegetación, clima, ganado, riesgo e historia se leen sobre el mismo polígono."],ganaderia:["GANADERÍA","El potrero es la unidad de decisión.","DOTS está diseñado para el manejo ganadero: pastura, agua, carga, rotación, bienestar térmico, riesgo y tareas en contexto."]}[kind];return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner"><PageHero eyebrow={cfg[0]} title={cfg[1]} lead={cfg[2]}/><section className="info-grid">{cards[kind].map(([n,t,d])=><article key={t}><span>{n}</span><h2>{t}</h2><p>{d}</p></article>)}</section><InstitutionalDepth kind={kind}/>{kind==="producto"&&<><section className="workflow-band"><div><b>CAMPO</b><span>→</span><b>POLÍGONO</b><span>→</span><b>FUENTES</b><span>→</span><b>DOTS</b><span>→</span><b>DECISIÓN</b></div><p>La procedencia del dato nunca se pierde durante el proceso.</p></section><section className="product-shot"><div className="mock-map"><div className="mock-poly"></div><span>Potrero seleccionado</span><small>satélite · clima · suelo · agua · riesgo</small></div><div><span className="section-tag">OBSERVATORIO</span><h2>El mapa permanece. Las capas cambian.</h2><p>Resumen, lotes, imágenes, vegetación, agua, suelos, ganado, clima, riesgos, ENOS, alertas e informes trabajan sobre el mismo territorio seleccionado.</p><button onClick={onDemo}>Probar demostración</button></div></section></>}<SourceStrip/></main><SiteFooter/></div>}
+// Fuentes y licencias: a quién le debemos cada dato y cada pieza de código, y con qué condiciones.
+const LIC_DATA:[string,string,string,string][]=[
+ ["INA · Sistema de Alerta","Instituto Nacional del Agua (Argentina), escalas de Prefectura Naval","Datos públicos del Estado argentino","https://alerta.ina.gob.ar/"],
+ ["Open-Meteo (pronóstico, conjuntos ECMWF y GFS, GloFAS, ERA5)","Open-Meteo.com","Datos CC-BY 4.0 · API gratuita sólo para uso no comercial","https://open-meteo.com/en/licence"],
+ ["ECMWF IFS","Centro Europeo de Pronósticos a Plazo Medio","Datos abiertos CC-BY 4.0","https://www.ecmwf.int/en/forecasts/datasets/open-data"],
+ ["NOAA GFS, CPC (El Niño), PSL","NOAA (EE. UU.)","Dominio público del gobierno de EE. UU.","https://www.cpc.ncep.noaa.gov/"],
+ ["Copernicus: Sentinel-1, Sentinel-2, GloFAS, DEM, GFM","Unión Europea · ESA · ECMWF","Acceso libre y abierto, con cita obligatoria de Copernicus","https://www.copernicus.eu/es/acceso-los-datos"],
+ ["Landsat 8 y 9","USGS · NASA","Dominio público, se pide citar a USGS","https://www.usgs.gov/landsat-missions"],
+ ["NASA: GIBS (VIIRS, MODIS, IMERG), POWER, FIRMS, MUR","NASA EOSDIS","Uso libre, se pide citar a NASA","https://www.earthdata.nasa.gov/engage/open-data-services-software-policies"],
+ ["Represas de Brasil","ONS · Operador Nacional do Sistema Elétrico","CC-BY 4.0","https://dados.ons.org.br/"],
+ ["Microsoft Planetary Computer","Microsoft (distribuye Sentinel y Landsat)","Servicio gratuito; cada colección conserva su licencia","https://planetarycomputer.microsoft.com/"],
+ ["CHIRPS (lluvia observada)","Climate Hazards Center · UCSB, vía ClimateSERV","Uso libre, se pide citar","https://www.chc.ucsb.edu/data/chirps"],
+ ["Fields of the World (lotes)","TGI · Microsoft AI for Good","CC-BY 4.0","https://fieldsofthe.world/"],
+ ["ESA WorldCover","ESA · VITO","CC-BY 4.0","https://esa-worldcover.org/"],
+ ["Mapas base","OpenStreetMap, Esri, Carto, OpenTopoMap, IGN Argentina","OSM: ODbL · OpenTopoMap: CC-BY-SA · Esri y Carto: según sus términos, con atribución visible","https://www.openstreetmap.org/copyright"],
+];
+const LIC_CODE:[string,string,string][]=[
+ ["React y React DOM","MIT","interfaz de la web"],["Leaflet","BSD-2-Clause","mapas"],["ECharts","Apache-2.0","gráficos"],
+ ["Lucide (íconos)","ISC","íconos del observatorio"],["geotiff.js","MIT","lectura de relieve"],["PMTiles, pbf, @mapbox/vector-tile","BSD-3-Clause","mapa de lotes"],
+ ["polygon-clipping","MIT","recorte de polígonos"],["Flask, Requests","BSD-3-Clause · Apache-2.0","servidor"],["Typst","Apache-2.0","informes en PDF"],
+ ["ReportLab","BSD","informes en PDF"],["Pillow","MIT-CMU","medir nubes en las imágenes"],["IBM Plex (tipografía)","SIL Open Font License 1.1","textos de la web y los PDF"],
+];
+const LIC_ADAPTED:[string,string,string][]=[
+ ["TailAdmin · free-react-tailwind-admin-dashboard","MIT · © 2023 TailAdmin","estructura del tablero del observatorio; se conserva el aviso de copyright en el código"],
+ ["Carbon Design System (IBM)","Apache-2.0","reglas visuales del tema oscuro; no se copian componentes"],
+ ["xyzservices (GeoPandas)","BSD-3-Clause","catálogo base de capas del mapa"],
+ ["xclim (Ouranos)","Apache-2.0","definición y nombres de los índices agroclimáticos; el cálculo es propio"],
+ ["chirps (rOpenSci)","MIT","forma de consultar la API pública ClimateSERV; el código es propio"],
+];
+function Licenses({onDemo}:{onDemo:()=>void}){
+ const th={textAlign:"left" as const,padding:"10px 12px",fontSize:12,letterSpacing:".08em",textTransform:"uppercase" as const,color:"#8fb3b8",borderBottom:"1px solid rgba(130,170,174,.3)"};
+ const td={padding:"10px 12px",verticalAlign:"top" as const,borderBottom:"1px solid rgba(130,170,174,.14)",fontSize:15,lineHeight:1.5,color:"#d6e2e4"};
+ const box={overflowX:"auto" as const,margin:"8px 0 36px"};
+ return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner">
+  <PageHero eyebrow="FUENTES Y LICENCIAS" title="Lo que usa DOTS, de quién es y con qué condiciones." lead="DOTS se construye sobre datos públicos y software libre. Acá está cada fuente y cada pieza de código de terceros, con su licencia y la forma en que la citamos."/>
+  <section className="institutional-depth">
+   <article><span>DATOS</span><h2>Siempre con su fuente</h2><p>Cada gráfico, informe y parte para WhatsApp nombra de dónde sale el dato. Las fuentes con licencia CC-BY exigen esa cita, y la cumplimos en todos los formatos.</p></article>
+   <article><span>CÓDIGO</span><h2>Software libre, con sus avisos</h2><p>Las librerías se instalan desde sus repositorios oficiales y conservan su licencia. Donde adaptamos ideas o código de otros proyectos, lo decimos en el archivo y en esta página.</p></article>
+   <article><span>USO</span><h2>Sin fines comerciales</h2><p>Hoy DOTS no tiene uso comercial. Algunas fuentes, como la API gratuita de Open-Meteo, sólo se pueden usar así; si eso cambia, hay que pasar a sus planes pagos o a otra fuente.</p></article>
+  </section>
+  <h2>Datos y servicios</h2>
+  <div style={box}><table style={{width:"100%",borderCollapse:"collapse"}}><thead><tr><th style={th}>Fuente</th><th style={th}>Titular</th><th style={th}>Licencia o condición</th></tr></thead>
+   <tbody>{LIC_DATA.map(([n,o,l,u])=><tr key={n}><td style={td}><a href={u} target="_blank" rel="noreferrer">{n}</a></td><td style={td}>{o}</td><td style={td}>{l}</td></tr>)}</tbody></table></div>
+  <h2>Librerías de software</h2>
+  <div style={box}><table style={{width:"100%",borderCollapse:"collapse"}}><thead><tr><th style={th}>Librería</th><th style={th}>Licencia</th><th style={th}>Para qué la usamos</th></tr></thead>
+   <tbody>{LIC_CODE.map(([n,l,u])=><tr key={n}><td style={td}>{n}</td><td style={td}>{l}</td><td style={td}>{u}</td></tr>)}</tbody></table></div>
+  <h2>Proyectos en los que nos basamos</h2>
+  <div style={box}><table style={{width:"100%",borderCollapse:"collapse"}}><thead><tr><th style={th}>Proyecto</th><th style={th}>Licencia</th><th style={th}>Qué tomamos</th></tr></thead>
+   <tbody>{LIC_ADAPTED.map(([n,l,u])=><tr key={n}><td style={td}>{n}</td><td style={td}>{l}</td><td style={td}>{u}</td></tr>)}</tbody></table></div>
+  <p className="footnote">Cita de Copernicus: «Contiene datos modificados de Copernicus Sentinel y del Servicio de Gestión de Emergencias de Copernicus». DOTS no es un organismo oficial; ante una emergencia mandan Defensa Civil y Prefectura. ¿Ves una fuente mal citada? <SiteLink to="/contacto">Escribinos</SiteLink> y la corregimos.</p>
+ </main><SiteFooter/></div>}
 function Technology({onDemo}:{onDemo:()=>void}){return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner"><PageHero eyebrow="FUENTES Y DATOS" title="Una red mundial, con procedencia visible." lead="DOTS integra servicios oficiales y abiertos cuando existe una interfaz programática verificable. Catálogo, imagen, modelo y medición no son lo mismo: el sistema los identifica por separado."/><section className="institutional-depth"><article><span>RED</span><h2>Por qué integramos múltiples fuentes</h2><p>Ningún satélite ni modelo describe por sí solo un establecimiento. Radar, óptico, meteorología, suelo, hidrología y clima global responden preguntas diferentes. DOTS los consulta por ubicación y fecha y conserva la fuente original.</p></article><article><span>API</span><h2>Qué significa “conectada”</h2><p>Una fuente sólo figura como operativa cuando el backend puede realizar una consulta válida. Las que requieren registro o clave quedan marcadas como credencial pendiente. Una API de catálogo confirma productos disponibles; no se presenta como índice o medición raster procesada.</p></article><article><span>QA</span><h2>Control y trazabilidad</h2><p>Cada resultado debe conservar fuente, producto o sensor, fecha, geometría consultada, variable, unidad, método y estado. Si una fuente falla, DOTS conserva el faltante y continúa con las demás, sin reemplazarlo por cero ni por un valor inventado.</p></article></section><section className="source-world">{sourceGroups.map(([region,items]:any)=><article key={region}><span>{region}</span>{items.map((x:string)=><div className="source-line" key={x}><i></i><b>{x}</b></div>)}</article>)}</section><section className="method-banner"><h2>OBSERVADO · SATELITAL · MODELADO · CALCULADO · PRONOSTICADO · INTERPRETACIÓN DOTS</h2><p>Fuente, producto o sensor, fecha, polígono, variable, unidad, método, estado y confianza acompañan cada resultado.</p></section><section className="status-explainer"><div><i className="ok"></i><b>Operativa</b><p>La consulta obtuvo una respuesta válida.</p></div><div><i className="key"></i><b>Requiere credencial</b><p>La integración está preparada pero necesita acceso autorizado.</p></div><div><i className="pending"></i><b>Pendiente</b><p>No se presenta como conectada hasta comprobarla.</p></div></section><section className="demo-call"><div><span className="section-tag">OBSERVATORIO</span><h2>Las fuentes se prueban desde el lote.</h2><p>Dentro del Observatorio podés seleccionar Copernicus, Sentinel-1/2, Landsat, NASA MODIS, CNES, DLR, Digital Earth Africa y FIRMS. El panel muestra la respuesta o el motivo por el que la fuente no está disponible.</p></div><button onClick={onDemo}>Probar fuentes →</button></section></main><SiteFooter/></div>}
 
 
@@ -2511,7 +2562,7 @@ function Contact({onDemo}:{onDemo:()=>void}){
       {ch?.email_enabled===false && <p className="form-status">El envío se habilita cuando el correo de destino esté configurado. No simulamos envíos.</p>}
     </form></section></main><SiteFooter/></div>}
 function Access({onDemo}:{onDemo:()=>void}){return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner access-page"><PageHero eyebrow="ACCESO" title="Observatorio DOTS" lead="La autenticación real se incorporará con permisos por establecimiento. La demostración no simula una cuenta de usuario."/><button className="big-demo" onClick={onDemo}>Entrar a la demostración →</button></main><SiteFooter/></div>}
-function SiteFooter(){return <footer className="site-footer"><Brand/><p>Inteligencia territorial para la gestión ganadera.</p><div><SiteLink to="/guia">Guía: cómo funciona</SiteLink><SiteLink to="/producto">Cómo funciona</SiteLink><SiteLink to="/tecnologia">Fuentes</SiteLink><SiteLink to="/capas">Capas</SiteLink><SiteLink to="/conexiones">APIs</SiteLink><SiteLink to="/demo">Demo</SiteLink><SiteLink to="/contacto">Contacto</SiteLink></div></footer>}
+function SiteFooter(){return <footer className="site-footer"><Brand/><p>Inteligencia territorial para la gestión ganadera.</p><div><SiteLink to="/guia">Guía: cómo funciona</SiteLink><SiteLink to="/producto">Cómo funciona</SiteLink><SiteLink to="/tecnologia">Fuentes</SiteLink><SiteLink to="/capas">Capas</SiteLink><SiteLink to="/conexiones">APIs</SiteLink><SiteLink to="/demo">Demo</SiteLink><SiteLink to="/licencias">Fuentes y licencias</SiteLink><SiteLink to="/contacto">Contacto</SiteLink></div></footer>}
 
 function App(){
   const [path,setPath]=useState(window.location.pathname);
@@ -2530,6 +2581,7 @@ function App(){
   if(path==="/panel")return <RegionalPanel onDemo={openDemo}/>;
   if(path==="/alertas")return <AlertsPage onDemo={openDemo}/>;
   if(path==="/tecnologia")return <Technology onDemo={openDemo}/>;
+  if(path==="/licencias")return <Licenses onDemo={openDemo}/>;
   if(path==="/capas")return <LayersPage onDemo={openDemo}/>;
   if(path==="/conexiones")return <ApiConnections onDemo={openDemo}/>;
   if(path==="/casos")return <Cases onDemo={openDemo}/>;
