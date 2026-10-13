@@ -279,3 +279,22 @@ def test_resumen_portada(monkeypatch):
     assert j['status'] == 'recibido' and d['total'] == 2 and d['counts']['Alerta'] == 1
     assert d['stations'][0]['place'] == 'Corrientes' and d['stations'][0]['pct_alert'] == 107 and d['rising'] == 1
     cc._CACHE.clear()
+
+
+def test_informe_de_localidad(monkeypatch):
+    import pytest
+    pytest.importorskip("typst")
+    from api.index import app
+    st = cc.merge_ina([{'id': 'parana-goya', 'river': 'Paraná', 'place': 'Goya', 'lat': -29.1, 'lon': -59.3, 'status': 'sin dato'}],
+                      {'levels': {'parana-goya': {'alert': 5.2, 'evac': 5.7, 'low': 2.23}},
+                       'heights': {'parana-goya': [(f'2026-10-{d:02d}', 5.2 + 0.08 * (d - 5)) for d in range(5, 13)]},
+                       'forecast': {'by_site': {'parana-goya': [{'date': '2026-10-20', 'min': 5.7, 'central': 6.0, 'max': 6.3}]}}})
+    fake = {'status': 'recibido', 'data': {'rivers': {'stations': st, 'actions': cc.ACTIONS}, 'alerts': [], 'maps': {}, 'errors': {}}}
+    monkeypatch.setattr(cc, 'analyze', lambda: fake)
+    c = app.test_client()
+    r = c.get('/api/fuentes/localidad-informe?id=parana-goya')
+    assert r.status_code == 200 and r.data[:5] == b'%PDF-' and 'Goya' in r.headers['Content-Disposition']
+    assert c.get('/api/fuentes/localidad-informe?id=xx').status_code == 400
+    import cuenca_report as cr
+    d = cr.local_data(fake['data'], 'parana-goya')
+    assert d['level'] == 'Evacuación' and d['to_alert'] == 'superado' and d['phones'][0][0] == '103'
