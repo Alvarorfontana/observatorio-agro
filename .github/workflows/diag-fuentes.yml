@@ -1,0 +1,37 @@
+name: Diagnóstico fuentes nuevas (temporal)
+on: workflow_dispatch
+permissions:
+  contents: read
+jobs:
+  d:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          python3 - > out.txt 2>&1 <<'PY'
+          import json, urllib.request, urllib.parse
+          def get(u, data=None, t=60):
+              req = urllib.request.Request(u, data=json.dumps(data).encode() if data else None, headers={'Content-Type':'application/json','User-Agent':'dots'})
+              with urllib.request.urlopen(req, timeout=t) as r: return r.status, r.read()
+          # TerraClimate NCSS
+          for host in ['http://thredds.northwestknowledge.net:8080','https://thredds.northwestknowledge.net']:
+              u = host + '/thredds/ncss/agg_terraclimate_def_1958_CurrentYear_GLOBE.nc?var=def&latitude=-28.55&longitude=-58.7&time_start=2024-01-01T00:00:00Z&time_end=2026-12-31T00:00:00Z&accept=csv'
+              try:
+                  s, b = get(u); print('TC', host, s, b[:400].decode(errors='replace'))
+              except Exception as e: print('TC', host, 'ERR', e)
+          # Sentinel-1 RTC
+          body = {'collections':['sentinel-1-rtc'],'intersects':{'type':'Point','coordinates':[-58.7,-28.55]},'limit':3,'sortby':[{'field':'properties.datetime','direction':'desc'}]}
+          s, b = get('https://planetarycomputer.microsoft.com/api/stac/v1/search', body); js = json.loads(b)
+          f = js['features'][0] if js['features'] else None
+          print('S1 n', len(js['features']), f and f['id'], f and list(f['assets'])[:6], f and f['properties'].get('datetime'))
+          if f:
+              feat = {'type':'Feature','properties':{},'geometry':{'type':'Polygon','coordinates':[[[-58.71,-28.56],[-58.69,-28.56],[-58.69,-28.54],[-58.71,-28.54],[-58.71,-28.56]]]}}
+              q = urllib.parse.urlencode({'collection':'sentinel-1-rtc','item':f['id'],'assets':'vv','asset_as_band':'true'})
+              try:
+                  s, b = get('https://planetarycomputer.microsoft.com/api/data/v1/item/statistics?'+q, feat); print('S1 stats', s, b[:500].decode())
+              except Exception as e: print('S1 stats ERR', e, getattr(e,'read',lambda:b'')()[:300])
+              q = urllib.parse.urlencode({'collection':'sentinel-1-rtc','item':f['id'],'expression':'where(vv<0.0158,1,0)','asset_as_band':'true'})
+              try:
+                  s, b = get('https://planetarycomputer.microsoft.com/api/data/v1/item/statistics?'+q, feat); print('S1 expr', s, b[:300].decode())
+              except Exception as e: print('S1 expr ERR', e, getattr(e,'read',lambda:b'')()[:300])
+          PY
+          python3 -c "print('::notice title=diag::'+open('out.txt').read().replace('%','%25').replace('\n','%0A'))"
