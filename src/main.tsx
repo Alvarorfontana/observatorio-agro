@@ -50,6 +50,7 @@ import { terrainForLot, terrainImage, DEM_ATTRIBUTION, DEM_SOURCE_URL, type Terr
 import { RISK_COLORS, DRAIN_COLOR } from "./dashboard/terrainCore";
 import { VariablesPanel } from "./dashboard/VariablesPanel";
 import { LotDashboard } from "./dashboard/LotDashboard";
+import { OPEN_LAYERS, LAYER_GROUPS } from "./dashboard/openLayers";
 import { GuideContent } from "./site/GuideContent";
 import { readLotFile, lotsToGeoJSON, lotsToKML } from "./dashboard/lotFiles";
 echarts.use([
@@ -348,6 +349,9 @@ function Observatory({onHome}:{onHome:()=>void}) {
     ),
     [layer, setLayer] = useState("base"),
     [gibsLayer, setGibsLayer] = useState(""),
+    [openBase, setOpenBase] = useState<string>(() => { try { return localStorage.getItem("dots-open-base") || ""; } catch { return ""; } }),
+    [openOver, setOpenOver] = useState<string>(() => { try { return localStorage.getItem("dots-open-over") || ""; } catch { return ""; } }),
+    [openOpacity, setOpenOpacity] = useState(0.75),
     [toast, setToast] = useState(""),
     [vertices, setVertices] = useState<Point[]>([]),
     [drawing, setDrawing] = useState(false),
@@ -536,6 +540,30 @@ function Observatory({onHome}:{onHome:()=>void}) {
       overlay.remove();
     };
   }, [layer, date]);
+  // Capas abiertas del catálogo (xyzservices + curadas): una de base y una superpuesta
+  const openTile = (id: string, opacity: number, pane?: string) => {
+    const l = OPEN_LAYERS.find(x => x.id === id); if (!l || !mapRef.current) return null;
+    const url = l.dated ? l.url.replace("{time}", date) : l.url;
+    const t = L.tileLayer(url, { maxZoom: 19, maxNativeZoom: l.maxNativeZoom ?? Math.min(l.maxZoom, 19), tms: !!l.tms,
+      subdomains: l.subdomains || "abc", opacity, attribution: l.attribution, pane, crossOrigin: true } as L.TileLayerOptions).addTo(mapRef.current);
+    let warned = false;
+    t.on("tileerror", () => { if (!warned) { warned = true; notify(`${l.name}: el servidor no devolvió imágenes aquí${l.dated ? " para esa fecha" : ""}.`); } });
+    return t;
+  };
+  useEffect(() => {
+    try { localStorage.setItem("dots-open-base", openBase); } catch {}
+    if (!openBase) return;
+    const t = openTile(openBase, 1); if (!t) return;
+    t.bringToBack(); t.setZIndex(1);
+    return () => { t.remove(); };
+  }, [openBase, date]);
+  useEffect(() => {
+    try { localStorage.setItem("dots-open-over", openOver); } catch {}
+    if (!openOver) return;
+    const t = openTile(openOver, openOpacity); if (!t) return;
+    t.setZIndex(400);
+    return () => { t.remove(); };
+  }, [openOver, openOpacity, date]);
   useEffect(() => {
     if (!gibsLayer || !mapRef.current) return;
     // WMS sin TIME: GIBS devuelve la última fecha disponible de cada capa.
@@ -1740,6 +1768,15 @@ function Observatory({onHome}:{onHome:()=>void}) {
           </button>
           <button className={layer === "modis" ? "active" : ""} onClick={() => setLayer("modis")} aria-pressed={layer === "modis"}>MODIS · imagen</button>
           <select value={gibsLayer} onChange={e=>{setGibsLayer(e.target.value); const d=GIBS_LAYERS.find(([k])=>k===e.target.value)?.[2]; if(d) notify(d);}} aria-label="Capas de NASA y cobertura del suelo">{GIBS_LAYERS.map(([k,l])=><option key={k} value={k}>{l}</option>)}</select>
+          <select value={openBase} onChange={e=>setOpenBase(e.target.value)} aria-label="Mapa base" title="Mapa base (catálogo abierto)">
+            <option value="">Mapa base · Esri satelital (DOTS)</option>
+            {LAYER_GROUPS.map(g=><optgroup key={g} label={g}>{OPEN_LAYERS.filter(l=>l.group===g&&!l.overlay).map(l=><option key={l.id} value={l.id}>{l.name}</option>)}</optgroup>)}
+          </select>
+          <select value={openOver} onChange={e=>setOpenOver(e.target.value)} aria-label="Capa superpuesta" title="Capa superpuesta (catálogo abierto)">
+            <option value="">Capa superpuesta · ninguna</option>
+            {LAYER_GROUPS.map(g=><optgroup key={g} label={g}>{OPEN_LAYERS.filter(l=>l.group===g&&l.overlay).map(l=><option key={l.id} value={l.id}>{l.name}</option>)}</optgroup>)}
+          </select>
+          {openOver && <label className="small" style={{display:"inline-flex",alignItems:"center",gap:6}}>Transparencia<input type="range" min={0.2} max={1} step={0.05} value={openOpacity} onChange={e=>setOpenOpacity(Number(e.target.value))}/></label>}
           <button onClick={()=>changeView("firms")}>FIRMS · focos térmicos</button>
           <button onClick={()=>changeView("nasa-power-30")}>NASA POWER · clima</button>
           <button onClick={()=>changeView("enso")}>ENSO · multifuente</button>

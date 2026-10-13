@@ -76,6 +76,33 @@ for name, body in POST.items():
 for path in ['/', '/observatorio', '/libre-deforestacion', '/que-es-dots']:
     t0 = time.monotonic(); r = S.get(BASE + path, timeout=30); codes[path] = show(path, r, t0)
 
+# Capas del mapa: una tesela sobre Corrientes (z=8) por capa del catálogo
+import math, re
+from datetime import date, timedelta
+try:
+    src = open(os.path.join(os.path.dirname(__file__), '..', 'src', 'dashboard', 'openLayers.ts'), encoding='utf-8').read()
+    layers = json.loads(src[src.index('OPEN_LAYERS: OpenLayer[] = ') + 27: src.index('];') + 1])
+except Exception as e:
+    layers = []; out(f'No se pudo leer el catálogo de capas: {e}')
+bad_layers = []
+for l in layers:
+    z = min(8, l.get('maxNativeZoom') or 8)
+    n = 2 ** z; x = int((LON + 180) / 360 * n)
+    y = int((1 - math.log(math.tan(math.radians(LAT)) + 1 / math.cos(math.radians(LAT))) / math.pi) / 2 * n)
+    if l.get('tms'): y = n - 1 - y
+    u = l['url'].replace('{time}', (date.today() - timedelta(days=1)).isoformat()).replace('{s}', (l.get('subdomains') or 'a')[0])
+    u = u.replace('{z}', str(z)).replace('{x}', str(x)).replace('{y}', str(y))
+    t0 = time.monotonic()
+    try:
+        r = S.get(u, timeout=25)
+        ok = r.status_code == 200 and r.headers.get('Content-Type', '').startswith('image')
+        code = r.status_code
+    except Exception as e:
+        ok, code = False, type(e).__name__
+    if not ok: bad_layers.append(l['name'])
+    out(f"{'OK ' if ok else 'MAL'}  {round((time.monotonic()-t0)*1000):>6} ms  capa · {l['name'][:60]}  ({code})")
+out(f"Capas: {len(layers) - len(bad_layers)} de {len(layers)} devuelven imagen." + (f" Sin imagen: {', '.join(bad_layers)}" if bad_layers else ''))
+
 bad = {k: v for k, v in codes.items() if v >= 500 and v != 503}   # 503 = fuente externa caída, se informa aparte
 slow = {k: v for k, v in codes.items() if v in (429, 503)}
 out(f"{len(codes) - len(bad)} de {len(codes)} sin error de DOTS." + (f" Fallan: {', '.join(bad)}" if bad else '')
