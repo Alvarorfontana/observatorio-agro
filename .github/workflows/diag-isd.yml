@@ -1,0 +1,13 @@
+name: Diagnóstico ISD (temporal)
+on: workflow_dispatch
+permissions:
+  contents: read
+jobs:
+  d:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          curl -sS -L -o h.csv -w "%{http_code} %{content_type} %{size_download}\n" https://www.ncei.noaa.gov/pub/data/noaa/isd-history.csv > meta.txt || true
+          { cat meta.txt; head -c 300 h.csv; echo; grep -c '"BR"' h.csv; grep '"BR"' h.csv | sort -t, -k11 | tail -3; grep -c '"CI"' h.csv; grep '"SBPA\|"SCEL' h.csv | head -3;
+            curl -sS "https://www.ncei.noaa.gov/access/services/data/v1?dataset=global-hourly&stations=83971099999&startDate=$(date -d '-4 day' +%F)&endDate=$(date +%F)&dataTypes=TMP&format=json" | head -c 400; } > out.txt
+          python3 -c "import sys;print('::notice title=ISD::'+open('out.txt').read().replace('%','%25').replace('\n','%0A'))"
