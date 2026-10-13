@@ -135,6 +135,11 @@ def research_data(name):
     if name=='cuenca':
         try: return jsonify(cca.analyze())
         except Exception as e: return _upstream_error(e)
+    if name=='gfm-capas':
+        try:
+            import gfm
+            return jsonify(gfm.web_layers())
+        except Exception as e: return _upstream_error(e)
     if name=='alertas-resumen':
         try: return jsonify(cca.resumen())
         except Exception as e: return _upstream_error(e)

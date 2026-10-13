@@ -195,18 +195,22 @@ def basin_rain(responses, basins=BASINS, normals=None, days=15):
             m = _members((resp or {}).get('daily') or {})
             per_point.append(m)
             cols = set(m) if cols is None else cols & set(m)
+        # Horizonte real: ECMWF publica hoy ~12 días y GFS ~15. Se usa el horizonte que cubre la mayoría de las
+        # corridas y se suma sólo lo pronosticado (sin estirar), comparando contra la normal de esos mismos días.
+        valid = {}
+        for col in cols or []:
+            per = [sum(1 for v in m[col][:days] if v is not None) for m in per_point]
+            valid[col] = min(per) if per else 0
+        usable = sorted(v for v in valid.values() if v >= 7)
+        H = min(days, usable[len(usable) // 2]) if usable else 0
         totals = []; daily = []
-        for col in sorted(cols or []):
+        for col in sorted(c for c, v in valid.items() if H and v >= H):
             dd = []
-            for j in range(days):
+            for j in range(H):
                 vs = [m[col][j] for m in per_point if j < len(m[col]) and m[col][j] is not None]
                 dd.append(sum(vs) / len(vs) if vs else None)
             daily.append(dd)
-            vals = []
-            for m in per_point:
-                s = [v for v in m[col][:days] if v is not None]
-                if len(s) >= days - 2:
-                    vals.append(sum(s) * days / len(s))
+            vals = [sum(v for v in m[col][:H] if v is not None) for m in per_point]
             if vals:
                 totals.append(sum(vals) / len(vals))
         if not totals:
@@ -215,18 +219,19 @@ def basin_rain(responses, basins=BASINS, normals=None, days=15):
         n = len(totals)
         norm = (normals.get(b['id']) or {})
         normal = norm.get('rain15_by_month', {}).get(str(date.today().month)) if norm else None
+        normal = normal * H / 15 if normal else None        # normal de los mismos días pronosticados
         med = quantile(totals, .5)
         times = ((group[0] or {}).get('daily') or {}).get('time') or []
-        med_day = [_r(quantile([dd[j] for dd in daily if dd[j] is not None], .5), 1) for j in range(days)]
+        med_day = [_r(quantile([dd[j] for dd in daily if dd[j] is not None], .5), 1) for j in range(H)]
         cum, tot, center = 0.0, sum(v for v in med_day if v) or 0, None
         for j, v in enumerate(med_day):
             cum += v or 0
             if tot and cum >= tot / 2:
                 center = j; break
         heavy = [j for j, v in enumerate(med_day) if v and v >= 10]
-        r10 = max((sum(v or 0 for v in med_day[j:j + 10]) for j in range(max(1, days - 9))), default=None)
+        r10 = max((sum(v or 0 for v in med_day[j:j + 10]) for j in range(max(1, H - 9))), default=None)
         out.append({'id': b['id'], 'group': b.get('group'), 'name': b['name'], 'where': b['where'], 'travel': b['travel'], 'status': 'recibido',
-                    'daily_median': med_day, 'dates': times[:days], 'rain10_mm': _r(r10),
+                    'daily_median': med_day, 'dates': times[:H], 'rain10_mm': _r(r10), 'days': H,
                     'rain_center': times[center] if center is not None and center < len(times) else None,
                     'rain_from': times[heavy[0]] if heavy and heavy[0] < len(times) else None,
                     'rain_to': times[heavy[-1]] if heavy and heavy[-1] < len(times) else None,
@@ -243,7 +248,9 @@ def headwaters():
               'daily': 'precipitation_sum', 'models': MODELS, 'forecast_days': 16, 'timezone': 'America/Argentina/Buenos_Aires'}
     data = c._get(ENSEMBLE, params, timeout=40).json()
     data = data if isinstance(data, list) else [data]
-    return {'days': 15, 'models': 'ECMWF IFS (51) + GFS (31)', 'basins': basin_rain(data, normals=load_normals().get('basins')),
+    basins = basin_rain(data, normals=load_normals().get('basins'))
+    hz = [b['days'] for b in basins if b.get('days')]
+    return {'days': max(hz) if hz else 15, 'models': 'ECMWF IFS (51) + GFS (31)', 'basins': basins,
             'source': ENSEMBLE}
 
 
@@ -522,9 +529,9 @@ def rain_level(b):
         if ORDER.index(to) > ORDER.index(lvl):
             lvl = to
         why.append(txt)
-    if p200 >= 50: up('Peligro', f'{p200} % de chances de superar 200 mm en 15 días')
+    if p200 >= 50: up('Peligro', f'{p200} % de chances de superar 200 mm en {b.get("days", 15)} días')
     elif p200 >= 25 or p100 >= 70: up('Alerta', f'{p100} % de chances de superar 100 mm' + (f' y {p200} % de superar 200 mm' if p200 else ''))
-    elif p100 >= 40: up('Atención', f'{p100} % de chances de superar 100 mm en 15 días')
+    elif p100 >= 40: up('Atención', f'{p100} % de chances de superar 100 mm en {b.get("days", 15)} días')
     if ratio is not None and ratio >= 2: up('Alerta', f'lluvia esperada {ratio:.1f} veces la normal de la época')
     elif ratio is not None and ratio >= 1.5: up('Atención', f'lluvia esperada {ratio:.1f} veces la normal de la época')
     return lvl, why
