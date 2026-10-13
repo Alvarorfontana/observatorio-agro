@@ -188,24 +188,30 @@ def rain_rise(rain, series, response, thresholds=None, window=10, min_rain=20, s
 
 
 # ───────────────────────────── descargas ─────────────────────────────
-def pick_cells(stations):
-    cand = []
+def pick_cells(stations, done=None):
+    """Celda GloFAS del cauce principal: la de mayor caudal medio (últimos 30 días) en un 5x5 de ~10 km.
+    De a una localidad por pedido, con reintentos: un corte de la API no tumba al resto."""
+    out = dict(done or {})
     for st in stations:
-        for dy in (-STEP, 0, STEP):
-            for dx in (-STEP, 0, STEP):
-                cand.append((st['id'], round(st['lat'] + dy, 3), round(st['lon'] + dx, 3)))
-    best = {}
-    for i in range(0, len(cand), 30):
-        part = cand[i:i + 30]
-        data = get(FLOOD, {'latitude': ','.join(str(c[1]) for c in part), 'longitude': ','.join(str(c[2]) for c in part),
-                           'daily': 'river_discharge', 'past_days': 31, 'forecast_days': 1})
-        for (sid, la, lo), resp in zip(part, data if isinstance(data, list) else [data]):
+        if st['id'] in out:
+            continue
+        cand = [(round(st['lat'] + dy * STEP, 3), round(st['lon'] + dx * STEP, 3)) for dy in range(-2, 3) for dx in range(-2, 3)]
+        try:
+            data = get(FLOOD, {'latitude': ','.join(str(c[0]) for c in cand), 'longitude': ','.join(str(c[1]) for c in cand),
+                               'daily': 'river_discharge', 'past_days': 31, 'forecast_days': 1}, timeout=240)
+        except Exception as e:
+            print(f'[normales] celda {st["id"]}: {type(e).__name__}', flush=True)
+            continue
+        best = None
+        for (la, lo), resp in zip(cand, data if isinstance(data, list) else [data]):
             qv = [v for v in (resp.get('daily') or {}).get('river_discharge') or [] if v is not None]
             m = sum(qv) / len(qv) if qv else -1
-            if sid not in best or m > best[sid][2]:
-                best[sid] = (la, lo, m)
-        time.sleep(5)
-    return {sid: {'lat': v[0], 'lon': v[1]} for sid, v in best.items()}
+            if best is None or m > best[2]:
+                best = (la, lo, m)
+        if best and best[2] > 0:
+            out[st['id']] = {'lat': best[0], 'lon': best[1], 'mean30': round(best[2])}
+        time.sleep(4)
+    return out
 
 
 def fetch_station(cell):
@@ -302,7 +308,7 @@ def compute(cache):
                 n = min(len(cache['q'][u]), len(cache['q'][d]))
                 r = lag_days([float('nan') if v is None else v for v in cache['q'][u][:n]],
                              [float('nan') if v is None else v for v in cache['q'][d][:n]])
-                if r:
+                if r and r['corr'] >= 0.3:                       # tramos con relación débil quedan "en cálculo"
                     lags[f'{u}>{d}'] = r
     rise = {}
     for outlet in sorted({b['outlet'] for b in cuenca.BASINS}):
@@ -344,11 +350,20 @@ def main(path):
     def note(what, e):
         msg = f'{what}: {type(e).__name__} {str(e)[:160]}'
         errors.append(msg); print(f'[normales] {msg}', flush=True)
-    if not cache['cells']:
-        try:
-            cache['cells'] = pick_cells(cuenca.STATIONS); save_cache(cache)
-        except Exception as e:
-            note('celdas GloFAS', e)
+    # celdas del cauce principal; si una cambia, el caudal bajado con la celda vieja se descarta
+    before = dict(cache['cells'])
+    try:
+        cache['cells'] = pick_cells(cuenca.STATIONS, cache['cells'])
+    except Exception as e:
+        note('celdas GloFAS', e)
+    for sid, cell in cache['cells'].items():
+        used = cache.setdefault('q_cell', {}).get(sid)
+        if sid in cache['q'] and used != [cell['lat'], cell['lon']]:
+            del cache['q'][sid]
+    missing = [s['id'] for s in cuenca.STATIONS if s['id'] not in cache['cells']]
+    if missing:
+        note('celdas pendientes', RuntimeError(', '.join(missing)))
+    save_cache(cache)
     # alturas del INA (sin límite de consultas): todas las localidades que tienen escala
     for sid, (site, *_r) in cuenca.INA_SITES.items():
         if sid not in cache['h']:
@@ -366,10 +381,11 @@ def main(path):
             except Exception as e:
                 note(f'lluvia {b["id"]}', e)
     # caudales GloFAS: hasta MAX_POR_CORRIDA por día (límites gratuitos de Open-Meteo)
-    pending = [s for s in cuenca.STATIONS if s['id'] not in cache['q']]
+    pending = [s for s in cuenca.STATIONS if s['id'] not in cache['q'] and s['id'] in cache['cells']]
     for st in pending[:MAX_POR_CORRIDA]:
         try:
-            cache['q'][st['id']] = fetch_station(cache['cells'].get(st['id'], st)); save_cache(cache)
+            cell = cache['cells'][st['id']]
+            cache['q'][st['id']] = fetch_station(cell); cache['q_cell'][st['id']] = [cell['lat'], cell['lon']]; save_cache(cache)
             print(f'[normales] caudal {st["river"]} · {st["place"]}: listo', flush=True)
         except Exception as e:
             note(f'caudal {st["id"]}', e)
@@ -394,7 +410,7 @@ def main(path):
             note('represas', e)
     data['errors'] = errors[:20] + (errors[-20:] if len(errors) > 20 else [])
     data['updated'] = date.today().isoformat()
-    data['complete'] = len(cache['q']) == len(cuenca.STATIONS)
+    data['complete'] = len(cache['q']) == len(cuenca.STATIONS) and len(cache['cells']) == len(cuenca.STATIONS)
     data['progress'] = f"{len(cache['q'])} de {len(cuenca.STATIONS)} localidades con caudal"
     os.makedirs(os.path.dirname(path) or '.', exist_ok=True)
     with open(path, 'w', encoding='utf-8') as f:
