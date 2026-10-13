@@ -392,7 +392,7 @@ def _add_days(iso, days):
 def travel(stations_out, normals):
     """Tiempo acumulado por tramo (de las normales) y llegada estimada del pico de cabecera."""
     by = {s['id']: s for s in stations_out}
-    lags = (normals or {}).get('lags') or {}
+    lags = {k: v for k, v in ((normals or {}).get('lags') or {}).items() if (v.get('corr') or 0) >= 0.3}
     out = []
     for ch in CHAINS:
         ids = ch['stations']; acc = 0.0; rows = []
@@ -547,7 +547,7 @@ def _span(iso, lo, hi):
 def early_warning(basins, stations, dams_list=None, normals=None):
     """Para cada cabecera: nivel, motivos y ventana de llegada a cada localidad aguas abajo."""
     st = {s['id']: s for s in stations or []}
-    lags = (normals or {}).get('lags') or {}
+    lags = {k: v for k, v in ((normals or {}).get('lags') or {}).items() if (v.get('corr') or 0) >= 0.3}
     dams_list = dams_list or []
     out = []
     for b in basins or []:
@@ -574,7 +574,8 @@ def early_warning(basins, stations, dams_list=None, normals=None):
         r10 = b.get('rain10_mm')
         ina = outlet.get('ina') or {}
         if r10:
-            hr = rr.get('height'); qr = rr.get('discharge')
+            ok = lambda x: x if x and (x.get('r') or 0) >= 0.3 and (x.get('per10mm') or 0) > 0 else None   # sólo relaciones firmes
+            hr = ok(rr.get('height')); qr = ok(rr.get('discharge'))
             if hr and ina.get('height') is not None:
                 rise = hr['per10mm'] * r10 / 10
                 ph = round(ina['height'] + rise, 2)
