@@ -165,3 +165,22 @@ def test_rgb_overlay_uses_visual_asset(pc):
     png, bounds = veg.ndvi_png('S2B_MSIL2A_20261008_1', LOT, '05.10', mode='rgb')
     url, params, _ = CALLS[-1]
     assert url.endswith('/item/feature.png') and params['assets'] == 'visual' and 'expression' not in params
+
+
+def test_kmeans_y_zonas(monkeypatch):
+    import vegetation as veg
+    cs, cortes = veg.kmeans_1d([0.2, 0.25, 0.5, 0.55, 0.8, 0.85], [10, 10, 30, 30, 20, 20])
+    assert cs[0] < 0.3 and 0.45 < cs[1] < 0.6 and cs[2] > 0.75 and cortes[0] < cortes[1]
+    poly = [[-29.10, -59.30], [-29.10, -59.28], [-29.12, -59.28], [-29.12, -59.30]]
+    monkeypatch.setattr(veg, 'search_s2', lambda *a, **k: [{'id': 'S2A_X', 'properties': {'datetime': '2026-10-10T13:00:00Z'}, 'geometry': None}])
+    monkeypatch.setattr(veg, 'scene_ndvi', lambda it, f: {'status': 'válida', 'datetime': '2026-10-10T13:00:00Z', 'clear_fraction_lot': 0.98, 'expression': 'x', 'ndvi_mean': 0.55})
+    edges = [round(-0.2 + i * 0.02, 2) for i in range(61)]
+    counts = [0] * 60
+    for v, n in ((0.3, 100), (0.55, 300), (0.8, 100)):
+        counts[int((v + 0.2) / 0.02)] = n
+    class R:
+        def raise_for_status(self): pass
+        def json(self): return {'properties': {'statistics': {'b1': {'histogram': [counts, edges]}}}}
+    monkeypatch.setattr(veg.c.SESSION, 'post', lambda *a, **k: R())
+    d = veg.ndvi_zones(poly)['data']
+    assert [z['pct'] for z in d['zones']] == [20.0, 60.0, 20.0] and abs(sum(z['ha'] for z in d['zones']) - d['area_ha']) < 0.2

@@ -39,7 +39,9 @@ def _int(args,key,default,lo,hi):
 
 VEGETATION={
   'ndvi':lambda p,a:veg.ndvi_best(p,_int(a,'days',120,15,365),_int(a,'scenes',6,1,10)),
-  'ndvi-modis':lambda p,a:veg.ndvi_modis(p,_int(a,'days',120,30,365)),
+  'ndvi-modis':lambda p,a:veg.ndvi_modis(p,_int(a,'days',120,30,760)),
+  'ndvi-zonas':lambda p,a:veg.ndvi_zones(p,_int(a,'days',60,15,180)),
+  'ndvi-zonas-imagen':None,
   'ndvi-imagen':None,
   'sentinel-hub-ndvi':lambda p,a:veg.sentinel_hub_ndvi(p,_int(a,'days',180,15,730)),
   'openeo-ndvi':lambda p,a:veg.openeo_ndvi(p,_int(a,'days',120,15,365)),
@@ -135,6 +137,37 @@ def research_data(name):
     if name=='cuenca':
         try: return jsonify(cca.analyze())
         except Exception as e: return _upstream_error(e)
+    if name=='eventos-extremos':
+        try:
+            import eventos
+            lat=float(request.args.get('lat','-28.5')); lon=float(request.args.get('lon','-59'))
+            return jsonify(eventos.extremos(lat,lon))
+        except ValueError: return jsonify({'status':'sin dato','error':'Coordenadas inválidas'}),400
+        except Exception as e: return _upstream_error(e)
+    if name=='transito-crecida':
+        a=request.args.get('desde',''); b=request.args.get('hasta','')
+        ids={x['id']:x for x in cca.STATIONS}
+        if a not in ids or b not in ids: return jsonify({'status':'sin dato','error':'Localidad desconocida'}),400
+        reach=ccr.downstream_days(a)
+        if b not in reach: return jsonify({'status':'sin dato','error':f"{ids[b]['place']} no está río abajo de {ids[a]['place']}"}),200
+        edges,lags=ccr._graph()
+        # camino tramo por tramo
+        path=[b]
+        while path[-1]!=a:
+            prev=next((u for u,ds in edges.items() if path[-1] in ds and u in reach),None)
+            if prev is None: break
+            path.append(prev)
+        path=path[::-1]
+        tramos=[{'desde':ids[u]['place'],'hasta':ids[v]['place'],'dias':(lags.get(f'{u}>{v}') or {}).get('days'),'corr':(lags.get(f'{u}>{v}') or {}).get('corr')} for u,v in zip(path,path[1:])]
+        return jsonify({'status':'recibido','data':{'desde':ids[a]['place'],'hasta':ids[b]['place'],'dias':reach[b],'tramos':tramos,
+                        'periodo':cca.load_normals().get('lags_period')}})
+    if name=='carbono-suelo':
+        try:
+            lat=float(request.args.get('lat','')); lon=float(request.args.get('lon',''))
+            if not (-60<=lat<=15 and -90<=lon<=-30): return jsonify({'status':'sin dato','error':'Fuera de Sudamérica'}),400
+            return jsonify(sus.carbon(lat,lon))
+        except ValueError: return jsonify({'status':'sin dato','error':'Coordenadas inválidas'}),400
+        except Exception as e: return _upstream_error(e)
     if name=='gfm-capas':
         try:
             import gfm
@@ -208,6 +241,9 @@ def research_data(name):
                 return c.envelope(out,'multi','deforestación, carbono y emisiones','Impact Observatory · ESA · ISRIC · IPCC','recibido' if ok else 'sin dato',None if ok else 'Sin datos')
             return jsonify(_both())
         if name in VEGETATION:
+            if name=='ndvi-zonas-imagen':
+                png,bounds=veg.zones_png(request.args.get('item',''),polygon,request.args.get('cuts','').split(','),request.args.get('baseline'))
+                return Response(png,mimetype='image/png',headers={'X-DOTS-Bounds':json.dumps(bounds),'Cache-Control':'public, max-age=86400'})
             if name=='ndvi-imagen':
                 png,bounds=veg.ndvi_png(request.args.get('item',''),polygon,request.args.get('baseline'),'rgb' if request.args.get('mode')=='rgb' else 'ndvi')
                 return Response(png,mimetype='image/png',headers={'X-DOTS-Bounds':json.dumps(bounds),'Cache-Control':'public, max-age=86400'})

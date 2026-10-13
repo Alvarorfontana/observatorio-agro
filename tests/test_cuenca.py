@@ -91,6 +91,7 @@ def test_ruta_cuenca_tolera_fallas(monkeypatch):
     monkeypatch.setattr(cc, 'headwaters', lambda: (_ for _ in ()).throw(TimeoutError()))
     monkeypatch.setattr(cc, 'rivers', lambda: {'stations': []})
     monkeypatch.setattr(cc, 'dams', lambda: {'dams': []})
+    monkeypatch.setattr(cc.temporales, 'temporales', lambda st: {'stations': {}, 'sudestada': None, 'counts': {}})
     j = app.test_client().get('/api/fuentes/cuenca').get_json()
     assert j['status'] == 'recibido' and j['data']['nino']['phase'] == 'Niño fuerte'
     assert j['data']['errors'] == {'headwaters': 'TimeoutError'}
@@ -183,12 +184,16 @@ def test_informe_pdf_de_la_cuenca(monkeypatch):
     fake = {'status': 'recibido', 'data': {'nino': nino, 'headwaters': None, 'rivers': None, 'dams': None,
             'alerts': [{'basin': 'alto-iguazu', 'group': 'Iguazú', 'name': 'Alto Iguazú', 'where': 'w', 'level': 'Alerta', 'why': ['x'],
                         'median_mm': 120, 'arrivals': [{'place': 'Cataratas', 'window': ['2026-10-20', '2026-10-23']}], 'actions': ['a']}],
-            'maps': cc.maps(), 'errors': {}}}
+            'maps': cc.maps(), 'errors': {},
+            'weather': {'stations': {'parana-zarate': {'id': 'parana-zarate', 'place': 'Zárate', 'river': 'Paraná', 'nivel': 'Alerta', 'pmin': 999.0, 'pmin_cuando': '15/10 03:00',
+                                                       'eventos': [{'nivel': 'Alerta', 'tipo': 'Sudestada', 'cuando': '14/10 a 15/10', 'texto': 't'}]}},
+                        'sudestada': {'nivel': 'Alerta', 'texto': 'Viento del sudeste durante 16 horas.', 'horas': 16, 'desde': '14/10 08:00', 'hasta': '15/10 00:00'}}}}
     monkeypatch.setattr(cc, 'analyze', lambda: fake)
     r = app.test_client().get('/api/fuentes/cuenca-informe')
     assert r.status_code == 200 and r.data[:5] == b'%PDF-' and 'attachment' in r.headers['Content-Disposition']
     d = cr.build_data(fake['data'])
     assert d['worst'] == 'Alerta' and 'Alto Iguazú' in d['summary'][1] and d['pictures'] == []
+    assert d['weather']['rows'][0]['place'] == 'Zárate' and any('sudestada' in x for x in d['summary'])
 
 
 def test_niveles_por_altura_oficial_e_ina_merge():
@@ -289,7 +294,10 @@ def test_informe_de_localidad(monkeypatch):
                       {'levels': {'parana-goya': {'alert': 5.2, 'evac': 5.7, 'low': 2.23}},
                        'heights': {'parana-goya': [(f'2026-10-{d:02d}', 5.2 + 0.08 * (d - 5)) for d in range(5, 13)]},
                        'forecast': {'by_site': {'parana-goya': [{'date': '2026-10-20', 'min': 5.7, 'central': 6.0, 'max': 6.3}]}}})
-    fake = {'status': 'recibido', 'data': {'rivers': {'stations': st, 'actions': cc.ACTIONS}, 'alerts': [], 'maps': {}, 'errors': {}}}
+    wx = {'stations': {'parana-goya': {'id': 'parana-goya', 'place': 'Goya', 'river': 'Paraná', 'nivel': 'Alerta', 'pmin': 998.4, 'pmin_cuando': '15/10 06:00',
+                                       'caida3h': 5.2, 'caida24h': 9.0, 'frente': 13, 'rafaga': 85,
+                                       'eventos': [{'nivel': 'Alerta', 'tipo': 'Frente frío', 'cuando': '15/10', 'texto': 'La máxima baja 13 °C.'}]}}}
+    fake = {'status': 'recibido', 'data': {'rivers': {'stations': st, 'actions': cc.ACTIONS}, 'alerts': [], 'maps': {}, 'errors': {}, 'weather': wx}}
     monkeypatch.setattr(cc, 'analyze', lambda: fake)
     monkeypatch.setenv('DOTS_REPORT_IMAGERY', '0')
     c = app.test_client()
@@ -299,6 +307,7 @@ def test_informe_de_localidad(monkeypatch):
     import cuenca_report as cr
     d = cr.local_data(fake['data'], 'parana-goya')
     assert d['level'] == 'Evacuación' and d['to_alert'] == 'superado' and d['phones'][0][0] == '103'
+    assert d['weather']['level'] == 'Alerta' and any('frente frío' in x for x in d['summary'])
 
 
 def test_informe_de_localidad_ampliado():
@@ -361,3 +370,12 @@ def test_foto_satelital_obligatoria(monkeypatch):
     monkeypatch.setattr(cr, '_image', lambda *a, **k: None)
     p = cr.local_picture(s, today)
     assert p['image'] is None and 'Sentinel-2' in p['missing'] and 'radar' in p['missing'] and 'VIIRS/MODIS' in p['missing']
+
+
+def test_carbono_soilgrids_en_t_ha(monkeypatch):
+    import sustainability as sus
+    raw = {'type': 'Feature', 'properties': {'layers': [{'name': 'ocs', 'unit_measure': {'d_factor': 10, 'mapped_units': 't/ha', 'target_units': 'kg/m²'},
+           'depths': [{'label': '0-30cm', 'values': {'mean': 35, 'Q0.05': 20, 'Q0.95': 52}}]}]}}
+    monkeypatch.setattr(sus.c, 'soilgrids', lambda *a, **k: {'data': raw, 'point_used': None, 'source_url': 'x'})
+    d = sus.carbon(-29.2, -59.04, area_ha=100)['data']
+    assert d['soc_t_ha'] == 35 and d['soc_t_ha_range'] == [20, 52] and d['soc_total_t'] == 3500

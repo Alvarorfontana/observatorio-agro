@@ -156,6 +156,25 @@
   #if d.calm.len() > 0 [#note[Sin alerta: #d.calm.join(" · ").]]
 ]
 
+// ───────────────────────────── 3 bis. temporales, frentes y sudestada ─────────────────────────────
+#if d.at("weather", default: none) != none [
+  #section("Temporales, frentes y sudestada", sub: [Próximos 5 días en las #d.weather.total localidades · pronóstico horario de Open-Meteo con reglas declaradas])
+  #if d.weather.sud != none [
+    #block(breakable: false, below: 7pt, stroke: (left: 3pt + tone(d.weather.sud.tone), rest: 0.6pt + line-c), radius: 6pt, inset: 9pt, width: 100%)[
+      #pill(d.weather.sud.level, tone(d.weather.sud.tone)) #h(4pt) *Sudestada en el Río de la Plata* #if d.weather.sud.when != "" [· #d.weather.sud.when] #linebreak()
+      #text(size: 8.5pt)[#d.weather.sud.text]]
+  ]
+  #if d.weather.rows.len() == 0 [
+    #card(fill: ok.transparentize(90%), stroke: none)[#text(fill: ok, weight: "semibold")[Sin avisos:] no se esperan caídas bruscas de presión, frentes fríos, ráfagas fuertes ni calor extremo en las localidades del sistema.]
+  ] else [
+    #set text(size: 8pt)
+    #table(columns: (1.2fr, auto, 2.6fr, auto), stroke: (x, y) => (bottom: if y == 0 { 0.6pt + ink2.transparentize(55%) } else { 0.4pt + line-c }), inset: (x: 5pt, y: 4pt), align: (left, left, left, right),
+      [*Localidad*], [*Nivel*], [*Qué se espera*], [*Presión mín.*],
+      ..d.weather.rows.map(r => ([*#r.place* #text(fill: muted, size: 7pt)[río #r.river]], pill(r.level, tone(r.tone)), r.events, [#r.pmin hPa])).flatten())
+  ]
+  #note[Caída de presión de 3 hPa en 3 h (5, alerta) o de 14 hPa en 24 h (ciclogénesis); frente frío si la máxima baja 8 °C de un día al otro (12, alerta); ráfagas desde 60 km/h (80, alerta); calor extremo con 3 días de máximas de 35 °C y mínimas de 22 °C; sudestada con 12 h seguidas de viento del este al sur de 30 km/h en el centro del Río de la Plata (45, alerta). Orientativo: los avisos oficiales son del SMN y la altura del agua en el estuario la pronostica el Servicio de Hidrografía Naval.]
+]
+
 // ───────────────────────────── 4. imágenes ─────────────────────────────
 #let others = d.pictures.filter(p => p.key != "sst")
 #if others.len() > 0 [
