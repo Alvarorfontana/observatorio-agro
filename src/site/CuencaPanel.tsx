@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import L from "leaflet";
 
 type Data = Record<string, any>;
+import { analizarFrentes, tono as tonoF, HOURLY as F_HOURLY, DAILY as F_DAILY } from "./frentes";
 const nf = (v: unknown, d = 0) => v == null || !Number.isFinite(Number(v)) ? "—" : Number(v).toLocaleString("es-AR", { minimumFractionDigits: d, maximumFractionDigits: d });
 const dm = (iso?: string | null) => iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}` : "—";
 const sign = (v: number | null | undefined, d = 1) => v == null ? "—" : `${v > 0 ? "+" : ""}${nf(v, d)}`;
@@ -462,6 +463,36 @@ function Extremos() {
   </div>;
 }
 
+// Temporales y frentes en las 34 localidades (presión, frentes fríos, ráfagas y calor)
+function Temporales({ stations }: { stations: Data[] }) {
+  const [rows, setRows] = useState<Data[] | null>(null), [err, setErr] = useState(""), [all, setAll] = useState(false);
+  useEffect(() => {
+    const st = stations.filter(s => s.lat != null);
+    const u = `https://api.open-meteo.com/v1/forecast?latitude=${st.map(s => s.lat).join(",")}&longitude=${st.map(s => s.lon).join(",")}&past_days=1&forecast_days=5&timezone=America%2FArgentina%2FBuenos_Aires&hourly=${F_HOURLY}&daily=${F_DAILY}`;
+    fetch(u, { signal: AbortSignal.timeout(40000) }).then(r => r.ok ? r.json() : Promise.reject()).then(j => {
+      const arr = Array.isArray(j) ? j : [j];
+      const ord = { Alerta: 0, "Atención": 1, Normal: 2 } as Record<string, number>;
+      setRows(st.map((s, i) => ({ s, a: analizarFrentes(arr[i]) })).sort((x, y) => ord[x.a.nivel] - ord[y.a.nivel] || x.a.pmin - y.a.pmin));
+    }).catch(() => setErr("Open-Meteo no respondió."));
+  }, [stations]);
+  const con = rows?.filter(r => r.a.nivel !== "Normal") || [];
+  const ver = all ? rows || [] : con;
+  return <div className="cp-block">
+    <h3>Temporales y frentes <small>Presión, cambios bruscos de temperatura, ráfagas y calor · próximos 5 días en las 34 localidades</small></h3>
+    {err && <p className="cp-note">{err}</p>}
+    {!rows && !err && <p className="cp-note">Analizando el pronóstico hora por hora…</p>}
+    {rows && <>
+      <p className="cp-transit-res">{con.length ? <><b>{con.length} {con.length === 1 ? "localidad" : "localidades"}</b> con avisos de temporal o frente en los próximos días.</> : "Sin temporales ni frentes bruscos a la vista en los próximos 5 días."}</p>
+      {ver.length > 0 && <div className="cp-table-wrap"><table className="cp-table"><thead><tr><th>Localidad</th><th>Nivel</th><th>Qué se espera</th><th>Presión mínima</th></tr></thead><tbody>
+        {ver.map(({ s, a }) => <tr key={s.id}><td>{s.place}<small className="cp-sub-note">río {s.river}</small></td><td><span className={`cp-chip ${tonoF(a.nivel) === "risk" ? "risk" : tonoF(a.nivel) === "warn" ? "alert" : ""}`}>{a.nivel}</span></td>
+          <td style={{ whiteSpace: "normal" }}>{a.eventos.length ? a.eventos.map((e: Data) => <div key={e.tipo}><b>{e.tipo}</b> ({e.cuando}): {e.texto}</div>) : "—"}</td><td>{Math.round(a.pmin)} hPa<small className="cp-sub-note">{a.pminCuando}</small></td></tr>)}
+      </tbody></table></div>}
+      <button className="cp-more" onClick={() => setAll(v => !v)}>{all ? "Ver sólo las que tienen aviso" : "Ver las 34 localidades"}</button>
+      <p className="cp-note">Reglas declaradas sobre el pronóstico de Open-Meteo: caída de presión de 3 hPa o más en 3 horas (5 o más, alerta) y de 14 hPa en 24 horas (ciclogénesis explosiva a estas latitudes); frente frío si la máxima baja 8 °C o más de un día al otro (12 o más, alerta); ráfagas de 60 km/h o más (80, alerta); calor extremo con 3 días seguidos de máxima de 35 °C y mínima de 22 °C o más. Orientativo: los avisos oficiales son los del SMN.</p>
+    </>}
+  </div>;
+}
+
 export function CuencaPanel() {
   const [res, setRes] = useState<Data | null>(null), [err, setErr] = useState(""), [pickKey, setPickKey] = useState(0);
   useEffect(() => {
@@ -506,6 +537,7 @@ export function CuencaPanel() {
 
     {rv?.stations && <AlertMap stations={rv.stations} onPick={id => { try { localStorage.setItem("dots-localidad", id); } catch { /* sin almacenamiento */ } setPickKey(k => k + 1); document.querySelector(".cp-local")?.scrollIntoView({ behavior: "smooth" }); }} />}
     {rv?.stations && <Transito stations={rv.stations} />}
+    {rv?.stations && <Temporales stations={rv.stations} />}
     <Extremos />
 
     {nino && <div className="cp-block">

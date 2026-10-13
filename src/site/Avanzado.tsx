@@ -4,8 +4,10 @@
  * (CAPE, índice de levantamiento y cortante), calidad del aire (CAMS) y lavado de nitratos (ecuación de Burns, 1974).
  * Todo con Open-Meteo, sin clave, desde el navegador.
  */
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import * as echarts from "echarts/core";
 import { CULTIVOS } from "./Cultivos";
+import { analizarFrentes, tono as tonoF, HOURLY as F_HOURLY, DAILY as F_DAILY, UMB } from "./frentes";
 
 type Data = Record<string, any>;
 const nf = (v: unknown, d = 0) => v == null || !Number.isFinite(Number(v)) ? "—" : Number(v).toLocaleString("es-AR", { minimumFractionDigits: d, maximumFractionDigits: d });
@@ -46,7 +48,7 @@ export function lavadoNitratos(p: { lluvia: number[]; et0: number[]; kc: number;
   return { dias, drenaje: drena, nSuelo, nTot, f, nLavado: nTot * f };
 }
 
-const TABS = [["d16", "Pronóstico 16 días"], ["comp", "Comparar localidades"], ["viento", "Viento en altura"], ["tormentas", "Tormentas severas"], ["aire", "Calidad del aire"], ["nitratos", "Lavado de nitratos"]] as const;
+const TABS = [["d16", "Pronóstico 16 días"], ["presion", "Presión y frentes"], ["comp", "Comparar localidades"], ["viento", "Viento en altura"], ["tormentas", "Tormentas severas"], ["aire", "Calidad del aire"], ["nitratos", "Lavado de nitratos"]] as const;
 
 export function Avanzado({ place, cultivo }: { place: Data; cultivo: string }) {
   const [tab, setTab] = useState("d16");
@@ -54,6 +56,7 @@ export function Avanzado({ place, cultivo }: { place: Data; cultivo: string }) {
     <h3>Clima avanzado</h3>
     <div className="cult-tabs no-print">{TABS.map(([id, t]) => <button key={id} className={tab === id ? "on" : ""} onClick={() => setTab(id)}>{t}</button>)}</div>
     {tab === "d16" && <D16 place={place} />}
+    {tab === "presion" && <Presion place={place} />}
     {tab === "comp" && <Comparar place={place} />}
     {tab === "viento" && <Viento place={place} />}
     {tab === "tormentas" && <Tormentas place={place} />}
@@ -81,6 +84,34 @@ function D16({ place }: { place: Data }) {
   return <>
     <T cab={["Día", "Mín °C", "Máx °C", "Lluvia mm", "Prob. lluvia", "Viento máx km/h", ""]} filas={dd.time.map((f: string, i: number) => [dia(f), nf(dd.temperature_2m_min[i], 1), nf(dd.temperature_2m_max[i], 1), nf(dd.precipitation_sum[i], 1), `${nf(dd.precipitation_probability_max[i])} %`, nf(dd.wind_speed_10m_max[i]), i >= 7 ? <Chip t="tendencia" tone="warn" /> : ""])} />
     <p className="cp-note">Lluvia total en 16 días: {nf(sum(dd.precipitation_sum))} mm. Después del día 7 la incertidumbre crece mucho: usalo como tendencia, no para programar labores.</p>
+  </>;
+}
+
+function Presion({ place }: { place: Data }) {
+  const { d, err, wait } = useData(`https://api.open-meteo.com/v1/forecast?latitude=${place.lat}&longitude=${place.lon}&past_days=1&forecast_days=5&timezone=${TZ}&hourly=${F_HOURLY}&daily=${F_DAILY}`);
+  const ref = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!d || !ref.current) return;
+    const h = d.hourly, ch = echarts.init(ref.current);
+    const ser = (k: string) => h.time.map((t: string, i: number) => [t, h[k][i]]);
+    ch.setOption({ grid: { left: 46, right: 46, top: 30, bottom: 28 }, tooltip: { trigger: "axis" }, legend: { top: 0, textStyle: { color: "#c9d6d9", fontSize: 11 } },
+      xAxis: { type: "time", axisLabel: { color: "#9fb2b6", fontSize: 10 } },
+      yAxis: [{ type: "value", scale: true, name: "hPa", nameTextStyle: { color: "#9fb2b6" }, axisLabel: { color: "#9fb2b6" }, splitLine: { lineStyle: { color: "rgba(255,255,255,.08)" } } },
+              { type: "value", scale: true, name: "°C", nameTextStyle: { color: "#9fb2b6" }, axisLabel: { color: "#9fb2b6" }, splitLine: { show: false } }],
+      series: [{ name: "Presión a nivel del mar", type: "line", showSymbol: false, data: ser("pressure_msl"), lineStyle: { color: "#43d6c5", width: 2 }, itemStyle: { color: "#43d6c5" },
+                 markLine: { silent: true, symbol: "none", label: { color: "#9fb2b6", formatter: "ahora" }, lineStyle: { color: "#9fb2b6", type: "dashed" }, data: [{ xAxis: Date.now() }] } },
+               { name: "Temperatura", type: "line", yAxisIndex: 1, showSymbol: false, data: ser("temperature_2m"), lineStyle: { color: "#f0a35e", width: 1.5 }, itemStyle: { color: "#f0a35e" } }] });
+    const ro = new ResizeObserver(() => ch.resize()); ro.observe(ref.current);
+    return () => { ro.disconnect(); ch.dispose(); };
+  }, [d]);
+  if (wait || !d) return <Wait err={err} />;
+  const a = analizarFrentes(d);
+  return <>
+    <div className={`cult-alert ${tonoF(a.nivel)}`}><b>{a.nivel === "Normal" ? "Sin cambios bruscos a la vista en 5 días" : `${a.nivel}: ${a.eventos.map(e => e.tipo.toLowerCase()).join(", ")}`}</b>
+      <p className="reco">Presión mínima prevista {nf(a.pmin, 1)} hPa ({a.pminCuando}). Mayor caída: {nf(a.caida3h, 1)} hPa en 3 h y {nf(a.caida24h, 1)} hPa en 24 h.</p></div>
+    <div ref={ref} style={{ width: "100%", height: 240 }} />
+    {a.eventos.length > 0 && <T cab={["Fenómeno", "Cuándo", "Qué se espera", "Nivel"]} filas={a.eventos.map(e => [e.tipo, e.cuando, e.texto, <Chip t={e.nivel} tone={tonoF(e.nivel)} />])} />}
+    <p className="cp-note">Reglas declaradas sobre el pronóstico horario de Open-Meteo: caída de presión de {UMB.caida3h[0]} hPa en 3 h (atención) o {UMB.caida3h[1]} hPa (alerta); {UMB.caida24h} hPa en 24 h como señal de ciclogénesis a esta latitud; frente frío si la máxima baja {UMB.frente[0]} °C o más de un día al otro ({UMB.frente[1]} °C, alerta); ráfagas de {UMB.rafaga[0]} y {UMB.rafaga[1]} km/h; calor extremo con {UMB.calor.dias} días de máximas ≥ {UMB.calor.tmax} °C y mínimas ≥ {UMB.calor.tmin} °C. Es orientativo: <b>los avisos oficiales son del SMN</b>.</p>
   </>;
 }
 
