@@ -68,3 +68,31 @@ def soil_trace(lat, lon):
         tb = traceback.extract_tb(e.__traceback__)[-1]
         return {'ok': False, 'ms': round((time.monotonic() - t0) * 1000), 'error': type(e).__name__,
                 'detail': str(e)[:240], 'at': f'{tb.name}:{tb.lineno}'}
+
+
+LOT = [[-28.56, -58.71], [-28.56, -58.69], [-28.54, -58.69], [-28.54, -58.71]]   # lote de control en tierra (Corrientes)
+GROUPS = {
+    '1': ['variables', 'modelos', 'historico', 'escenas', 'rios', 'aire', 'elevacion'],
+    '2': ['ndvi', 'indices', 'teleconexiones', 'estadistica', 'enso'],
+    '3': ['suelo', 'serie', 'proyeccion', 'sustentabilidad', 'plataformas'],
+    '4': ['smn', 'inmet', 'nasa-power-30', 'landsat', 'radar', 'copernicus-stac', 'firms'],
+}
+
+
+def routes(app, group):
+    """Recorre las rutas del panel dentro del mismo servidor y devuelve código, tiempo y error de cada una."""
+    import json as _json
+    names = GROUPS.get(str(group))
+    if not names:
+        raise ValueError('grupo 1 a 4')
+    lat = sum(p[0] for p in LOT) / 4; lon = sum(p[1] for p in LOT) / 4
+
+    def one(name):
+        t0 = time.monotonic()
+        with app.test_client() as cl:
+            r = cl.get(f'/api/fuentes/{name}', query_string={'lat': lat, 'lon': lon, 'polygon': _json.dumps(LOT)})
+        js = r.get_json(silent=True) or {}
+        return {'route': name, 'code': r.status_code, 'ms': round((time.monotonic() - t0) * 1000),
+                'status': js.get('status'), 'error': (str(js.get('error'))[:160] if js.get('error') else None), 'type': js.get('type')}
+    with ThreadPoolExecutor(max_workers=len(names)) as pool:
+        return list(pool.map(one, names))

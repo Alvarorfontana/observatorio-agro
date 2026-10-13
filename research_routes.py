@@ -36,6 +36,10 @@ VEGETATION={
 
 @research_api.get('/monitor')
 def sources_monitor():
+    if request.args.get('rutas'):
+        from flask import current_app
+        try: return jsonify(mon.routes(current_app._get_current_object(),request.args['rutas']))
+        except ValueError as e: return jsonify({'error':str(e)}),400
     if request.args.get('suelo'):
         try: lat,lon=(float(x) for x in request.args['suelo'].split(','))
         except ValueError: return jsonify({'error':'suelo=lat,lon'}),400
