@@ -113,11 +113,9 @@ def getmap(layer, bbox, day, width, height):
 
 def covered(png):
     """Fracción de píxeles pintados (no transparentes) de un PNG de máscara."""
-    from io import BytesIO
-    from PIL import Image
-    im = Image.open(BytesIO(png)).convert('RGBA')
-    a = im.getchannel('A').tobytes()
-    return sum(1 for v in a if v > 40) / max(1, len(a))
+    import pngmini
+    w, h, rows = pngmini.decode(png)
+    return sum(1 for row in rows for p in row if p[3] > 40) / max(1, w * h)
 
 
 def area_km2(bbox):
@@ -154,17 +152,12 @@ def flood_at(bbox, today=None, width=900, height=620):
             'source': WMS, 'portal': PORTAL}
 
 
-def overlay(base, mask, color=(217, 45, 32)):
-    """Pinta la máscara de crecida (rojo, 65 %) sobre la foto base, ajustando tamaños. Devuelve PNG."""
-    from io import BytesIO
-    from PIL import Image
-    b = Image.open(BytesIO(base)).convert('RGBA')
-    m = Image.open(BytesIO(mask)).convert('RGBA').resize(b.size)
-    alpha = m.getchannel('A').point(lambda v: 165 if v > 40 else 0)
-    layer = Image.new('RGBA', b.size, color + (0,)); layer.putalpha(alpha)
-    out = Image.alpha_composite(b, layer).convert('RGB')
-    buf = BytesIO(); out.save(buf, 'PNG', optimize=True)
-    return buf.getvalue()
+def recolor(mask, color=(217, 45, 32), alpha=165):
+    """Máscara de GFM → PNG rojo semitransparente donde hay agua de crecida (para apoyar sobre la foto)."""
+    import pngmini
+    w, h, rows = pngmini.decode(mask)
+    on, off = color + (alpha,), (0, 0, 0, 0)
+    return pngmini.encode_rgba(w, h, [[on if p[3] > 40 else off for p in row] for row in rows])
 
 
 def web_layers(today=None):

@@ -1,7 +1,6 @@
 """Copernicus GFM: capas, última pasada, km² inundados y superposición (servicios simulados)."""
 import os, sys
 from datetime import date
-from io import BytesIO
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 import gfm
 
@@ -13,13 +12,9 @@ CAPS = b"""<?xml version="1.0"?><WMS_Capabilities xmlns="http://www.opengis.net/
 
 
 def _png(frac, size=(100, 60)):
-    from PIL import Image
-    im = Image.new('RGBA', size, (0, 0, 0, 0))
-    w = int(size[0] * frac)
-    for x in range(w):
-        for y in range(size[1]):
-            im.putpixel((x, y), (0, 0, 255, 255))
-    b = BytesIO(); im.save(b, 'PNG'); return b.getvalue()
+    import pngmini
+    w, h = size; k = int(w * frac)
+    return pngmini.encode_rgba(w, h, [[(0, 0, 255, 255)] * k + [(0, 0, 0, 0)] * (w - k) for _ in range(h)])
 
 
 def test_capas_y_fechas():
@@ -49,8 +44,8 @@ def test_agua_de_crecida_en_km2(monkeypatch):
     total = gfm.area_km2(bbox)
     assert f['date'] == '2026-10-11' and f['age'] == 2 and f['passes'] == 2
     assert abs(f['flood_km2'] - 0.2 * total) < 0.5 and abs(f['water_km2'] - 0.1 * total) < 0.5
-    out = gfm.overlay(_png(1.0, (90, 60)).replace(b'', b''), f['mask'])
-    assert out[:8] == b'\x89PNG\r\n\x1a\n'
+    red = gfm.recolor(f['mask'])
+    assert red[:8] == b'\x89PNG\r\n\x1a\n' and abs(gfm.covered(red) - 0.2) < 0.02
 
 
 def test_informe_suma_gfm(monkeypatch):

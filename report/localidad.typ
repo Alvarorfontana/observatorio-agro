@@ -163,7 +163,7 @@
   #sec("Crecida en camino por lluvia en las cabeceras")
   #for a in d.arrivals [
     #block(below: 5pt, stroke: (left: 3pt + tone(a.tone), rest: 0.6pt + line-c), radius: 6pt, inset: 8pt, width: 100%, breakable: false)[
-      #pill(a.level, tone(a.tone)) #h(4pt) *Lluvia en #a.basin* (#a.mm mm en 15 días): repunte esperado entre el *#a.window*.
+      #pill(a.level, tone(a.tone)) #h(4pt) *Lluvia en #a.basin* (#a.mm mm en #d.rain_days días): repunte esperado entre el *#a.window*.
       #if a.prediction != "" [#linebreak() #text(size: 8.3pt, fill: ink2)[#a.prediction]]
     ]
   ]
@@ -190,10 +190,16 @@
       card(fill: soft, stroke: none)[#text(size: 7.4pt, fill: muted)[Última pasada de radar] #linebreak() #text(size: 15pt, weight: "bold")[#d.flood.date] #linebreak() #text(size: 7.4pt, fill: ink2)[hace #d.flood.age días · Sentinel-1]]))
   ]
   #if d.picture != none and d.picture.image != none [
-    #block(width: 100%, radius: 6pt, clip: true, breakable: false, image(bytes(d.picture.image), width: 100%))
+    #block(width: 100%, radius: 6pt, clip: true, breakable: false, layout(size => {
+      let h = size.width * d.picture.at("ratio", default: 0.6667)
+      box(width: size.width, height: h, {
+        image(bytes(d.picture.image), width: size.width, height: h, fit: "stretch")
+        if d.flood != none and d.flood.ok and d.flood.mask != none { place(top + left, image(bytes(d.flood.mask), width: size.width, height: h, fit: "stretch")) }
+      })
+    }))
     #note[#d.picture.sensor · #d.picture.clear % sin nubes · tomada el #d.picture.date (hace #d.picture.age días). #d.picture.caption #if d.flood != none and d.flood.ok and d.flood.overlaid [En rojo: agua de crecida detectada por Copernicus GFM con el radar del #d.flood.date.]]
   ] else if d.flood != none and d.flood.ok and d.flood.mask != none [
-    #block(width: 100%, radius: 6pt, clip: true, breakable: false, image(bytes(d.flood.mask), width: 100%))
+    #block(width: 100%, radius: 6pt, clip: true, breakable: false, fill: rgb("#e8ecf0"), image(bytes(d.flood.mask), width: 100%))
     #note[En rojo: agua de crecida detectada por Copernicus GFM con el radar del #d.flood.date. #if d.picture != none [#d.picture.missing]]
   ] else if d.picture != none [
     #card(fill: soft, stroke: none)[#text(size: 8.6pt, fill: ink2)[#d.picture.missing]]
@@ -206,13 +212,13 @@
   #sec("De dónde viene el agua: lluvia en las cabeceras")
   #table(columns: (1.5fr, 1.7fr, auto, auto, auto, auto, 1fr), stroke: (x, y) => (bottom: if y == 0 { 0.6pt + ink2.transparentize(55%) } else { 0.4pt + line-c }), inset: (x: 5pt, y: 4.5pt),
     align: (left, left, right, right, right, right, left),
-    ..hd("Cuenca", "Dónde llueve", "15 días", "Rango", "vs normal", "≥100 mm", "Llega acá en"),
+    ..hd("Cuenca", "Dónde llueve", str(d.rain_days) + " días", "Rango", "vs normal", "≥100 mm", "Llega acá en"),
     ..d.basins.map(b => (
       [#text(weight: "medium")[#b.name] #linebreak() #if b.level != "—" { pill(b.level, tone(b.tone)) }],
       text(size: 7.6pt, fill: ink2)[#b.where #if b.heavy != "" [#linebreak() lluvia fuerte #b.heavy]],
       [#b.mm mm], text(size: 8pt)[#b.range], b.ratio, b.p100,
       text(size: 8pt)[#b.travel #if b.window != "" [#linebreak() #text(fill: ink, weight: "semibold")[#b.window]]])).flatten())
-  #note[Pronóstico por conjunto ECMWF (51 corridas) y GFS (31) para los próximos 15 días, promediado sobre puntos de cada cabecera. "vs normal": veces la lluvia normal de esos 15 días (NASA POWER). Los tiempos suman la respuesta de la cuenca y el desfase medio entre puertos (#d.lags_period).]
+  #note[Pronóstico por conjunto ECMWF (51 corridas) y GFS (31) para los próximos #d.rain_days días (lo que hoy publican los modelos), promediado sobre puntos de cada cabecera. "vs normal": veces la lluvia normal de esos 15 días (NASA POWER). Los tiempos suman la respuesta de la cuenca y el desfase medio entre puertos (#d.lags_period).]
 ]
 
 #if d.dams.len() > 0 [

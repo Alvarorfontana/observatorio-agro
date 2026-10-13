@@ -130,12 +130,12 @@ def build_data(d, images=None, today=None):
     if active:
         a = active[0]
         win = next((x['window'] for x in a.get('arrivals') or [] if x.get('window')), None)
-        lines.append(f"{a['level']} por lluvia en {a['name']}: {num(a.get('median_mm'))} mm esperados en 15 días"
+        lines.append(f"{a['level']} por lluvia en {a['name']}: {num(a.get('median_mm'))} mm esperados en {(d.get('headwaters') or {}).get('days', 15)} días"
                      + (f"; repunte en {a['arrivals'][0]['place']} entre el {dm(win[0])} y el {dm(win[1])}." if win else '.'))
         if len(active) > 1:
             lines.append('Otras cuencas con aviso: ' + ', '.join(f"{x['name']} ({x['level'].lower()})" for x in active[1:5]) + '.')
     else:
-        lines.append('Sin alertas por lluvia en las cabeceras para los próximos 15 días.')
+        lines.append(f"Sin alertas por lluvia en las cabeceras para los próximos {(d.get('headwaters') or {}).get('days', 15)} días.")
     high = [s for s in rv.get('stations') or [] if (s.get('ina') or {}).get('level') in ('Atención', 'Alerta', 'Evacuación')]
     if high and len(lines) < 3:
         lines.append('Puertos cerca o sobre el nivel de alerta: ' + ', '.join(f"{s['place']} {num((s.get('ina') or {}).get('height'), 2)} m ({(s.get('ina') or {}).get('level', '').lower()})" for s in high[:4]) + '.')
@@ -179,7 +179,7 @@ def build_data(d, images=None, today=None):
                  'series34': nino.get('series', {}).get('nino34') or [], 'series12': nino.get('series', {}).get('nino12') or [],
                  'weeks': [dm(w) for w in nino.get('series', {}).get('weeks') or []]} if nino else None,
         'alerts': [{'name': a['name'], 'where': a['where'], 'level': a['level'], 'tone': TONE.get(a['level']),
-                    'rain': (f"{num(a.get('median_mm'))} mm en 15 días" + (f" · lluvia fuerte del {dm(a.get('rain_from'))} al {dm(a.get('rain_to'))}" if a.get('rain_from') else '')),
+                    'rain': (f"{num(a.get('median_mm'))} mm en {hw.get('days', 15)} días" + (f" · lluvia fuerte del {dm(a.get('rain_from'))} al {dm(a.get('rain_to'))}" if a.get('rain_from') else '')),
                     'why': a.get('why') or [], 'actions': a.get('actions') or [],
                     'prediction': pred_text(a.get('prediction')), 'basis': pred_basis(a.get('prediction')),
                     'arrivals': [{'place': x['place'], 'window': f"{dm(x['window'][0])} al {dm(x['window'][1])}" if x.get('window') else '—'} for x in a.get('arrivals') or []]}
@@ -404,13 +404,14 @@ def local_data(d, sid, today=None):
             summary.append('; '.join(t2) + '.')
     elif s.get('discharge') is not None:
         summary.append(f"Sin escala oficial en {s['place']}: el caudal estimado es {num(s['discharge'])} m³/s" + (f", {num(s['ratio'], 1)} veces lo normal para la fecha." if s.get('ratio') is not None else '.'))
+    H = (d.get('headwaters') or {}).get('days', 15)
     wet = [b for b in basins if (b.get('ratio_v') or 0) >= 1.3]
     if basins:
         if wet:
             top = max(wet, key=lambda b: b['ratio_v'])
-            summary.append(f"De las {len(basins)} cabeceras que aportan agua hasta acá, {len(wet)} esperan más lluvia que lo normal en 15 días; la más cargada es {top['name']} ({top['mm']} mm, {top['ratio']} lo normal), " + (f"que tarda {top['travel']} en llegar." if top['known'] else "cuyo tiempo de llegada hasta acá todavía está en cálculo."))
+            summary.append(f"De las {len(basins)} cabeceras que aportan agua hasta acá, {len(wet)} esperan más lluvia que lo normal en los próximos {H} días; la más cargada es {top['name']} ({top['mm']} mm, {top['ratio']} lo normal), " + (f"que tarda {top['travel']} en llegar." if top['known'] else "cuyo tiempo de llegada hasta acá todavía está en cálculo."))
         else:
-            summary.append(f"Ninguna de las {len(basins)} cabeceras que aportan agua hasta acá espera lluvia muy por encima de lo normal en los próximos 15 días.")
+            summary.append(f"Ninguna de las {len(basins)} cabeceras que aportan agua hasta acá espera lluvia muy por encima de lo normal en los próximos {H} días.")
     if arrivals:
         summary.append(f"Hay {len(arrivals)} {'aviso' if len(arrivals) == 1 else 'avisos'} de crecida en camino: " + '; '.join(f"{a['basin']}, del {a['window']}" for a in arrivals[:3]) + '.')
     if flow and s.get('ratio') is not None:
@@ -441,6 +442,7 @@ def local_data(d, sid, today=None):
         'fc_issued': dm(rv.get('ina_forecast_issued')),
         'record': (f"{m2(rec['value'])} en {my(rec['date'])}") if rec.get('value') else '',
         'discharge': (f"{num(s.get('discharge'))} m³/s" + (f" · {num(s.get('ratio'), 1)} veces lo normal para la fecha" if s.get('ratio') is not None else '')) if s.get('discharge') is not None else '',
+        'rain_days': (d.get('headwaters') or {}).get('days', 15),
         'arrivals': arrivals, 'basins': basins, 'dams': dams, 'upstream': upstream, 'downstream': downstream,
         'flow': flow, 'nino': nino_out, 'actions': actions,
         'country': _country(sid), 'phones': PHONES[_country(sid)],
@@ -562,19 +564,18 @@ def radar_picture(s, today=None, days=RADAR_DAYS):
     return None
 
 
-def cloud_fraction(jpeg):
-    """Fracción de píxeles blancos y poco saturados (nube) en una imagen color real. None si no se puede leer."""
+def cloud_fraction(png):
+    """Fracción de píxeles blancos y poco saturados (nube) en una miniatura PNG color real. None si no se puede leer."""
+    import pngmini
     try:
-        from io import BytesIO
-        from PIL import Image
-        im = Image.open(BytesIO(jpeg)).convert('RGB').resize((180, 120))
+        w, h, rows = pngmini.decode(png)
     except Exception:
         return None
-    raw = im.tobytes(); px = [tuple(raw[k:k + 3]) for k in range(0, len(raw), 3)]
-    data = [p for p in px if max(p) > 8]                 # descarta franjas sin dato (negras)
+    px = [p for row in rows for p in row]
+    data = [p for p in px if p[3] > 0 and max(p[:3]) > 8]   # descarta franjas sin dato
     if len(data) < 0.6 * len(px):
-        return 1.0                                       # más de 40 % sin dato: como si estuviera tapado
-    cloudy = sum(1 for r, g, b in data if min(r, g, b) > 165 and max(r, g, b) - min(r, g, b) < 35)
+        return 1.0                                           # más de 40 % sin dato: como si estuviera tapado
+    cloudy = sum(1 for r, g, b, _ in data if min(r, g, b) > 165 and max(r, g, b) - min(r, g, b) < 35)
     return cloudy / len(data)
 
 
@@ -589,20 +590,23 @@ def daily_picture(s, today=None, days=DAILY_DAYS):
             for k in range(start, min(start + 2, days + 1)):
                 day = (today - timedelta(days=k)).isoformat()
                 for layer, name in DAILY:
-                    jobs.append((day, name, pool.submit(_image, [cc.gibs_url(layer, box, day, 900, 600, 'image/jpeg')])))
+                    jobs.append((day, (layer, name), pool.submit(_image, [cc.gibs_url(layer, box, day, 150, 100, 'image/png')])))
             got = [(day, name, f.result()) for day, name, f in jobs]
-        for day, name, img in got:
-            if not img:
+        for day, ln, thumb in got:
+            if not thumb:
                 continue
-            cf = cloud_fraction(img)
+            cf = cloud_fraction(thumb)
             score = 1.0 if cf is None else cf
             if best is None or score < best[0] or (score == best[0] and day > best[1]):
-                best = (score, day, name, img)
+                best = (score, day, ln)
         if best and best[0] < 0.25:
             break
     if not best:
         return None
-    score, day, name, img = best
+    score, day, (layer, name) = best
+    img = _image([cc.gibs_url(layer, box, day, 900, 600, 'image/jpeg')], timeout=20)
+    if not img:
+        return None
     pct = round(100 * (1 - score))
     note = ('' if score < 0.25 else f" Ningún día de los últimos {days} estuvo despejado: esta es la toma con menos nubes ({pct} % del recuadro visible).")
     return {'image': list(img), 'date': dm(day) + '/' + day[:4], 'sensor': f'{name}, 250-375 m', 'clear': pct, 'bbox': box,
@@ -644,20 +648,11 @@ def local_flood(s, picture=None, today=None):
     out = {'ok': True, 'missing': '', 'date': dm(f['date']) + '/' + f['date'][:4], 'age': f['age'], 'flood_km2': num(f['flood_km2'], 1),
            'flood_pct': num(f['flood_pct'], 1), 'water_km2': num(f['water_km2'], 1) if f['water_km2'] is not None else '—',
            'box_km2': num(f['box_km2']), 'has_flood': f['flood_km2'] >= 0.5, 'overlaid': False, 'mask': None}
-    if pic.get('image'):
-        try:
-            pic['image'] = list(gfm.overlay(bytes(pic['image']), f['mask']))
-            out['overlaid'] = True
-        except Exception:
-            pass
-    if not out['overlaid']:
-        try:
-            from io import BytesIO
-            from PIL import Image
-            bg = Image.new('RGB', (900, 620), (232, 236, 240)); buf = BytesIO(); bg.save(buf, 'PNG')
-            out['mask'] = list(gfm.overlay(buf.getvalue(), f['mask']))
-        except Exception:
-            pass
+    try:
+        out['mask'] = list(gfm.recolor(f['mask']))
+        out['overlaid'] = bool(pic.get('image'))
+    except Exception:
+        pass
     out['summary'] = ((f"Copernicus GFM detectó agua de crecida en {out['flood_km2']} km² alrededor de la localidad "
                        f"({out['flood_pct']} % del recuadro de {out['box_km2']} km², fuera del cauce normal), con el radar del {dm(f['date'])}.")
                       if out['has_flood'] else
@@ -674,6 +669,10 @@ def local_pdf(d, sid, today=None):
     except Exception as e:
         ld['picture'] = {'image': None, 'missing': f'No se pudo obtener imagen satelital ({type(e).__name__}).'}
     ld['flood'] = local_flood(s, ld['picture'], today) if s else None
+    if (ld['picture'] or {}).get('image'):
+        import pngmini
+        wh = pngmini.size(bytes(ld['picture']['image'])) or (3, 2)
+        ld['picture']['ratio'] = round(wh[1] / wh[0], 4)
     if (ld['flood'] or {}).get('summary'):
         ld['summary'].insert(min(2, len(ld['summary'])), ld['flood']['summary'])
     data = json.dumps(ld, ensure_ascii=False, default=str)

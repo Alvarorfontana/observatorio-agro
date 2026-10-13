@@ -318,9 +318,9 @@ def test_informe_de_localidad_ampliado():
 
 
 def _jpeg(color):
-    from io import BytesIO
-    from PIL import Image
-    b = BytesIO(); Image.new('RGB', (90, 60), color).save(b, 'JPEG'); return b.getvalue() + b'0' * 2000
+    """Miniatura PNG de un solo color (nombre histórico)."""
+    import pngmini
+    return pngmini.encode_rgba(30, 20, [[tuple(color) + (255,)] * 30 for _ in range(20)]) + b''
 
 
 def test_foto_satelital_obligatoria(monkeypatch):
