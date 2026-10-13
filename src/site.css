@@ -721,3 +721,11 @@
   .cult-charts { grid-template-columns: 1fr 1fr; } .cult-sec, .cult-charts > div { break-inside: avoid; }
   @page { size: A4; margin: 12mm; }
 }
+
+.cp-transit { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+.cp-transit label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 600; color: #52656c; }
+.cp-transit select { font: inherit; font-size: 14px; border: 1px solid #cfd8d4; border-radius: 8px; padding: 8px 10px; background: #fff; }
+.cp-transit-res { font-size: 15px; color: #10222b; margin: 12px 0 8px; }
+.cp-gdacs { list-style: none; padding: 0; margin: 8px 0; display: grid; gap: 6px; font-size: 14px; }
+.cp-chip { display: inline-block; font-size: 11px; font-weight: 700; border-radius: 999px; padding: 2px 8px; background: #e6f6ef; color: #027a48; }
+.cp-chip.alert { background: #ffe4d5; color: #c4320a; } .cp-chip.risk { background: #fee4e2; color: #b42318; }

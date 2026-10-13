@@ -135,6 +135,30 @@ def research_data(name):
     if name=='cuenca':
         try: return jsonify(cca.analyze())
         except Exception as e: return _upstream_error(e)
+    if name=='eventos-extremos':
+        try:
+            import eventos
+            lat=float(request.args.get('lat','-28.5')); lon=float(request.args.get('lon','-59'))
+            return jsonify(eventos.extremos(lat,lon))
+        except ValueError: return jsonify({'status':'sin dato','error':'Coordenadas inválidas'}),400
+        except Exception as e: return _upstream_error(e)
+    if name=='transito-crecida':
+        a=request.args.get('desde',''); b=request.args.get('hasta','')
+        ids={x['id']:x for x in cca.STATIONS}
+        if a not in ids or b not in ids: return jsonify({'status':'sin dato','error':'Localidad desconocida'}),400
+        reach=ccr.downstream_days(a)
+        if b not in reach: return jsonify({'status':'sin dato','error':f"{ids[b]['place']} no está río abajo de {ids[a]['place']}"}),200
+        edges,lags=ccr._graph()
+        # camino tramo por tramo
+        path=[b]
+        while path[-1]!=a:
+            prev=next((u for u,ds in edges.items() if path[-1] in ds and u in reach),None)
+            if prev is None: break
+            path.append(prev)
+        path=path[::-1]
+        tramos=[{'desde':ids[u]['place'],'hasta':ids[v]['place'],'dias':(lags.get(f'{u}>{v}') or {}).get('days'),'corr':(lags.get(f'{u}>{v}') or {}).get('corr')} for u,v in zip(path,path[1:])]
+        return jsonify({'status':'recibido','data':{'desde':ids[a]['place'],'hasta':ids[b]['place'],'dias':reach[b],'tramos':tramos,
+                        'periodo':cca.load_normals().get('lags_period')}})
     if name=='carbono-suelo':
         try:
             lat=float(request.args.get('lat','')); lon=float(request.args.get('lon',''))

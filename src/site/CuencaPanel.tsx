@@ -420,6 +420,48 @@ export function AlertasTeaser() {
   </section>;
 }
 
+// Tránsito de una crecida entre dos puertos (desfases medios de 20 años)
+function Transito({ stations }: { stations: Data[] }) {
+  const [a, setA] = useState("parana-corrientes"), [b, setB] = useState("parana-rosario"), [r, setR] = useState<Data | null>(null), [busy, setBusy] = useState(false);
+  const calc = async () => {
+    setBusy(true); setR(null);
+    try { setR(await (await fetch(`/api/fuentes/transito-crecida?desde=${a}&hasta=${b}`)).json()); } catch { setR({ error: "No se pudo calcular." }); }
+    setBusy(false);
+  };
+  const opts = (id: string, set: (v: string) => void) => <select value={id} onChange={e => { set(e.target.value); setR(null); }}>{RIVER_ORDER.map(rn => <optgroup key={rn} label={`Río ${rn}`}>{stations.filter(x => x.river === rn).map(x => <option key={x.id} value={x.id}>{x.place}</option>)}</optgroup>)}</select>;
+  const d = r?.data;
+  return <div className="cp-block">
+    <h3>¿Cuándo llega la crecida? <small>Elegí un puerto de origen y uno río abajo · desfase medio entre puertos</small></h3>
+    <div className="cp-transit"><label>Desde {opts(a, setA)}</label><label>Hasta {opts(b, setB)}</label><button className="cult-go" onClick={() => void calc()} disabled={busy}>{busy ? "Calculando…" : "Calcular"}</button></div>
+    {r && (r.status !== "recibido" ? <p className="cp-note">{r.error || "Sin dato."}</p> : <>
+      <p className="cp-transit-res">Lo que hoy pasa por <b>{d.desde}</b> llega a <b>{d.hasta}</b> en {d.dias == null ? <b>— (hay tramos todavía en cálculo)</b> : <b>{d.dias < 0.5 ? "el mismo día" : `unos ${nf(d.dias)} días`}</b>}.</p>
+      <div className="cp-table-wrap"><table className="cp-table"><thead><tr><th>Tramo</th><th>Días</th><th>Ajuste</th></tr></thead><tbody>
+        {d.tramos.map((t: Data) => <tr key={t.desde + t.hasta}><td>{t.desde} → {t.hasta}</td><td>{t.dias == null ? "en cálculo" : nf(t.dias)}</td><td>{t.corr == null ? "—" : t.corr >= 0.7 ? "firme" : t.corr >= 0.5 ? "aceptable" : "débil"}</td></tr>)}
+      </tbody></table></div>
+      <p className="cp-note">Desfase que maximiza la correlación entre los caudales diarios de cada par de puertos ({d.periodo || "20 años"}). Es un promedio: con el río muy alto la onda puede viajar distinto, y las represas cambian los tiempos. Orientativo.</p>
+    </>)}
+  </div>;
+}
+
+// Ciclones activos y alertas de la ONU en los países de la cuenca
+function Extremos() {
+  const [d, setD] = useState<Data | null>(null), [err, setErr] = useState("");
+  useEffect(() => { fetch("/api/fuentes/eventos-extremos?lat=-28.5&lon=-58.5", { signal: AbortSignal.timeout(40000) }).then(r => r.json()).then(j => j.status === "recibido" ? setD(j.data) : setErr(j.error || "Sin datos")).catch(() => setErr("No respondió")); }, []);
+  return <div className="cp-block">
+    <h3>Eventos extremos en la región <small>Ciclones activos (NOAA IBTrACS) y alertas de desastres de la ONU (GDACS)</small></h3>
+    {err && <p className="cp-note">Las fuentes internacionales no respondieron ahora: {err}.</p>}
+    {!d && !err && <p className="cp-note">Consultando NOAA y GDACS…</p>}
+    {d && <>
+      {d.near.length ? <div className="cp-table-wrap"><table className="cp-table"><thead><tr><th>Sistema</th><th>Categoría</th><th>Viento</th><th>Distancia al Litoral</th><th>Última posición</th></tr></thead><tbody>
+        {d.near.map((x: Data) => <tr key={x.id}><td>{x.name}</td><td>{x.category}</td><td>{x.wind_kmh ? `${nf(x.wind_kmh)} km/h` : "—"}</td><td>{nf(x.distance_km)} km</td><td>{x.time.slice(0, 16)} UTC</td></tr>)}</tbody></table></div>
+        : <p className="cp-note">No hay ciclones activos a menos de 2.500 km. {d.cyclones.length ? `En el mundo hay ${d.cyclones.length} activos, todos lejos.` : ""}</p>}
+      {d.gdacs.length ? <ul className="cp-gdacs">{d.gdacs.map((g: Data) => <li key={g.link + g.title}><span className={`cp-chip ${g.level === "Rojo" ? "risk" : g.level === "Naranja" ? "alert" : "ok"}`}>{g.level}</span> <b>{g.type}</b> · {g.countries.join(", ")} · <a href={g.link} target="_blank" rel="noreferrer">{g.title}</a></li>)}</ul>
+        : <p className="cp-note">GDACS no tiene alertas activas en Argentina, Uruguay, Paraguay, Brasil, Bolivia ni Chile.</p>}
+      <p className="cp-note">IBTrACS se actualiza varias veces por semana, no al minuto; GDACS casi en tiempo real. Para avisos oficiales en Argentina: SMN y Defensa Civil.</p>
+    </>}
+  </div>;
+}
+
 export function CuencaPanel() {
   const [res, setRes] = useState<Data | null>(null), [err, setErr] = useState(""), [pickKey, setPickKey] = useState(0);
   useEffect(() => {
@@ -463,6 +505,8 @@ export function CuencaPanel() {
     </div>}
 
     {rv?.stations && <AlertMap stations={rv.stations} onPick={id => { try { localStorage.setItem("dots-localidad", id); } catch { /* sin almacenamiento */ } setPickKey(k => k + 1); document.querySelector(".cp-local")?.scrollIntoView({ behavior: "smooth" }); }} />}
+    {rv?.stations && <Transito stations={rv.stations} />}
+    <Extremos />
 
     {nino && <div className="cp-block">
       <h3>El Niño esta semana <small>NOAA CPC · semana del {dm(nino.week)} · anomalía contra 1991–2020</small></h3>
