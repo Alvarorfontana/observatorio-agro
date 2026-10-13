@@ -39,7 +39,9 @@
 #let kicker(t, fill: brand) = text(size: 7pt, weight: "semibold", fill: fill, tracking: 0.12em, upper(t))
 #let card(body, fill: white, stroke: 0.6pt + line-c, inset: 10pt) = block(fill: fill, stroke: stroke, radius: 8pt, inset: inset, width: 100%, breakable: false, body)
 #let pill(t, c) = box(fill: c.transparentize(86%), inset: (x: 6pt, y: 2.5pt), radius: 8pt, text(size: 7.2pt, weight: "semibold", fill: c)[#t])
-#let sec(t) = block(above: 13pt, below: 6pt, text(size: 12pt, weight: "semibold")[#t])
+#let sec(t) = block(above: 13pt, below: 6pt, sticky: true, text(size: 12pt, weight: "semibold")[#t])
+#let hd(..xs) = xs.pos().map(t => text(size: 6.8pt, weight: "semibold", fill: muted, upper(t)))
+#let note(t) = text(size: 7.2pt, fill: muted)[#t]
 
 // ───────────── banda de nivel ─────────────
 #let c = tone(d.tone)
@@ -52,6 +54,15 @@
 })
 #v(4pt)
 #text(size: 8pt, fill: muted)[Informe del #d.generated #if d.gauge != "" [· #d.gauge]]
+
+#if d.summary.len() > 0 [
+  #v(6pt)
+  #block(width: 100%, fill: soft, radius: 8pt, inset: (x: 12pt, y: 10pt), breakable: false)[
+    #kicker("Resumen de la situación") #v(2pt)
+    #set par(leading: 0.62em)
+    #for l in d.summary [#text(size: 9.4pt)[#l] #parbreak()]
+  ]
+]
 
 // ───────────── cifras ─────────────
 #if d.has_h [
@@ -135,6 +146,13 @@
   #grid(columns: (1fr, 1fr), column-gutter: 10pt,
     card[#kicker("Tendencia", fill: muted) #linebreak() #text(weight: "semibold", size: 11pt)[#d.trend] #linebreak() #text(size: 8.2pt, fill: ink2)[#d.days_alert #d.days_evac]],
     card[#kicker("Pronóstico oficial del INA", fill: muted) #linebreak() #if d.fc_txt != "" [#text(weight: "semibold", size: 11pt)[#d.fc_txt]] else [#text(size: 8.5pt, fill: muted)[El INA no publica pronóstico para este puerto.]]])
+  #if d.fc_rows.len() > 1 [
+    #v(6pt)
+    #table(columns: (auto, auto, 1fr, auto), stroke: (x, y) => (bottom: if y == 0 { 0.6pt + ink2.transparentize(55%) } else { 0.4pt + line-c }), inset: (x: 5pt, y: 4.5pt), align: (left, right, left, left),
+      ..hd("Fecha", "Altura central", "Rango", "Nivel"),
+      ..d.fc_rows.map(f => (f.d, text(weight: "semibold")[#f.c], text(size: 8pt)[#f.r], if f.lv == "—" [—] else { pill(f.lv, tone(if f.lv == "Normal" { "ok" } else if f.lv == "Atención" { "warn" } else if f.lv == "Alerta" { "alert" } else { "risk" })) })).flatten())
+    #note[Pronóstico oficial del INA (Paraná, Corrientes a Rosario) emitido el #d.fc_issued. Variación de la última semana: #d.change7 · altura en % del nivel de alerta: #d.pct_alert.]
+  ]
 ] else [
   #v(8pt)
   #card(fill: soft, stroke: none)[Esta localidad no tiene escala del INA. #if d.discharge != "" [Caudal estimado (GloFAS): *#d.discharge*.]]
@@ -150,15 +168,6 @@
     ]
   ]
 ]
-#if d.upstream.len() > 0 [
-  #sec("Río arriba")
-  #table(columns: (1.5fr, auto, auto, 1.3fr, auto), stroke: (x, y) => (bottom: if y == 0 { 0.6pt + ink2.transparentize(55%) } else { 0.4pt + line-c }), inset: (x: 5pt, y: 4.5pt),
-    align: (left, right, left, left, right),
-    ..("Localidad", "Altura", "Nivel", "Tendencia", "Llega en").map(t => text(size: 6.8pt, weight: "semibold", fill: muted, upper(t))),
-    ..d.upstream.map(u => (text(weight: "medium")[#u.place], u.h, if u.level == "—" [—] else { pill(u.level, tone(u.tone)) }, text(size: 8pt)[#u.trend], text(size: 8pt)[#u.days])).flatten())
-  #text(size: 7.2pt, fill: muted)[Lo que pasa río arriba llega acá en esos días (desfase estadístico de 20 años; orientativo).]
-]
-
 // ───────────── qué hacer ─────────────
 #v(8pt)
 #grid(columns: (1.35fr, 1fr), column-gutter: 10pt,
@@ -171,7 +180,87 @@
     #text(weight: "bold")[Teléfonos de emergencia · #d.country] #v(3pt)
     #for p in d.phones [#text(size: 13pt, weight: "bold", fill: risk)[#p.at(0)] #h(3pt) #text(size: 8.5pt)[#p.at(1)] #linebreak()]
   ])
+
+#if d.basins.len() > 0 [
+  #sec("De dónde viene el agua: lluvia en las cabeceras")
+  #table(columns: (1.5fr, 1.7fr, auto, auto, auto, auto, 1fr), stroke: (x, y) => (bottom: if y == 0 { 0.6pt + ink2.transparentize(55%) } else { 0.4pt + line-c }), inset: (x: 5pt, y: 4.5pt),
+    align: (left, left, right, right, right, right, left),
+    ..hd("Cuenca", "Dónde llueve", "15 días", "Rango", "vs normal", "≥100 mm", "Llega acá en"),
+    ..d.basins.map(b => (
+      [#text(weight: "medium")[#b.name] #linebreak() #if b.level != "—" { pill(b.level, tone(b.tone)) }],
+      text(size: 7.6pt, fill: ink2)[#b.where #if b.heavy != "" [#linebreak() lluvia fuerte #b.heavy]],
+      [#b.mm mm], text(size: 8pt)[#b.range], b.ratio, b.p100,
+      text(size: 8pt)[#b.travel #if b.window != "" [#linebreak() #text(fill: ink, weight: "semibold")[#b.window]]])).flatten())
+  #note[Pronóstico por conjunto ECMWF (51 corridas) y GFS (31) para los próximos 15 días, promediado sobre puntos de cada cabecera. "vs normal": veces la lluvia normal de esos 15 días (NASA POWER). Los tiempos suman la respuesta de la cuenca y el desfase medio entre puertos (#d.lags_period).]
+]
+
+#if d.dams.len() > 0 [
+  #sec("Represas río arriba")
+  #table(columns: (1.2fr, auto, auto, auto, auto, auto, 1.6fr), stroke: (x, y) => (bottom: if y == 0 { 0.6pt + ink2.transparentize(55%) } else { 0.4pt + line-c }), inset: (x: 5pt, y: 4.5pt),
+    align: (left, right, right, right, right, left, left),
+    ..hd("Represa", "Suelta", "Entra", "7 días", "vs normal", "Nivel", "Llega acá"),
+    ..d.dams.map(x => ([#text(weight: "medium")[#x.name] #linebreak() #text(size: 7pt, fill: muted)[río #x.river · #x.date]],
+      [#x.out], [#x.in], x.change, x.ratio, text(size: 8pt)[#x.level], text(size: 7.6pt, fill: ink2)[#x.days #linebreak() #x.note])).flatten())
+  #note[Caudales medidos por el ONS (Brasil), en m³/s. Lo que una represa suelta de más suele anticipar la subida río abajo.]
+]
+
+#if d.upstream.len() > 0 [
+  #sec("Río arriba")
+  #table(columns: (1.6fr, auto, auto, auto, 1.2fr, auto, auto), stroke: (x, y) => (bottom: if y == 0 { 0.6pt + ink2.transparentize(55%) } else { 0.4pt + line-c }), inset: (x: 5pt, y: 4.5pt),
+    align: (left, right, right, left, left, right, right),
+    ..hd("Localidad", "Altura", "% alerta", "Nivel", "Tendencia", "Caudal", "Llega acá"),
+    ..d.upstream.map(u => ([#text(weight: "medium")[#u.place] #text(size: 7pt, fill: muted)[#u.river]], u.h, text(size: 8pt)[#u.pct],
+      if u.level == "—" [—] else { pill(u.level, tone(u.tone)) }, text(size: 8pt)[#u.trend], text(size: 8pt)[#u.q], text(size: 8pt)[#u.days])).flatten())
+  #note[Lo que pasa río arriba llega acá en esos días (desfase medio #d.lags_period; orientativo). "Caudal": veces lo normal para la fecha (GloFAS).]
+]
+
+#if d.downstream.len() > 0 [
+  #sec("Río abajo: a quién le llega después")
+  #table(columns: (1.6fr, auto, auto, auto, 1.2fr, auto), stroke: (x, y) => (bottom: if y == 0 { 0.6pt + ink2.transparentize(55%) } else { 0.4pt + line-c }), inset: (x: 5pt, y: 4.5pt),
+    align: (left, right, right, left, left, right),
+    ..hd("Localidad", "Altura", "% alerta", "Nivel", "Tendencia", "Desde acá"),
+    ..d.downstream.map(u => ([#text(weight: "medium")[#u.place] #text(size: 7pt, fill: muted)[#u.river]], u.h, text(size: 8pt)[#u.pct],
+      if u.level == "—" [—] else { pill(u.level, tone(u.tone)) }, text(size: 8pt)[#u.trend], text(size: 8pt)[#u.days])).flatten())
+]
+
+#if d.flow != none [
+  #sec("Caudal contra la historia")
+  #grid(columns: (1fr, 1fr, 1fr, 1fr), column-gutter: 7pt,
+    card(fill: soft, stroke: none)[#text(size: 7.4pt, fill: muted)[Caudal hoy (m³/s)] #linebreak() #text(size: 15pt, weight: "bold")[#d.flow.now] #linebreak() #text(size: 7.4pt, fill: ink2)[7 días: #d.flow.change]],
+    card(fill: soft, stroke: none)[#text(size: 7.4pt, fill: muted)[Normal para la fecha] #linebreak() #text(size: 15pt, weight: "bold")[#d.flow.normal] #linebreak() #text(size: 7.4pt, fill: ink2)[hoy: #d.flow.ratio]],
+    card(fill: soft, stroke: none)[#text(size: 7.4pt, fill: muted)[Posición histórica] #linebreak() #text(size: 15pt, weight: "bold")[#d.flow.level] #linebreak() #text(size: 7.4pt, fill: ink2)[#d.flow.pct (2001-2020)]],
+    card(fill: soft, stroke: none)[#text(size: 7.4pt, fill: muted)[Pico en 30 días] #linebreak() #text(size: 10.5pt, weight: "bold")[#d.flow.peak]])
+  #v(4pt)
+  #note[Crecidas de referencia (Gumbel, 20 años): cada 2 años #d.flow.q2 m³/s · cada 5 años #d.flow.q5 · cada 20 años #d.flow.q20. Máximo de la serie: #d.flow.max. Caudal simulado por Copernicus GloFAS (grilla ~5 km): sirve para comparar contra su propia historia, no reemplaza la altura oficial.]
+]
+
+#if d.nino != none [
+  #sec("Contexto climático: El Niño")
+  #grid(columns: (1fr, 2.2fr), column-gutter: 12pt,
+    card(fill: soft, stroke: none)[#text(size: 7.4pt, fill: muted)[Semana del #d.nino.week] #linebreak() #text(size: 13pt, weight: "bold")[#d.nino.phase] #linebreak() #text(size: 7.6pt, fill: ink2)[Niño 3.4: #d.nino.n34 °C · costero: #d.nino.n12 °C]],
+    align(horizon, text(size: 8.8pt)[#d.nino.effect #linebreak() #note[Anomalía semanal NOAA CPC (OISST) contra 1991-2020. El estado oficial se declara con el ONI trimestral.]]))
+]
+
+#if d.picture != none [
+  #sec("Imagen satelital de la zona · " + d.picture.date)
+  #block(width: 100%, radius: 6pt, clip: true, breakable: false, image(bytes(d.picture.image), width: 100%))
+  #note[#d.picture.caption]
+]
+
 #if d.record != "" or d.discharge != "" [
   #v(6pt)
-  #text(size: 7.6pt, fill: muted)[#if d.record != "" [Récord de los últimos 20 años: #d.record. ] #if d.discharge != "" [Caudal estimado hoy: #d.discharge.] Las alturas se miden sobre el cero de cada escala: no son comparables entre puertos.]
+  #text(size: 7.6pt, fill: muted)[#if d.record != "" [Récord de altura de los últimos 20 años: #d.record. ] #if d.discharge != "" [Caudal estimado hoy: #d.discharge.] Las alturas se miden sobre el cero de cada escala: no son comparables entre puertos.]
 ]
+
+#sec("Fuentes y alcances")
+#set text(size: 7.8pt, fill: ink2)
+#table(columns: (auto, 1fr), stroke: (x, y) => (bottom: 0.4pt + line-c), inset: (x: 5pt, y: 3.5pt),
+  [*Altura y niveles*], [INA · Sistema de Alerta (alerta.ina.gob.ar), escalas de Prefectura Naval; niveles de alerta y evacuación oficiales.],
+  [*Pronóstico de altura*], [INA · pronóstico tabprono del río Paraná (Corrientes a Rosario).],
+  [*Lluvia en cabeceras*], [ECMWF IFS y NOAA GFS por conjunto, vía Open-Meteo; normales de NASA POWER.],
+  [*Caudal*], [Copernicus GloFAS vía Open-Meteo; normales y crecidas de retorno calculadas sobre 2001-2020.],
+  [*Represas*], [ONS Brasil, datos abiertos (CC-BY 4.0).],
+  [*El Niño e imagen*], [NOAA CPC (OISST semanal) · NASA GIBS (VIIRS, MODIS).],
+  [*Oficiales para consultar*], [Argentina: INA, Prefectura, Defensa Civil · Brasil: ANA, SGB · Paraguay: DMH · Bolivia: SENAMHI · Uruguay: INUMET, CTM Salto Grande · Regional: CIC Plata.])
+#v(4pt)
+#text(size: 7.4pt, fill: muted)[DOTS combina datos públicos con reglas declaradas; no es un organismo oficial. Los tiempos de llegada y las subidas estimadas son orientativos. Ante una evacuación, siguen mandando Defensa Civil y Prefectura.]

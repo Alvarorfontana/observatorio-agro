@@ -5,7 +5,7 @@ Estructura fija: 1 portada y resumen · 2 El Niño · 3 alertas por cuenca · 4 
 """
 import json, os
 from concurrent.futures import ThreadPoolExecutor
-from datetime import date
+from datetime import date, timedelta
 
 import cuenca as cc
 
@@ -231,8 +231,57 @@ def _country(sid):
     return 'Paraguay' if sid in ('paraguay-bahianegra', 'paraguay-concepcion') else 'Uruguay' if sid == 'uruguay-fraybentos' else 'Argentina'
 
 
+def _graph():
+    """Tramos río abajo (u → dn) de todas las cadenas, con el desfase medio de 20 años cuando es firme."""
+    lags = {k: v for k, v in ((cc.load_normals().get('lags')) or {}).items() if (v.get('corr') or 0) >= 0.3}
+    edges = {}
+    for ch in cc.CHAINS:
+        for u, dn in zip(ch['stations'], ch['stations'][1:]):
+            edges.setdefault(u, set()).add(dn)
+    return edges, lags
+
+
+def downstream_days(src, edges=None, lags=None):
+    """{localidad: días desde src} para todo lo que está río abajo de src (None si falta algún tramo)."""
+    if edges is None:
+        edges, lags = _graph()
+    out, stack = {src: 0.0}, [src]
+    while stack:
+        u = stack.pop()
+        for dn in edges.get(u, ()):
+            if dn in out:
+                continue
+            lg = (lags or {}).get(f'{u}>{dn}')
+            out[dn] = (out[u] + lg['days']) if (lg and out[u] is not None) else None
+            stack.append(dn)
+    return out
+
+
+def _trend_txt(t, short=False):
+    if t is None:
+        return '—'
+    if abs(t) <= 0.005:
+        return 'estable'
+    return f"{'sube' if t > 0 else 'baja'} {num(abs(t) * 100)} cm{'/día' if short else ' por día'}"
+
+
+def _days_txt(x):
+    return 'en cálculo' if x is None else 'el mismo día' if x < 0.5 else f'~{num(x)} días'
+
+
+def _litoral_nino(phase):
+    p = (phase or '').lower()
+    if 'niño' in p:
+        return ('Con El Niño, la primavera y el verano suelen traer más lluvia de lo normal en el sur de Brasil, el Litoral y el NEA: '
+                'aumenta la chance de crecidas en el Paraná, el Iguazú y el Uruguay.')
+    if 'niña' in p:
+        return 'Con La Niña suele llover menos de lo normal en la región: las bajantes son más probables que las crecidas.'
+    return 'Pacífico neutral: no hay una señal climática fuerte que empuje la lluvia de la región para arriba ni para abajo.'
+
+
 def local_data(d, sid, today=None):
-    """Datos de una localidad para su informe: altura, niveles, tendencia, pronóstico, río arriba y qué hacer."""
+    """Informe de una localidad: altura y niveles, tendencia y pronóstico, de dónde viene el agua (cabeceras, represas y
+    río arriba), adónde va (río abajo), caudal contra la historia, El Niño, qué hacer y fuentes."""
     today = today or date.today()
     rv = d.get('rivers') or {}
     st = {s['id']: s for s in rv.get('stations') or []}
@@ -243,6 +292,10 @@ def local_data(d, sid, today=None):
     lvl = i.get('level') or s.get('danger') or 'Sin dato'
     act_key = {'Evacuación': 'Peligro'}.get(lvl, lvl)
     actions = (rv.get('actions') or cc.ACTIONS).get(act_key) or cc.ACTIONS['Normal']
+    edges, lags = _graph()
+    norm_st = (cc.load_normals().get('stations') or {}).get(sid) or {}
+
+    # ── crecida en camino (alertas activas que llegan acá)
     arrivals = []
     for a in d.get('alerts') or []:
         if a.get('level') in (None, 'Normal'):
@@ -251,54 +304,174 @@ def local_data(d, sid, today=None):
             if x.get('place') == s['place'] and x.get('window'):
                 arrivals.append({'basin': a['name'], 'level': a['level'], 'tone': TONE_H.get(a['level'], 'warn'),
                                  'window': f"{dm(x['window'][0])} al {dm(x['window'][1])}", 'mm': num(a.get('median_mm')),
+                                 'why': '; '.join(a.get('why') or []),
                                  'prediction': pred_text(a.get('prediction')) if (a.get('prediction') or {}).get('place') == s['place'] else ''})
-    # río arriba: hasta 4 localidades anteriores en la cadena, con sus días de traslado
-    lags = {k: v for k, v in ((cc.load_normals().get('lags')) or {}).items() if (v.get('corr') or 0) >= 0.3}
-    upstream = []
-    for ch in cc.CHAINS:
-        if sid in ch['stations'] and ch['stations'].index(sid) > 0:
-            ids = ch['stations'][:ch['stations'].index(sid)]
-            acc, rows = 0.0, []
-            for u, dn in reversed(list(zip(ids, ch['stations'][1:ch['stations'].index(sid) + 1]))):
-                lg = lags.get(f'{u}>{dn}')
-                acc = acc + lg['days'] if (lg and acc is not None) else None
-                us = st.get(u) or {}
-                ui = us.get('ina') or {}
-                rows.append({'place': us.get('place') or u, 'river': us.get('river') or '', 'h': m2(ui.get('height')),
-                             'level': ui.get('level') or us.get('danger') or '—', 'tone': TONE_H.get(ui.get('level') or us.get('danger') or '', 'idle'),
-                             'trend': (('sube ' if ui['trend_m_day'] > 0.005 else 'baja ' if ui['trend_m_day'] < -0.005 else 'estable ') + (f"{num(abs(ui['trend_m_day']) * 100)} cm/día" if abs(ui['trend_m_day']) > 0.005 else '')) if ui.get('trend_m_day') is not None else '—',
-                             'days': ('el mismo día' if acc == 0 else f"~{num(acc)} días") if acc is not None else 'en cálculo'})
-                if len(rows) >= 4:
-                    break
-            upstream = rows
-            break
-    rec = s.get('height_record') or {}
+
+    # ── de dónde viene el agua: todas las cabeceras que drenan hasta esta localidad
+    alert_lv = {a['basin']: a for a in d.get('alerts') or []}
+    hw = {b['id']: b for b in (d.get('headwaters') or {}).get('basins') or []}
+    basins = []
+    for cfg in cc.BASINS:
+        reach = downstream_days(cfg['outlet'], edges, lags)
+        if sid not in reach:
+            continue
+        b = hw.get(cfg['id']) or {}
+        lag = reach[sid]
+        lo, hi = cfg['response']
+        lv = (alert_lv.get(cfg['id']) or {}).get('level') or (cc.rain_level(b)[0] if b else None) or ('Normal' if b.get('status') == 'recibido' else '—')
+        start = b.get('rain_center') or b.get('rain_from')
+        win = (f"{dm(cc._add_days(start, lo + lag))} al {dm(cc._add_days(start, hi + lag))}" if (start and lag is not None) else '')
+        basins.append({'name': cfg['name'], 'group': cfg['group'], 'where': cfg['where'],
+                       'travel': (f"{num(lo + lag)}–{num(hi + lag)} días" if lag is not None else f"{num(lo)}–{num(hi)} días a {(st.get(cfg['outlet']) or {}).get('place', '')} + tramo en cálculo"),
+                       'lo': lo + (lag or 0),
+                       'mm': num(b.get('median_mm')) if b.get('status') == 'recibido' else '—',
+                       'range': f"{num(b.get('p10_mm'))}–{num(b.get('p90_mm'))}" if b.get('status') == 'recibido' else '—',
+                       'ratio': f"{num(b.get('ratio'), 1)}×" if b.get('ratio') is not None else '—', 'ratio_v': b.get('ratio'),
+                       'p100': f"{num(b.get('p_ge100'))} %" if b.get('p_ge100') is not None else '—',
+                       'heavy': (f"{dm(b['rain_from'])} al {dm(b['rain_to'])}" if b.get('rain_from') else ''),
+                       'window': win, 'level': lv, 'tone': TONE_H.get(lv, 'idle'), 'median': b.get('median_mm'), 'known': lag is not None})
+    basins.sort(key=lambda x: (not x['known'], x['lo']))
+
+    # ── represas río arriba (ONS, medido)
+    dams = []
+    for x in (d.get('dams') or {}).get('dams') or []:
+        if x.get('status') != 'recibido' or not x.get('outlet'):
+            continue
+        reach = downstream_days(x['outlet'], edges, lags)
+        if sid in reach:
+            dams.append({'name': x['name'], 'river': x['river'], 'out': num(x.get('outflow')), 'in': num(x.get('inflow')),
+                         'change': f"{sign(x.get('change_7d_pct'), 0)} %" if x.get('change_7d_pct') is not None else '—',
+                         'ratio': f"{num(x.get('ratio'), 1)}×" if x.get('ratio') is not None else '—', 'level': x.get('level') or '—',
+                         'date': dm(x.get('date')), 'note': x.get('note') or '', 'days': _days_txt(reach[sid])})
+
+    # ── río arriba y río abajo, con los días que tarda el agua
+    def row(oid, days):
+        o = st.get(oid) or {}
+        oi = o.get('ina') or {}
+        lv = oi.get('level') or o.get('danger') or '—'
+        return {'place': o.get('place') or oid, 'river': o.get('river') or '', 'h': m2(oi.get('height')),
+                'pct': f"{num(100 * oi['height'] / oi['alert'])} %" if oi.get('height') is not None and oi.get('alert') else '—',
+                'level': lv, 'tone': TONE_H.get(lv, 'idle'), 'trend': _trend_txt(oi.get('trend_m_day'), True),
+                'q': (f"{num(o.get('ratio'), 1)}×" if o.get('ratio') is not None else '—'), 'days': _days_txt(days)}
+    ups = []
+    for u in st:
+        if u == sid:
+            continue
+        reach = downstream_days(u, edges, lags)
+        if sid in reach:
+            ups.append((reach[sid], u))
+    ups.sort(key=lambda t: (t[0] is None, t[0] or 0))
+    upstream = [row(u, dd) for dd, u in reversed(ups[:8])]
+    down = sorted(((v, k) for k, v in downstream_days(sid, edges, lags).items() if k != sid), key=lambda t: (t[0] is None, t[0] or 0))
+    downstream = [row(k, v) for v, k in down[:5]]
+
+    # ── caudal contra la historia (GloFAS)
+    th = s.get('thresholds') or {}
+    flow = None
+    if s.get('status') == 'recibido':
+        flow = {'now': num(s.get('discharge')), 'normal': num(s.get('normal')), 'ratio': f"{num(s.get('ratio'), 1)}×" if s.get('ratio') is not None else '—',
+                'pct': f"percentil {s['percentile']}" if s.get('percentile') is not None else '—', 'level': s.get('level') or '—',
+                'change': f"{sign(s.get('change_7d_pct'), 0)} %" if s.get('change_7d_pct') is not None else '—',
+                'peak': (f"{num(s.get('peak'))} m³/s el {dm(s.get('peak_date'))}" + (f" ({s['peak_level']})" if s.get('peak_level') else '')) if s.get('peak') else '—',
+                'q2': num(th.get('q2')), 'q5': num(th.get('q5')), 'q20': num(th.get('q20')),
+                'max': (f"{num(th['max'])} m³/s · {my(th.get('max_date'))}") if th.get('max') else '—',
+                'danger': s.get('danger') or '—', 'peak_danger': s.get('peak_danger') or '—'}
+
+    # ── El Niño
+    nino = d.get('nino') or {}
+    nino_out = None
+    if nino.get('phase'):
+        n34 = next((r for r in nino.get('regions', []) if r['id'] == 'nino34'), {})
+        n12 = next((r for r in nino.get('regions', []) if r['id'] == 'nino12'), {})
+        nino_out = {'week': dm(nino.get('week')), 'phase': nino['phase'], 'coastal': nino.get('coastal') or '—',
+                    'n34': sign(n34.get('anom')), 'n12': sign(n12.get('anom')), 'effect': _litoral_nino(nino['phase'])}
+
+    # ── resumen en palabras
+    summary = []
+    if i.get('height') is not None:
+        line = f"El río {s['river']} en {s['place']} marca {m2(i['height'])} ({dm(i.get('date'))})"
+        if i.get('alert') is not None:
+            line += (f", {m2(-i['to_alert'])} por encima del nivel de alerta ({m2(i['alert'])})" if i['to_alert'] <= 0
+                     else f", {m2(i['to_alert'])} por debajo del nivel de alerta ({m2(i['alert'])})")
+        summary.append(line + f". Nivel: {lvl.lower()}.")
+        t2 = []
+        if i.get('trend_m_day') is not None:
+            t2.append(f"En la última semana {_trend_txt(i['trend_m_day'])}" + (f"; a ese ritmo llegaría a la alerta en ~{i['days_to_alert']} días" if i.get('days_to_alert') else ''))
+        fc = i.get('forecast') or []
+        if fc:
+            t2.append(f"el INA pronostica {m2(fc[-1]['central'])} al {dm(fc[-1]['date'])}")
+        if t2:
+            summary.append('; '.join(t2) + '.')
+    elif s.get('discharge') is not None:
+        summary.append(f"Sin escala oficial en {s['place']}: el caudal estimado es {num(s['discharge'])} m³/s" + (f", {num(s['ratio'], 1)} veces lo normal para la fecha." if s.get('ratio') is not None else '.'))
+    wet = [b for b in basins if (b.get('ratio_v') or 0) >= 1.3]
+    if basins:
+        if wet:
+            top = max(wet, key=lambda b: b['ratio_v'])
+            summary.append(f"De las {len(basins)} cabeceras que aportan agua hasta acá, {len(wet)} esperan más lluvia que lo normal en 15 días; la más cargada es {top['name']} ({top['mm']} mm, {top['ratio']} lo normal), " + (f"que tarda {top['travel']} en llegar." if top['known'] else "cuyo tiempo de llegada hasta acá todavía está en cálculo."))
+        else:
+            summary.append(f"Ninguna de las {len(basins)} cabeceras que aportan agua hasta acá espera lluvia muy por encima de lo normal en los próximos 15 días.")
+    if arrivals:
+        summary.append(f"Hay {len(arrivals)} {'aviso' if len(arrivals) == 1 else 'avisos'} de crecida en camino: " + '; '.join(f"{a['basin']}, del {a['window']}" for a in arrivals[:3]) + '.')
+    if flow and s.get('ratio') is not None:
+        summary.append(f"El caudal estimado (GloFAS) es {flow['now']} m³/s, {flow['ratio']} lo normal para la época ({flow['level']}).")
+    if nino_out:
+        summary.append(f"Pacífico en {nino_out['phase'].lower()} (Niño 3.4 {nino_out['n34']} °C). {nino_out['effect']}")
+
+    rec = s.get('height_record') or norm_st.get('height_record') or {}
     fc = i.get('forecast') or []
     return {
         'title': f"DOTS · Alerta de crecidas · {s['place']}", 'generated': f'{today.day} de {MONTHS[today.month - 1]} de {today.year}',
         'place': s['place'], 'river': s['river'], 'gauge': i.get('gauge') or '', 'level': lvl, 'tone': TONE_H.get(lvl, 'idle'),
+        'summary': summary,
         'has_h': i.get('height') is not None,
         'h': i.get('height'), 'h_txt': m2(i.get('height')), 'date': dm(i.get('date')), 'alert': i.get('alert'), 'evac': i.get('evac'), 'low': i.get('low'),
         'alert_txt': m2(i.get('alert')), 'evac_txt': m2(i.get('evac')), 'low_txt': m2(i.get('low')),
         'to_alert': ('superado' if i.get('to_alert') is not None and i['to_alert'] <= 0 else m2(i.get('to_alert'))),
+        'change7': (sign(i.get('change_7d'), 2) + ' m') if i.get('change_7d') is not None else '—',
+        'pct_alert': f"{num(100 * i['height'] / i['alert'])} %" if i.get('height') is not None and i.get('alert') else '—',
         'trend': (f"{'sube' if i['trend_m_day'] > 0.005 else 'baja' if i['trend_m_day'] < -0.005 else 'estable'} {num(abs(i['trend_m_day']) * 100)} cm por día") if i.get('trend_m_day') is not None else '—',
         'days_alert': (f"a este ritmo llegaría a la alerta en ~{i['days_to_alert']} días" if i.get('days_to_alert') else ''),
         'days_evac': (f"y a la evacuación en ~{i['days_to_evac']} días" if i.get('days_to_evac') else ''),
         'series': [{'d': dm(x['date']), 'v': x['h']} for x in i.get('series') or [] if x.get('h') is not None],
         'forecast': [{'d': dm(f['date']), 'c': f['central'], 'lo': f['min'], 'hi': f['max']} for f in fc],
+        'fc_rows': [{'d': dm(f['date']), 'c': m2(f['central']), 'r': f"{num(f['min'], 2)}–{num(f['max'], 2)} m",
+                     'lv': cc.height_level(f['central'], {'alert': i.get('alert'), 'evac': i.get('evac')}, s.get('river')) or '—'} for f in fc],
         'fc_txt': (f"{num(fc[-1]['central'], 2)} m al {dm(fc[-1]['date'])} (entre {num(fc[-1]['min'], 2)} y {num(fc[-1]['max'], 2)} m)") if fc else '',
         'fc_issued': dm(rv.get('ina_forecast_issued')),
         'record': (f"{m2(rec['value'])} en {my(rec['date'])}") if rec.get('value') else '',
         'discharge': (f"{num(s.get('discharge'))} m³/s" + (f" · {num(s.get('ratio'), 1)} veces lo normal para la fecha" if s.get('ratio') is not None else '')) if s.get('discharge') is not None else '',
-        'arrivals': arrivals, 'upstream': upstream, 'actions': actions,
+        'arrivals': arrivals, 'basins': basins, 'dams': dams, 'upstream': upstream, 'downstream': downstream,
+        'flow': flow, 'nino': nino_out, 'actions': actions,
         'country': _country(sid), 'phones': PHONES[_country(sid)],
+        'lags_period': (cc.load_normals().get('lags_period') or '20 años'),
+        'picture': None,
         'url': 'observatorio-agro.vercel.app/alertas',
     }
 
 
+def local_picture(s, today=None):
+    """Imagen VIIRS color real del día anterior alrededor de la localidad (NASA GIBS). None si no hay."""
+    today = today or date.today()
+    day = (today - timedelta(days=1)).isoformat()
+    bbox = (round(s['lon'] - 0.9, 2), round(s['lat'] - 0.6, 2), round(s['lon'] + 0.9, 2), round(s['lat'] + 0.6, 2))
+    main = _image([cc.gibs_url('VIIRS_SNPP_CorrectedReflectance_TrueColor', bbox, day, 900, 600, 'image/jpeg'),
+                   cc.gibs_url('MODIS_Terra_CorrectedReflectance_TrueColor', bbox, day, 900, 600, 'image/jpeg')])
+    if not main:
+        return None
+    return {'image': list(main), 'date': dm(day), 'caption': 'VIIRS (Suomi NPP) color real, NASA GIBS, ~1,8 × 1,2 grados alrededor de la localidad. '
+                                                            'Con cielo despejado se ve el cauce y el agua fuera de él; con nubes, sólo la cobertura nubosa.'}
+
+
 def local_pdf(d, sid, today=None):
     import typst
-    data = json.dumps(local_data(d, sid, today), ensure_ascii=False, default=str)
+    ld = local_data(d, sid, today)
+    s = next((x for x in cc.STATIONS if x['id'] == sid), None)
+    try:
+        ld['picture'] = local_picture(s, today) if s else None
+    except Exception:
+        ld['picture'] = None
+    data = json.dumps(ld, ensure_ascii=False, default=str)
     out = typst.compile(LOCAL_TEMPLATE, root=BASE, font_paths=[FONTS], ignore_system_fonts=True, sys_inputs={'data': data})
     if out[:5] != b'%PDF-':
         raise RuntimeError('Typst no generó el PDF')

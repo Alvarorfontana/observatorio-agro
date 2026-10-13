@@ -298,3 +298,19 @@ def test_informe_de_localidad(monkeypatch):
     import cuenca_report as cr
     d = cr.local_data(fake['data'], 'parana-goya')
     assert d['level'] == 'Evacuación' and d['to_alert'] == 'superado' and d['phones'][0][0] == '103'
+
+
+def test_informe_de_localidad_ampliado():
+    import cuenca_report as cr
+    st = [{**cc._st(s), 'status': 'sin dato'} for s in cc.STATIONS]
+    basins = [{'id': b['id'], 'name': b['name'], 'where': b['where'], 'status': 'recibido', 'median_mm': 120, 'p10_mm': 40, 'p90_mm': 200,
+               'ratio': 2.1, 'p_ge100': 60, 'p_ge200': 10, 'rain_center': '2026-10-16', 'rain_from': '2026-10-15', 'rain_to': '2026-10-18'} for b in cc.BASINS]
+    dams = [{'id': 'itaipu', 'name': 'Itaipú', 'river': 'Paraná', 'note': 'n', 'outlet': 'parana-posadas', 'status': 'recibido',
+             'date': '2026-10-12', 'inflow': 1, 'outflow': 2, 'level': 'alto'}]
+    d = cr.local_data({'rivers': {'stations': st}, 'headwaters': {'basins': basins}, 'dams': {'dams': dams}, 'alerts': [],
+                       'nino': {'phase': 'Niño fuerte', 'week': '2026-10-07', 'regions': [{'id': 'nino34', 'anom': 1.9}]}}, 'parana-goya')
+    names = {b['name'] for b in d['basins']}
+    assert 'Alto Iguazú' in names and 'Cuiabá' in names and 'Ibicuí' not in names     # Paraná y Paraguay sí; Uruguay no
+    assert [x['name'] for x in d['dams']] == ['Itaipú']
+    assert any(u['place'] == 'Bella Vista' for u in d['upstream']) and d['downstream'][0]['place'] == 'Reconquista'
+    assert d['nino']['phase'] == 'Niño fuerte' and any('cabeceras' in l for l in d['summary'])
