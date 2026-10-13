@@ -311,7 +311,25 @@ def rivers_summary(responses, normals=None, today=None, past=7):
 
 
 def _st(st):
-    return {'id': st['id'], 'river': st['river'], 'place': st['place']}
+    return {'id': st['id'], 'river': st['river'], 'place': st['place'], 'lat': st['lat'], 'lon': st['lon']}
+
+
+def trend(series, days=7):
+    """Pendiente (m/día) por mínimos cuadrados sobre los últimos `days` días de alturas [(fecha, m)]."""
+    pts = [(date.fromisoformat(d).toordinal(), v) for d, v in series[-(days + 1):] if v is not None]
+    if len(pts) < 4:
+        return None
+    n = len(pts); mx = sum(x for x, _ in pts) / n; my = sum(y for _, y in pts) / n
+    den = sum((x - mx) ** 2 for x, _ in pts)
+    return round(sum((x - mx) * (y - my) for x, y in pts) / den, 3) if den else None
+
+
+def days_to(level, h, slope, horizon=60):
+    """Días hasta alcanzar `level` si sigue el ritmo actual (sólo si sube y está por debajo)."""
+    if level is None or h is None or slope is None or slope <= 0.005 or h >= level:
+        return None
+    d = (level - h) / slope
+    return round(d) if d <= horizon else None
 
 
 def rivers():
@@ -787,10 +805,12 @@ def merge_ina(stations, ina):
         h = hs[-1][1] if hs else None
         wk = [v for d, v in hs if d <= (date.fromisoformat(hs[-1][0]) - timedelta(days=7)).isoformat()] if hs else []
         fmax = max((x['max'] for x in fc), default=None)
+        sl = trend(hs)
         s['ina'] = {'site': INA_SITES[sid][0], 'gauge': INA_NAMES.get(sid), 'height': h, 'date': hs[-1][0] if hs else None,
                     'change_7d': round(h - wk[-1], 2) if h is not None and wk else None,
                     'alert': lv.get('alert'), 'evac': lv.get('evac'), 'low': lv.get('low'),
                     'to_alert': round(lv['alert'] - h, 2) if h is not None and lv.get('alert') is not None else None,
+                    'trend_m_day': sl, 'days_to_alert': days_to(lv.get('alert'), h, sl), 'days_to_evac': days_to(lv.get('evac'), h, sl),
                     'level': height_level(h, lv, s.get('river')),
                     'forecast': fc, 'forecast_level': height_level(fmax, lv, s.get('river')),
                     'series': [{'date': d, 'h': v} for d, v in hs]}

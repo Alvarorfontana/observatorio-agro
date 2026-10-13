@@ -250,3 +250,13 @@ def test_compute_arma_cifras_de_referencia():
     assert d['lags']['iguazu-cataratas>parana-eldorado']['days'] == 2
     rr = d['rain_rise']['iguazu-cataratas']
     assert rr['discharge']['per10mm'] > 0 and rr['height']['per10mm'] > 0
+
+
+def test_tendencia_y_dias_hasta_alerta():
+    hs = [(f'2026-10-{d:02d}', 4.0 + 0.05 * (d - 5)) for d in range(5, 13)]
+    sl = cc.trend(hs)
+    assert abs(sl - 0.05) < 1e-6
+    assert cc.days_to(6.5, 4.35, sl) == 43 and cc.days_to(6.5, 4.35, -0.02) is None and cc.days_to(4, 4.35, sl) is None
+    st = cc.merge_ina([{'id': 'parana-corrientes', 'river': 'Paraná', 'place': 'Corrientes'}],
+                      {'levels': {'parana-corrientes': {'alert': 6.5, 'evac': 7}}, 'heights': {'parana-corrientes': hs}, 'forecast': {}})[0]
+    assert st['ina']['trend_m_day'] == 0.05 and st['ina']['days_to_alert'] == 43 and st['ina']['days_to_evac'] == 53

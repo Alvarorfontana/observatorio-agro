@@ -202,7 +202,7 @@
           r.d7, r.low, [#r.alert / #r.evac], if r.to_alert == "superado" { text(fill: risk, weight: "bold")[superado] } else { r.to_alert },
           r.fc, text(size: 7pt)[#r.record], r.q, if r.level == "—" [—] else { pill(r.level, tone(r.tone)) })).flatten())).flatten())
   }
-  #note[Alturas en metros sobre el cero de cada escala (no son comparables entre puertos); "7 días": cuánto subió o bajó en la semana; "Falta": metros hasta el nivel de alerta. Alerta y evacuación son los niveles oficiales que publica el INA para las escalas de la Prefectura. "Atención": a menos de 1 m del nivel de alerta (2 m en el Iguazú y el Uruguay). Donde no hay escala, el nivel sale del caudal (crecidas de 2, 5 y 20 años). Caudal en m³/s y veces lo normal para la fecha.]
+  #note[Alturas en metros sobre el cero de cada escala (no son comparables entre puertos); "7 días": cuánto subió o bajó en la semana; "Falta": metros hasta el nivel de alerta y, si el río sube, días estimados para llegar a ese ritmo. Alerta y evacuación son los niveles oficiales que publica el INA para las escalas de la Prefectura. "Atención": a menos de 1 m del nivel de alerta (2 m en el Iguazú y el Uruguay). Donde no hay escala, el nivel sale del caudal (crecidas de 2, 5 y 20 años). Caudal en m³/s y veces lo normal para la fecha.]
 ]
 
 // ───────────────────────────── 7. traslado y acciones ─────────────────────────────

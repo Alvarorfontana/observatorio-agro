@@ -107,7 +107,8 @@ def _ref_row(s):
     return {'place': s['place'], 'h': m2(i.get('height')), 'h_date': dm(i.get('date')) if i.get('date') else '',
             'd7': sign(i.get('change_7d'), 2) if i.get('change_7d') is not None else '—',
             'low': m2(i.get('low')), 'alert': m2(i.get('alert')), 'evac': m2(i.get('evac')),
-            'to_alert': ('superado' if i.get('to_alert') is not None and i['to_alert'] <= 0 else m2(i.get('to_alert'))),
+            'to_alert': ('superado' if i.get('to_alert') is not None and i['to_alert'] <= 0 else
+                         m2(i.get('to_alert')) + (f" · ~{i['days_to_alert']} d" if i.get('days_to_alert') else '')),
             'fc': (f"{num(fc['central'], 2)} · {dm(fc['date'])}") if fc else '—',
             'record': (f"{num(rec['value'], 2)} m · {my(rec['date'])}") if rec else ((f"{num(th['max'])} m³/s · {my(th.get('max_date'))}") if th.get('max') else 'en cálculo'),
             'q': (f"{num(s.get('discharge'))} · {num(s.get('ratio'), 1)}×" if s.get('ratio') is not None else num(s.get('discharge'))) if s.get('status') == 'recibido' else '—',
