@@ -408,7 +408,7 @@ def local_data(d, sid, today=None):
     wet = [b for b in basins if (b.get('ratio_v') or 0) >= 1.3]
     if basins:
         if wet:
-            top = max(wet, key=lambda b: b['ratio_v'])
+            top = max(wet, key=lambda b: (b['known'], b['ratio_v']))
             summary.append(f"De las {len(basins)} cabeceras que aportan agua hasta acá, {len(wet)} esperan más lluvia que lo normal en los próximos {H} días; la más cargada es {top['name']} ({top['mm']} mm, {top['ratio']} lo normal), " + (f"que tarda {top['travel']} en llegar." if top['known'] else "cuyo tiempo de llegada hasta acá todavía está en cálculo."))
         else:
             summary.append(f"Ninguna de las {len(basins)} cabeceras que aportan agua hasta acá espera lluvia muy por encima de lo normal en los próximos {H} días.")
@@ -476,7 +476,7 @@ def _box_poly(b):
     return [[so, w], [so, e], [n, e], [n, w]]
 
 
-def _pc_search(collection, feat, pts, today, days, query=None):
+def _pc_search(collection, feat, pts, today, days, query=None, min_cov=0.99):
     import vegetation as veg
     from datetime import datetime, time as dtime
     end = datetime.combine(today, dtime(23, 59)); start = end - timedelta(days=days)
@@ -485,8 +485,12 @@ def _pc_search(collection, feat, pts, today, days, query=None):
             'sortby': [{'field': 'properties.datetime', 'direction': 'desc'}]}
     if query:
         body['query'] = query
-    return [it for it in veg.c._post(veg.PC_STAC + '/search', body, timeout=25).json().get('features', [])
-            if veg.footprint_coverage(it, pts) >= 0.99]
+    out = []
+    for it in veg.c._post(veg.PC_STAC + '/search', body, timeout=25).json().get('features', []):
+        cov = veg.footprint_coverage(it, pts)
+        if cov >= min_cov:
+            out.append(it | {'_cov': cov})
+    return out
 
 
 def _pc_png(collection, item_id, feat, params):
@@ -514,7 +518,7 @@ def optical_picture(s, today=None, days=OPTICAL_DAYS, tries=4):
     feat = {'type': 'Feature', 'properties': {}, 'geometry': veg.geojson_polygon(pts)}
     cands = []
     try:
-        cands += [('s2', it) for it in _pc_search('sentinel-2-l2a', feat, pts, today, days, {'eo:cloud_cover': {'lt': 40}})[:tries]]
+        cands += [('s2', it) for it in _pc_search('sentinel-2-l2a', feat, pts, today, days, {'eo:cloud_cover': {'lt': 95}})[:tries]]
     except Exception:
         pass
     try:
@@ -554,13 +558,16 @@ def radar_picture(s, today=None, days=RADAR_DAYS):
     today = today or date.today()
     pts = _box_poly(_box(s, S2_BOX))
     feat = {'type': 'Feature', 'properties': {}, 'geometry': veg.geojson_polygon(pts)}
-    for it in _pc_search('sentinel-1-rtc', feat, pts, today, days)[:2]:
+    items = _pc_search('sentinel-1-rtc', feat, pts, today, days, min_cov=0.5)
+    items.sort(key=lambda it: (str(it['properties'].get('datetime', ''))[:10], it['_cov']), reverse=True)
+    for it in items[:2]:
         png = _pc_png('sentinel-1-rtc', it['id'], feat, {'expression': '10*log10(vv)', 'asset_as_band': 'true', 'rescale': '-24,0', 'nodata': 0})
         if png:
             day = str(it['properties'].get('datetime', ''))[:10]
             return _pic(png, day, today, 'Sentinel-1 radar (ESA · Copernicus), 10 m', 100,
                         f'Radar Sentinel-1 (VV, corregido por terreno): atraviesa las nubes. El agua quieta y las zonas anegadas se ven negras; '
-                        f'ciudades y monte, claros. Se usó porque no hubo toma óptica despejada en los últimos {OPTICAL_DAYS} días. Recuadro de {BOX_TXT}.', _box(s, S2_BOX))
+                        f'ciudades y monte, claros. Se usó porque no hubo toma óptica despejada en los últimos {OPTICAL_DAYS} días. Recuadro de {BOX_TXT}'
+                        + ('.' if it['_cov'] >= 0.95 else f'; la pasada cubre el {round(100 * it["_cov"])} % del recuadro (el resto queda en blanco).'), _box(s, S2_BOX))
     return None
 
 
@@ -633,15 +640,16 @@ def local_picture(s, today=None):
                                       'Volvé a descargarlo en unos minutos o consultá worldview.earthdata.nasa.gov.'}
 
 
-def local_flood(s, picture=None, today=None):
-    """Agua de crecida de Copernicus GFM sobre el mismo recuadro de la foto. Siempre devuelve un dict."""
+def local_flood(s, picture=None, today=None, f=None):
+    """Agua de crecida de Copernicus GFM en el recuadro local (~33 × 24 km). Si la foto es de otro recuadro, se pide la
+    máscara para ese recuadro. Siempre devuelve un dict."""
     import gfm
     if os.environ.get('DOTS_REPORT_IMAGERY', '1') == '0':
         return {'ok': False, 'missing': 'Imágenes satelitales desactivadas en esta instalación.'}
     pic = picture or {}
-    bbox = pic.get('bbox') or _box(s, S2_BOX)
+    local = _box(s, S2_BOX)
     try:
-        f = gfm.flood_at(tuple(bbox), today)
+        f = f or gfm.flood_at(local, today)
     except Exception as e:
         return {'ok': False, 'missing': f'Copernicus GFM no respondió al generar el informe ({type(e).__name__}). '
                                         f'Se puede consultar en global-flood.emergency.copernicus.eu.'}
@@ -649,10 +657,11 @@ def local_flood(s, picture=None, today=None):
            'flood_pct': num(f['flood_pct'], 1), 'water_km2': num(f['water_km2'], 1) if f['water_km2'] is not None else '—',
            'box_km2': num(f['box_km2']), 'has_flood': f['flood_km2'] >= 0.5, 'overlaid': False, 'mask': None}
     try:
-        out['mask'] = list(gfm.recolor(f['mask']))
+        pb = tuple(pic['bbox']) if pic.get('image') and pic.get('bbox') else None
+        out['mask'] = list(gfm.recolor(f['mask']) if (pb is None or pb == tuple(local)) else gfm.mask_for(f['layer'], pb, f['date']))
         out['overlaid'] = bool(pic.get('image'))
     except Exception:
-        pass
+        out['mask'] = None
     out['summary'] = ((f"Copernicus GFM detectó agua de crecida en {out['flood_km2']} km² alrededor de la localidad "
                        f"({out['flood_pct']} % del recuadro de {out['box_km2']} km², fuera del cauce normal), con el radar del {dm(f['date'])}.")
                       if out['has_flood'] else
@@ -664,11 +673,25 @@ def local_pdf(d, sid, today=None):
     import typst
     ld = local_data(d, sid, today)
     s = next((x for x in cc.STATIONS if x['id'] == sid), None)
-    try:
-        ld['picture'] = local_picture(s, today) if s else None
-    except Exception as e:
-        ld['picture'] = {'image': None, 'missing': f'No se pudo obtener imagen satelital ({type(e).__name__}).'}
-    ld['flood'] = local_flood(s, ld['picture'], today) if s else None
+    # foto y GFM en paralelo: el informe tiene que entrar en los 60 s de Vercel
+    import gfm
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        jp = pool.submit(local_picture, s, today) if s else None
+        jf = pool.submit(gfm.flood_at, _box(s, S2_BOX), today) if s and os.environ.get('DOTS_REPORT_IMAGERY', '1') != '0' else None
+        try:
+            ld['picture'] = jp.result(timeout=40) if jp else None
+        except Exception as e:
+            ld['picture'] = {'image': None, 'missing': f'No se pudo obtener imagen satelital ({type(e).__name__}).'}
+        try:
+            fres = jf.result(timeout=30) if jf else None
+        except Exception:
+            fres = None
+    if not s:
+        ld['flood'] = None
+    elif jf and fres is None:
+        ld['flood'] = {'ok': False, 'missing': 'Copernicus GFM no respondió a tiempo al generar el informe. Se puede consultar en global-flood.emergency.copernicus.eu.'}
+    else:
+        ld['flood'] = local_flood(s, ld['picture'], today, fres)
     if (ld['picture'] or {}).get('image'):
         import pngmini
         wh = pngmini.size(bytes(ld['picture']['image'])) or (3, 2)

@@ -58,16 +58,22 @@ def latest_time(times, today=None):
 
 
 def pick_layers(caps):
-    """Capa de agua de crecida observada y capa de agua de referencia (permanente)."""
-    def find(*keys, avoid=('likelihood', 'uncertain', 'maximum', 'advisory', 'exclusion')):
+    """Capa de agua de crecida observada y capa de agua de referencia (permanente). Se evitan las capas 'group'
+    y 'footprint', que además del agua dibujan el contorno de la pasada y la fecha."""
+    bad = ('likelihood', 'uncertain', 'maximum', 'advisory', 'exclusion', 'group', 'footprint', 'landcover', 'population')
+    def find(*keys):
+        names = sorted(caps, key=len)
         for k in keys:
-            for n in caps:
+            for n in names:                       # primero el nombre exacto (sin prefijo de espacio de trabajo)
+                if n.split(':')[-1].lower() == k:
+                    return n
+            for n in names:
                 low = n.lower()
-                if k in low and not any(a in low for a in avoid):
+                if k in low and not any(a in low for a in bad):
                     return n
         return None
-    return {'flood': find('observed_flood_extent', 'ensemble_flood_extent', 'flood_extent', 'flood'),
-            'reference': find('reference_water', 'permanent_water')}
+    return {'flood': find('observed_flood_extent', 'ensemble_flood_extent', 'flood_extent'),
+            'reference': find('reference_water_mask', 'reference_water', 'permanent_water')}
 
 
 def capabilities():
@@ -123,6 +129,12 @@ def area_km2(bbox):
     w, s, e, n = bbox
     lat = math.radians((s + n) / 2)
     return abs(e - w) * 111.32 * math.cos(lat) * abs(n - s) * 110.54
+
+
+def mask_for(layer, bbox, day, width=900, height=620):
+    """Máscara roja de agua de crecida para otro recuadro (p. ej., el de la foto), mismo día y capa."""
+    m = getmap(layer, bbox, day, width, height)
+    return recolor(m) if m else None
 
 
 def flood_at(bbox, today=None, width=900, height=620):
