@@ -357,3 +357,24 @@
 @media (max-width: 1100px) { .guide-four { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 560px) { .guide-four { grid-template-columns: 1fr; } }
 .guide p + p { margin-top: 14px; }
+.layer-funnel{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:24px 0}
+.layer-funnel div{border:1px solid #e4e7ec;border-radius:12px;padding:16px;background:#fff}
+.layer-funnel b{display:block;font-size:34px;line-height:1;color:#0b2b33}
+.layer-funnel span{font-size:13px;color:#667085}
+.layer-themes{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin:8px 0 28px}
+.layer-themes article{border:1px solid #e4e7ec;border-radius:12px;padding:18px;background:#fff}
+.layer-themes h3{margin:6px 0 8px}
+.layer-themes p{color:#475467;font-size:14px}
+.layer-themes ul{margin:10px 0 0;padding-left:18px;font-size:13px;color:#344054;columns:2;column-gap:18px}
+@media (max-width:760px){.layer-funnel{grid-template-columns:1fr 1fr}.layer-themes{grid-template-columns:1fr}.layer-themes ul{columns:1}}
+.layers-page .layer-funnel,.layers-page .layer-themes,.layers-page .layer-credits{max-width:1200px;margin-left:auto;margin-right:auto;padding-left:24px;padding-right:24px;box-sizing:border-box}
+.layers-page .layer-credits{margin-top:18px;margin-bottom:18px}
+/* encabezado en pantallas medianas: entra todo en una línea */
+@media (min-width:1101px) and (max-width:1500px){
+  .site-header{gap:16px;padding:0 2.5vw}
+  .site-brand{min-width:0}
+  .site-header nav{gap:16px!important}
+  .site-header nav .nav-demo{display:none}
+  .site-head-actions .demo-btn{padding:10px 12px;white-space:nowrap}
+}
+@media (min-width:1101px) and (max-width:1260px){.site-brand small{display:none}.site-header nav a{font-size:12px}}

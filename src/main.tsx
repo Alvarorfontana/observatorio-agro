@@ -2163,7 +2163,7 @@ function SiteLink({to,children,className=""}:{to:string;children:React.ReactNode
   return <a href={to} className={className} onClick={(e)=>{e.preventDefault();history.pushState({},"",to);window.dispatchEvent(new PopStateEvent("popstate"));window.scrollTo({top:0,behavior:"smooth"});}}>{children}</a>
 }
 function Brand(){return <SiteLink to="/" className="site-brand"><img className="brand-logo" src="/dots-logo.svg" alt="DOTS Campo"/><span><b>DOTS <em>CAMPO</em></b><small>DATOS · OBSERVACIÓN · TERRITORIO · SATÉLITE</small></span></SiteLink>}
-function PublicHeader({onDemo}:{onDemo:()=>void}){return <header className="site-header"><Brand/><nav><SiteLink to="/que-es-dots">Qué es DOTS</SiteLink><SiteLink to="/guia">Cómo funciona</SiteLink><SiteLink to="/libre-deforestacion" className="nav-highlight">Libre de deforestación</SiteLink><SiteLink to="/modulos">Módulos</SiteLink><SiteLink to="/panel">Panel regional</SiteLink><SiteLink to="/tecnologia">Fuentes y datos</SiteLink><SiteLink to="/conexiones">APIs y accesos</SiteLink><button className="nav-demo" onClick={onDemo}>Demo</button></nav><div className="site-head-actions"><SiteLink to="/acceso" className="ghost-link">Ingresar</SiteLink><button className="demo-btn" onClick={onDemo}>Abrir Observatorio →</button></div></header>}
+function PublicHeader({onDemo}:{onDemo:()=>void}){return <header className="site-header"><Brand/><nav><SiteLink to="/que-es-dots">Qué es DOTS</SiteLink><SiteLink to="/guia">Cómo funciona</SiteLink><SiteLink to="/libre-deforestacion" className="nav-highlight">Libre de deforestación</SiteLink><SiteLink to="/modulos">Módulos</SiteLink><SiteLink to="/panel">Panel regional</SiteLink><SiteLink to="/capas">Capas</SiteLink><SiteLink to="/tecnologia">Fuentes</SiteLink><SiteLink to="/conexiones">APIs</SiteLink><button className="nav-demo" onClick={onDemo}>Demo</button></nav><div className="site-head-actions"><SiteLink to="/acceso" className="ghost-link">Ingresar</SiteLink><button className="demo-btn" onClick={onDemo}>Abrir Observatorio →</button></div></header>}
 const sourceGroups=[
  ["ARGENTINA",["CONAE · SAOCOM","SMN","INA"]],
  ["EUROPA",["Copernicus · Sentinel","ECMWF · C3S","EUMETSAT","DLR · Alemania","CNES · Francia"]],
@@ -2342,6 +2342,44 @@ function Deforestation({onDemo}:{onDemo:()=>void}){
   </main><SiteFooter/></div>;
 }
 function Guide({onDemo}:{onDemo:()=>void}){return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner guide"><PageHero eyebrow="CÓMO FUNCIONA DOTS" title="Lo que el satélite ve de un campo, contado para todos." lead="Para productores, estudiantes, profesionales, periodistas y curiosos: qué es DOTS, de qué satélite sale cada dato, cómo se procesa la información de un lote y cómo usarlo en cinco minutos."/><GuideContent onDemo={onDemo}/></main><SiteFooter/></div>}
+const LAYER_THEMES: [string,string,string][] = [
+  ["Campo y ambiente","Bosque, agua y anegamiento","Pérdida de bosque año por año desde 2001 y dónde hubo agua en superficie desde 1984: bajos que se anegan, lagunas que aparecen o se secan, desmontes. Sirve para elegir potreros, ubicar aguadas y respaldar la verificación libre de deforestación."],
+  ["Satélite NASA","Imagen satelital diaria","Color real de MODIS y VIIRS de cada día, combinaciones de bandas que resaltan agua, quemas y anegamiento, temperatura de la superficie y humo. Sirve para seguir inundaciones, incendios y sequías a escala regional."],
+  ["Mapas base","Mapas para ubicarse","Imagen satelital de alta resolución, topográficos con curvas de nivel, caminos rurales, el mapa oficial del IGN argentino y fondos claros u oscuros para leer mejor los datos."],
+  ["Etiquetas y redes","Rutas, vías y localidades","Rutas, caminos, vías férreas, límites y nombres de lugares sobre cualquier fondo. Sirven para la logística: cómo sale la hacienda y a qué distancia están el remate, el frigorífico o el puerto."],
+];
+const DOTS_LAYERS: [string,string][] = [
+  ["NDVI del lote · Sentinel-2 10 m","Vigor del pasto dentro del polígono, escena por escena, con nubes excluidas."],
+  ["Color real del lote · Sentinel-2","La foto satelital más reciente del lote, recortada a su borde."],
+  ["Cobertura anual 2017–2023 · 10 m","Árboles, pastizal, cultivo y agua de cada año, para comparar contra 2020."],
+  ["Relieve y anegamiento · DEM 30 m","Bajos cerrados, escurrimiento y propensión a anegarse, calculados en el navegador."],
+  ["Límites de lotes · Fields of the World","Lotes detectados por inteligencia artificial en todo el mundo, para tomar el borde con un clic."],
+  ["NDVI regional, humedad del suelo, lluvia y nubes · NASA","NDVI MODIS cada 8 días, humedad SMAP, lluvia GPM IMERG cada 30 minutos y nubes GOES cada 10 minutos."],
+  ["Cobertura ESA WorldCover y suelos INTA","Clases de cobertura a 10 m y cartografía de suelos de Argentina."],
+];
+function LayersPage({onDemo}:{onDemo:()=>void}){
+  const n = OPEN_LAYERS.length + DOTS_LAYERS.length;
+  return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner layers-page">
+    <PageHero eyebrow="CAPAS DEL MAPA" title={`${n} capas abiertas sobre el lote, sin claves ni costos.`} lead="DOTS revisó catálogos abiertos de mapas y se quedó con las capas que sirven para el campo, cubren Argentina y la región, son gratuitas y responden. Cada capa indica de dónde viene."/>
+    <section className="layer-funnel">
+      <div><b>950</b><span>capas revisadas en el catálogo abierto xyzservices (GeoPandas)</span></div>
+      <div><b>≈120</b><span>gratuitas y sin clave</span></div>
+      <div><b>{OPEN_LAYERS.length}</b><span>útiles para el campo, con cobertura en la región y probadas todos los días</span></div>
+      <div><b>+{DOTS_LAYERS.length}</b><span>capas que DOTS calcula o integra para cada lote</span></div>
+    </section>
+    <section className="layer-themes">{LAYER_THEMES.map(([g,t,d])=><article key={g}><span className="module-num">{OPEN_LAYERS.filter(l=>l.group===g).length} capas</span><h3>{t}</h3><p>{d}</p>
+      <ul>{OPEN_LAYERS.filter(l=>l.group===g).map(l=><li key={l.id}>{l.name}</li>)}</ul></article>)}</section>
+    <section className="about-body"><section className="about-block"><div className="about-side"><span className="module-num">PROPIAS DE DOTS</span><h2>Capas calculadas para el lote</h2></div><div className="about-text">
+      {DOTS_LAYERS.map(([t,d])=><p key={t}><b>{t}.</b> {d}</p>)}
+    </div></section>
+    <section className="about-block"><div className="about-side"><span className="module-num">CÓMO SE ELIGIERON</span><h2>Criterio</h2></div><div className="about-text">
+      <p>Se descartaron las capas que exigen clave o pago, las que sólo cubren otro país (Francia, Alemania, Estados Unidos, Singapur) y las que no devolvieron imagen al probarlas sobre Corrientes. Un chequeo automático pide todos los días una imagen de cada capa y avisa si alguna deja de responder.</p>
+      <p>Las capas muestran datos de cada fuente tal como los publica: no se mezclan ni se rellenan. Las de la NASA son diarias y regionales (250 m a 1 km); para el detalle del lote, DOTS usa Sentinel-2 a 10 m.</p>
+    </div></section></section>
+    <section className="demo-call"><div><span className="section-tag">PROBALO</span><h2>Elegí el mapa base y una capa encima.</h2><p>En el Observatorio, arriba del mapa, hay un selector de mapa base y otro de capa superpuesta con control de transparencia.</p></div><button onClick={onDemo}>Abrir el mapa →</button></section>
+    <p className="footnote layer-credits">Catálogo base: xyzservices (github.com/geopandas/xyzservices, licencia BSD-3). Atribuciones: Esri, OpenStreetMap (ODbL), OpenTopoMap (CC-BY-SA), CyclOSM, Carto, OpenRailwayMap, NASA GIBS/EOSDIS, Hansen/UMD/Google/USGS/NASA vía Global Forest Watch (CC-BY 4.0), EC JRC/Google Global Surface Water, Instituto Geográfico Nacional de Argentina.</p>
+  </main><SiteFooter/></div>
+}
 function PageHero({eyebrow,title,lead}:{eyebrow:string;title:string;lead:string}){return <section className="page-hero"><span className="section-tag">{eyebrow}</span><h1>{title}</h1><p>{lead}</p></section>}
 const cards={producto:[["01","Territorio primero","Todo análisis comienza en el polígono real del lote o potrero."],["02","Observación multifuente","Satélites, estaciones, modelos y bases territoriales se consultan por lugar y fecha."],["03","Interpretación trazable","Cada variable indica fuente, unidad, fecha, método, estado y alcance."],["04","Decisión y seguimiento","DOTS reúne hallazgos, recomendaciones, tareas e informe en una sola lectura."]],soluciones:[["Lotes y potreros","Superficie, perímetro, centroides, historial y análisis por unidad de manejo."],["Pasturas","Escenas y evolución espectral cuando existe procesamiento raster verificable."],["Agua","Lluvia, balance, ríos e infraestructura hídrica declarada o detectada con su nivel de evidencia."],["Suelos","Humedad, temperatura, relieve y propiedades modeladas con profundidad y fuente declaradas."],["Ganado","THI, carga y rotación cuando existe inventario o dato aportado por el productor."],["Riesgos","FIRMS, calor, sequía y exceso hídrico sin convertir ausencia de detección en ausencia de riesgo."]],ganaderia:[["Potrero como unidad","Cada lectura parte de un límite territorial y su historia."],["Agua para el rodeo","Cobertura, distancias y estado de la infraestructura hídrica."],["Pastura y carga","Condición vegetal cruzada con ocupación y presión de pastoreo cuando hay datos."],["Bienestar térmico","THI y meteorología para anticipar condiciones de estrés por calor."],["Rotación","Entrada, salida, descanso y recuperación del potrero."],["Tareas","Del diagnóstico a inspecciones, movimientos y acciones verificables."]]};
 function InstitutionalDepth({kind}:{kind:"producto"|"soluciones"|"ganaderia"}){
@@ -2428,7 +2466,7 @@ function Contact({onDemo}:{onDemo:()=>void}){
       {ch?.email_enabled===false && <p className="form-status">El envío se habilita cuando el correo de destino esté configurado. No simulamos envíos.</p>}
     </form></section></main><SiteFooter/></div>}
 function Access({onDemo}:{onDemo:()=>void}){return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner access-page"><PageHero eyebrow="ACCESO" title="Observatorio DOTS" lead="La autenticación real se incorporará con permisos por establecimiento. La demostración no simula una cuenta de usuario."/><button className="big-demo" onClick={onDemo}>Entrar a la demostración →</button></main><SiteFooter/></div>}
-function SiteFooter(){return <footer className="site-footer"><Brand/><p>Inteligencia territorial para la gestión ganadera.</p><div><SiteLink to="/guia">Guía: cómo funciona</SiteLink><SiteLink to="/producto">Cómo funciona</SiteLink><SiteLink to="/tecnologia">Fuentes</SiteLink><SiteLink to="/conexiones">APIs</SiteLink><SiteLink to="/demo">Demo</SiteLink><SiteLink to="/contacto">Contacto</SiteLink></div></footer>}
+function SiteFooter(){return <footer className="site-footer"><Brand/><p>Inteligencia territorial para la gestión ganadera.</p><div><SiteLink to="/guia">Guía: cómo funciona</SiteLink><SiteLink to="/producto">Cómo funciona</SiteLink><SiteLink to="/tecnologia">Fuentes</SiteLink><SiteLink to="/capas">Capas</SiteLink><SiteLink to="/conexiones">APIs</SiteLink><SiteLink to="/demo">Demo</SiteLink><SiteLink to="/contacto">Contacto</SiteLink></div></footer>}
 
 function App(){
   const [path,setPath]=useState(window.location.pathname);
@@ -2446,6 +2484,7 @@ function App(){
   if(path==="/modulos")return <Modules onDemo={openDemo}/>;
   if(path==="/panel")return <RegionalPanel onDemo={openDemo}/>;
   if(path==="/tecnologia")return <Technology onDemo={openDemo}/>;
+  if(path==="/capas")return <LayersPage onDemo={openDemo}/>;
   if(path==="/conexiones")return <ApiConnections onDemo={openDemo}/>;
   if(path==="/casos")return <Cases onDemo={openDemo}/>;
   if(path==="/precios")return <Pricing onDemo={openDemo}/>;
