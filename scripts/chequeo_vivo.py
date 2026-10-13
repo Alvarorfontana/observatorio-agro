@@ -90,7 +90,7 @@ for l in layers:
     n = 2 ** z; x = int((LON + 180) / 360 * n)
     y = int((1 - math.log(math.tan(math.radians(LAT)) + 1 / math.cos(math.radians(LAT))) / math.pi) / 2 * n)
     if l.get('tms'): y = n - 1 - y
-    u = l['url'].replace('{time}', (date.today() - timedelta(days=2)).isoformat())   # NASA publica con 1-2 días de atraso.replace('{s}', (l.get('subdomains') or 'a')[0])
+    u = l['url'].replace('{time}', (date.today() - timedelta(days=2)).isoformat()).replace('{s}', (l.get('subdomains') or 'a')[0])   # NASA publica con 1-2 días de atraso
     u = u.replace('{z}', str(z)).replace('{x}', str(x)).replace('{y}', str(y))
     t0 = time.monotonic()
     try:
