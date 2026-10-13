@@ -53,6 +53,7 @@ import { LotDashboard } from "./dashboard/LotDashboard";
 import { OPEN_LAYERS, LAYER_GROUPS } from "./dashboard/openLayers";
 import { GuideContent } from "./site/GuideContent";
 import { CuencaPanel, AlertasTeaser, AlertasPortada } from "./site/CuencaPanel";
+import { CultivosPanel } from "./site/Cultivos";
 import { readLotFile, lotsToGeoJSON, lotsToKML } from "./dashboard/lotFiles";
 echarts.use([
   MarkLineComponent,
@@ -2214,7 +2215,7 @@ function SiteLink({to,children,className=""}:{to:string;children:React.ReactNode
   return <a href={to} className={className} onClick={(e)=>{e.preventDefault();history.pushState({},"",to);window.dispatchEvent(new PopStateEvent("popstate"));window.scrollTo({top:0,behavior:"smooth"});}}>{children}</a>
 }
 function Brand(){return <SiteLink to="/" className="site-brand"><img className="brand-logo" src="/dots-logo.svg" alt="DOTS Campo"/><span><b>DOTS <em>CAMPO</em></b><small>DATOS · OBSERVACIÓN · TERRITORIO · SATÉLITE</small></span></SiteLink>}
-function PublicHeader({onDemo}:{onDemo:()=>void}){return <header className="site-header"><Brand/><nav><SiteLink to="/que-es-dots">Qué es DOTS</SiteLink><SiteLink to="/guia">Cómo funciona</SiteLink><SiteLink to="/libre-deforestacion" className="nav-highlight">Libre de deforestación</SiteLink><SiteLink to="/modulos">Módulos</SiteLink><SiteLink to="/panel">Panel regional</SiteLink><SiteLink to="/tecnologia">Fuentes</SiteLink><SiteLink to="/conexiones">APIs</SiteLink><button className="nav-demo" onClick={onDemo}>Demo</button></nav><div className="site-head-actions"><SiteLink to="/alertas" className="alert-btn">⚠ Alertas</SiteLink><SiteLink to="/capas" className="layers-btn">◧ Capas<span className="lb-long">&nbsp;del mapa</span></SiteLink><SiteLink to="/acceso" className="ghost-link">Ingresar</SiteLink><button className="demo-btn" onClick={onDemo}>Abrir Observatorio →</button></div></header>}
+function PublicHeader({onDemo}:{onDemo:()=>void}){return <header className="site-header"><Brand/><nav><SiteLink to="/que-es-dots">Qué es DOTS</SiteLink><SiteLink to="/guia">Cómo funciona</SiteLink><SiteLink to="/libre-deforestacion" className="nav-highlight">Libre de deforestación</SiteLink><SiteLink to="/modulos">Módulos</SiteLink><SiteLink to="/cultivos">Cultivos</SiteLink><SiteLink to="/panel">Panel regional</SiteLink><SiteLink to="/tecnologia">Fuentes</SiteLink><SiteLink to="/conexiones">APIs</SiteLink><button className="nav-demo" onClick={onDemo}>Demo</button></nav><div className="site-head-actions"><SiteLink to="/alertas" className="alert-btn">⚠ Alertas</SiteLink><SiteLink to="/capas" className="layers-btn">◧ Capas<span className="lb-long">&nbsp;del mapa</span></SiteLink><SiteLink to="/acceso" className="ghost-link">Ingresar</SiteLink><button className="demo-btn" onClick={onDemo}>Abrir Observatorio →</button></div></header>}
 const sourceGroups=[
  ["ARGENTINA",["CONAE · SAOCOM","SMN","INA"]],
  ["EUROPA",["Copernicus · Sentinel","ECMWF · C3S","EUMETSAT","DLR · Alemania","CNES · Francia"]],
@@ -2291,6 +2292,13 @@ function Modules({onDemo}:{onDemo:()=>void}){
   </main><SiteFooter/></div>;
 }
 const REGIONS:[string,string,number,number][]=[["bellavista","Bella Vista · Corrientes",-28.507,-59.043],["mercedes","Mercedes · Corrientes",-29.18,-58.08],["reconquista","Reconquista · Santa Fe",-29.15,-59.65],["resistencia","Resistencia · Chaco",-27.45,-58.99],["pergamino","Pergamino · Buenos Aires",-33.89,-60.57]];
+function CultivosPage({onDemo}:{onDemo:()=>void}){
+  useEffect(()=>{document.title="Informe de cultivo · DOTS";},[]);
+  return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner regional-panel alerts-page">
+    <div className="no-print"><PageHero eyebrow="AGRICULTURA" title="Informe de cultivo por localidad." lead="Lluvia y evapotranspiración de los últimos 30 días y la semana que viene, temperaturas contra el umbral de helada de cada cultivo, grados día desde la siembra, alertas y recomendaciones. Maíz, soja, trigo, girasol, sorgo y arroz."/></div>
+    <CultivosPanel/>
+  </main><div className="no-print"><SiteFooter/></div></div>;
+}
 function AlertsPage({onDemo}:{onDemo:()=>void}){
   useEffect(()=>{document.title="Sistema de Alerta de Crecidas · DOTS";},[]);
   return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner regional-panel alerts-page">
@@ -2485,7 +2493,7 @@ function InfoPage({kind,onDemo}:{kind:"producto"|"soluciones"|"ganaderia";onDemo
 // Fuentes y licencias: a quién le debemos cada dato y cada pieza de código, y con qué condiciones.
 const LIC_DATA:[string,string,string,string][]=[
  ["INA · Sistema de Alerta","Instituto Nacional del Agua (Argentina), escalas de Prefectura Naval","Datos públicos del Estado argentino","https://alerta.ina.gob.ar/"],
- ["Open-Meteo (pronóstico, conjuntos ECMWF y GFS, GloFAS, ERA5)","Open-Meteo.com","Datos CC-BY 4.0 · API gratuita sólo para uso no comercial","https://open-meteo.com/en/licence"],
+ ["Open-Meteo (pronóstico, conjuntos ECMWF y GFS, GloFAS, ERA5; informe de cultivo)","Open-Meteo.com","Datos CC-BY 4.0 · API gratuita sólo para uso no comercial","https://open-meteo.com/en/licence"],
  ["ECMWF IFS","Centro Europeo de Pronósticos a Plazo Medio","Datos abiertos CC-BY 4.0","https://www.ecmwf.int/en/forecasts/datasets/open-data"],
  ["NOAA GFS, CPC (El Niño), PSL","NOAA (EE. UU.)","Dominio público del gobierno de EE. UU.","https://www.cpc.ncep.noaa.gov/"],
  ["Copernicus: Sentinel-1, Sentinel-2, GloFAS, DEM, GFM","Unión Europea · ESA · ECMWF","Acceso libre y abierto, con cita obligatoria de Copernicus","https://www.copernicus.eu/es/acceso-los-datos"],
@@ -2609,7 +2617,7 @@ function Contact({onDemo}:{onDemo:()=>void}){
       {ch?.email_enabled===false && <p className="form-status">El envío se habilita cuando el correo de destino esté configurado. No simulamos envíos.</p>}
     </form></section></main><SiteFooter/></div>}
 function Access({onDemo}:{onDemo:()=>void}){return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner access-page"><PageHero eyebrow="ACCESO" title="Observatorio DOTS" lead="La autenticación real se incorporará con permisos por establecimiento. La demostración no simula una cuenta de usuario."/><button className="big-demo" onClick={onDemo}>Entrar a la demostración →</button></main><SiteFooter/></div>}
-function SiteFooter(){return <footer className="site-footer"><Brand/><p>Inteligencia territorial para la gestión ganadera.</p><div><SiteLink to="/guia">Guía: cómo funciona</SiteLink><SiteLink to="/producto">Cómo funciona</SiteLink><SiteLink to="/tecnologia">Fuentes</SiteLink><SiteLink to="/capas">Capas</SiteLink><SiteLink to="/conexiones">APIs</SiteLink><SiteLink to="/demo">Demo</SiteLink><SiteLink to="/licencias">Fuentes y licencias</SiteLink><SiteLink to="/contacto">Contacto</SiteLink></div></footer>}
+function SiteFooter(){return <footer className="site-footer"><Brand/><p>Inteligencia territorial para la gestión ganadera.</p><div><SiteLink to="/guia">Guía: cómo funciona</SiteLink><SiteLink to="/producto">Cómo funciona</SiteLink><SiteLink to="/tecnologia">Fuentes</SiteLink><SiteLink to="/capas">Capas</SiteLink><SiteLink to="/conexiones">APIs</SiteLink><SiteLink to="/demo">Demo</SiteLink><SiteLink to="/cultivos">Informe de cultivo</SiteLink><SiteLink to="/licencias">Fuentes y licencias</SiteLink><SiteLink to="/contacto">Contacto</SiteLink></div></footer>}
 
 function App(){
   const [path,setPath]=useState(window.location.pathname);
@@ -2627,6 +2635,7 @@ function App(){
   if(path==="/modulos")return <Modules onDemo={openDemo}/>;
   if(path==="/panel")return <RegionalPanel onDemo={openDemo}/>;
   if(path==="/alertas")return <AlertsPage onDemo={openDemo}/>;
+  if(path==="/cultivos")return <CultivosPage onDemo={openDemo}/>;
   if(path==="/tecnologia")return <Technology onDemo={openDemo}/>;
   if(path==="/licencias")return <Licenses onDemo={openDemo}/>;
   if(path==="/capas")return <LayersPage onDemo={openDemo}/>;
