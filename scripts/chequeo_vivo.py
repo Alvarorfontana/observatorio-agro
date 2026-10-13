@@ -60,7 +60,7 @@ for name, la, lo in (('inmet', -30.03, -51.20), ('dmc', -33.45, -70.66), ('eccc'
         r = S.get(f'{BASE}/api/fuentes/{route}', params={'lat': la, 'lon': lo}, timeout=65)
         js = r.json() if r.headers.get('Content-Type', '').startswith('application/json') else {}
         d = js.get('data') or {}
-        codes[name] = show(name, r, t0, f"  {len(d.get('observations') or [])} obs · {d.get('source_mode', '')}")
+        codes[name] = show(name, r, t0, f"  {len(d.get('observations') or [])} obs · {d.get('source_mode', '')} · estaciones del país en NOAA: {d.get('stations_in_country', '-')} · {[x.get('name') for x in d.get('stations') or []]}")
     except Exception as e:
         codes[name] = 599; out(f"ERR  {round((time.monotonic()-t0)*1000):>6} ms  {name:<16} {type(e).__name__}")
     time.sleep(1.5)
@@ -109,5 +109,8 @@ out(f"{len(codes) - len(bad)} de {len(codes)} sin error de DOTS." + (f" Fallan: 
     + (f" Fuente externa sin respuesta o con límite: {', '.join(slow)}" if slow else ''))
 if os.environ.get('GITHUB_ACTIONS'):
     # la tabla también queda como anotación, legible por la API de GitHub
-    print('::notice title=Chequeo en vivo::' + '%0A'.join(l.replace('%', '%25') for l in LINES))
+    rutas = [l for l in LINES if 'capa ·' not in l and not l.startswith('Capas:')]
+    capas = [l for l in LINES if 'capa ·' in l or l.startswith('Capas:')]
+    for title, part in (('Rutas', rutas), ('Capas del mapa', capas)):
+        print(f'::notice title={title}::' + '%0A'.join(l.replace('%', '%25') for l in part))
 sys.exit(1 if bad else 0)

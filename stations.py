@@ -50,7 +50,7 @@ def isd_stations(cc):
     """Estaciones ISD activas del país (lista oficial de NCEI, se guarda un día en memoria)."""
     if not _ISD['rows'] or time.monotonic() - _ISD['t'] > 86400:
         txt = c._get(ISD_HISTORY, timeout=40).text
-        recent = (c._now() - timedelta(days=30)).strftime('%Y%m%d')
+        recent = (c._now() - timedelta(days=365)).strftime('%Y%m%d')   # la lista de NCEI se actualiza con atraso
         rows = []
         for r in csv.DictReader(io.StringIO(txt)):
             try:
@@ -83,7 +83,8 @@ def isd(key, lat, lon, n=3):
     st = isd_stations(cc)
     near = [x for x in sorted(((c._km(lat, lon, s['lat'], s['lon']), s) for s in st), key=lambda x: x[0])[:n] if x[0] <= MAX_KM]
     if not near:
-        return c.envelope({'agency': AGENCY[key], 'observations': [], 'scope': f'Sin estaciones activas de {name} a menos de {MAX_KM} km'},
+        return c.envelope({'agency': AGENCY[key], 'observations': [], 'stations_in_country': len(st),
+                           'scope': f'Sin estaciones activas de {name} a menos de {MAX_KM} km'},
                           ISD_DATA, 'observación', 'NOAA NCEI', 'sin dato', f'No hay estaciones de {name} a menos de {MAX_KM} km del lote')
     end = c._now().date(); start = end - timedelta(days=4)
     r = c._get(ISD_DATA, {'dataset': 'global-hourly', 'stations': ','.join(s['id'] for _, s in near),
