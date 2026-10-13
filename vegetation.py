@@ -257,14 +257,24 @@ def ndvi_modis(polygon, days=120):
     w_km = (max(p[1] for p in pts) - min(p[1] for p in pts)) * 111.32 * math.cos(math.radians(lat))
     k = max(0, min(2, int((min(h_km, w_km) - 1) / 2)))   # ventana de 2k+1 km que entra en el lote
     end = c._now().date(); start = end - timedelta(days=days)
-    r = c._get(ORNL_MODIS, {'latitude': round(lat, 5), 'longitude': round(lon, 5), 'band': '250m_16_days_NDVI',
-                            'startDate': f'A{start.year}{start.timetuple().tm_yday:03d}',
-                            'endDate': f'A{end.year}{end.timetuple().tm_yday:03d}',
-                            'kmAboveBelow': k, 'kmLeftRight': k}, headers={'Accept': 'application/json'}, timeout=40)
-    js = r.json()
+    # el servicio de ORNL devuelve hasta 10 compuestos por pedido: se pide de a 150 días, en paralelo
+    tramos, a = [], start
+    while a <= end:
+        b = min(end, a + timedelta(days=149)); tramos.append((a, b)); a = b + timedelta(days=1)
+    def pedir(t):
+        a, b = t
+        return c._get(ORNL_MODIS, {'latitude': round(lat, 5), 'longitude': round(lon, 5), 'band': '250m_16_days_NDVI',
+                                   'startDate': f'A{a.year}{a.timetuple().tm_yday:03d}', 'endDate': f'A{b.year}{b.timetuple().tm_yday:03d}',
+                                   'kmAboveBelow': k, 'kmLeftRight': k}, headers={'Accept': 'application/json'}, timeout=40).json()
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        partes = list(pool.map(pedir, tramos))
+    js = partes[0] if partes else {}
     scale = float(js.get('scale') or 0.0001)
-    rows = []
-    for sub in js.get('subset') or []:
+    rows, vistos = [], set()
+    for sub in [x for p in partes for x in (p.get('subset') or [])]:
+        if sub.get('calendar_date') in vistos:
+            continue
+        vistos.add(sub.get('calendar_date'))
         vals = [v * scale for v in sub.get('data') or [] if v is not None and -2000 <= v <= 10000]
         row = {'item': f"MOD13Q1 {sub.get('modis_date')}", 'datetime': f"{sub.get('calendar_date')}T00:00:00Z", 'pixels': len(vals)}
         if vals:
@@ -499,3 +509,87 @@ def gee_ndvi(polygon, years=10):
                       url.replace(proj, '{PROJECT}'), f'NDVI histórico {years} años · Earth Engine',
                       'Google Earth Engine · NASA MODIS', 'recibido' if rows else 'sin dato',
                       None if rows else 'Earth Engine no devolvió valores')
+
+
+# ───────────────────────────── zonificación del lote por vigor ─────────────────────────────
+ZONE_COLORS = {1: [217, 45, 32, 200], 2: [240, 160, 32, 200], 3: [25, 185, 138, 200]}
+ZONE_NAMES = {1: 'Vigor bajo', 2: 'Vigor medio', 3: 'Vigor alto'}
+
+
+def kmeans_1d(centros, pesos, k=3, iters=40):
+    """k-medias en una dimensión sobre los centros del histograma, ponderado por la cantidad de píxeles."""
+    pares = [(x, w) for x, w in zip(centros, pesos) if w > 0]
+    if len(pares) < k:
+        raise ValueError('Muy pocos píxeles con NDVI para zonificar')
+    xs = sorted(x for x, _ in pares)
+    cs = [xs[int((i + 0.5) * len(xs) / k)] for i in range(k)]
+    for _ in range(iters):
+        grupos = [[] for _ in range(k)]
+        for x, w in pares:
+            grupos[min(range(k), key=lambda j: abs(x - cs[j]))].append((x, w))
+        nuevos = [sum(x * w for x, w in g) / sum(w for _, w in g) if g else cs[j] for j, g in enumerate(grupos)]
+        if max(abs(a - b) for a, b in zip(nuevos, cs)) < 1e-4:
+            break
+        cs = nuevos
+    cs.sort()
+    return cs, [(cs[i] + cs[i + 1]) / 2 for i in range(k - 1)]
+
+
+def _zone_expr(ndvi, cortes):
+    t1, t2 = cortes
+    return f'where(({ndvi})<{t1:.4f},1,where(({ndvi})<{t2:.4f},2,3))'
+
+
+def ndvi_zones(polygon, days=60):
+    """Tres zonas de vigor del lote con la escena Sentinel-2 despejada más reciente: cortes por k-medias del
+    histograma de NDVI, superficie de cada zona y la expresión para dibujarlas."""
+    pts = require_polygon(polygon)
+    feature = {'type': 'Feature', 'properties': {}, 'geometry': geojson_polygon(pts)}
+    items = best_tiles(search_s2(pts, days=days, limit=12, max_cloud=60), pts)
+    ha = area_ha(pts)
+    for it in items[:5]:
+        row = scene_ndvi(it, feature)
+        if row.get('status') != 'válida':
+            continue
+        r = c.SESSION.post(f'{PC_DATA}/item/statistics', json=feature, timeout=40,
+                           params={'collection': 'sentinel-2-l2a', 'item': it['id'], 'expression': row['expression'],
+                                   'asset_as_band': 'true', 'histogram_bins': 60, 'histogram_range': '-0.2,1'})
+        r.raise_for_status()
+        hist = _first_stats(r.json()).get('histogram') or [[], []]
+        counts, edges = hist[0], hist[1]
+        centros = [(edges[i] + edges[i + 1]) / 2 for i in range(len(counts))]
+        cs, cortes = kmeans_1d(centros, counts)
+        tot = sum(counts) or 1
+        zonas = []
+        for z, (lo, hi) in enumerate(zip([-1] + cortes, cortes + [2]), start=1):
+            n = sum(w for x, w in zip(centros, counts) if lo <= x < hi)
+            zonas.append({'zone': z, 'name': ZONE_NAMES[z], 'ndvi_center': round(cs[z - 1], 3), 'from': None if z == 1 else round(lo, 3),
+                          'to': None if z == 3 else round(hi, 3), 'pct': round(100 * n / tot, 1), 'ha': round(ha * n / tot, 1),
+                          'color': '#%02x%02x%02x' % tuple(ZONE_COLORS[z][:3])})
+        return c.envelope({'item': it['id'], 'datetime': row['datetime'], 'clear_fraction_lot': row['clear_fraction_lot'],
+                           'ndvi_mean': row.get('ndvi_mean'), 'cuts': [round(x, 4) for x in cortes], 'zones': zonas, 'area_ha': ha,
+                           'processing_baseline': row.get('processing_baseline'),
+                           'method': 'Sentinel-2 L2A (10 m) · NDVI · k-medias (3 grupos) sobre el histograma del lote'},
+                          PC_STAC, 'zonas de vigor del lote', 'Copernicus Sentinel-2 · Microsoft Planetary Computer')
+    return c.envelope(None, PC_STAC, 'zonas de vigor del lote', 'Copernicus Sentinel-2', 'sin dato',
+                      f'No hubo una escena Sentinel-2 despejada sobre el lote en los últimos {days} días')
+
+
+def zones_png(item_id, polygon, cuts, processing_baseline=None):
+    """PNG de las tres zonas de vigor recortado al lote, para superponer en el mapa."""
+    pts = require_polygon(polygon)
+    if not isinstance(item_id, str) or not item_id.startswith('S2') or len(item_id) > 80 or not all(ch.isalnum() or ch in '_.' for ch in item_id):
+        raise ValueError('Escena inválida')
+    t1, t2 = (float(x) for x in cuts)
+    if not (-1 <= t1 < t2 <= 1):
+        raise ValueError('Cortes inválidos')
+    expr = _zone_expr(ndvi_expression({'properties': {'s2:processing_baseline': processing_baseline}}), (t1, t2))
+    feature = {'type': 'Feature', 'properties': {}, 'geometry': geojson_polygon(pts)}
+    r = c.SESSION.post(f'{PC_DATA}/item/feature.png', json=feature, timeout=40,
+                       params={'collection': 'sentinel-2-l2a', 'item': item_id, 'expression': expr, 'asset_as_band': 'true',
+                               'colormap': json.dumps({str(k): v for k, v in ZONE_COLORS.items()}), 'max_size': 512})
+    r.raise_for_status()
+    if not r.headers.get('Content-Type', '').startswith('image/png'):
+        raise ValueError('La API raster no devolvió PNG')
+    w, s_, e, n = c.polygon_bbox(pts)
+    return r.content, [[s_, w], [n, e]]

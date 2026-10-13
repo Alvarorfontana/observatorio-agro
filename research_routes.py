@@ -39,7 +39,9 @@ def _int(args,key,default,lo,hi):
 
 VEGETATION={
   'ndvi':lambda p,a:veg.ndvi_best(p,_int(a,'days',120,15,365),_int(a,'scenes',6,1,10)),
-  'ndvi-modis':lambda p,a:veg.ndvi_modis(p,_int(a,'days',120,30,365)),
+  'ndvi-modis':lambda p,a:veg.ndvi_modis(p,_int(a,'days',120,30,760)),
+  'ndvi-zonas':lambda p,a:veg.ndvi_zones(p,_int(a,'days',60,15,180)),
+  'ndvi-zonas-imagen':None,
   'ndvi-imagen':None,
   'sentinel-hub-ndvi':lambda p,a:veg.sentinel_hub_ndvi(p,_int(a,'days',180,15,730)),
   'openeo-ndvi':lambda p,a:veg.openeo_ndvi(p,_int(a,'days',120,15,365)),
@@ -239,6 +241,9 @@ def research_data(name):
                 return c.envelope(out,'multi','deforestación, carbono y emisiones','Impact Observatory · ESA · ISRIC · IPCC','recibido' if ok else 'sin dato',None if ok else 'Sin datos')
             return jsonify(_both())
         if name in VEGETATION:
+            if name=='ndvi-zonas-imagen':
+                png,bounds=veg.zones_png(request.args.get('item',''),polygon,request.args.get('cuts','').split(','),request.args.get('baseline'))
+                return Response(png,mimetype='image/png',headers={'X-DOTS-Bounds':json.dumps(bounds),'Cache-Control':'public, max-age=86400'})
             if name=='ndvi-imagen':
                 png,bounds=veg.ndvi_png(request.args.get('item',''),polygon,request.args.get('baseline'),'rgb' if request.args.get('mode')=='rgb' else 'ndvi')
                 return Response(png,mimetype='image/png',headers={'X-DOTS-Bounds':json.dumps(bounds),'Cache-Control':'public, max-age=86400'})

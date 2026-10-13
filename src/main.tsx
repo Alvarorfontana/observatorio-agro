@@ -54,6 +54,7 @@ import { OPEN_LAYERS, LAYER_GROUPS } from "./dashboard/openLayers";
 import { GuideContent } from "./site/GuideContent";
 import { CuencaPanel, AlertasTeaser, AlertasPortada } from "./site/CuencaPanel";
 import { CultivosPanel } from "./site/Cultivos";
+import { NdviExtra } from "./site/NdviExtra";
 import { readLotFile, lotsToGeoJSON, lotsToKML } from "./dashboard/lotFiles";
 echarts.use([
   MarkLineComponent,
@@ -1494,6 +1495,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
                 {view==="ndvi" && ndviValid.length>1 && <div className="ndvi-timeline"><button onClick={()=>setNdviPlay(p=>!p)} aria-label={ndviPlay?"Pausar":"Reproducir"}>{ndviPlay?"❚❚":"▶"}</button><input type="range" min={0} max={ndviValid.length-1} step={1} value={ndviIdx} onChange={e=>{setNdviPlay(false);setNdviPick(Number(e.target.value))}} aria-label="Fecha de la escena"/><small>Escena {ndviIdx+1} de {ndviValid.length} · {String(ndviValid[ndviIdx]?.datetime||"").slice(0,10)} · NDVI medio {fmt(ndviValid[ndviIdx]?.ndvi_mean,2)}</small></div>}
                 {view==="ndvi" && payload?.latest && <div className="overlay-switch"><span>Sobre el lote · {String((ndviValid[ndviIdx]||payload.latest).datetime||"").slice(0,10)}</span>{[["ndvi","NDVI"],["rgb","Color real"],["off","Ninguna"]].map(([k,l])=><button key={k} className={(k==="off"?!showNdvi:showNdvi&&overlayMode===k)?"active":""} onClick={()=>{if(k==="off"){setShowNdvi(false)}else{setShowNdvi(true);setOverlayMode(k as any)}}}>{l}</button>)}</div>}
                 <p className="footnote">Escala: menos de 0,2 suelo desnudo o agua · 0,2–0,5 vegetación rala o pastura seca · más de 0,5 vegetación activa. No reemplaza la recorrida a campo.</p>
+                {view==="ndvi" && vertices.length>=3 && <NdviExtra point={point} vertices={vertices} map={mapRef.current}/>}
               </>}
               {view === "metnorway" && <><p className="footnote">MET Norway · conexión directa · pronóstico modelado. Actualizado: {payload?.properties?.meta?.updated_at || "Sin fecha"}</p>{Object.entries(payload?.properties?.timeseries?.[0]?.data?.instant?.details || {}).map(([key,value])=><div className="soil" key={key}><span style={{fontSize:10,maxWidth:"65%"}}>{key.replaceAll("_"," ")}</span><strong style={{fontSize:12}}>{fmt(value)} <small>{payload?.properties?.meta?.units?.[key]}</small></strong></div>)}<p className="footnote">Hora válida: {payload?.properties?.timeseries?.[0]?.time || "Sin fecha"}. Datos MET Norway, CC BY 4.0.</p></>}
               {view === "variables" && <VariablesPanel weather={weather} />}

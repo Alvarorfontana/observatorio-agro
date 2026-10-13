@@ -958,3 +958,8 @@ header {
 .lot-list{display:grid;gap:7px;margin-top:10px}.lot-list button{display:flex;align-items:center;justify-content:space-between;text-align:left;padding:10px 12px;border:1px solid rgba(255,255,255,.1);border-radius:10px;background:rgba(255,255,255,.025)}.lot-list button.active{border-color:#57dce0;background:rgba(87,220,224,.09)}.lot-list button span{font-size:11px;opacity:.72}.lot-manager .primary{justify-content:center}
 
 .vertex-close{background:#ffd166!important;border:0!important;color:#071820!important;font-weight:800!important;font-size:11px!important;padding:2px 6px!important;box-shadow:0 1px 4px rgba(0,0,0,.35)!important}.vertex-close:before{display:none!important}
+
+.ndvi-extra{margin-top:16px;border-top:1px solid rgba(130,170,174,.2);padding-top:12px}.ndvi-extra h4{margin:0 0 8px;font-size:14px}
+.ndvi-extra>button{width:100%}.zone-rows{display:grid;gap:6px;margin:8px 0}
+.zone-row{display:grid;grid-template-columns:14px 1fr auto auto;gap:10px;align-items:center;font-size:13px}.zone-row i{width:14px;height:14px;border-radius:3px}
+.zone-row small{display:block;opacity:.75;font-size:11px}.zone-row input{width:64px;padding:4px 6px}
