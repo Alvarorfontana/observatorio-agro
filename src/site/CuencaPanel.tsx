@@ -1,5 +1,6 @@
 // Panel "Cuenca del Plata": El Niño semanal, lluvia en las cabeceras, ríos, tiempos de traslado y qué hacer.
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import L from "leaflet";
 
 type Data = Record<string, any>;
 const nf = (v: unknown, d = 0) => v == null || !Number.isFinite(Number(v)) ? "—" : Number(v).toLocaleString("es-AR", { minimumFractionDigits: d, maximumFractionDigits: d });
@@ -63,6 +64,167 @@ const OFFICIAL: [string, [string, string, string][]][] = [
     ["SWOT (NASA · CNES)", "satélite que mide la altura del agua de ríos y lagunas", "https://swot.jpl.nasa.gov/"]]],
 ];
 
+
+const LEVEL_COLOR: Record<string, string> = { Normal: "#19b98a", "Atención": "#f0a020", Alerta: "#e8590c", "Evacuación": "#d92d20", Peligro: "#d92d20" };
+const EMERGENCY: Record<string, [string, string][]> = {
+  Argentina: [["Defensa Civil", "103"], ["Prefectura Naval", "106"], ["Emergencias", "911"], ["Bomberos", "100"], ["SAME", "107"]],
+  Brasil: [["Defesa Civil", "199"], ["Bombeiros", "193"], ["SAMU", "192"]],
+  Paraguay: [["Emergencias", "911"]],
+  Uruguay: [["Emergencias", "911"]],
+};
+const COUNTRY = (id: string) => id === "paraguay-bahianegra" || id === "paraguay-concepcion" ? "Paraguay" : id === "uruguay-fraybentos" ? "Uruguay" : "Argentina";
+const levelOf = (s: Data) => s?.ina?.level || s?.danger || null;
+
+// Resumen de la cuenca: cuántos puertos en cada nivel y cuántos subiendo
+function Summary({ stations }: { stations: Data[] }) {
+  const withH = stations.filter(s => s.ina?.height != null);
+  const count = (l: string) => withH.filter(s => s.ina.level === l).length;
+  const rising = withH.filter(s => (s.ina.trend_m_day ?? 0) > 0.01).length;
+  return <div className="cp-summary">
+    {[["Evacuación", "risk"], ["Alerta", "alert"], ["Atención", "warn"], ["Normal", "ok"]].map(([l, t]) =>
+      <article key={l} className={t}><b>{count(l)}</b><span>{l === "Evacuación" ? "en evacuación" : l === "Normal" ? "normales" : `en ${l.toLowerCase()}`}</span></article>)}
+    <article className="rise"><b>{rising}<small> de {withH.length}</small></b><span>puertos con el río subiendo</span></article>
+  </div>;
+}
+
+// Regla: aguas bajas · hoy · alerta · evacuación
+function Ruler({ i }: { i: Data }) {
+  if (i.height == null || i.alert == null) return null;
+  const lo = Math.min(i.low ?? i.height, i.height) - 0.5, hi = Math.max((i.evac ?? i.alert) + 1, i.height + 0.5);
+  const pos = (v: number) => `${((v - lo) / (hi - lo)) * 100}%`;
+  return <div className="cp-ruler" aria-label="Altura de hoy frente a los niveles oficiales">
+    <div className="track">
+      <i className="z-ok" style={{ left: 0, width: pos(i.alert - (i.attention ?? 1)) }} />
+      <i className="z-warn" style={{ left: pos(i.alert - (i.attention ?? 1)), width: `calc(${pos(i.alert)} - ${pos(i.alert - (i.attention ?? 1))})` }} />
+      <i className="z-alert" style={{ left: pos(i.alert), width: `calc(${pos(i.evac ?? i.alert)} - ${pos(i.alert)})` }} />
+      <i className="z-risk" style={{ left: pos(i.evac ?? i.alert), right: 0 }} />
+      <b className="now" style={{ left: pos(i.height) }}><em>{nf(i.height, 2)} m</em></b>
+    </div>
+    <div className="marks">
+      {i.low != null && <span style={{ left: pos(i.low) }}>aguas bajas {nf(i.low, 2)}</span>}
+      <span style={{ left: pos(i.alert) }}>alerta {nf(i.alert, 2)}</span>
+      {i.evac != null && <span style={{ left: pos(i.evac) }}>evacuación {nf(i.evac, 2)}</span>}
+    </div>
+  </div>;
+}
+
+// Gráfico: alturas de los últimos días, pronóstico del INA y líneas de alerta y evacuación
+function HeightChart({ i }: { i: Data }) {
+  const box = useRef<HTMLDivElement | null>(null);
+  const [W, setW] = useState(640);
+  useEffect(() => {
+    if (!box.current) return;
+    const ro = new ResizeObserver(e => setW(Math.max(280, Math.round(e[0].contentRect.width))));
+    ro.observe(box.current); return () => ro.disconnect();
+  }, []);
+  const obs: Data[] = i.series || [], fc: Data[] = i.forecast || [];
+  if (obs.length < 2) return <div ref={box} />;
+  const H = W < 500 ? 200 : 240, P = { l: 40, r: 10, t: 14, b: 24 };
+  const days = [...obs.map(o => o.date), ...fc.map(f => f.date)];
+  const t0 = new Date(days[0]).getTime(), t1 = new Date(days[days.length - 1]).getTime() || t0 + 1;
+  const vals = [...obs.map(o => o.h), ...fc.flatMap(f => [f.min, f.max]), i.alert, i.evac].filter((v): v is number => v != null);
+  const lo = Math.floor(Math.min(...vals) - 0.3), hi = Math.ceil(Math.max(...vals) + 0.3);
+  const x = (d: string) => P.l + ((new Date(d).getTime() - t0) / (t1 - t0 || 1)) * (W - P.l - P.r);
+  const y = (v: number) => P.t + (1 - (v - lo) / (hi - lo || 1)) * (H - P.t - P.b);
+  const ticks = Array.from({ length: 5 }, (_, k) => lo + (k * (hi - lo)) / 4);
+  const last = obs[obs.length - 1];
+  return <div ref={box}><svg className="cp-hchart" width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Altura del río y pronóstico">
+    {ticks.map(v => <g key={v}><line x1={P.l} x2={W - P.r} y1={y(v)} y2={y(v)} className="grid" /><text x={P.l - 6} y={y(v) + 4} textAnchor="end">{nf(v, 1)}</text></g>)}
+    {i.evac != null && <><line x1={P.l} x2={W - P.r} y1={y(i.evac)} y2={y(i.evac)} className="evac" /><text x={W - P.r} y={y(i.evac) - 4} textAnchor="end" className="lab-evac">evacuación {nf(i.evac, 2)} m</text></>}
+    {i.alert != null && <><line x1={P.l} x2={W - P.r} y1={y(i.alert)} y2={y(i.alert)} className="alert" /><text x={W - P.r} y={y(i.alert) - 4} textAnchor="end" className="lab-alert">alerta {nf(i.alert, 2)} m</text></>}
+    {fc.length > 0 && <polygon className="fc-band" points={[...fc.map(f => `${x(f.date)},${y(f.max)}`), ...fc.slice().reverse().map(f => `${x(f.date)},${y(f.min)}`), `${x(last.date)},${y(last.h)}`].join(" ")} />}
+    {fc.length > 0 && <polyline className="fc" points={[`${x(last.date)},${y(last.h)}`, ...fc.map(f => `${x(f.date)},${y(f.central)}`)].join(" ")} />}
+    <polyline className="obs" points={obs.map(o => `${x(o.date)},${y(o.h)}`).join(" ")} />
+    {obs.map(o => <circle key={o.date} cx={x(o.date)} cy={y(o.h)} r={2.5} className="obs-dot" />)}
+    {fc.map(f => <circle key={f.date} cx={x(f.date)} cy={y(f.central)} r={3.5} className="fc-dot" />)}
+    {[days[0], last.date, ...fc.map(f => f.date)].filter((d, k, a) => a.indexOf(d) === k).map((d, k, a) => <text key={d} x={x(d)} y={H - 6} textAnchor={k === 0 ? "start" : k === a.length - 1 ? "end" : "middle"}>{dm(d)}</text>)}
+  </svg></div>;
+}
+
+function shareText(s: Data, arrivals: Data[]) {
+  const i = s.ina || {}; const lvl = levelOf(s) || "sin dato";
+  const lines = [`⚠️ DOTS · Sistema de Alerta de Crecidas`, `${s.place} (río ${s.river}): ${lvl.toUpperCase()}`];
+  if (i.height != null) lines.push(`Altura ${nf(i.height, 2)} m el ${dm(i.date)}. Alerta ${nf(i.alert, 2)} m · evacuación ${nf(i.evac, 2)} m.`);
+  if (i.trend_m_day != null) lines.push(`Tendencia: ${i.trend_m_day > 0 ? "sube" : "baja"} ${nf(Math.abs(i.trend_m_day) * 100, 0)} cm por día${i.days_to_alert ? `; a este ritmo llegaría a la alerta en ~${i.days_to_alert} días` : ""}.`);
+  const fc = (i.forecast || []).slice(-1)[0]; if (fc) lines.push(`Pronóstico INA al ${dm(fc.date)}: ${nf(fc.central, 2)} m (${nf(fc.min, 2)}–${nf(fc.max, 2)}).`);
+  arrivals.slice(0, 2).forEach(a => lines.push(`Lluvia en ${a.name}: repunte esperado entre el ${dm(a.window[0])} y el ${dm(a.window[1])}.`));
+  lines.push(`Ante una evacuación seguí a Defensa Civil (103) y Prefectura (106).`, `Más datos: ${location.origin}/alertas`);
+  return lines.join("\n");
+}
+
+// ¿Cómo está mi localidad?
+function Locality({ stations, alerts, actions }: { stations: Data[]; alerts: Data[]; actions: Data }) {
+  const order = ["Evacuación", "Alerta", "Atención"];
+  const initial = useMemo(() => {
+    let id = ""; try { id = localStorage.getItem("dots-localidad") || ""; } catch { /* sin almacenamiento */ }
+    if (stations.some(s => s.id === id)) return id;
+    const worst = stations.filter(s => order.includes(levelOf(s))).sort((a, b) => order.indexOf(levelOf(a)) - order.indexOf(levelOf(b)))[0];
+    return worst?.id || "parana-corrientes";
+  }, [stations]);
+  const [sel, setSel] = useState(initial);
+  const s = stations.find(x => x.id === sel) || stations[0];
+  if (!s) return null;
+  const i = s.ina || {}; const lvl = levelOf(s);
+  const arrivals = alerts.filter(a => a.level !== "Normal").flatMap(a => (a.arrivals || []).filter((x: Data) => x.place === s.place && x.window).map((x: Data) => ({ name: a.name, level: a.level, window: x.window })));
+  const act = actions?.[lvl === "Evacuación" ? "Peligro" : lvl || "Normal"] || [];
+  const country = COUNTRY(s.id);
+  const pick = (id: string) => { setSel(id); try { localStorage.setItem("dots-localidad", id); } catch { /* sin almacenamiento */ } };
+  const wa = `https://wa.me/?text=${encodeURIComponent(shareText(s, arrivals))}`;
+  return <div className="cp-block cp-local">
+    <h3>¿Cómo está mi localidad? <small>Elegí tu ciudad: altura de hoy, niveles oficiales, tendencia y qué hacer</small></h3>
+    <div className="cp-local-card">
+      <div className="cp-local-head">
+        <select value={s.id} onChange={e => pick(e.target.value)} aria-label="Elegí tu localidad">
+          {RIVER_ORDER.map(rn => <optgroup key={rn} label={`Río ${rn}`}>{stations.filter(x => x.river === rn).map(x => <option key={x.id} value={x.id}>{x.place}{levelOf(x) && levelOf(x) !== "Normal" ? ` · ${levelOf(x)}` : ""}</option>)}</optgroup>)}
+        </select>
+        {lvl && <span className={`cp-big-level ${LEVEL_TONE[lvl]}`}>{lvl}</span>}
+        <a className="cp-wa" href={wa} target="_blank" rel="noreferrer">Compartir por WhatsApp</a>
+      </div>
+      {i.height != null ? <>
+        <div className="cp-local-kpis">
+          <div><span>Altura hoy</span><b>{nf(i.height, 2)} m</b><em>{dm(i.date)}{i.gauge ? ` · ${i.gauge}` : ""}</em></div>
+          <div><span>Falta para la alerta</span><b className={i.to_alert != null && i.to_alert <= 0 ? "cp-red" : ""}>{i.to_alert == null ? "—" : i.to_alert <= 0 ? "superada" : `${nf(i.to_alert, 2)} m`}</b><em>alerta {nf(i.alert, 2)} m · evacuación {nf(i.evac, 2)} m</em></div>
+          <div><span>Tendencia</span><b>{i.trend_m_day == null ? "—" : `${i.trend_m_day > 0 ? "↑" : i.trend_m_day < 0 ? "↓" : "→"} ${nf(Math.abs(i.trend_m_day) * 100, 0)} cm/día`}</b><em>{i.days_to_alert ? `a este ritmo, alerta en ~${i.days_to_alert} días` : i.trend_m_day != null && i.trend_m_day <= 0.005 ? "estable o bajando" : "lejos de la alerta"}</em></div>
+          <div><span>Pronóstico INA</span><b>{(i.forecast || []).length ? `${nf(i.forecast.slice(-1)[0].central, 2)} m` : "—"}</b><em>{(i.forecast || []).length ? `al ${dm(i.forecast.slice(-1)[0].date)} · ${nf(i.forecast.slice(-1)[0].min, 2)}–${nf(i.forecast.slice(-1)[0].max, 2)} m` : "sin pronóstico oficial para este puerto"}</em></div>
+        </div>
+        <Ruler i={{ ...i, attention: s.river === "Iguazú" || s.river === "Uruguay" ? 2 : 1 }} />
+        <HeightChart i={i} />
+        <p className="cp-legend"><i className="l-obs" /> altura medida (INA) <i className="l-fc" /> pronóstico INA y rango <i className="l-alert" /> alerta <i className="l-evac" /> evacuación</p>
+      </> : <p className="cp-note">Esta localidad no tiene escala del INA. Nivel según el caudal (GloFAS): {s.discharge != null ? `${nf(s.discharge)} m³/s${s.ratio != null ? `, ${nf(s.ratio, 1)} veces lo normal` : ""}` : "sin dato"}.</p>}
+      {arrivals.length > 0 && <div className="cp-local-arrivals"><b>Crecida en camino</b>{arrivals.map(a => <p key={a.name}><span className={`cp-chip ${LEVEL_TONE[a.level]}`}>{a.level}</span> lluvia en {a.name}: repunte esperado entre el <strong>{dm(a.window[0])}</strong> y el <strong>{dm(a.window[1])}</strong>.</p>)}</div>}
+      <div className="cp-local-foot">
+        <div><b>Qué hacer ahora</b><ul>{act.map((t: string) => <li key={t}>{t}</li>)}</ul></div>
+        <div><b>Teléfonos de emergencia · {country}</b><ul className="cp-phones">{EMERGENCY[country].map(([n, t]) => <li key={t}><a href={`tel:${t}`}>{t}</a> {n}</li>)}</ul></div>
+      </div>
+    </div>
+  </div>;
+}
+
+// Mapa de alertas: localidades pintadas por nivel
+function AlertMap({ stations, onPick }: { stations: Data[]; onPick?: (id: string) => void }) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!ref.current) return;
+    const map = L.map(ref.current, { scrollWheelZoom: false, attributionControl: true }).setView([-28.5, -57.5], 5);
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png", { maxZoom: 12, attribution: "© OpenStreetMap · © CARTO" }).addTo(map);
+    const pts: L.LatLngExpression[] = [];
+    stations.forEach(s => {
+      if (s.lat == null) return;
+      const lvl = levelOf(s) || "Normal"; const i = s.ina || {};
+      const m = L.circleMarker([s.lat, s.lon], { radius: lvl === "Normal" ? 6 : 9, color: "#fff", weight: 2, fillColor: LEVEL_COLOR[lvl] || "#98a2b3", fillOpacity: 0.95 }).addTo(map);
+      m.bindTooltip(`<b>${s.place}</b> · río ${s.river}<br>${lvl}${i.height != null ? ` · ${nf(i.height, 2)} m (alerta ${nf(i.alert, 2)})` : ""}`, { direction: "top" });
+      if (onPick) m.on("click", () => onPick(s.id));
+      pts.push([s.lat, s.lon]);
+    });
+    if (pts.length) map.fitBounds(L.latLngBounds(pts).pad(0.15));
+    return () => { map.remove(); };
+  }, [stations]);
+  return <div className="cp-block">
+    <h3>Mapa de alertas <small>34 localidades pintadas por nivel · tocá un punto para ver el detalle</small></h3>
+    <div className="cp-mapbox"><div ref={ref} className="cp-leaflet" /><div className="cp-map-legend">{["Normal", "Atención", "Alerta", "Evacuación"].map(l => <span key={l}><i style={{ background: LEVEL_COLOR[l] }} />{l}</span>)}</div></div>
+  </div>;
+}
+
 // Aviso compacto para el panel regional: lleva a la página del sistema de alertas
 export function AlertasTeaser() {
   return <section className="cp cp-teaser">
@@ -76,7 +238,7 @@ export function AlertasTeaser() {
 }
 
 export function CuencaPanel() {
-  const [res, setRes] = useState<Data | null>(null), [err, setErr] = useState("");
+  const [res, setRes] = useState<Data | null>(null), [err, setErr] = useState(""), [pickKey, setPickKey] = useState(0);
   useEffect(() => {
     let live = true;
     fetch("/api/fuentes/cuenca").then(r => r.json()).then(j => { if (!live) return; if (j.status === "recibido") setRes(j.data); else setErr(j.error || "Las fuentes no respondieron."); })
@@ -99,6 +261,8 @@ export function CuencaPanel() {
     {err && <p className="rp-error">{err} No se muestran valores supuestos.</p>}
     {!res && !err && <p className="cp-loading">Consultando NOAA, ECMWF, GFS y GloFAS…</p>}
 
+    {rv?.stations && <Summary stations={rv.stations} />}
+    {rv?.stations && <Locality key={pickKey} stations={rv.stations} alerts={al} actions={rv.actions} />}
     {res?.alerts && <div className="cp-block cp-alerts">
       <h3>Alertas activas · lluvia en las cabeceras <small>Se recalcula con cada pronóstico · lluvia ECMWF + GFS, estado del río y represas</small></h3>
       {active.length ? <div className="cp-alert-list">{active.map(a => <article key={a.basin} className={LEVEL_TONE[a.level]}>
@@ -114,6 +278,8 @@ export function CuencaPanel() {
       {al.filter(a => a.level === "Normal").length > 0 && <p className="cp-note">Sin alerta: {al.filter(a => a.level === "Normal").map(a => a.name).join(" · ")}.</p>}
       <p className="cp-note">Qué hacer en cada nivel: ver "Qué hacer según el nivel" más abajo. Cómo se calcula: probabilidad de superar 100 y 200 mm en 15 días y lluvia contra la normal de la época. Si el río de salida ya viene alto o las represas sueltan mucho, la alerta sube un escalón. La ventana de llegada suma la respuesta típica de cada cuenca y los días de traslado aguas abajo. Es orientativo: no reemplaza las alertas del INA, la Prefectura ni Defensa Civil.</p>
     </div>}
+
+    {rv?.stations && <AlertMap stations={rv.stations} onPick={id => { try { localStorage.setItem("dots-localidad", id); } catch { /* sin almacenamiento */ } setPickKey(k => k + 1); document.querySelector(".cp-local")?.scrollIntoView({ behavior: "smooth" }); }} />}
 
     {nino && <div className="cp-block">
       <h3>El Niño esta semana <small>NOAA CPC · semana del {dm(nino.week)} · anomalía contra 1991–2020</small></h3>
