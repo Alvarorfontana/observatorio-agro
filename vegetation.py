@@ -493,11 +493,25 @@ def gee_ndvi(polygon, years=10):
     years = int(years)
     if not 1 <= years <= 25:
         raise ValueError('Años fuera de rango (1-25)')
-    proj, tok = gee_token()
+    def fail(msg):
+        return c.envelope(None, GEE, f'NDVI histórico {years} años · Earth Engine', 'Google Earth Engine', 'sin dato', msg[:300])
+    try:
+        proj, tok = gee_token()
+    except PermissionError:
+        raise
+    except json.JSONDecodeError:
+        return fail('GOOGLE_APPLICATION_CREDENTIALS_JSON no es un JSON válido: hay que pegar el contenido completo del archivo, desde { hasta }.')
+    except Exception as e:
+        return fail(f'Google no aceptó la cuenta de servicio ({type(e).__name__}): {str(e)[:160]}')
     url = f'{GEE}/projects/{proj}/value:compute'
     r = c.SESSION.post(url, json=gee_expression(pts, years),
                        headers={'Authorization': f'Bearer {tok}'}, timeout=55)
-    r.raise_for_status()
+    if r.status_code >= 400:
+        try:
+            msg = (r.json().get('error') or {}).get('message', '')
+        except ValueError:
+            msg = r.text[:200]
+        return fail(f'Earth Engine respondió HTTP {r.status_code}: {msg}')
     feats = (r.json().get('result') or {}).get('features') or []
     rows = []
     for f in feats:
