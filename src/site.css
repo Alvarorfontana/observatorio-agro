@@ -378,3 +378,33 @@
   .site-head-actions .demo-btn{padding:10px 12px;white-space:nowrap}
 }
 @media (min-width:1101px) and (max-width:1260px){.site-brand small{display:none}.site-header nav a{font-size:12px}}
+/* botón Capas del mapa en el encabezado */
+.layers-btn{display:inline-flex;align-items:center;gap:6px;padding:10px 14px;border-radius:5px;border:1px solid #25efb5;color:#25efb5!important;font-weight:700;font-size:13px;text-decoration:none;white-space:nowrap;background:#25efb514}
+.layers-btn:hover{background:#25efb52a}
+.layers-btn.big{padding:15px 22px;font-size:15px}
+@media (max-width:720px){.site-head-actions .layers-btn{display:none}}
+/* qué es una capa */
+.layer-what{max-width:1200px;margin:10px auto 28px;padding:0 24px;display:grid;grid-template-columns:1fr 1.1fr;gap:48px;align-items:center;box-sizing:border-box}
+.layer-stack{position:relative;height:330px;perspective:900px}
+.layer-stack div{position:absolute;left:8%;right:8%;height:150px;top:calc(var(--i) * 40px);border-radius:12px;background:color-mix(in srgb,var(--c) 30%,transparent);border:2px solid var(--c);transform:rotateX(58deg) rotateZ(-28deg);box-shadow:0 10px 22px #0b2b3322}
+.layer-stack div:last-child{background:linear-gradient(135deg,#2f5d50,#6f8f5a 40%,#a9a26a 70%,#4c6f8a);border-color:#1f3d35}
+.layer-stack span{position:absolute;right:-6px;top:50%;transform:translate(100%,-50%) rotateZ(28deg) rotateX(-58deg);font:600 12px var(--mono,monospace);color:#10222b;white-space:nowrap;background:#fff;border:1px solid #d0d5dd;padding:3px 8px;border-radius:6px}
+.layer-what-text h2{font-size:clamp(28px,3vw,40px);line-height:1.1;margin:10px 0 14px;color:#10222b}
+.layer-what-text p{font-size:17px;line-height:1.65;color:#475467}
+.layer-uses p{border-left:3px solid #1cc79a;padding-left:14px}
+.layer-tech{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.layer-tech article{background:#fff;border:1px solid #e4e7ec;border-radius:10px;padding:16px}
+.layer-tech h3{margin:0 0 6px;font-size:16px;color:#10222b}
+.layer-tech p{margin:0;font-size:14px;line-height:1.55}
+.layers-teaser{display:flex;align-items:center;justify-content:space-between;gap:40px;padding:56px 7vw;background:linear-gradient(120deg,#08202a,#0c3340);color:#fff}
+.layers-teaser h2{font-size:clamp(28px,3vw,42px);margin:10px 0}
+.layers-teaser p{color:#b7c8cf;max-width:720px;font-size:17px;line-height:1.6}
+@media (max-width:900px){.layer-what{grid-template-columns:1fr}.layer-stack{height:280px}.layer-stack span{display:none}.layer-tech{grid-template-columns:1fr}.layers-teaser{display:block}.layers-teaser .layers-btn{margin-top:18px}}
+.layer-figure{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center}
+.layer-legend{list-style:none;margin:0;padding:0;display:grid;gap:10px;font-size:13px;color:#344054}
+.layer-legend li{display:flex;align-items:center;gap:8px;white-space:nowrap}
+.layer-legend i{width:14px;height:14px;border-radius:3px;display:inline-block}
+.layer-section-title{max-width:1200px;margin:30px auto 6px;padding:0 24px;box-sizing:border-box;font-size:clamp(24px,2.4vw,32px);color:#10222b}
+@media (max-width:900px){.layer-figure{grid-template-columns:1fr}.layer-legend{grid-template-columns:1fr 1fr}}
+@media (max-width:900px){.layer-stack{height:300px;margin-bottom:24px}.layer-stack div{height:120px;top:calc(var(--i) * 34px)}}
+@media (max-width:720px){.site-head-actions .layers-btn{display:inline-flex;padding:8px 9px;font-size:12px}.site-head-actions .layers-btn .lb-long{display:none}}
