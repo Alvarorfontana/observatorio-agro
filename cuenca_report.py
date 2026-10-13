@@ -140,6 +140,18 @@ def build_data(d, images=None, today=None):
     if high and len(lines) < 3:
         lines.append('Puertos cerca o sobre el nivel de alerta: ' + ', '.join(f"{s['place']} {num((s.get('ina') or {}).get('height'), 2)} m ({(s.get('ina') or {}).get('level', '').lower()})" for s in high[:4]) + '.')
 
+    w = d.get('weather') or {}
+    wx_on = sorted([x for x in (w.get('stations') or {}).values() if x.get('nivel') != 'Normal'], key=lambda x: (x['nivel'] != 'Alerta', x.get('pmin') or 9999))
+    sud = w.get('sudestada') or {}
+    if wx_on or sud.get('nivel') in ('Atención', 'Alerta'):
+        lines.append('Avisos meteorológicos a 5 días: ' + (f"sudestada en el Río de la Plata ({sud['nivel'].lower()}, {sud['desde']} a {sud['hasta']}); " if sud.get('nivel') in ('Atención', 'Alerta') else '')
+                     + (f"{len(wx_on)} localidades con temporal, frente o calor, entre ellas " + ', '.join(f"{x['place']} ({x['eventos'][0]['tipo'].lower()})" for x in wx_on[:3]) + '.' if wx_on else 'sin otros temporales.'))
+    weather = {'sud': {'level': sud.get('nivel'), 'tone': {'Alerta': 'risk', 'Atención': 'warn'}.get(sud.get('nivel'), 'ok'), 'text': sud.get('texto') or '',
+                       'when': f"{sud['desde']} a {sud['hasta']}" if sud.get('horas') else ''} if sud else None,
+               'rows': [{'place': x['place'], 'river': x['river'], 'level': x['nivel'], 'tone': {'Alerta': 'risk', 'Atención': 'warn'}.get(x['nivel'], 'ok'),
+                         'events': '; '.join(f"{e['tipo']} ({e['cuando']})" for e in x['eventos']), 'pmin': num(x.get('pmin'))} for x in wx_on],
+               'total': len(w.get('stations') or {})} if w.get('stations') else None
+
     def img(key, part='main'):
         b = images.get((key, part))
         return list(b) if b else None
@@ -171,7 +183,7 @@ def build_data(d, images=None, today=None):
     return {
         'title': 'DOTS · Informe de la Cuenca del Plata',
         'generated': f'{today.day} de {MONTHS[today.month - 1]} de {today.year}',
-        'worst': worst, 'worst_tone': TONE.get(worst, 'ok'), 'summary': lines[:3],
+        'worst': worst, 'worst_tone': TONE.get(worst, 'ok'), 'summary': lines[:4], 'weather': weather,
         'active_count': len(active),
         'nino': {'week': dm(nino.get('week')), 'phase': nino.get('phase') or '—', 'coastal': nino.get('coastal') or '—',
                  'rows': [{'name': r['name'], 'sst': num(r.get('sst'), 1), 'anom': sign(r.get('anom')), 'phase': r.get('phase') or '—',
@@ -414,6 +426,15 @@ def local_data(d, sid, today=None):
             summary.append(f"Ninguna de las {len(basins)} cabeceras que aportan agua hasta acá espera lluvia muy por encima de lo normal en los próximos {H} días.")
     if arrivals:
         summary.append(f"Hay {len(arrivals)} {'aviso' if len(arrivals) == 1 else 'avisos'} de crecida en camino: " + '; '.join(f"{a['basin']}, del {a['window']}" for a in arrivals[:3]) + '.')
+    wx = ((d.get('weather') or {}).get('stations') or {}).get(sid)
+    weather = None
+    if wx:
+        tw = {'Alerta': 'risk', 'Atención': 'warn'}.get(wx['nivel'], 'ok')
+        weather = {'level': wx['nivel'], 'tone': tw, 'events': [{**e, 'tone': {'Alerta': 'risk', 'Atención': 'warn'}.get(e['nivel'], 'ok')} for e in wx['eventos']],
+                   'pmin': f"{num(wx['pmin'])} hPa ({wx['pmin_cuando']})" if wx.get('pmin') is not None else '—',
+                   'drop3': f"{num(wx['caida3h'], 1)} hPa", 'drop24': f"{num(wx['caida24h'], 1)} hPa"}
+        if wx['eventos']:
+            summary.append(f"Tiempo en los próximos 5 días: {wx['nivel'].lower()} por " + '; '.join(f"{e['tipo'].lower()} ({e['cuando']})" for e in wx['eventos']) + '.')
     if flow and s.get('ratio') is not None:
         summary.append(f"El caudal estimado (GloFAS) es {flow['now']} m³/s, {flow['ratio']} lo normal para la época ({flow['level']}).")
     if nino_out:
@@ -444,7 +465,7 @@ def local_data(d, sid, today=None):
         'discharge': (f"{num(s.get('discharge'))} m³/s" + (f" · {num(s.get('ratio'), 1)} veces lo normal para la fecha" if s.get('ratio') is not None else '')) if s.get('discharge') is not None else '',
         'rain_days': (d.get('headwaters') or {}).get('days', 15),
         'arrivals': arrivals, 'basins': basins, 'dams': dams, 'upstream': upstream, 'downstream': downstream,
-        'flow': flow, 'nino': nino_out, 'actions': actions,
+        'flow': flow, 'nino': nino_out, 'actions': actions, 'weather': weather,
         'country': _country(sid), 'phones': PHONES[_country(sid)],
         'lags_period': (cc.load_normals().get('lags_period') or '20 años'),
         'picture': None, 'flood': None,

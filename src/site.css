@@ -731,3 +731,12 @@
 .cp-chip.alert { background: #ffe4d5; color: #c4320a; } .cp-chip.risk { background: #fee4e2; color: #b42318; }
 
 .cp-more { font: inherit; font-size: 13px; font-weight: 600; margin-top: 8px; background: none; border: 0; color: #1f5f99; cursor: pointer; padding: 0; }
+.cp-local-wx { border-radius: 12px; padding: 12px 14px; margin-top: 10px; background: #f2f7f8; border-left: 4px solid #2e9e8f; }
+.cp-local-wx.alert { background: #fff8eb; border-left-color: #dc6803; }
+.cp-local-wx.risk { background: #fef3f2; border-left-color: #d92d20; }
+.cp-local-wx > b { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: #344054; margin-bottom: 4px; }
+.cp-local-wx p { margin: 4px 0 0; font-size: 14px; color: #10222b; }
+.cp-wx-strip { margin-top: 14px; padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(220,104,3,.35); background: rgba(220,104,3,.06); }
+.cp-wx-strip > b { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+.cp-wx-strip p { margin: 5px 0 0; font-size: 14px; }
+.ap-wx { margin: 10px 0 0; font-size: 14px; }

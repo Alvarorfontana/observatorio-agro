@@ -168,6 +168,17 @@
     ]
   ]
 ]
+// ───────────── temporales y frentes ─────────────
+#if d.at("weather", default: none) != none [
+  #sec("Temporales y frentes · próximos 5 días")
+  #block(stroke: (left: 3pt + tone(d.weather.tone), rest: 0.6pt + line-c), radius: 6pt, inset: 8pt, width: 100%, breakable: false)[
+    #pill(d.weather.level, tone(d.weather.tone)) #h(4pt)
+    #if d.weather.events.len() == 0 [Sin caídas bruscas de presión, frentes fríos, ráfagas fuertes ni calor extremo a la vista.] else [*#d.weather.events.len() #if d.weather.events.len() == 1 [aviso] else [avisos] meteorológicos*]
+    #text(size: 8.3pt, fill: ink2)[ · presión mínima prevista #d.weather.pmin · mayor caída #d.weather.drop3 en 3 h y #d.weather.drop24 en 24 h]
+    #for e in d.weather.events [#linebreak() #pill(e.nivel, tone(e.tone)) #h(3pt) *#e.tipo* (#e.cuando): #e.texto]
+  ]
+  #text(size: 7.4pt, fill: muted)[Reglas declaradas sobre el pronóstico horario de Open-Meteo: caída de presión de 3 hPa en 3 h (5 hPa, alerta) o de 14 hPa en 24 h; frente frío si la máxima baja 8 °C de un día al otro (12 °C, alerta); ráfagas desde 60 km/h (80, alerta); calor extremo con 3 días de máximas de 35 °C y mínimas de 22 °C; sudestada con 12 h seguidas de viento del este al sur de 30 km/h en el Río de la Plata (45 km/h, alerta). Los avisos oficiales son del SMN y la altura del agua en el estuario la pronostica el Servicio de Hidrografía Naval.]
+]
 // ───────────── qué hacer ─────────────
 #v(8pt)
 #grid(columns: (1.35fr, 1fr), column-gutter: 10pt,
@@ -280,6 +291,7 @@
   [*Pronóstico de altura*], [INA · pronóstico tabprono del río Paraná (Corrientes a Rosario).],
   [*Lluvia en cabeceras*], [ECMWF IFS y NOAA GFS por conjunto, vía Open-Meteo; normales de NASA POWER.],
   [*Caudal*], [Copernicus GloFAS vía Open-Meteo; normales y crecidas de retorno calculadas sobre 2001-2020.],
+  [*Temporales y sudestada*], [Open-Meteo (ECMWF, GFS y otros modelos): presión, temperatura y viento hora por hora; reglas declaradas de DOTS.],
   [*Represas*], [ONS Brasil, datos abiertos (CC-BY 4.0).],
   [*Zona inundada*], [Copernicus Global Flood Monitoring (GFM), vía EODC: agua de crecida observada con Sentinel-1.],
   [*El Niño e imagen*], [NOAA CPC (OISST semanal) · Sentinel-2 y Sentinel-1 (Copernicus) y Landsat 8/9 (USGS), vía Microsoft Planetary Computer · NASA GIBS (VIIRS, MODIS).],

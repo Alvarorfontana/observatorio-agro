@@ -17,6 +17,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import date, timedelta
 
 import research_connectors as c
+import temporales
 
 CPC_WEEKLY = 'https://www.cpc.ncep.noaa.gov/data/indices/wksst9120.for'
 ENSEMBLE = 'https://ensemble-api.open-meteo.com/v1/ensemble'
@@ -848,7 +849,14 @@ def resumen():
         rows.sort(key=lambda r: (order.get(r['level'], 4), -(r['pct_alert'] or 0)))
         counts = {k: sum(1 for r in rows if r['level'] == k) for k in ('Evacuación', 'Alerta', 'Atención', 'Normal')}
         rising = sum(1 for r in rows if (r['trend_m_day'] or 0) > 0.01)
-        return c.envelope({'stations': rows, 'counts': counts, 'rising': rising, 'total': len(rows)},
+        weather = None
+        try:   # avisos de temporal, frente y sudestada (si Open-Meteo no responde, la portada sigue con el INA)
+            w = temporales.temporales(STATIONS)
+            weather = {'counts': w['counts'], 'sudestada': w['sudestada'],
+                       'top': sorted([x for x in w['stations'].values() if x['nivel'] != 'Normal'], key=lambda x: -temporales.ORD.index(x['nivel']))[:6]}
+        except Exception:
+            pass
+        return c.envelope({'stations': rows, 'counts': counts, 'rising': rising, 'total': len(rows), 'weather': weather},
                           INA, 'alturas y niveles oficiales', 'INA · escalas de Prefectura', 'recibido' if rows else 'sin dato',
                           None if rows else 'El INA no respondió')
     key = 'resumen'
@@ -864,9 +872,10 @@ def resumen():
 # ───────────────────────────── todo junto ─────────────────────────────
 def analyze():
     def run():
-        out = {'nino': None, 'headwaters': None, 'rivers': None, 'dams': None, 'errors': {}}
-        with ThreadPoolExecutor(max_workers=4) as pool:
-            jobs = {'nino': pool.submit(nino_weekly), 'headwaters': pool.submit(headwaters), 'rivers': pool.submit(rivers), 'dams': pool.submit(dams)}
+        out = {'nino': None, 'headwaters': None, 'rivers': None, 'dams': None, 'weather': None, 'errors': {}}
+        with ThreadPoolExecutor(max_workers=5) as pool:
+            jobs = {'nino': pool.submit(nino_weekly), 'headwaters': pool.submit(headwaters), 'rivers': pool.submit(rivers), 'dams': pool.submit(dams),
+                    'weather': pool.submit(lambda: temporales.temporales(STATIONS))}
             for k, f in jobs.items():
                 try:
                     out[k] = f.result()
@@ -880,7 +889,7 @@ def analyze():
         out['maps'] = maps(out.get('alerts'))
         ok = any(out[k] for k in ('nino', 'headwaters', 'rivers', 'dams'))
         return c.envelope(out, 'multi', 'Cuenca del Plata: El Niño, lluvia en cabeceras y ríos',
-                          'NOAA CPC · ECMWF · NOAA GFS · Copernicus GloFAS (vía Open-Meteo) · ONS Brasil',
+                          'NOAA CPC · ECMWF · NOAA GFS · Copernicus GloFAS (vía Open-Meteo) · ONS Brasil · temporales y sudestada (Open-Meteo)',
                           'recibido' if ok else 'sin dato', None if ok else 'Ninguna fuente respondió')
     res = _cached('cuenca', run)
     if res['status'] != 'recibido':

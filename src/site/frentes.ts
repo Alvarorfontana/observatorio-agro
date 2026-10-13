@@ -50,3 +50,28 @@ export function analizarFrentes(d: Data, hoy = new Date(Date.now() - 3 * 3600e3)
   const nivel = eventos.reduce((a, e) => peor(a, e.nivel), "Normal");
   return { nivel, eventos, pmin, pminCuando: imin >= 0 ? hm(t[imin]) : "", caida3h: c3.v, caida24h: c24.v, frente: fr.v, rafaga: gmax };
 }
+
+/**
+ * Sudestada en el Río de la Plata: viento persistente del este al sur que frena la salida del río y sube el agua
+ * en la costa argentina (Delta, San Fernando, Buenos Aires, Quilmes). Regla declarada sobre el viento horario
+ * pronosticado en el centro del estuario; la altura oficial del agua la pronostica el Servicio de Hidrografía Naval (SHN).
+ */
+export const SUDESTADA = { punto: [-34.85, -57.4] as [number, number], dir: [80, 190], viento: [30, 45], horas: 12, rafaga: 70 };
+export function sudestada(d: Data, hoy = new Date(Date.now() - 3 * 3600e3).toISOString().slice(0, 13)) {
+  const h = d.hourly, t: string[] = h.time, v: number[] = h.wind_speed_10m, g: number[] = h.wind_direction_10m, r: number[] = h.wind_gusts_10m || [];
+  const k0 = Math.max(0, t.findIndex(x => x.slice(0, 13) >= hoy));
+  const dentro = (i: number, lim: number) => g[i] != null && v[i] != null && g[i] >= SUDESTADA.dir[0] && g[i] <= SUDESTADA.dir[1] && v[i] >= lim;
+  const racha = (lim: number) => {   // tramo más largo de horas seguidas con viento del sector y por encima del límite
+    let best = { n: 0, i: -1, j: -1 }, n = 0, ini = -1;
+    for (let i = k0; i < t.length; i++) { if (dentro(i, lim)) { if (!n) ini = i; n++; if (n > best.n) best = { n, i: ini, j: i }; } else n = 0; }
+    return best;
+  };
+  const fuerte = racha(SUDESTADA.viento[1]), mod = racha(SUDESTADA.viento[0]);
+  const tramo = fuerte.n >= SUDESTADA.horas ? fuerte : mod;
+  const gmax = tramo.n ? Math.max(...r.slice(tramo.i, tramo.j + 1).filter(x => x != null), 0) : 0;
+  const vmax = tramo.n ? Math.max(...v.slice(tramo.i, tramo.j + 1)) : Math.max(...v.slice(k0).filter((x, i) => dentro(i + k0, 0)), 0);
+  const nivel = fuerte.n >= SUDESTADA.horas || (mod.n >= SUDESTADA.horas && gmax >= SUDESTADA.rafaga) ? "Alerta" : mod.n >= SUDESTADA.horas ? "Atención" : "Normal";
+  const texto = nivel === "Normal" ? "Sin viento persistente del sudeste sobre el Río de la Plata en los próximos días."
+    : `Viento del ${["este", "sudeste", "sur"][Math.min(2, Math.round((((tramo.i >= 0 ? g[tramo.i] : 135) - 90) / 45)))] ?? "sudeste"} durante ${tramo.n} horas seguidas, con máximas de ${Math.round(vmax)} km/h${gmax ? ` y ráfagas de ${Math.round(gmax)} km/h` : ""}: el agua puede subir en la costa del Delta, San Fernando, Buenos Aires y Quilmes, y frenar la bajada del Paraná y el Uruguay.`;
+  return { nivel, texto, horas: tramo.n, desde: tramo.n ? hm(t[tramo.i]) : "", hasta: tramo.n ? hm(t[tramo.j]) : "", vmax, gmax };
+}

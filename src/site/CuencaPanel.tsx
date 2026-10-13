@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import L from "leaflet";
 
 type Data = Record<string, any>;
-import { analizarFrentes, tono as tonoF, HOURLY as F_HOURLY, DAILY as F_DAILY } from "./frentes";
+import { analizarFrentes, sudestada, SUDESTADA, tono as tonoF, HOURLY as F_HOURLY, DAILY as F_DAILY } from "./frentes";
 const nf = (v: unknown, d = 0) => v == null || !Number.isFinite(Number(v)) ? "—" : Number(v).toLocaleString("es-AR", { minimumFractionDigits: d, maximumFractionDigits: d });
 const dm = (iso?: string | null) => iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}` : "—";
 const sign = (v: number | null | undefined, d = 1) => v == null ? "—" : `${v > 0 ? "+" : ""}${nf(v, d)}`;
@@ -143,7 +143,7 @@ function HeightChart({ i }: { i: Data }) {
 }
 
 // Parte para WhatsApp: texto formal, sin emojis, con datos verificables y su fuente.
-function shareText(s: Data, arrivals: Data[], actions: string[]) {
+function shareText(s: Data, arrivals: Data[], actions: string[], wx?: Data | null) {
   const i = s.ina || {}; const lvl = levelOf(s) || "Sin dato"; const country = COUNTRY(s.id);
   const hoy = new Date().toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" });
   const L: string[] = ["*DOTS · SISTEMA DE ALERTA DE CRECIDAS*", `*Parte de situación hidrométrica · ${s.place}* (río ${s.river})`, `Emitido el ${hoy}`, "", `*Nivel: ${lvl.toUpperCase()}*`, ""];
@@ -162,15 +162,19 @@ function shareText(s: Data, arrivals: Data[], actions: string[]) {
     L.push("", "*Aportes previstos desde las cabeceras*");
     arrivals.slice(0, 4).forEach(a => L.push(`- ${a.name} (${a.level.toLowerCase()}): repunte estimado entre el ${dm(a.window[0])} y el ${dm(a.window[1])}.`));
   }
+  if (wx?.eventos?.length) {
+    L.push("", `*Avisos meteorológicos, próximos 5 días (${wx.nivel.toLowerCase()})*`);
+    wx.eventos.forEach((e: Data) => L.push(`- ${e.tipo} (${e.cuando}): ${e.texto}`));
+  }
   if (actions.length) { L.push("", "*Recomendaciones*"); actions.slice(0, 4).forEach(t => L.push(`- ${t}`)); }
   L.push("", `*Teléfonos de emergencia (${country})*: ${EMERGENCY[country].slice(0, 3).map(([n, t]) => `${n} ${t}`).join(" · ")}`,
     "", `Informe completo en PDF: ${location.origin}/alertas`,
-    "_Fuente: INA (escalas de Prefectura Naval), ECMWF, GFS y Copernicus GloFAS. Información orientativa: las órdenes de evacuación las emite Defensa Civil._");
+    `_Fuente: INA (escalas de Prefectura Naval), ECMWF, GFS y Copernicus GloFAS${wx?.eventos?.length ? "; avisos meteorológicos con reglas de DOTS sobre Open-Meteo (los oficiales son del SMN)" : ""}. Información orientativa: las órdenes de evacuación las emite Defensa Civil._`);
   return L.join("\n");
 }
 
 // Tarjeta en imagen (1080×1350): parte formal para compartir
-function drawCard(s: Data, arrivals: Data[]): HTMLCanvasElement {
+function drawCard(s: Data, arrivals: Data[], wx?: Data | null): HTMLCanvasElement {
   const i = s.ina || {}; const lvl = levelOf(s) || "Sin dato"; const country = COUNTRY(s.id);
   const W = 1080, H = 1350, M = 72, cv = document.createElement("canvas"); cv.width = W; cv.height = H;
   const g = cv.getContext("2d")!; const col = LEVEL_COLOR[lvl] || "#667085";
@@ -231,6 +235,10 @@ function drawCard(s: Data, arrivals: Data[]): HTMLCanvasElement {
     text("Aportes previstos desde las cabeceras", M, y, F(600, 26)); y += 38;
     arrivals.slice(0, 2).forEach(a => { text(`${a.name} (${a.level.toLowerCase()}): repunte entre el ${dm(a.window[0])} y el ${dm(a.window[1])}`, M, y, F(400, 24), INK2); y += 34; });
   }
+  if (wx?.eventos?.length && y < 1150) {
+    text("Avisos meteorológicos (5 días)", M, y, F(600, 26)); y += 36;
+    wx.eventos.slice(0, Math.max(1, Math.floor((1170 - y) / 32))).forEach((e: Data) => { text(`${e.tipo} · ${e.cuando} · ${e.nivel.toLowerCase()}`, M, y, F(400, 24), e.nivel === "Alerta" ? "#b42318" : "#b54708"); y += 32; });
+  }
   // pie: teléfonos y fuente
   rule(1190, INK, 2);
   text(`Emergencias (${country}): ${EMERGENCY[country].slice(0, 3).map(([n, t]) => `${n} ${t}`).join(" · ")}`, M, 1238, F(600, 26), INK);
@@ -238,8 +246,8 @@ function drawCard(s: Data, arrivals: Data[]): HTMLCanvasElement {
   text(`Información orientativa: las evacuaciones las dispone Defensa Civil · ${location.host}/alertas`, M, 1312, F(400, 21), MUTED);
   return cv;
 }
-async function shareCard(s: Data, arrivals: Data[]) {
-  const cv = drawCard(s, arrivals);
+async function shareCard(s: Data, arrivals: Data[], wx?: Data | null) {
+  const cv = drawCard(s, arrivals, wx);
   const blob: Blob | null = await new Promise(r => cv.toBlob(b => r(b), "image/png"));
   if (!blob) return;
   const file = new File([blob], `alerta-${s.place.replace(/[^\w]+/g, "-")}.png`, { type: "image/png" });
@@ -249,7 +257,7 @@ async function shareCard(s: Data, arrivals: Data[]) {
 }
 
 // ¿Cómo está mi localidad?
-function Locality({ stations, alerts, actions }: { stations: Data[]; alerts: Data[]; actions: Data }) {
+function Locality({ stations, alerts, actions, weather }: { stations: Data[]; alerts: Data[]; actions: Data; weather?: Data | null }) {
   const order = ["Evacuación", "Alerta", "Atención"];
   const initial = useMemo(() => {
     let id = ""; try { id = localStorage.getItem("dots-localidad") || ""; } catch { /* sin almacenamiento */ }
@@ -265,7 +273,8 @@ function Locality({ stations, alerts, actions }: { stations: Data[]; alerts: Dat
   const act = actions?.[lvl === "Evacuación" ? "Peligro" : lvl || "Normal"] || [];
   const country = COUNTRY(s.id);
   const pick = (id: string) => { setSel(id); try { localStorage.setItem("dots-localidad", id); } catch { /* sin almacenamiento */ } };
-  const wa = `https://wa.me/?text=${encodeURIComponent(shareText(s, arrivals, act))}`;
+  const wx: Data | null = weather?.stations?.[s.id] || null;
+  const wa = `https://wa.me/?text=${encodeURIComponent(shareText(s, arrivals, act, wx))}`;
   return <div className="cp-block cp-local">
     <h3>¿Cómo está mi localidad? <small>Elegí tu ciudad: altura de hoy, niveles oficiales, tendencia y qué hacer</small></h3>
     <div className="cp-local-card">
@@ -277,7 +286,7 @@ function Locality({ stations, alerts, actions }: { stations: Data[]; alerts: Dat
         <div className="cp-share">
           <a className="cp-pdf-local" href={`/api/fuentes/localidad-informe?id=${s.id}`} download>Informe de {s.place} · PDF</a>
           <a className="cp-wa" href={wa} target="_blank" rel="noreferrer">Enviar parte por WhatsApp</a>
-          <button className="cp-img" onClick={() => void shareCard(s, arrivals)}>Compartir imagen</button>
+          <button className="cp-img" onClick={() => void shareCard(s, arrivals, wx)}>Compartir imagen</button>
         </div>
       </div>
       {i.height != null ? <>
@@ -292,6 +301,9 @@ function Locality({ stations, alerts, actions }: { stations: Data[]; alerts: Dat
         <p className="cp-legend"><i className="l-obs" /> altura medida (INA) <i className="l-fc" /> pronóstico INA y rango <i className="l-alert" /> alerta <i className="l-evac" /> evacuación</p>
       </> : <p className="cp-note">Esta localidad no tiene escala del INA. Nivel según el caudal (GloFAS): {s.discharge != null ? `${nf(s.discharge)} m³/s${s.ratio != null ? `, ${nf(s.ratio, 1)} veces lo normal` : ""}` : "sin dato"}.</p>}
       {arrivals.length > 0 && <div className="cp-local-arrivals"><b>Crecida en camino</b>{arrivals.map(a => <p key={a.name}><span className={`cp-chip ${LEVEL_TONE[a.level]}`}>{a.level}</span> lluvia en {a.name}: repunte esperado entre el <strong>{dm(a.window[0])}</strong> y el <strong>{dm(a.window[1])}</strong>.</p>)}</div>}
+      {wx && <div className={`cp-local-wx ${wx.nivel === "Alerta" ? "risk" : wx.nivel === "Atención" ? "alert" : "ok"}`}><b>Temporales y frentes · próximos 5 días</b>
+        {wx.eventos.length ? wx.eventos.map((e: Data) => <p key={e.tipo}><span className={`cp-chip ${e.nivel === "Alerta" ? "risk" : "alert"}`}>{e.nivel}</span> <b>{e.tipo}</b> ({e.cuando}): {e.texto}</p>)
+          : <p>Sin caídas bruscas de presión, frentes fríos, ráfagas fuertes ni calor extremo a la vista. Presión mínima prevista {Math.round(wx.pmin)} hPa.</p>}</div>}
       <div className="cp-local-foot">
         <div><b>Qué hacer ahora</b><ul>{act.map((t: string) => <li key={t}>{t}</li>)}</ul></div>
         <div><b>Teléfonos de emergencia · {country}</b><ul className="cp-phones">{EMERGENCY[country].map(([n, t]) => <li key={t}><a href={`tel:${t}`}>{t}</a> {n}</li>)}</ul></div>
@@ -384,6 +396,8 @@ export function AlertasPortada() {
         {[["Evacuación", "risk"], ["Alerta", "alert"], ["Atención", "warn"], ["Normal", "ok"]].map(([l, t]) => <span key={l} className={t}><b>{c[l] || 0}</b>{l === "Normal" ? "normales" : l.toLowerCase()}</span>)}
         <span className="rise"><b>{d.rising}</b>subiendo</span>
       </div>}
+      {d?.weather && ((d.weather.counts?.Alerta || 0) + (d.weather.counts?.["Atención"] || 0) > 0 || d.weather.sudestada?.nivel !== "Normal") && <p className="ap-wx">
+        <b>Avisos meteorológicos:</b> {(d.weather.counts?.Alerta || 0) + (d.weather.counts?.["Atención"] || 0)} localidades con temporal, frente o calor en 5 días{d.weather.top?.length ? ` (${d.weather.top.slice(0, 3).map((w: Data) => `${w.place}: ${w.eventos.map((e: Data) => e.tipo.toLowerCase()).join(", ")}`).join("; ")})` : ""}{d.weather.sudestada && d.weather.sudestada.nivel !== "Normal" ? `. Sudestada en el Río de la Plata (${d.weather.sudestada.nivel.toLowerCase()}), ${d.weather.sudestada.desde} a ${d.weather.sudestada.hasta}` : ""}.</p>}
       <div className="ap-actions">
         <a href="/alertas" onClick={go("/alertas")} className="primary">Ver el Sistema de Alerta de Crecidas →</a>
         <a href="/alertas" onClick={go("/alertas")}>¿Cómo está mi localidad?</a>
@@ -464,9 +478,13 @@ function Extremos() {
 }
 
 // Temporales y frentes en las 34 localidades (presión, frentes fríos, ráfagas y calor)
-function Temporales({ stations }: { stations: Data[] }) {
-  const [rows, setRows] = useState<Data[] | null>(null), [err, setErr] = useState(""), [all, setAll] = useState(false);
+const ORD_W = { Alerta: 0, "Atención": 1, Normal: 2 } as Record<string, number>;
+const wxRows = (w: Data) => (Object.values(w.stations || {}) as Data[]).map((x: Data) => ({ s: { id: x.id, place: x.place, river: x.river }, a: { ...x, pminCuando: x.pmin_cuando } }))
+  .sort((x: Data, y: Data) => ORD_W[x.a.nivel] - ORD_W[y.a.nivel] || x.a.pmin - y.a.pmin);
+function Temporales({ stations, weather }: { stations: Data[]; weather?: Data | null }) {
+  const [rows, setRows] = useState<Data[] | null>(weather?.stations ? wxRows(weather) : null), [err, setErr] = useState(""), [all, setAll] = useState(false);
   useEffect(() => {
+    if (weather?.stations) { setRows(wxRows(weather)); return; }
     const st = stations.filter(s => s.lat != null);
     const u = `https://api.open-meteo.com/v1/forecast?latitude=${st.map(s => s.lat).join(",")}&longitude=${st.map(s => s.lon).join(",")}&past_days=1&forecast_days=5&timezone=America%2FArgentina%2FBuenos_Aires&hourly=${F_HOURLY}&daily=${F_DAILY}`;
     fetch(u, { signal: AbortSignal.timeout(40000) }).then(r => r.ok ? r.json() : Promise.reject()).then(j => {
@@ -474,7 +492,7 @@ function Temporales({ stations }: { stations: Data[] }) {
       const ord = { Alerta: 0, "Atención": 1, Normal: 2 } as Record<string, number>;
       setRows(st.map((s, i) => ({ s, a: analizarFrentes(arr[i]) })).sort((x, y) => ord[x.a.nivel] - ord[y.a.nivel] || x.a.pmin - y.a.pmin));
     }).catch(() => setErr("Open-Meteo no respondió."));
-  }, [stations]);
+  }, [stations, weather]);
   const con = rows?.filter(r => r.a.nivel !== "Normal") || [];
   const ver = all ? rows || [] : con;
   return <div className="cp-block">
@@ -493,6 +511,23 @@ function Temporales({ stations }: { stations: Data[] }) {
   </div>;
 }
 
+function Sudestada({ data }: { data?: Data | null }) {
+  const [a, setA] = useState<Data | null>(data || null), [err, setErr] = useState("");
+  useEffect(() => {
+    if (data) { setA(data); return; }
+    const [la, lo] = SUDESTADA.punto;
+    fetch(`https://api.open-meteo.com/v1/forecast?latitude=${la}&longitude=${lo}&forecast_days=5&timezone=America%2FArgentina%2FBuenos_Aires&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m`, { signal: AbortSignal.timeout(30000) })
+      .then(r => r.ok ? r.json() : Promise.reject()).then(j => setA(sudestada(j))).catch(() => setErr("Open-Meteo no respondió."));
+  }, [data]);
+  return <div className="cp-block">
+    <h3>Sudestada en el Río de la Plata <small>Viento del sudeste que sube el agua en la costa y frena la salida del Paraná y el Uruguay · próximos 5 días</small></h3>
+    {err && <p className="cp-note">{err}</p>}
+    {!a && !err && <p className="cp-note">Analizando el viento sobre el estuario…</p>}
+    {a && <p className="cp-transit-res"><span className={`cp-chip ${tonoF(a.nivel) === "risk" ? "risk" : tonoF(a.nivel) === "warn" ? "alert" : ""}`}>{a.nivel}</span> {a.horas ? <b>{a.desde} a {a.hasta}. </b> : null}{a.texto}</p>}
+    <p className="cp-note">Regla declarada sobre el viento pronosticado en el centro del Río de la Plata: {SUDESTADA.horas} horas seguidas o más de viento del este al sur de {SUDESTADA.viento[0]} km/h es atención; de {SUDESTADA.viento[1]} km/h, o con ráfagas de {SUDESTADA.rafaga} km/h, alerta. No calcula la altura del agua: la pronostica el <a href="https://www.hidro.gob.ar/oceanografia/alturashorarias.asp" target="_blank" rel="noreferrer">Servicio de Hidrografía Naval</a>, que es la fuente oficial.</p>
+  </div>;
+}
+
 export function CuencaPanel() {
   const [res, setRes] = useState<Data | null>(null), [err, setErr] = useState(""), [pickKey, setPickKey] = useState(0);
   useEffect(() => {
@@ -503,7 +538,8 @@ export function CuencaPanel() {
   }, []);
   const nino = res?.nino, hw = res?.headwaters, rv = res?.rivers, dm2 = res?.dams, al: Data[] = res?.alerts || [];
   const active = al.filter(a => a.level !== "Normal");
-  const levels: string[] = [...(rv?.stations || []).flatMap((s: Data) => [s.danger, s.peak_danger]), ...al.map(a => a.level)].filter(Boolean);
+  const wxSt: Data[] = Object.values(res?.weather?.stations || {}), wxOn = wxSt.filter(w => w.nivel !== "Normal"), sud = res?.weather?.sudestada;
+  const levels: string[] = [...(rv?.stations || []).flatMap((s: Data) => [s.danger, s.peak_danger]), ...al.map(a => a.level), ...wxSt.map(w => w.nivel), sud?.nivel].filter(Boolean);
   const worst = ["Peligro", "Alerta", "Atención", "Normal"].find(l => levels.map(x => x === "Evacuación" ? "Peligro" : x).includes(l));
 
   return <section className="cp" aria-label="Cuenca del Plata">
@@ -518,7 +554,7 @@ export function CuencaPanel() {
     {!res && !err && <p className="cp-loading">Consultando NOAA, ECMWF, GFS y GloFAS…</p>}
 
     {rv?.stations && <Summary stations={rv.stations} />}
-    {rv?.stations && <Locality key={pickKey} stations={rv.stations} alerts={al} actions={rv.actions} />}
+    {rv?.stations && <Locality key={pickKey} stations={rv.stations} alerts={al} actions={rv.actions} weather={res?.weather} />}
     {res?.alerts && <div className="cp-block cp-alerts">
       <h3>Alertas activas · lluvia en las cabeceras <small>Se recalcula con cada pronóstico · lluvia ECMWF + GFS, estado del río y represas</small></h3>
       {active.length ? <div className="cp-alert-list">{active.map(a => <article key={a.basin} className={LEVEL_TONE[a.level]}>
@@ -532,12 +568,18 @@ export function CuencaPanel() {
       </article>)}</div>
         : <p className="cp-calm">Sin alertas: el pronóstico no muestra lluvias fuera de lo común en las cabeceras para los próximos 15 días.</p>}
       {al.filter(a => a.level === "Normal").length > 0 && <p className="cp-note">Sin alerta: {al.filter(a => a.level === "Normal").map(a => a.name).join(" · ")}.</p>}
+      {(wxOn.length > 0 || (sud && sud.nivel !== "Normal")) && <div className="cp-wx-strip"><b>Avisos meteorológicos</b>
+        {sud && sud.nivel !== "Normal" && <p><span className={`cp-chip ${sud.nivel === "Alerta" ? "risk" : "alert"}`}>{sud.nivel}</span> <b>Sudestada en el Río de la Plata</b> ({sud.desde} a {sud.hasta}): {sud.texto}</p>}
+        {wxOn.sort((x, y) => ORD_W[x.nivel] - ORD_W[y.nivel]).slice(0, 6).map(w => <p key={w.id}><span className={`cp-chip ${w.nivel === "Alerta" ? "risk" : "alert"}`}>{w.nivel}</span> <b>{w.place}</b>: {w.eventos.map((e: Data) => `${e.tipo.toLowerCase()} (${e.cuando})`).join(", ")}</p>)}
+        {wxOn.length > 6 && <p className="cp-note">Y {wxOn.length - 6} localidades más: ver "Temporales y frentes".</p>}
+      </div>}
       <p className="cp-note">Qué hacer en cada nivel: ver "Qué hacer según el nivel" más abajo. Cómo se calcula: probabilidad de superar 100 y 200 mm en 15 días y lluvia contra la normal de la época. Si el río de salida ya viene alto o las represas sueltan mucho, la alerta sube un escalón. La ventana de llegada suma la respuesta típica de cada cuenca y los días de traslado aguas abajo. Es orientativo: no reemplaza las alertas del INA, la Prefectura ni Defensa Civil.</p>
     </div>}
 
     {rv?.stations && <AlertMap stations={rv.stations} onPick={id => { try { localStorage.setItem("dots-localidad", id); } catch { /* sin almacenamiento */ } setPickKey(k => k + 1); document.querySelector(".cp-local")?.scrollIntoView({ behavior: "smooth" }); }} />}
     {rv?.stations && <Transito stations={rv.stations} />}
-    {rv?.stations && <Temporales stations={rv.stations} />}
+    {rv?.stations && <Temporales stations={rv.stations} weather={res?.weather} />}
+      <Sudestada data={res?.weather?.sudestada} />
     <Extremos />
 
     {nino && <div className="cp-block">
