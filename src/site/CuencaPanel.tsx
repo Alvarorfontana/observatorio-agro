@@ -141,15 +141,93 @@ function HeightChart({ i }: { i: Data }) {
   </svg></div>;
 }
 
+const DOT: Record<string, string> = { Normal: "🟢", "Atención": "🟡", Alerta: "🟠", "Evacuación": "🔴" };
+// Barra de 10 casillas: cuánto del nivel de evacuación alcanzó el río
+function emojiBar(h?: number, alert?: number, evac?: number) {
+  if (h == null || alert == null) return "";
+  const top = evac ?? alert, n = Math.max(0, Math.min(10, Math.round((h / top) * 10)));
+  const cell = (k: number) => { const v = ((k + 1) / 10) * top; return v <= alert - 1 ? "🟩" : v <= alert ? "🟨" : v <= top ? "🟧" : "🟥"; };
+  return Array.from({ length: 10 }, (_, k) => k < n ? (h >= top ? "🟥" : cell(k)) : "⬜").join("");
+}
 function shareText(s: Data, arrivals: Data[]) {
-  const i = s.ina || {}; const lvl = levelOf(s) || "sin dato";
-  const lines = [`⚠️ DOTS · Sistema de Alerta de Crecidas`, `${s.place} (río ${s.river}): ${lvl.toUpperCase()}`];
-  if (i.height != null) lines.push(`Altura ${nf(i.height, 2)} m el ${dm(i.date)}. Alerta ${nf(i.alert, 2)} m · evacuación ${nf(i.evac, 2)} m.`);
-  if (i.trend_m_day != null) lines.push(`Tendencia: ${i.trend_m_day > 0 ? "sube" : "baja"} ${nf(Math.abs(i.trend_m_day) * 100, 0)} cm por día${i.days_to_alert ? `; a este ritmo llegaría a la alerta en ~${i.days_to_alert} días` : ""}.`);
-  const fc = (i.forecast || []).slice(-1)[0]; if (fc) lines.push(`Pronóstico INA al ${dm(fc.date)}: ${nf(fc.central, 2)} m (${nf(fc.min, 2)}–${nf(fc.max, 2)}).`);
-  arrivals.slice(0, 2).forEach(a => lines.push(`Lluvia en ${a.name}: repunte esperado entre el ${dm(a.window[0])} y el ${dm(a.window[1])}.`));
-  lines.push(`Ante una evacuación seguí a Defensa Civil (103) y Prefectura (106).`, `Más datos: ${location.origin}/alertas`);
-  return lines.join("\n");
+  const i = s.ina || {}; const lvl = levelOf(s) || "Sin dato";
+  const L: string[] = [`${DOT[lvl] || "⚪"} *ALERTA DE CRECIDA · ${s.place.toUpperCase()}*`, `Río ${s.river} · nivel *${lvl.toUpperCase()}*`, ""];
+  if (i.height != null) {
+    L.push(`📏 Altura hoy: *${nf(i.height, 2)} m* (${dm(i.date)})`);
+    L.push(`🟠 Alerta: ${nf(i.alert, 2)} m · 🔴 Evacuación: ${nf(i.evac, 2)} m`);
+    const bar = emojiBar(i.height, i.alert, i.evac); if (bar) L.push(bar);
+    if (i.to_alert != null) L.push(i.to_alert <= 0 ? `⚠️ *Superó el nivel de alerta* por ${nf(-i.to_alert, 2)} m` : `Faltan *${nf(i.to_alert, 2)} m* para la alerta`);
+  }
+  if (i.trend_m_day != null) L.push(`${i.trend_m_day > 0.005 ? "📈 Sube" : i.trend_m_day < -0.005 ? "📉 Baja" : "➡️ Estable"} ${nf(Math.abs(i.trend_m_day) * 100, 0)} cm por día${i.days_to_alert ? ` · alerta en ~${i.days_to_alert} días a este ritmo` : ""}`);
+  const fc = (i.forecast || []).slice(-1)[0]; if (fc) L.push(`🔮 Pronóstico INA al ${dm(fc.date)}: *${nf(fc.central, 2)} m* (${nf(fc.min, 2)} a ${nf(fc.max, 2)})`);
+  if (arrivals.length) { L.push("", "🌧️ *Crecida en camino*"); arrivals.slice(0, 3).forEach(a => L.push(`${DOT[a.level === "Peligro" ? "Evacuación" : a.level] || "🟡"} Lluvia en ${a.name}: repunte del ${dm(a.window[0])} al ${dm(a.window[1])}`)); }
+  L.push("", "☎️ Defensa Civil *103* · Prefectura *106* · Emergencias *911*", `Más datos y el informe PDF: ${location.origin}/alertas`, "_DOTS · Sistema de Alerta de Crecidas · datos del INA_");
+  return L.join("\n");
+}
+
+// Tarjeta en imagen (1080×1350) para compartir por WhatsApp o redes
+function drawCard(s: Data): HTMLCanvasElement {
+  const i = s.ina || {}; const lvl = levelOf(s) || "Sin dato";
+  const W = 1080, H = 1350, cv = document.createElement("canvas"); cv.width = W; cv.height = H;
+  const g = cv.getContext("2d")!; const col = LEVEL_COLOR[lvl] || "#667085";
+  const F = (w: number, px: number) => `${w} ${px}px Inter, "IBM Plex Sans", system-ui, sans-serif`;
+  g.fillStyle = "#ffffff"; g.fillRect(0, 0, W, H);
+  g.fillStyle = col; g.fillRect(0, 0, W, 300);
+  g.fillStyle = "#fff"; g.font = F(800, 30); g.fillText("DOTS · SISTEMA DE ALERTA DE CRECIDAS", 64, 76);
+  g.font = F(800, 86); g.fillText(s.place.length > 18 ? s.place.slice(0, 18) + "…" : s.place, 64, 180);
+  g.font = F(500, 36); g.fillText(`río ${s.river}`, 64, 240);
+  g.textAlign = "right"; g.font = F(600, 30); g.fillText("NIVEL HOY", W - 64, 150); g.font = F(900, 64); g.fillText(lvl.toUpperCase(), W - 64, 225); g.textAlign = "left";
+  if (i.height != null) {
+    g.fillStyle = "#101828"; g.font = F(800, 120); g.fillText(`${nf(i.height, 2)} m`, 64, 450);
+    g.fillStyle = "#667085"; g.font = F(500, 32); g.fillText(`altura del ${dm(i.date)} · INA, escala de Prefectura`, 64, 500);
+    g.font = F(700, 38); g.fillStyle = "#e8590c"; g.fillText(`Alerta ${nf(i.alert, 2)} m`, 64, 570); g.fillStyle = "#d92d20"; g.fillText(`Evacuación ${nf(i.evac, 2)} m`, 470, 570);
+    // regla
+    if (i.alert != null) {
+      const ev = i.evac ?? i.alert, lo = Math.min(i.low ?? i.height, i.height) - 0.5, hi = Math.max(ev + 1, i.height + 0.5);
+      const X = (v: number) => 64 + ((v - lo) / (hi - lo)) * (W - 128), att = s.river === "Iguazú" || s.river === "Uruguay" ? 2 : 1;
+      const seg = (a: number, b: number, c: string) => { g.fillStyle = c; g.fillRect(X(a), 620, Math.max(0, X(b) - X(a)), 26); };
+      seg(lo, i.alert - att, "#bfe9d8"); seg(i.alert - att, i.alert, "#ffe1a8"); seg(i.alert, ev, "#ffc4a3"); seg(ev, hi, "#f7a7a0");
+      g.fillStyle = "#101828"; g.fillRect(X(i.height) - 5, 600, 10, 66);
+    }
+    // gráfico
+    const obs: Data[] = i.series || [], fc: Data[] = i.forecast || [];
+    if (obs.length > 1) {
+      const top = 720, bot = 1090, L0 = 110, R0 = W - 64, all = [...obs.map(o => o.h), ...fc.flatMap(f => [f.min, f.max]), i.alert, i.evac].filter((v: any) => v != null);
+      const lo = Math.floor(Math.min(...all) - 0.3), hi = Math.ceil(Math.max(...all) + 0.3), n = obs.length + fc.length;
+      const X = (k: number) => L0 + (k / Math.max(1, n - 1)) * (R0 - L0), Y = (v: number) => bot - ((v - lo) / (hi - lo || 1)) * (bot - top);
+      g.strokeStyle = "#eef2ef"; g.lineWidth = 2; g.fillStyle = "#98a2b3"; g.font = F(500, 24); g.textAlign = "right";
+      for (let k = 0; k <= 4; k++) { const v = lo + (k * (hi - lo)) / 4; g.beginPath(); g.moveTo(L0, Y(v)); g.lineTo(R0, Y(v)); g.stroke(); g.fillText(nf(v, 1), L0 - 12, Y(v) + 8); }
+      g.textAlign = "left";
+      const hline = (v: number | null | undefined, c: string, dash: number[]) => { if (v == null) return; g.strokeStyle = c; g.lineWidth = 4; g.setLineDash(dash); g.beginPath(); g.moveTo(L0, Y(v)); g.lineTo(R0, Y(v)); g.stroke(); g.setLineDash([]); };
+      hline(i.evac, "#d92d20", []); hline(i.alert, "#e8590c", [16, 10]);
+      g.font = F(700, 24); g.textAlign = "left";
+      if (i.evac != null) { g.fillStyle = "#d92d20"; g.fillText("evacuación", L0 + 8, Y(i.evac) - 10); }
+      if (i.alert != null) { g.fillStyle = "#e8590c"; g.fillText("alerta", L0 + 8, Y(i.alert) + 30); }
+      const li = obs.length - 1;
+      if (fc.length) {
+        g.fillStyle = "rgba(122,90,248,.15)"; g.beginPath(); g.moveTo(X(li), Y(obs[li].h)); fc.forEach((f, k) => g.lineTo(X(li + 1 + k), Y(f.max))); fc.slice().reverse().forEach((f, k) => g.lineTo(X(li + fc.length - k), Y(f.min))); g.closePath(); g.fill();
+        g.strokeStyle = "#7a5af8"; g.lineWidth = 5; g.setLineDash([14, 10]); g.beginPath(); g.moveTo(X(li), Y(obs[li].h)); fc.forEach((f, k) => g.lineTo(X(li + 1 + k), Y(f.central))); g.stroke(); g.setLineDash([]);
+      }
+      g.strokeStyle = "#1f5f99"; g.lineWidth = 7; g.beginPath(); obs.forEach((o, k) => k ? g.lineTo(X(k), Y(o.h)) : g.moveTo(X(k), Y(o.h))); g.stroke();
+      g.fillStyle = "#98a2b3"; g.font = F(500, 24); g.fillText(dm(obs[0].date), L0, bot + 40); g.textAlign = "right"; g.fillText(dm((fc.slice(-1)[0] || obs[li]).date), R0, bot + 40); g.textAlign = "left";
+    }
+    g.fillStyle = "#101828"; g.font = F(700, 36);
+    const tr = i.trend_m_day == null ? "" : `${i.trend_m_day > 0.005 ? "Sube" : i.trend_m_day < -0.005 ? "Baja" : "Estable"} ${nf(Math.abs(i.trend_m_day) * 100, 0)} cm por día`;
+    g.fillText(tr + (i.days_to_alert ? ` · alerta en ~${i.days_to_alert} días` : ""), 64, 1190);
+  } else { g.fillStyle = "#101828"; g.font = F(600, 40); g.fillText("Sin escala del INA en esta localidad.", 64, 460); }
+  g.fillStyle = "#f6f7f9"; g.fillRect(0, 1230, W, 120);
+  g.fillStyle = "#d92d20"; g.font = F(800, 34); g.fillText("Defensa Civil 103 · Prefectura 106 · 911", 64, 1285);
+  g.fillStyle = "#667085"; g.font = F(500, 26); g.fillText(`${location.host}/alertas · datos públicos del INA`, 64, 1325);
+  return cv;
+}
+async function shareCard(s: Data) {
+  const cv = drawCard(s);
+  const blob: Blob | null = await new Promise(r => cv.toBlob(b => r(b), "image/png"));
+  if (!blob) return;
+  const file = new File([blob], `alerta-${s.place.replace(/[^\w]+/g, "-")}.png`, { type: "image/png" });
+  const nav: any = navigator;
+  if (nav.canShare && nav.canShare({ files: [file] })) { try { await nav.share({ files: [file], title: `Alerta de crecida · ${s.place}`, text: `${s.place}: ${levelOf(s) || ""}` }); return; } catch { /* cancelado */ } }
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = file.name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
 }
 
 // ¿Cómo está mi localidad?
@@ -178,7 +256,11 @@ function Locality({ stations, alerts, actions }: { stations: Data[]; alerts: Dat
           {RIVER_ORDER.map(rn => <optgroup key={rn} label={`Río ${rn}`}>{stations.filter(x => x.river === rn).map(x => <option key={x.id} value={x.id}>{x.place}{levelOf(x) && levelOf(x) !== "Normal" ? ` · ${levelOf(x)}` : ""}</option>)}</optgroup>)}
         </select>
         {lvl && <span className={`cp-big-level ${LEVEL_TONE[lvl]}`}>{lvl}</span>}
-        <a className="cp-wa" href={wa} target="_blank" rel="noreferrer">Compartir por WhatsApp</a>
+        <div className="cp-share">
+          <a className="cp-pdf-local" href={`/api/fuentes/localidad-informe?id=${s.id}`} download>Informe de {s.place} · PDF</a>
+          <a className="cp-wa" href={wa} target="_blank" rel="noreferrer">WhatsApp</a>
+          <button className="cp-img" onClick={() => void shareCard(s)}>Compartir imagen</button>
+        </div>
       </div>
       {i.height != null ? <>
         <div className="cp-local-kpis">
@@ -307,7 +389,7 @@ export function CuencaPanel() {
       <span className="section-tag">DOTS · SISTEMA DE ALERTA DE CRECIDAS · CUENCA DEL PLATA</span>
       <h2>Sistema de Alerta de Crecidas</h2>
       <p className="cp-sub">De la lluvia en Brasil, Paraguay y Bolivia a la crecida en tu costa: Iguazú, Paraná, Paraguay, Bermejo y Uruguay.</p>
-      <a className="cp-pdf" href="/api/fuentes/cuenca-informe" download>Descargar informe PDF ↓</a>
+      <a className="cp-pdf" href="/api/fuentes/cuenca-informe" download>Informe general de la cuenca · PDF ↓</a>
       <p>Las crecidas del Paraná y del Uruguay nacen en las cabeceras: el sur de Brasil, el Alto Paraná y el Pantanal. El Niño carga de lluvia esa zona en primavera y verano. Acá se sigue la cadena completa: el océano, la lluvia que viene, los ríos hoy y cuánto tarda el agua en llegar.</p>
     </div>
     {err && <p className="rp-error">{err} No se muestran valores supuestos.</p>}

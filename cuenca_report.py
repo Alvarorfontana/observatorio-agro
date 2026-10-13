@@ -218,3 +218,88 @@ def pdf(d, today=None):
     if out[:5] != b'%PDF-':
         raise RuntimeError('Typst no generó el PDF')
     return out
+
+
+# ───────────────────────────── informe de una localidad ─────────────────────────────
+LOCAL_TEMPLATE = os.path.join(BASE, 'localidad.typ')
+TONE_H = {'Normal': 'ok', 'Atención': 'warn', 'Alerta': 'alert', 'Evacuación': 'risk', 'Peligro': 'risk'}
+PHONES = {'Argentina': [['103', 'Defensa Civil'], ['106', 'Prefectura Naval'], ['911', 'Emergencias'], ['100', 'Bomberos'], ['107', 'SAME']],
+          'Paraguay': [['911', 'Emergencias']], 'Uruguay': [['911', 'Emergencias']]}
+
+
+def _country(sid):
+    return 'Paraguay' if sid in ('paraguay-bahianegra', 'paraguay-concepcion') else 'Uruguay' if sid == 'uruguay-fraybentos' else 'Argentina'
+
+
+def local_data(d, sid, today=None):
+    """Datos de una localidad para su informe: altura, niveles, tendencia, pronóstico, río arriba y qué hacer."""
+    today = today or date.today()
+    rv = d.get('rivers') or {}
+    st = {s['id']: s for s in rv.get('stations') or []}
+    s = st.get(sid)
+    if not s:
+        raise ValueError('Localidad desconocida')
+    i = s.get('ina') or {}
+    lvl = i.get('level') or s.get('danger') or 'Sin dato'
+    act_key = {'Evacuación': 'Peligro'}.get(lvl, lvl)
+    actions = (rv.get('actions') or cc.ACTIONS).get(act_key) or cc.ACTIONS['Normal']
+    arrivals = []
+    for a in d.get('alerts') or []:
+        if a.get('level') in (None, 'Normal'):
+            continue
+        for x in a.get('arrivals') or []:
+            if x.get('place') == s['place'] and x.get('window'):
+                arrivals.append({'basin': a['name'], 'level': a['level'], 'tone': TONE_H.get(a['level'], 'warn'),
+                                 'window': f"{dm(x['window'][0])} al {dm(x['window'][1])}", 'mm': num(a.get('median_mm')),
+                                 'prediction': pred_text(a.get('prediction')) if (a.get('prediction') or {}).get('place') == s['place'] else ''})
+    # río arriba: hasta 4 localidades anteriores en la cadena, con sus días de traslado
+    lags = {k: v for k, v in ((cc.load_normals().get('lags')) or {}).items() if (v.get('corr') or 0) >= 0.3}
+    upstream = []
+    for ch in cc.CHAINS:
+        if sid in ch['stations'] and ch['stations'].index(sid) > 0:
+            ids = ch['stations'][:ch['stations'].index(sid)]
+            acc, rows = 0.0, []
+            for u, dn in reversed(list(zip(ids, ch['stations'][1:ch['stations'].index(sid) + 1]))):
+                lg = lags.get(f'{u}>{dn}')
+                acc = acc + lg['days'] if (lg and acc is not None) else None
+                us = st.get(u) or {}
+                ui = us.get('ina') or {}
+                rows.append({'place': us.get('place') or u, 'river': us.get('river') or '', 'h': m2(ui.get('height')),
+                             'level': ui.get('level') or us.get('danger') or '—', 'tone': TONE_H.get(ui.get('level') or us.get('danger') or '', 'idle'),
+                             'trend': (('sube ' if ui['trend_m_day'] > 0.005 else 'baja ' if ui['trend_m_day'] < -0.005 else 'estable ') + (f"{num(abs(ui['trend_m_day']) * 100)} cm/día" if abs(ui['trend_m_day']) > 0.005 else '')) if ui.get('trend_m_day') is not None else '—',
+                             'days': ('el mismo día' if acc == 0 else f"~{num(acc)} días") if acc is not None else 'en cálculo'})
+                if len(rows) >= 4:
+                    break
+            upstream = rows
+            break
+    rec = s.get('height_record') or {}
+    fc = i.get('forecast') or []
+    return {
+        'title': f"DOTS · Alerta de crecidas · {s['place']}", 'generated': f'{today.day} de {MONTHS[today.month - 1]} de {today.year}',
+        'place': s['place'], 'river': s['river'], 'gauge': i.get('gauge') or '', 'level': lvl, 'tone': TONE_H.get(lvl, 'idle'),
+        'has_h': i.get('height') is not None,
+        'h': i.get('height'), 'h_txt': m2(i.get('height')), 'date': dm(i.get('date')), 'alert': i.get('alert'), 'evac': i.get('evac'), 'low': i.get('low'),
+        'alert_txt': m2(i.get('alert')), 'evac_txt': m2(i.get('evac')), 'low_txt': m2(i.get('low')),
+        'to_alert': ('superado' if i.get('to_alert') is not None and i['to_alert'] <= 0 else m2(i.get('to_alert'))),
+        'trend': (f"{'sube' if i['trend_m_day'] > 0.005 else 'baja' if i['trend_m_day'] < -0.005 else 'estable'} {num(abs(i['trend_m_day']) * 100)} cm por día") if i.get('trend_m_day') is not None else '—',
+        'days_alert': (f"a este ritmo llegaría a la alerta en ~{i['days_to_alert']} días" if i.get('days_to_alert') else ''),
+        'days_evac': (f"y a la evacuación en ~{i['days_to_evac']} días" if i.get('days_to_evac') else ''),
+        'series': [{'d': dm(x['date']), 'v': x['h']} for x in i.get('series') or [] if x.get('h') is not None],
+        'forecast': [{'d': dm(f['date']), 'c': f['central'], 'lo': f['min'], 'hi': f['max']} for f in fc],
+        'fc_txt': (f"{num(fc[-1]['central'], 2)} m al {dm(fc[-1]['date'])} (entre {num(fc[-1]['min'], 2)} y {num(fc[-1]['max'], 2)} m)") if fc else '',
+        'fc_issued': dm(rv.get('ina_forecast_issued')),
+        'record': (f"{m2(rec['value'])} en {my(rec['date'])}") if rec.get('value') else '',
+        'discharge': (f"{num(s.get('discharge'))} m³/s" + (f" · {num(s.get('ratio'), 1)} veces lo normal para la fecha" if s.get('ratio') is not None else '')) if s.get('discharge') is not None else '',
+        'arrivals': arrivals, 'upstream': upstream, 'actions': actions,
+        'country': _country(sid), 'phones': PHONES[_country(sid)],
+        'url': 'observatorio-agro.vercel.app/alertas',
+    }
+
+
+def local_pdf(d, sid, today=None):
+    import typst
+    data = json.dumps(local_data(d, sid, today), ensure_ascii=False, default=str)
+    out = typst.compile(LOCAL_TEMPLATE, root=BASE, font_paths=[FONTS], ignore_system_fonts=True, sys_inputs={'data': data})
+    if out[:5] != b'%PDF-':
+        raise RuntimeError('Typst no generó el PDF')
+    return out

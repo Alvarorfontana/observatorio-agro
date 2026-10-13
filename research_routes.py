@@ -138,6 +138,18 @@ def research_data(name):
     if name=='alertas-resumen':
         try: return jsonify(cca.resumen())
         except Exception as e: return _upstream_error(e)
+    if name=='localidad-informe':
+        sid=request.args.get('id','')
+        if sid not in {x['id'] for x in cca.STATIONS}:return jsonify({'status':'sin dato','error':'Localidad desconocida'}),400
+        try:
+            res=cca.analyze()
+            if res.get('status')!='recibido':return jsonify({'status':'sin dato','error':res.get('error') or 'Sin datos de la cuenca'}),502
+            out=ccr.local_pdf(res['data'],sid)
+            place=next(x['place'] for x in cca.STATIONS if x['id']==sid)
+            safe=''.join(ch if ch.isalnum() else '-' for ch in place.encode('ascii','ignore').decode()).strip('-')
+            fname=f"DOTS-Alerta-{safe}-{datetime.now(timezone.utc).strftime('%Y-%m-%d')}.pdf"
+            return Response(out,mimetype='application/pdf',headers={'Content-Disposition':f'attachment; filename="{fname}"','Cache-Control':'no-store'})
+        except Exception as e: return _upstream_error(e)
     if name=='cuenca-informe':
         try:
             res=cca.analyze()
