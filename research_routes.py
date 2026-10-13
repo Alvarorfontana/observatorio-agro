@@ -16,6 +16,9 @@ import sustainability as sus
 import forage as fgr
 import costs as cst
 import monitor as mon
+import soil_wetness as sw
+import cuenca as cca
+import cuenca_report as ccr
 
 research_api=Blueprint('research_api',__name__,url_prefix='/api/fuentes')
 
@@ -129,6 +132,17 @@ def contact_send():
 def research_data(name):
     if name=='plataformas':
         return jsonify(c.platform_registry())
+    if name=='cuenca':
+        try: return jsonify(cca.analyze())
+        except Exception as e: return _upstream_error(e)
+    if name=='cuenca-informe':
+        try:
+            res=cca.analyze()
+            if res.get('status')!='recibido':return jsonify({'status':'sin dato','error':res.get('error') or 'Sin datos de la cuenca'}),502
+            out=ccr.pdf(res['data'])
+            fname=f"DOTS-Cuenca-del-Plata-{datetime.now(timezone.utc).strftime('%Y-%m-%d')}.pdf"
+            return Response(out,mimetype='application/pdf',headers={'Content-Disposition':f'attachment; filename="{fname}"','Cache-Control':'no-store'})
+        except Exception as e: return _upstream_error(e)
     if name=='inta-suelos-wms':
         try: return jsonify(c.ogc_capabilities('inta-suelos-wms'))
         except Exception as e: return jsonify({'status':'sin dato','error':'INTA WMS no respondió válidamente','type':type(e).__name__}),502
@@ -189,7 +203,7 @@ def research_data(name):
           'suelo':lambda:c.soil_full(lat,lon),
           'serie':lambda:c.external('https://archive-api.open-meteo.com/v1/archive',{'latitude':lat,'longitude':lon,'start_date':f'{endyear-years+1}-01-01','end_date':f'{endyear}-12-31','daily':'temperature_2m_mean,precipitation_sum','models':'era5','timezone':'UTC'}),
           'proyeccion':lambda:c.projection(lat,lon),
-          'estadistica':lambda:fst.analyze(lat,lon),
+          'estadistica':lambda:fst.analyze(lat,lon),'humedad-nasa':lambda:sw.analyze(lat,lon),
           'indices':lambda:ci.agro_indices(lat,lon,_int(request.args,'index_years',10,3,30)),'teleconexiones':lambda:ci.psl_indices(),
           'nws':lambda:c.nws(lat,lon),'metnorway':lambda:c.met_norway(lat,lon),
           'aire':lambda:c.air_quality(lat,lon),'elevacion':lambda:c.elevation(lat,lon),

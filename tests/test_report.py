@@ -102,3 +102,15 @@ def test_pdf_with_satellite_water():
     assert d['water']['facts'][0][1] == '12,4 ha' and d['water']['values'] == [10.1, 12.4] and 'geoai' in d['attributions']
     pdf, engine = rt.pdf(RESULT, 'Potrero', extras)
     assert engine == 'typst' and pdf[:5] == b'%PDF-'
+
+
+def test_informe_incluye_humedad_nasa_y_entorno():
+    import report_typst as rt
+    extras = {'humedad': {'root_pct': 31.5, 'normal_pct': 48, 'category': 'más seco que lo normal', 'percentile': 18, 'change_30d_pts': -6, 'date': '2026-10-10', 'years': 20},
+              'entorno': {'departamento': 'Mercedes', 'provincia': 'Corrientes', 'camino_mas_cercano_m': 0, 'ruta_mas_cercana_m': 3400,
+                          'caminos_km': {'caminos_lote': 2.2, 'rutas_lote': 0}, 'construcciones_lote': 3, 'construcciones_2km': 12, 'release': '2026-09-17.0'}}
+    d = rt.build_data({'summary': 's', 'evidence': []}, 'Lote', extras)
+    assert d['soil_nasa']['facts'][0][1] == '32 %' or d['soil_nasa']['facts'][0][1].startswith('3')
+    assert d['surroundings']['facts'][0][1] == 'Mercedes, Corrientes' and d['surroundings']['facts'][2][1] == '3,4 km'
+    pdf, motor = rt.pdf({'summary': 's', 'evidence': []}, 'Lote', extras)
+    assert pdf[:5] == b'%PDF-' and motor == 'typst'

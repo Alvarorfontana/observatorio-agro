@@ -351,6 +351,23 @@ def build_data(result, name='Lote DOTS', extras=None):
                  'values': [_f(h.get('water_ha')) for h in hs],
                  'note': 'Procesamiento semanal: Sentinel-2 L2A (Earth Search), detección de agua con geoai y el modelo preentrenado OmniWaterMask, recortada al lote.'
                          + (' Resultado de una semana anterior: la última imagen no tuvo dato válido.' if ag.get('stale') else '')}
+    sw = extras.get('humedad') or {}
+    soil_nasa = None
+    if sw.get('root_pct') is not None:
+        soil_nasa = {'facts': [['Zona de raíces (0-100 cm)', f"{num(sw.get('root_pct'), 0)} %"], ['Normal del mes', f"{num(sw.get('normal_pct'), 0)} %"],
+                               ['Estado', str(sw.get('category') or '—')], ['Percentil', f"{num(sw.get('percentile'), 0)} de 100"],
+                               ['Cambio en 30 días', (('+' if (sw.get('change_30d_pts') or 0) > 0 else '') + num(sw.get('change_30d_pts'), 0) + ' pts') if sw.get('change_30d_pts') is not None else '—']],
+                     'note': f"NASA POWER (MERRA-2), % de saturación; último dato {str(sw.get('date', ''))[8:10]}/{str(sw.get('date', ''))[5:7]}. Normal: mismo mes, {sw.get('years', '—')} años. Segunda opinión, independiente de Open-Meteo."}
+    en = (extras.get('agua') or {}).get('entorno') or extras.get('entorno') or {}
+    surroundings = None
+    if en:
+        kmf = lambda m: '—' if m is None else ('pasa por el lote' if m == 0 else f"{num(m, 0)} m" if m < 1000 else f"{num(m / 1000)} km")
+        ck = en.get('caminos_km') or {}
+        surroundings = {'facts': [['Ubicación', ', '.join(x for x in (en.get('departamento'), en.get('provincia')) if x) or '—'],
+                                  ['Camino más cercano', kmf(en.get('camino_mas_cercano_m'))], ['Ruta más cercana', kmf(en.get('ruta_mas_cercana_m')) if en.get('ruta_mas_cercana_m') is not None else 'más de 6 km'],
+                                  ['Caminos dentro del lote', f"{num((ck.get('caminos_lote') or 0) + (ck.get('rutas_lote') or 0))} km"],
+                                  ['Construcciones en el lote', num(en.get('construcciones_lote'), 0)], ['Construcciones a 2 km', num(en.get('construcciones_2km'), 0)]],
+                        'note': f"Overture Maps (OpenStreetMap, Microsoft, Google y otros), versión {en.get('release', '—')}. Pueden faltar caminos internos o galpones nuevos."}
     nl_series = [r for r in (ndvi.get('series') or []) if r.get('status') == 'válida' and r.get('ndvi_mean') is not None]
     week = week_outlook(nmean, nl_series, bal, _f(rain and rain.get('value')), _f(et and et.get('value')), thiv, fo)
     thumb = extras.get('_thumb') if '_thumb' in extras else satellite_thumb(poly)
@@ -358,7 +375,7 @@ def build_data(result, name='Lote DOTS', extras=None):
     ev = result.get('evidence') or []
     ok = sum(1 for e in ev if e.get('status') == 'recibido')
     return {
-        'week': week, 'relief': relief, 'water': water,
+        'week': week, 'relief': relief, 'water': water, 'soil_nasa': soil_nasa, 'surroundings': surroundings,
         'confidence_line': f"Confianza de la lectura {conf.get('score', '—')}/100 ({conf.get('label', 's/d')}) · {ok} de {len(ev)} fuentes con respuesta válida",
         'title': f'DOTS · Informe territorial · {lot.get("name") or name}',
         'generated': generated,
@@ -400,6 +417,8 @@ def build_data(result, name='Lote DOTS', extras=None):
                          + ('; relieve: Copernicus DEM GLO-30 © DLR e.V. 2010-2014 y © Airbus Defence and Space GmbH 2014-2018, provisto bajo COPERNICUS por la UE y la ESA' if relief else '')
                          + ('; imagen satelital: Esri World Imagery' if thumb else '')
                          + ('; agua: Sentinel-2 (ESA/Copernicus) procesado con geoai (opengeos, MIT) y OmniWaterMask' if water else '')
+                         + ('; humedad: NASA POWER (MERRA-2)' if soil_nasa else '')
+                         + ('; entorno: Overture Maps Foundation (ODbL y CDLA)' if surroundings else '')
                          + ('; límites de lote: Fields of the World / PRUE (Robinson et al. 2026), CC-BY-4.0' if ftw else '')
                          + '. Tipografía IBM Plex (SIL OFL). Documento compuesto con Typst.'),
     }

@@ -132,6 +132,11 @@ export function LotDashboard({ weather, sources, lot, thi, terrain, onLoad, onTe
   const wx = why("variables", "Esperando el pronóstico de Open-Meteo…");
   const wn = why("ndvi", hasLot ? "Preparando el NDVI de este lote…" : "Dibujá o seleccioná un lote para ver su NDVI.");
   const wl = why("lluvia", hasLot ? "Preparando la lluvia observada del lote…" : "Dibujá o seleccioná un lote para ver su lluvia observada.");
+  const sw = sources["humedad-nasa"]?.payload?.data;
+  const wsw = why("humedad-nasa", "Consultando la humedad de suelo de NASA…");
+  const swTone: Tone = sw?.percentile == null ? "idle" : sw.percentile < 10 || sw.percentile > 90 ? "risk" : sw.percentile < 30 || sw.percentile > 70 ? "warn" : "ok";
+  const env = water?.entorno;
+  const km = (m: number | null | undefined) => m == null ? "—" : m < 1000 ? `${fmt(m, 0)} m` : `${fmt(m / 1000, 1)} km`;
   const wr = why("relieve", hasLot ? "Preparando el relieve de este lote…" : "Dibujá o seleccioná un lote para ver su relieve.");
 
   return (
@@ -214,7 +219,42 @@ export function LotDashboard({ weather, sources, lot, thi, terrain, onLoad, onTe
         </> : <Empty text={wr.text} button={hasLot && !busy("relieve") ? (wr.failed ? "Reintentar" : "Analizar relieve") : undefined} onClick={onTerrain} busy={busy("relieve")} />}
       </Card>
 
-      {/* Fila 5: agua detectada por satélite (procesamiento semanal con geoai) */}
+      {/* Fila 5: humedad de NASA contra lo normal y entorno del lote */}
+      <Card span={10} title="Humedad del suelo contra lo normal" sub="NASA POWER (MERRA-2) · zona de raíces 0–100 cm · % de saturación · banda gris: rango normal del mes (20 años)">
+        {sw?.series?.length ? <div className="db-water">
+          <dl className="db-facts db-facts-4">
+            <div><dt>Zona de raíces</dt><dd>{fmt(sw.root_pct, 0)} %</dd></div>
+            <div><dt>Normal del mes</dt><dd>{fmt(sw.normal_pct, 0)} %</dd></div>
+            <div><dt>Estado</dt><dd><b className={`db-word tone-${swTone}`}>{sw.category || "—"}</b></dd></div>
+            <div><dt>Cambio 30 días</dt><dd>{sw.change_30d_pts == null ? "—" : `${sw.change_30d_pts > 0 ? "+" : ""}${fmt(sw.change_30d_pts, 0)} pts`}</dd></div>
+          </dl>
+          <EChart height={200} label="Humedad de la zona de raíces y rango normal" option={t => {
+            const a = axis(t, sw.series.map((r: Data) => dm(String(r.date))), "%");
+            const band = sw.normal_range;
+            return { legend: { show: false }, xAxis: a.x, yAxis: { ...a.y, min: 0, max: 100, scale: false }, series: [
+              { name: "Zona de raíces", type: "line", data: sw.series.map((r: Data) => r.root_pct), symbol: "none", lineStyle: { width: 2.5, color: t.c[1] }, itemStyle: { color: t.c[1] },
+                markArea: band ? { silent: true, itemStyle: { color: t.light ? "rgba(0,0,0,.06)" : "rgba(255,255,255,.07)" }, data: [[{ yAxis: band.p10 }, { yAxis: band.p90 }]] } : undefined },
+            ] };
+          }} />
+          <p className="db-note">Segunda opinión, independiente de la humedad de Open-Meteo. Último dato del {dm(String(sw.date))}; NASA publica con unos días de demora. Percentil {fmt(sw.percentile, 0)} frente a {fmt(sw.years, 0)} años.</p>
+        </div> : <Empty text={wsw.text} button={wsw.failed ? "Reintentar" : undefined} onClick={() => onLoad("humedad-nasa")} busy={busy("humedad-nasa")} />}
+      </Card>
+      <Card span={6} title="Entorno del lote" sub="Overture Maps · caminos, construcciones y departamento · se actualiza con cada versión mensual">
+        {env ? <>
+          <dl className="db-facts">
+            <div><dt>Ubicación</dt><dd>{[env.departamento, env.provincia].filter(Boolean).join(", ") || "—"}</dd></div>
+            <div><dt>Camino más cercano</dt><dd>{env.camino_mas_cercano_m === 0 ? "Pasa por el lote" : km(env.camino_mas_cercano_m)}</dd></div>
+            <div><dt>Ruta más cercana</dt><dd>{env.ruta_mas_cercana_m === 0 ? "Pasa por el lote" : env.ruta_mas_cercana_m == null ? "Más de 6 km" : km(env.ruta_mas_cercana_m)}</dd></div>
+            <div><dt>Caminos dentro del lote</dt><dd>{fmt((env.caminos_km?.caminos_lote || 0) + (env.caminos_km?.rutas_lote || 0), 1)} km</dd></div>
+            <div><dt>Construcciones en el lote</dt><dd>{fmt(env.construcciones_lote, 0)}{env.techo_m2_lote ? ` · ${fmt(env.techo_m2_lote, 0)} m² de techo` : ""}</dd></div>
+            <div><dt>Construcciones a 2 km</dt><dd>{fmt(env.construcciones_2km, 0)}</dd></div>
+          </dl>
+          <p className="db-note">Datos abiertos de OpenStreetMap, Microsoft y Google reunidos por Overture (versión {env.release}). Pueden faltar caminos internos o galpones nuevos.</p>
+        </> : <Empty text={!hasLot ? "Seleccioná un lote para ver su entorno." : !cloudOn ? "El entorno se calcula en el procesamiento semanal, que todavía no está activado en este sitio." : !hasKey ? "Guardá tus lotes en la nube para que el procesamiento semanal calcule caminos y construcciones." : "El entorno aparece después del próximo procesamiento semanal."}
+          button={hasLot && cloudOn && !hasKey ? "Ir a guardar lotes" : undefined} onClick={onCloud} />}
+      </Card>
+
+      {/* Fila 6: agua detectada por satélite (procesamiento semanal con geoai) */}
       <Card span={16} title="Agua detectada por satélite" sub="Procesamiento semanal · Sentinel-2 · geoai (modelo OmniWaterMask) · aguadas, tajamares y bajos con agua dentro del lote">
         {water?.status === "recibido" || water?.stale ? <div className="db-water">
           <dl className="db-facts db-facts-4">
@@ -233,7 +273,7 @@ export function LotDashboard({ weather, sources, lot, thi, terrain, onLoad, onTe
           button={hasLot && cloudOn && !hasKey ? "Ir a guardar lotes" : undefined} onClick={onCloud} />}
       </Card>
 
-      {/* Fila 6: trazabilidad */}
+      {/* Fila 7: trazabilidad */}
       <Card span={16} title="Fuentes consultadas" sub={`${statusRows.filter(([, s]) => s.status === "recibido").length} con respuesta válida · ${statusRows.filter(([, s]) => s.status === "sin dato").length} sin dato · ningún faltante se reemplaza`}>
         <div className="db-table-wrap"><table className="db-table">
           <thead><tr><th>Fuente</th><th>Estado</th><th>Consulta</th><th></th></tr></thead>
