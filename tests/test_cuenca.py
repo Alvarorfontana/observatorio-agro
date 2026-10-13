@@ -266,3 +266,16 @@ def test_tendencia_y_dias_hasta_alerta():
     st = cc.merge_ina([{'id': 'parana-corrientes', 'river': 'Paraná', 'place': 'Corrientes'}],
                       {'levels': {'parana-corrientes': {'alert': 6.5, 'evac': 7}}, 'heights': {'parana-corrientes': hs}, 'forecast': {}})[0]
     assert st['ina']['trend_m_day'] == 0.05 and st['ina']['days_to_alert'] == 43 and st['ina']['days_to_evac'] == 53
+
+
+def test_resumen_portada(monkeypatch):
+    from api.index import app
+    cc._CACHE.clear()
+    hs = [(f'2026-10-{d:02d}', 6.6 + 0.05 * (d - 5)) for d in range(5, 13)]
+    monkeypatch.setattr(cc, 'ina_all', lambda today=None: {'levels': {'parana-corrientes': {'alert': 6.5, 'evac': 7.0}, 'parana-goya': {'alert': 5.2, 'evac': 5.7}},
+                                                          'heights': {'parana-corrientes': hs, 'parana-goya': [('2026-10-12', 3.0)]}, 'forecast': {}})
+    j = app.test_client().get('/api/fuentes/alertas-resumen').get_json()
+    d = j['data']
+    assert j['status'] == 'recibido' and d['total'] == 2 and d['counts']['Alerta'] == 1
+    assert d['stations'][0]['place'] == 'Corrientes' and d['stations'][0]['pct_alert'] == 107 and d['rising'] == 1
+    cc._CACHE.clear()
