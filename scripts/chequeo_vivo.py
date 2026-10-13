@@ -54,6 +54,16 @@ for name in GET:
     except Exception as e:
         codes[name] = 599; out(f"ERR  {round((time.monotonic()-t0)*1000):>6} ms  {name:<16} {type(e).__name__}")
     time.sleep(1.5)   # respeta los límites de las fuentes (SoilGrids, Nominatim)
+for name, la, lo in (('inmet', -30.03, -51.20), ('dmc', -33.45, -70.66), ('eccc', 45.40, -75.69), ('inmet@corrientes', LAT, LON)):
+    t0 = time.monotonic(); route = name.split('@')[0]
+    try:
+        r = S.get(f'{BASE}/api/fuentes/{route}', params={'lat': la, 'lon': lo}, timeout=65)
+        js = r.json() if r.headers.get('Content-Type', '').startswith('application/json') else {}
+        d = js.get('data') or {}
+        codes[name] = show(name, r, t0, f"  {len(d.get('observations') or [])} obs · {d.get('source_mode', '')}")
+    except Exception as e:
+        codes[name] = 599; out(f"ERR  {round((time.monotonic()-t0)*1000):>6} ms  {name:<16} {type(e).__name__}")
+    time.sleep(1.5)
 for name, body in POST.items():
     t0 = time.monotonic()
     try:

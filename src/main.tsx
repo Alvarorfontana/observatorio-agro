@@ -83,7 +83,7 @@ const GIBS_LAYERS: [string,string,string,string?][] = [
   ["GOES-East_ABI_Band13_Clean_Infrared","Nubes GOES-East · infrarrojo · 10 min","Satélite meteorológico geoestacionario: topes nubosos fríos = tormentas. Última imagen disponible."],
   [WORLDCOVER,"Cobertura ESA WorldCover · 10 m","Árboles, pastizal, cultivo, agua y humedales (2021). Fuente: ESA / VITO Terrascope, CC-BY 4.0.","https://titiler.terrascope.be/wms"],
 ];
-const NATIONAL = ["smn", "nws"];
+const NATIONAL = ["smn", "inmet", "dmc", "eccc", "nws"];
 const SOURCES = [
   ["plataformas","Matriz de conexiones","REST · STAC · WMS/WMTS · OAuth"],
   ["inta-suelos-wms","INTA Suelos · WMS","Argentina · conexión OGC"],
@@ -139,6 +139,9 @@ const SOURCES = [
   ["serie", "Clima de 20–30 años", "ERA5 / Open-Meteo"],
   ["proyeccion", "Proyección 2031–2040", "CMIP6 / MPI-ESM1-2-XR"],
   ["smn", "Estaciones · Argentina", "SMN / WIS2"],
+  ["inmet", "Estaciones · Brasil", "INMET · respaldo NOAA"],
+  ["dmc", "Estaciones · Chile", "DMC · respaldo NOAA"],
+  ["eccc", "Estaciones · Canadá", "ECCC GeoMet"],
   ["nws", "Estaciones · EE.UU.", "NOAA / NWS"],
   ["metnorway", "Pronóstico · Noruega", "MET Norway directo"],];
 const fmt = (v: unknown, n = 1) =>
@@ -1286,6 +1289,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
               {NATIONAL.includes(view) && (
                 <>
                   <p className="footnote">{payload?.agency || "Servicio oficial directo"}. {payload?.scope || "Seleccioná coordenadas dentro del país de la agencia."}</p>
+                  {payload?.source_mode==="respaldo NOAA" && <p className="footnote warn-note">Datos vía NOAA (red mundial de la OMM), con 1 a 2 días de demora. {payload?.native_note||""}</p>}
                   {sources[view]?.status === "recibido" && !payload?.observations?.length && <p className="error">Sin observaciones en esta ubicación y período. No se sustituyen por datos de otro país.</p>}
                   {(payload?.observations || []).slice(0,35).map((o: Data,i: number)=><div className="soil" key={i}><span style={{fontSize:10,maxWidth:"60%",overflowWrap:"anywhere"}}>{o.variable}<small style={{display:"block"}}>{o.station} · {fmt(o.distance_km)} km</small><small style={{display:"block"}}>{o.observed_at || "Sin fecha"}</small><small style={{display:"block"}}>Calidad: {o.quality ?? "no informada"}</small></span><strong style={{fontSize:12}}>{fmt(o.value)}<small style={{display:"block"}}>{o.unit || "sin unidad"}</small></strong></div>)}
                   <p className="footnote">Se muestran hasta 35 valores; exportá JSON para ver toda la respuesta. La antigüedad y la distancia de cada registro importan.</p>
@@ -1899,8 +1903,9 @@ function Observatory({onHome}:{onHome:()=>void}) {
             {[["Pacífico ecuatorial · El Niño",["nino34","oni","meiv2"]],["Hemisferio sur y Atlántico",["aao","soi","tsa"]]].map(([title,keys]:any)=><section className="panel chart" key={title}><h2>{title}</h2><p className="small">NOAA PSL · últimos 12 meses publicados</p><Chart dates={(payload.indices[keys[0]]?.data?.last12||[]).map((r:Data)=>r.period)} unit="índice" series={keys.map((k:string,i:number)=>({name:payload.indices[k]?.data?.name||k,values:(payload.indices[k]?.data?.last12||[]).map((r:Data)=>r.value),color:["#06b6d4","#e9bd72","#a7a5ff"][i]}))}/></section>)}
           </> : NDVI_VIEWS.includes(view) ? <section className="panel chart"><h2>NDVI del lote · serie</h2><p className="small">{payload?.sensor||"Sentinel-2"} · media zonal dentro del polígono · escenas nubladas en el lote excluidas</p><Chart dates={(payload?.series||[]).filter((r:Data)=>r.status==="válida").map((r:Data)=>(r.datetime||r.from||"").slice(0,10))} unit="NDVI" series={[{name:"NDVI medio",values:(payload?.series||[]).filter((r:Data)=>r.status==="válida").map((r:Data)=>r.ndvi_mean??null),color:"#19b98a"}]}/></section> : view==="ina" ? <><section className="panel chart"><h2>{inaSeries==="37299"?"Temperatura observada":"Río Paraná · altura observada"}</h2><p className="small">INA · Bella Vista · serie {inaSeries} · fechas originales</p><Chart dates={(payload?.data||[]).map((r:Data)=>r.timestart)} unit={payload?.responseHeader?.seriesmetadata?.unit_abrev||"m"} series={[{name:"Altura",values:(payload?.data||[]).map((r:Data)=>r.valor??null),color:"#06b6d4"}]}/></section><section className="panel chart"><h2>Estación hidrométrica</h2><p className="footnote">Nivel del río medido en una estación; no describe inundación del lote. Para evaluar riesgo hacen falta relieve, umbrales y delimitación de la cuenca.</p></section></> : view==="aire" ? <>{["pm2_5","pm10"].map((k,i)=><section className="panel chart" key={k}><h2>{i===0?"Partículas PM2.5":"Partículas PM10"}</h2><p className="small">CAMS · pronóstico modelado · UTC</p><Chart dates={payload?.hourly?.time||[]} unit={payload?.hourly_units?.[k]||""} series={[{name:k,values:payload?.hourly?.[k]||[],color:i===0?"#06b6d4":"#b7c989"}]}/></section>)}</> : NATIONAL.includes(view) ? (
             <>
-              {[(view==="eccc"?"TEMP":view==="nws"?"temperature":"air_temperature"), (view==="eccc"?"WIND_SPEED":view==="nws"?"windSpeed":"wind_speed")].map((variable,i)=>{
-                const rows=(payload?.observations||[]).filter((o:Data)=>o.variable===variable).sort((a:Data,b:Data)=>String(a.observed_at).localeCompare(String(b.observed_at)));
+              {[["Temperatura","temperature","air_temperature","TEMP"],["Viento","windSpeed","wind_speed","WIND_SPEED"]].map((names,i)=>{
+                const variable=names[0];
+                const rows=(payload?.observations||[]).filter((o:Data)=>names.includes(o.variable)).sort((a:Data,b:Data)=>String(a.observed_at).localeCompare(String(b.observed_at)));
                 return <section className="panel chart" key={variable}><h2>{i===0?"Temperatura observada":"Viento observado"}</h2><p className="small">{payload?.agency||"Agencia oficial"} · muestra de estaciones · {rows[0]?.unit||"Sin dato"}</p><Chart dates={rows.map((o:Data)=>o.observed_at+" · "+o.station)} unit={rows[0]?.unit||""} series={[{name:variable,values:rows.map((o:Data)=>o.value),type:"bar",color:i===0?"#06b6d4":"#b7c989"}]}/></section>;
               })}
             </>

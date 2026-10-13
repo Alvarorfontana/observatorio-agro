@@ -19,7 +19,7 @@ TIMEOUT = 20
 SESSION = requests.Session()
 SESSION.headers.update({'User-Agent': UA})
 
-AGENCIES = ['smn', 'nws']   # INMET (Brasil), DMC (Chile) y ECCC (Canadá): pendientes de registro, ver CLAVES-A-GESTIONAR.md
+AGENCIES = ['smn', 'inmet', 'dmc', 'eccc', 'nws']
 
 
 # ───────────────────────────── utilidades ─────────────────────────────
@@ -591,6 +591,9 @@ def national(key, lat, lon):
         return _smn(lat, lon)
     if key == 'nws':
         return nws(lat, lon)
+    if key in ('inmet', 'dmc', 'eccc'):
+        import stations
+        return stations.national(key, lat, lon)
     raise ValueError(f'El conector de la agencia "{key}" todavía no está implementado; '
                      'no se sustituye por datos de otro país.')
 

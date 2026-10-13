@@ -12,7 +12,6 @@ No compartir contraseñas por chat. Cargar secretos directamente en Vercel.
 - Google Earth Engine: `GOOGLE_CLOUD_PROJECT`, `GOOGLE_APPLICATION_CREDENTIALS_JSON`
 
 ## Prioridad 2
-- Estaciones de países vecinos (no conectadas todavía; se quitaron del menú hasta tenerlas): INMET Brasil (token de apitempo.inmet.gov.br), DMC Chile (usuario y token de climatologia.meteochile.gob.cl)
 - OpenAQ v3: `OPENAQ_API_KEY`
 - Global Forest Watch: `GFW_API_KEY`
 - AEMET OpenData: `AEMET_API_KEY`
@@ -62,3 +61,15 @@ Mientras no estén las claves, DOTS obtiene las mismas variables de fuentes abie
 | Focos de calor | NASA FIRMS (clave gratuita, 1 minuto) | — | — |
 
 Licencias: Open-Meteo y el plan Hobby de Vercel son de uso no comercial. Alcanza mientras DOTS no cobre; al empezar a cobrar, pasar a Open-Meteo API comercial y Vercel Pro.
+
+## Estaciones de Brasil, Chile y Canadá
+
+Las tres pantallas ya muestran datos. Con las claves pasan a la fuente nativa del país, en tiempo real.
+
+| País | Sin clave (ya funciona) | Con clave | Cómo registrarse |
+|---|---|---|---|
+| Canadá | ECCC MSC GeoMet, tiempo real, abierta | — | No hace falta |
+| Chile | NOAA ISD (estaciones oficiales DMC vía OMM, 1–2 días de demora) | DMC red EMA en tiempo real: `DMC_USUARIO` (correo) y `DMC_TOKEN` | Crear cuenta en https://climatologia.meteochile.gob.cl (Iniciar sesión → registrarse), entrar a "Web Services" y copiar la API key personal |
+| Brasil | NOAA ISD (estaciones oficiales INMET vía OMM, 1–2 días de demora) | INMET apitempo en tiempo real: `INMET_TOKEN` | Pedir el token a INMET desde https://portal.inmet.gov.br (Serviços → API / Fale conosco), indicando uso no comercial y el proyecto |
+
+Cerca de una frontera se ven las estaciones del país vecino a menos de 300 km, siempre con su distancia: desde Corrientes, por ejemplo, Uruguaiana (Brasil).

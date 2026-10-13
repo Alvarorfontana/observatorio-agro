@@ -90,9 +90,19 @@ def test_smn_dentro_de_argentina(client):
 
 
 def test_agencia_no_implementada_es_honesta(client):
-    # INMET/DMC/ECCC se quitaron hasta tener registro: no se ofrecen ni se sustituyen
-    r = client.get(f'/api/fuentes/inmet{Q}')
-    assert r.status_code == 404
+    import stations
+    called = {}
+    def nat(key, lat, lon):
+        called['key'] = key
+        return c.envelope({'observations': [], 'scope': 'x'}, '', 'observación', 'x')
+    import research_connectors as c
+    stations_national = stations.national
+    try:
+        stations.national = nat
+        r = client.get(f'/api/fuentes/inmet{Q}')
+    finally:
+        stations.national = stations_national
+    assert r.status_code == 200 and called['key'] == 'inmet'
 
 
 def test_firms_sin_clave_409(client):

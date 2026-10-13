@@ -133,7 +133,7 @@ def research_data(name):
         try: return jsonify(c.ogc_capabilities('inta-suelos-wms'))
         except Exception as e: return jsonify({'status':'sin dato','error':'INTA WMS no respondió válidamente','type':type(e).__name__}),502
     if name=='estado':
-        return jsonify({'public_adapters':['smn','nws','metnorway','aire','elevacion','ina','usgs','nasa-catalogo','productos-nasa','landsat','radar','copernicus-stac','cnes-stac','dlr-stac','deafrica-stac'], 'new_open_stac':['Copernicus Data Space','CNES GEODES','DLR EOC','Digital Earth Africa'], 'firms': 'credencial configurada' if os.environ.get('FIRMS_MAP_KEY') else 'pendiente de clave gratuita', 'protocol':'botón → conector → API → dato → procesamiento → visualización → informe', 'scope':'Catálogo, raster y variable procesada se informan como estados distintos; nunca se sustituyen faltantes.'})
+        return jsonify({'public_adapters':['smn','inmet','dmc','eccc','nws','metnorway','aire','elevacion','ina','usgs','nasa-catalogo','productos-nasa','landsat','radar','copernicus-stac','cnes-stac','dlr-stac','deafrica-stac'], 'new_open_stac':['Copernicus Data Space','CNES GEODES','DLR EOC','Digital Earth Africa'], 'firms': 'credencial configurada' if os.environ.get('FIRMS_MAP_KEY') else 'pendiente de clave gratuita', 'protocol':'botón → conector → API → dato → procesamiento → visualización → informe', 'scope':'Catálogo, raster y variable procesada se informan como estados distintos; nunca se sustituyen faltantes.'})
     try:
         q={key:[value] for key,value in request.args.items()}
         if name=='tile':
