@@ -543,3 +543,9 @@
 .cp-pred > span { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #1f5f99; margin-bottom: 4px; }
 .cp-pred p { font-size: 14px; color: #10222b; font-weight: 600; line-height: 1.45; margin: 0; }
 .cp-pred small { display: block; font-size: 12px; color: #52656c; margin-top: 4px; line-height: 1.45; }
+.cp-intro .cp-sub { color: #e6eef2; font-size: 17px; margin: 0 0 10px; }
+.cp-pdf.static { position: static; display: inline-block; margin-top: 8px; }
+.cp-teaser { margin-top: 18px; }
+.alerts-page .cp { margin-top: 24px; }
+.site-header nav .nav-alert { color: #ff8a65; font-weight: 600; }
+.site-header nav .nav-alert::before { content: "●"; font-size: 9px; margin-right: 5px; vertical-align: 2px; }

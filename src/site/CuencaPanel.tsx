@@ -63,6 +63,18 @@ const OFFICIAL: [string, [string, string, string][]][] = [
     ["SWOT (NASA · CNES)", "satélite que mide la altura del agua de ríos y lagunas", "https://swot.jpl.nasa.gov/"]]],
 ];
 
+// Aviso compacto para el panel regional: lleva a la página del sistema de alertas
+export function AlertasTeaser() {
+  return <section className="cp cp-teaser">
+    <div className="cp-intro">
+      <span className="section-tag">NUEVO · SISTEMA DE ALERTA DE CRECIDAS</span>
+      <h2>¿Viene agua? Alertas por lluvia en Brasil, Paraguay y Bolivia.</h2>
+      <p>34 localidades del Iguazú, Paraná, Paraguay, Bermejo y Uruguay con su altura de hoy contra los niveles oficiales, el pronóstico del INA y cuándo llegaría la crecida.</p>
+      <a className="cp-pdf static" href="/alertas" onClick={e => { e.preventDefault(); history.pushState({}, "", "/alertas"); dispatchEvent(new PopStateEvent("popstate")); scrollTo(0, 0); }}>Ver el sistema de alertas →</a>
+    </div>
+  </section>;
+}
+
 export function CuencaPanel() {
   const [res, setRes] = useState<Data | null>(null), [err, setErr] = useState("");
   useEffect(() => {
@@ -78,8 +90,9 @@ export function CuencaPanel() {
 
   return <section className="cp" aria-label="Cuenca del Plata">
     <div className="cp-intro">
-      <span className="section-tag">CUENCA DEL PLATA · EL NIÑO Y CRECIDAS</span>
-      <h2>De la lluvia en Brasil a la crecida en tu costa.</h2>
+      <span className="section-tag">DOTS · SISTEMA DE ALERTA DE CRECIDAS · CUENCA DEL PLATA</span>
+      <h2>Sistema de Alerta de Crecidas</h2>
+      <p className="cp-sub">De la lluvia en Brasil, Paraguay y Bolivia a la crecida en tu costa: Iguazú, Paraná, Paraguay, Bermejo y Uruguay.</p>
       <a className="cp-pdf" href="/api/fuentes/cuenca-informe" download>Descargar informe PDF ↓</a>
       <p>Las crecidas del Paraná y del Uruguay nacen en las cabeceras: el sur de Brasil, el Alto Paraná y el Pantanal. El Niño carga de lluvia esa zona en primavera y verano. Acá se sigue la cadena completa: el océano, la lluvia que viene, los ríos hoy y cuánto tarda el agua en llegar.</p>
     </div>
@@ -87,7 +100,7 @@ export function CuencaPanel() {
     {!res && !err && <p className="cp-loading">Consultando NOAA, ECMWF, GFS y GloFAS…</p>}
 
     {res?.alerts && <div className="cp-block cp-alerts">
-      <h3>Alerta temprana por lluvia en las cabeceras <small>Se recalcula con cada pronóstico · lluvia ECMWF + GFS, estado del río y represas</small></h3>
+      <h3>Alertas activas · lluvia en las cabeceras <small>Se recalcula con cada pronóstico · lluvia ECMWF + GFS, estado del río y represas</small></h3>
       {active.length ? <div className="cp-alert-list">{active.map(a => <article key={a.basin} className={LEVEL_TONE[a.level]}>
         <div className="cp-head"><span className={`cp-chip ${LEVEL_TONE[a.level]}`}>{a.level}</span><b>{a.name}</b><small>{a.where}</small></div>
         <p className="cp-alert-rain">{a.median_mm != null ? `${nf(a.median_mm)} mm esperados en 15 días` : ""}{a.rain_from ? ` · lluvia fuerte entre el ${dm(a.rain_from)} y el ${dm(a.rain_to)}` : ""}</p>

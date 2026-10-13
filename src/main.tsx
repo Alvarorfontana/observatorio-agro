@@ -52,7 +52,7 @@ import { VariablesPanel } from "./dashboard/VariablesPanel";
 import { LotDashboard } from "./dashboard/LotDashboard";
 import { OPEN_LAYERS, LAYER_GROUPS } from "./dashboard/openLayers";
 import { GuideContent } from "./site/GuideContent";
-import { CuencaPanel } from "./site/CuencaPanel";
+import { CuencaPanel, AlertasTeaser } from "./site/CuencaPanel";
 import { readLotFile, lotsToGeoJSON, lotsToKML } from "./dashboard/lotFiles";
 echarts.use([
   MarkLineComponent,
@@ -2167,7 +2167,7 @@ function SiteLink({to,children,className=""}:{to:string;children:React.ReactNode
   return <a href={to} className={className} onClick={(e)=>{e.preventDefault();history.pushState({},"",to);window.dispatchEvent(new PopStateEvent("popstate"));window.scrollTo({top:0,behavior:"smooth"});}}>{children}</a>
 }
 function Brand(){return <SiteLink to="/" className="site-brand"><img className="brand-logo" src="/dots-logo.svg" alt="DOTS Campo"/><span><b>DOTS <em>CAMPO</em></b><small>DATOS · OBSERVACIÓN · TERRITORIO · SATÉLITE</small></span></SiteLink>}
-function PublicHeader({onDemo}:{onDemo:()=>void}){return <header className="site-header"><Brand/><nav><SiteLink to="/que-es-dots">Qué es DOTS</SiteLink><SiteLink to="/guia">Cómo funciona</SiteLink><SiteLink to="/libre-deforestacion" className="nav-highlight">Libre de deforestación</SiteLink><SiteLink to="/modulos">Módulos</SiteLink><SiteLink to="/panel">Panel regional</SiteLink><SiteLink to="/tecnologia">Fuentes</SiteLink><SiteLink to="/conexiones">APIs</SiteLink><button className="nav-demo" onClick={onDemo}>Demo</button></nav><div className="site-head-actions"><SiteLink to="/capas" className="layers-btn">◧ Capas<span className="lb-long">&nbsp;del mapa</span></SiteLink><SiteLink to="/acceso" className="ghost-link">Ingresar</SiteLink><button className="demo-btn" onClick={onDemo}>Abrir Observatorio →</button></div></header>}
+function PublicHeader({onDemo}:{onDemo:()=>void}){return <header className="site-header"><Brand/><nav><SiteLink to="/que-es-dots">Qué es DOTS</SiteLink><SiteLink to="/guia">Cómo funciona</SiteLink><SiteLink to="/libre-deforestacion" className="nav-highlight">Libre de deforestación</SiteLink><SiteLink to="/modulos">Módulos</SiteLink><SiteLink to="/alertas" className="nav-alert">Alertas de crecidas</SiteLink><SiteLink to="/panel">Panel regional</SiteLink><SiteLink to="/tecnologia">Fuentes</SiteLink><SiteLink to="/conexiones">APIs</SiteLink><button className="nav-demo" onClick={onDemo}>Demo</button></nav><div className="site-head-actions"><SiteLink to="/capas" className="layers-btn">◧ Capas<span className="lb-long">&nbsp;del mapa</span></SiteLink><SiteLink to="/acceso" className="ghost-link">Ingresar</SiteLink><button className="demo-btn" onClick={onDemo}>Abrir Observatorio →</button></div></header>}
 const sourceGroups=[
  ["ARGENTINA",["CONAE · SAOCOM","SMN","INA"]],
  ["EUROPA",["Copernicus · Sentinel","ECMWF · C3S","EUMETSAT","DLR · Alemania","CNES · Francia"]],
@@ -2243,6 +2243,14 @@ function Modules({onDemo}:{onDemo:()=>void}){
   </main><SiteFooter/></div>;
 }
 const REGIONS:[string,string,number,number][]=[["bellavista","Bella Vista · Corrientes",-28.507,-59.043],["mercedes","Mercedes · Corrientes",-29.18,-58.08],["reconquista","Reconquista · Santa Fe",-29.15,-59.65],["resistencia","Resistencia · Chaco",-27.45,-58.99],["pergamino","Pergamino · Buenos Aires",-33.89,-60.57]];
+function AlertsPage({onDemo}:{onDemo:()=>void}){
+  useEffect(()=>{document.title="Sistema de Alerta de Crecidas · DOTS";},[]);
+  return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner regional-panel alerts-page">
+    <CuencaPanel/>
+    <section className="demo-call"><div><span className="section-tag">TU CAMPO</span><h2>Bajá de la cuenca a tu potrero.</h2><p>En el Observatorio ves el relieve, los bajos que se anegan y el agua detectada por satélite en tu lote.</p></div><button onClick={onDemo}>Abrir Observatorio →</button></section>
+  </main><SiteFooter/></div>;
+}
+
 function RegionalPanel({onDemo}:{onDemo:()=>void}){
   const [reg,setReg]=useState(REGIONS[0]);
   const [tele,setTele]=useState<any>(null),[idx,setIdx]=useState<any>(null),[err,setErr]=useState("");
@@ -2262,7 +2270,7 @@ function RegionalPanel({onDemo}:{onDemo:()=>void}){
       <div><span className="section-tag">EL NIÑO · NOAA</span><h2>{tele?.enso_consensus?`Fase ${tele.enso_consensus}`:"Consultando…"}</h2><p>{tele?.enso_agreement?`${tele.enso_agreement} índices del Pacífico coinciden. Último dato: ${tele?.indices?.nino34?.data?.period||""}.`:"Niño 3.4, ONI y MEI v2."}</p></div>
       <div className="rp-telegrid">{Object.entries(tele?.indices||{}).filter(([,e]:any)=>e?.status==="recibido").slice(0,6).map(([k,e]:any)=><article key={k}><span>{e.data.name}</span><b>{fmt(e.data.value,2)}</b><em>{e.data.phase}</em></article>)}</div>
     </section>
-    <CuencaPanel/>
+    <AlertasTeaser/>
     <section className="rp-cards">{card("Lluvia "+(last?.year||""),"prcptot","mm")}{card("Días con helada","frost_days","días")}{card("Días con máxima ≥ 35 °C","tx35","días")}{card("Racha seca más larga","cdd","días")}</section>
     {idx?.years && <section className="rp-charts">
       <div className="rp-chart"><h3>Lluvia anual · {idx.period?.[0]}–{idx.period?.[1]}</h3><Chart dates={idx.years.map((r:Data)=>String(r.year))} unit="mm" series={[{name:"Lluvia",values:idx.years.map((r:Data)=>r.prcptot),type:"bar",color:"#19b98a"}]}/></div>
@@ -2519,6 +2527,7 @@ function App(){
   if(path==="/libre-deforestacion")return <Deforestation onDemo={openDemo}/>;
   if(path==="/modulos")return <Modules onDemo={openDemo}/>;
   if(path==="/panel")return <RegionalPanel onDemo={openDemo}/>;
+  if(path==="/alertas")return <AlertsPage onDemo={openDemo}/>;
   if(path==="/tecnologia")return <Technology onDemo={openDemo}/>;
   if(path==="/capas")return <LayersPage onDemo={openDemo}/>;
   if(path==="/conexiones")return <ApiConnections onDemo={openDemo}/>;
