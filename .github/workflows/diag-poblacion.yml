@@ -1,0 +1,27 @@
+name: diag poblacion
+on: workflow_dispatch
+jobs:
+  d:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          python3 - <<'PY'
+          import json,time,urllib.request
+          B='https://observatorio-agro.vercel.app/api/poblacion'
+          def post(p,b):
+              r=urllib.request.Request(B+p,data=json.dumps(b).encode(),headers={'Content-Type':'application/json'})
+              try:
+                  with urllib.request.urlopen(r,timeout=60) as x: return x.status,json.loads(x.read())
+              except urllib.error.HTTPError as e: return e.code,json.loads(e.read() or b'{}')
+          rect=lambda w,s,e,n:{'type':'Polygon','coordinates':[[[w,s],[e,s],[e,n],[w,n],[w,s]]]}
+          body={'area':rect(-58.86,-27.49,-58.81,-27.44),'hazard':rect(-58.87,-27.48,-58.84,-27.45),'year':2025,
+                'event':{'kind':'inundacion','category':'escenario_usuario','source':'prueba','date':'2026-10-14','enso':'el_nino'}}
+          t0=time.time(); st,js=post('/exposicion',body); out=[f'exposicion {st} {str(js)[:200]}']
+          tok=js.get('token')
+          for i in range(25):
+              if not tok: break
+              time.sleep(4); st,js=post('/resultado',{'token':tok})
+              if st!=202: out.append(f'resultado {st} t={time.time()-t0:.0f}s total={js.get("population_total")} expuesta={js.get("population_exposed")} pct={js.get("exposed_percent")} err={js.get("error")}'); break
+          else: out.append('sigue pendiente')
+          print('::notice::'+' | '.join(out))
+          PY
