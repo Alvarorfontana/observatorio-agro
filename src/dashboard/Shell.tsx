@@ -7,7 +7,7 @@
 import React from "react";
 import {
   LayoutDashboard, Layers, Satellite, Sprout, Waves, CircleDot, Beef, CloudSun,
-  Flame, Gauge, FileText, Network, Thermometer, CloudRain, Sigma, BellRing, Leaf, Wheat, Truck, ChevronsLeft, X, Hexagon,
+  Flame, Gauge, FileText, Network, Thermometer, CloudRain, Sigma, BellRing, Leaf, Wheat, Truck, ChevronsLeft, X, Hexagon, Trees, Globe2,
 } from "lucide-react";
 
 export type NavItem = {
@@ -31,8 +31,13 @@ export function buildNav(go: (k: string) => void, draw: () => void, pdf: () => v
       { key: "balance-agua", label: "Balance de agua", icon: <CloudRain />, onClick: () => go("balance-agua") },
       { key: "rios", label: "Agua y ríos", icon: <Waves />, onClick: () => go("rios") },
       { key: "lluvia", label: "Lluvia y sequía", icon: <CloudRain />, onClick: () => go("lluvia") },
-      { key: "suelo", label: "Suelos", icon: <CircleDot />, onClick: () => go("suelo") },
+      { key: "suelo", label: "Suelo y nitrógeno", icon: <CircleDot />, onClick: () => go("suelo") },
       { key: "__ganado", label: "Ganado", icon: <Beef />, soon: true },
+    ]},
+    { title: "Bosque y exportación", items: [
+      { key: "sustentabilidad", label: "Bosque y deforestación", icon: <Trees />, onClick: () => go("sustentabilidad") },
+      { key: "__eudr", label: "Exportar a la UE (EUDR)", icon: <Globe2 />, onClick: () => { go("sustentabilidad"); setTimeout(() => document.querySelector(".eudr-actions")?.scrollIntoView({ behavior: "smooth", block: "center" }), 1500); } },
+      { key: "__carbono", label: "Carbono y nitrógeno del suelo", icon: <Leaf />, onClick: () => go("suelo") },
     ]},
     { title: "Clima y riesgo", items: [
       { key: "modelos", label: "Clima · modelos", icon: <CloudSun />, onClick: () => go("modelos") },
@@ -45,7 +50,6 @@ export function buildNav(go: (k: string) => void, draw: () => void, pdf: () => v
     { title: "Salidas", items: [
       { key: "alertas", label: "Alertas", icon: <BellRing />, onClick: () => go("alertas") },
       { key: "costos", label: "Costos y logística", icon: <Truck />, onClick: () => go("costos") },
-      { key: "sustentabilidad", label: "Deforestación y carbono", icon: <Leaf />, onClick: () => go("sustentabilidad") },
       { key: "plataformas", label: "Fuentes y APIs", icon: <Network />, onClick: () => go("plataformas") },
       { key: "__pdf", label: "Informe PDF", icon: <FileText />, onClick: pdf },
     ]},
