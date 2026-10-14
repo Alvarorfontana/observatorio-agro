@@ -54,6 +54,7 @@ import { LotDashboard } from "./dashboard/LotDashboard";
 import { OPEN_LAYERS, LAYER_GROUPS } from "./dashboard/openLayers";
 import { PacificSection, SAImpactMap } from "./site/NinoIllustrations";
 import { NinoNowSA } from "./site/NinoNow";
+import { AvisosBox } from "./site/AvisosBox";
 import { HerdPanel, HERD_CATS, type HerdRow, type Movement } from "./dashboard/Herd";
 import { GuideContent } from "./site/GuideContent";
 import { CuencaPanel, AlertasTeaser, AlertasPortada } from "./site/CuencaPanel";
@@ -2582,6 +2583,7 @@ function AlertsPage({onDemo}:{onDemo:()=>void}){
   useEffect(()=>{document.title="Sistema de Alerta de Crecidas · DOTS";},[]);
   return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner regional-panel alerts-page">
     <CuencaPanel/>
+    <AvisosBox/>
     <section className="demo-call"><div><span className="section-tag">TU CAMPO</span><h2>Bajá de la cuenca a tu potrero.</h2><p>En el Observatorio ves el relieve, los bajos que se anegan y el agua detectada por satélite en tu lote.</p></div><button onClick={onDemo}>Abrir Observatorio →</button></section>
   </main><SiteFooter/></div>;
 }

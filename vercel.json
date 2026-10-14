@@ -27,11 +27,24 @@
       "destination": "/poblacion/index.html"
     },
     {
-      "source": "/((?!api/|ftw/|dem/|assets/|poblacion).*)",
+      "source": "/avisos-widget",
+      "destination": "/avisos-widget/index.html"
+    },
+    {
+      "source": "/((?!api/|ftw/|dem/|assets/|poblacion|avisos-widget).*)",
       "destination": "/index.html"
     }
   ],
   "headers": [
+    {
+      "source": "/avisos-widget/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "frame-ancestors *"
+        }
+      ]
+    },
     {
       "source": "/(.*)",
       "headers": [

@@ -1,0 +1,30 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Avisos de crecidas · DOTS</title>
+<style>
+:root{--ink:#101828;--muted:#667085;--line:#e4e7ec}
+*{box-sizing:border-box}body{margin:0;font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);background:#fff}
+header{display:flex;justify-content:space-between;align-items:baseline;padding:12px 14px;border-bottom:1px solid var(--line)}
+header b{font-size:15px}header a{color:#0f4c5c;font-size:12px}
+ul{list-style:none;margin:0;padding:0}li{padding:10px 14px;border-bottom:1px solid var(--line)}
+.row{display:flex;justify-content:space-between;gap:8px;align-items:center}.lvl{font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px;white-space:nowrap}
+.normal{background:#e7f6ee;color:#05603a}.atencion{background:#fff3d6;color:#93370d}.alerta{background:#ffe2cc;color:#b42318}.evacuacion{background:#b42318;color:#fff}
+small{color:var(--muted)}h2{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:12px 14px 4px}
+footer{padding:8px 14px;color:var(--muted);font-size:11px}
+</style></head><body>
+<header><b>Crecidas · Cuenca del Plata</b><a href="https://observatorio-agro.vercel.app/alertas" target="_blank" rel="noopener">DOTS ↗</a></header>
+<h2>Localidades fuera de lo normal</h2><ul id="now"><li><small>Cargando alturas oficiales…</small></li></ul>
+<h2>Últimos avisos</h2><ul id="feed"><li><small>Cargando…</small></li></ul>
+<footer>Datos: INA y escalas de Prefectura. Ante una evacuación manda Defensa Civil.</footer>
+<script>
+const key=t=>String(t||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+const el=(tag,cls,text)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e;};
+const n=v=>v==null?'—':Number(v).toLocaleString('es-AR',{maximumFractionDigits:2});
+fetch('/api/fuentes/alertas-resumen').then(r=>r.json()).then(j=>{const ul=document.getElementById('now');ul.replaceChildren();
+  const rows=((j.data||{}).stations||[]).filter(s=>s.level&&s.level!=='Normal');
+  if(!rows.length){ul.append(el('li',null,'Todas las localidades están en nivel normal.'));return;}
+  for(const s of rows){const li=el('li');const r=el('div','row');r.append(el('b',null,`${s.place} · ${s.river}`),el('span','lvl '+key(s.level),s.level));li.append(r,el('small',null,`Altura ${n(s.height)} m · alerta ${n(s.alert)} m · evacuación ${n(s.evac)} m · ${s.date||''}`));ul.append(li);}
+}).catch(()=>{document.getElementById('now').replaceChildren(el('li',null,'El INA no respondió.'));});
+fetch('/api/fuentes/avisos').then(r=>r.json()).then(j=>{const ul=document.getElementById('feed');ul.replaceChildren();const items=((j.data||{}).items||[]).slice(0,10);
+  if(!items.length){ul.append(el('li',null,'Sin cambios de nivel recientes.'));return;}
+  for(const i of items){const li=el('li');const r=el('div','row');r.append(el('b',null,i.place),el('span','lvl '+key(i.to),i.to));li.append(r,el('div',null,i.text),el('small',null,String(i.at||'').replace('T',' ')+' UTC'));ul.append(li);}
+}).catch(()=>{});
+</script></body></html>

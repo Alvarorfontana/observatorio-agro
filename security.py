@@ -12,7 +12,8 @@ from flask import request, jsonify
 
 # (prefijo de ruta, pedidos permitidos, ventana en segundos) — se usa la primera regla que coincide
 RULES = [
-    ('/api/fuentes/contacto', 5, 600),       # 5 consultas cada 10 minutos
+    ('/api/fuentes/contacto', 5, 600),
+    ('/api/fuentes/avisos/suscribir', 5, 600),       # 5 consultas cada 10 minutos
     ('/api/fuentes/analizar', 6, 300),       # informes PDF
     ('/api/fuentes/eudr', 10, 300),
     ('/api/fuentes/costos', 20, 300),

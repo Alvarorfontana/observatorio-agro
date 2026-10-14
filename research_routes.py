@@ -23,6 +23,7 @@ import enso_sa
 import mapbiomas as mbx
 import herd as hrd
 import pasture_gpw as gpw
+import avisos_web as avw
 import enso_report
 import monitor as mon
 import soil_wetness as sw
@@ -98,6 +99,12 @@ def lot_costs():
                                    d.get('params') if isinstance(d.get('params'),dict) else {}))
     except ValueError as e: return jsonify({'status':'sin dato','error':str(e)}),400
     except Exception as e: return jsonify({'status':'sin dato','error':'No se pudieron calcular costos y logística','type':type(e).__name__}),502
+
+@research_api.post('/avisos/suscribir')
+def avisos_subscribe():
+    try: return jsonify(avw.subscribe(request.get_json(silent=True) or {}))
+    except ValueError as e: return jsonify({'status':'rechazado','error':str(e)}),400
+    except Exception: return jsonify({'status':'error','error':'No se pudo registrar el correo.'}),502
 
 @research_api.post('/ganado')
 def herd_analysis():
@@ -216,6 +223,13 @@ def research_data(name):
             return jsonify(sus.carbon(lat,lon))
         except ValueError: return jsonify({'status':'sin dato','error':'Coordenadas inválidas'}),400
         except Exception as e: return _upstream_error(e)
+    if name=='avisos':
+        data=avw.feed(request.args.get('localidad') or None)
+        if request.args.get('formato')=='rss':
+            return Response(avw.rss(data),mimetype='application/rss+xml',headers={'Cache-Control':'public, s-maxage=600','Access-Control-Allow-Origin':'*'})
+        r=jsonify(c.envelope(data,'data/avisos.json','avisos de crecidas','DOTS · INA · Prefectura'))
+        r.headers['Cache-Control']='public, s-maxage=600'; r.headers['Access-Control-Allow-Origin']='*'
+        return r
     if name=='precios-hacienda':
         try:
             r=jsonify(c.envelope(cst.mag_prices(),cst.MAG,'precios de hacienda de referencia','Mercado Agroganadero de Cañuelas'))

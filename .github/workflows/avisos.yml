@@ -1,0 +1,44 @@
+# Avisos automáticos de crecidas: cada 2 horas compara los niveles de las 34 localidades y avisa los cambios
+# (feed público en la web, canal de Telegram y correo a suscriptores). Ver scripts/avisos.py.
+name: Avisos de crecidas
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "23 */2 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: avisos
+  cancel-in-progress: false
+
+jobs:
+  avisos:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Revisar niveles y avisar
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RESEND_AUDIENCE_ID: ${{ secrets.RESEND_AUDIENCE_ID }}
+          AVISOS_FROM: ${{ secrets.AVISOS_FROM }}
+        run: |
+          pip install requests
+          python scripts/avisos.py
+      - name: Guardar
+        run: |
+          git config user.name "DOTS avisos"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/avisos_estado.json data/avisos.json 2>/dev/null || true
+          if git diff --cached --quiet; then echo "Sin cambios."; else
+            git commit -q -m "Avisos de crecidas $(date -u +%Y-%m-%d\ %H:%M)"
+            git pull -q --rebase && git push -q
+          fi

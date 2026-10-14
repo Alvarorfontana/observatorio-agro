@@ -1023,3 +1023,19 @@ html, body { overflow-x: hidden; }
 }
 .nn-table-tools select,.nino-local select{background:#fff;color:#101828;border:1px solid #d0d5dd;border-radius:6px;padding:4px 8px;font:inherit;font-size:13px}
 .nn-report select{background:#123a44;color:#fff;border:1px solid #2b5560;border-radius:6px;padding:5px 8px;font:inherit;font-size:13px}
+
+/* Avisos automáticos */
+.avisos-box{max-width:1200px;margin:24px auto;padding:22px 24px;background:#fff;border:1px solid #e4e7ec;border-radius:12px;box-sizing:border-box}
+.avisos-head h2{margin:6px 0 8px;font-size:22px}.avisos-head p{margin:0;color:#475467;max-width:900px;line-height:1.55}
+.avisos-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:16px 0}
+.avisos-grid article{border:1px solid #e4e7ec;border-radius:10px;padding:14px;background:#f9fafb}
+.avisos-grid article>b{display:block;margin-bottom:8px}
+.avisos-grid form{display:flex;gap:6px;flex-wrap:wrap}.avisos-grid input[type=email]{flex:1;min-width:160px;padding:8px;border:1px solid #d0d5dd;border-radius:6px;font:inherit}
+.avisos-grid form button,.avisos-btn{background:#0b2b33;color:#fff;border:0;border-radius:6px;padding:8px 12px;font:inherit;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block}
+.avisos-btn.ghost{background:#fff;color:#0b2b33;border:1px solid #0b2b33;margin-bottom:8px}
+.avisos-grid .trap{position:absolute;left:-9999px;width:1px;height:1px}
+.avisos-last ul{list-style:none;padding:0;margin:8px 0 0}.avisos-last li{padding:8px 0;border-top:1px solid #f2f4f7;font-size:14px}
+.avisos-last small{color:#667085;margin-left:6px}
+.lvl{font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px;margin-right:6px}
+.lvl-normal{background:#e7f6ee;color:#05603a}.lvl-atencion{background:#fff3d6;color:#93370d}.lvl-alerta{background:#ffe2cc;color:#b42318}.lvl-evacuacion{background:#b42318;color:#fff}
+@media(max-width:860px){.avisos-grid{grid-template-columns:1fr}.avisos-box{padding:16px}}
