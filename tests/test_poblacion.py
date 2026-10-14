@@ -60,3 +60,14 @@ def test_routes_flow(monkeypatch):
         tok = r.get_json()['token']
         res = c.post('/api/poblacion/resultado', json={'token': tok}).get_json()
     assert res['status'] == 'complete' and res['population_exposed'] == 400.0 and round(res['exposed_percent']) == 40
+
+
+def test_self_intersection_and_holes_and_disjoint():
+    import pytest
+    with pytest.raises(InputError):
+        polygon({'type': 'Polygon', 'coordinates': [[[0, 0], [1, 1], [0, 1], [1, 0], [0, 0]]]})
+    donut = {'type': 'Polygon', 'coordinates': [rect(0, 0, 2, 2)['coordinates'][0], rect(0.5, 0.5, 1.5, 1.5)['coordinates'][0][::-1]]}
+    g = polygon(donut)
+    assert abs(area_km2(g) / area_km2(polygon(rect(0, 0, 2, 2))) - 0.75) < 0.01
+    r = prepare({**req(), 'hazard': rect(-60, -30, -59.9, -29.9)})
+    assert r['intersection'] is None and r['hazard_in_area_km2'] == 0

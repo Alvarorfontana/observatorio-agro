@@ -10,7 +10,7 @@ from research_routes import research_api   # si algo falla acá, falla fuerte (n
 from lotes_store import lotes_api
 try:
     from poblacion.routes import bp as population_bp
-except ImportError:   # el módulo de población necesita shapely
+except ImportError:   # el módulo de población necesita pyclipper
     population_bp = None
 import security
 
