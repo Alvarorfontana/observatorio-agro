@@ -133,35 +133,69 @@ def eccc(lat, lon):
 DMC = 'https://climatologia.meteochile.gob.cl/application/servicios/getDatosRecientesRedEma'
 
 
+DMC_RESUMEN = 'https://climatologia.meteochile.gob.cl/application/servicios/getEmaResumenDiario'
+DMC_VARS = (('temperatura', 'Temperatura', '°C'), ('humedadRelativa', 'Humedad', '%'),
+            ('fuerzaDelVientoPromedio10Minutos', 'Viento', 'kt'), ('aguaCaida24Horas', 'Lluvia 24 h', 'mm'),
+            ('presionNivelDelMar', 'Presión a nivel del mar', 'hPa'), ('radiacionGlobalInst', 'Radiación', 'W/m²'))
+
+
+def dmc_stations(js):
+    """Normaliza las dos respuestas de la DMC → [(estación, últimos valores)].
+    getEmaResumenDiario: {'estaciones': {código: {'datosEstacion', 'datosResumenEma': {'datos': {'valoresMasRecientes'}}}}}
+    getDatosRecientesRedEma: {'datosEstaciones': [{'estacion', 'datos': [...]}]}"""
+    out = []
+    est = js.get('estaciones')
+    if isinstance(est, dict):
+        for e in est.values():
+            info = e.get('datosEstacion') or {}
+            last = (((e.get('datosResumenEma') or {}).get('datos') or {}).get('valoresMasRecientes')) or {}
+            if last.get('fueraDeServicio') or last.get('desactualizada'):
+                continue
+            out.append((info, last))
+    for e in js.get('datosEstaciones') or (est if isinstance(est, list) else []) or []:
+        info = e.get('estacion') or e
+        datos = e.get('datos') or []
+        last = next((d for d in reversed(datos) if d.get('temperatura') not in (None, '')), datos[-1] if datos else {})
+        out.append((info, last))
+    return out
+
+
 def dmc(lat, lon):
     user, token = os.environ.get('DMC_USUARIO'), os.environ.get('DMC_TOKEN')
     if not (user and token):
         raise PermissionError('requiere credencial: DMC_USUARIO, DMC_TOKEN')
-    js = c._get(DMC, {'usuario': user, 'token': token}, timeout=30).json()
-    near = []
-    for e in js.get('datosEstaciones') or js.get('estaciones') or []:
-        est = e.get('estacion') or e
+    js, url = {}, DMC_RESUMEN
+    for url in (DMC_RESUMEN, DMC):
         try:
-            d = c._km(lat, lon, float(est['latitud']), float(est['longitud']))
+            js = c._get(url, {'usuario': user.strip(), 'token': token.strip()}, timeout=30).json()
+        except ValueError:
+            js = {}
+        if dmc_stations(js):
+            break
+    near = []
+    for info, last in dmc_stations(js):
+        try:
+            d = c._km(lat, lon, float(info['latitud']), float(info['longitud']))
         except (KeyError, TypeError, ValueError):
             continue
-        near.append((d, est, e.get('datos') or []))
+        near.append((d, info, last))
     near = [x for x in sorted(near, key=lambda x: x[0]) if x[0] <= MAX_KM]
     obs = []
-    for d, est, datos in near[:3]:
-        row = datos[-1] if datos else {}
-        for k, label, unit in (('temperatura', 'Temperatura', '°C'), ('humedadRelativa', 'Humedad', '%'),
-                               ('fuerzaDelVientoPromedio10Minutos', 'Viento', 'kt'), ('aguaCaida24Horas', 'Lluvia 24 h', 'mm'),
-                               ('presionNivelDelMar', 'Presión a nivel del mar', 'hPa'), ('radiacionGlobalInst', 'Radiación', 'W/m²')):
+    for d, info, row in near[:3]:
+        for k, label, unit in DMC_VARS:
             v = row.get(k)
             try:
                 v = float(str(v).split()[0]) if v not in (None, '') else None
             except ValueError:
                 v = None
             if v is not None:
-                obs.append(c._obs(label, est.get('nombreEstacion'), d, v, unit, row.get('momento')))
+                obs.append(c._obs(label, info.get('nombreEstacion'), d, v, unit, row.get('momento')))
+    err = None
+    if not obs:
+        err = (f"La DMC respondió: {str(js.get('status') or js.get('mensaje') or js.get('error') or 'sin estaciones')[:160]}"
+               if not dmc_stations(js) else 'Sin datos recientes cerca')
     return c.envelope({'agency': AGENCY['dmc'], 'observations': obs, 'scope': 'Red de estaciones automáticas (EMA) · 3 más cercanas'},
-                      DMC, 'observación', 'DMC Chile', 'recibido' if obs else 'sin dato', None if obs else 'Sin datos recientes cerca')
+                      url, 'observación', 'DMC Chile', 'recibido' if obs else 'sin dato', err)
 
 
 # ───────────────────────── Brasil · INMET (token a solicitar) ─────────────────────────
