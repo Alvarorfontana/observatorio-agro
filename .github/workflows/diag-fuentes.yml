@@ -1,0 +1,16 @@
+name: Diagnóstico fuentes nuevas (temporal)
+on: workflow_dispatch
+permissions:
+  contents: read
+jobs:
+  d:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          {
+          for f in cpac850 wpac850 epac850 olr; do echo "== $f"; curl -sS -m 30 https://www.cpc.ncep.noaa.gov/data/indices/$f | head -8; echo ...; curl -sS -m 30 https://www.cpc.ncep.noaa.gov/data/indices/$f | tail -4; done
+          echo "== IRI"; curl -sS -m 30 -o /dev/null -w "%{http_code} %{content_type}\n" "https://iri.columbia.edu/our-expertise/climate/forecasts/enso/current/?enso_tab=enso-sst_table"
+          curl -sS -m 30 "https://iri.columbia.edu/our-expertise/climate/forecasts/enso/current/?enso_tab=enso-sst_table" | grep -iE "La Niña|Neutral|El Niño|OND|NDJ|DJF" | sed 's/<[^>]*>/ /g' | tr -s ' ' | head -25
+          echo "== CPC prob"; curl -sS -m 30 https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/ensodisc.shtml | sed 's/<[^>]*>/ /g' | grep -iE "ENSO Alert|Synopsis|chance|probab" | tr -s ' ' | head -8
+          } > out.txt 2>&1
+          python3 -c "print('::notice title=diag::'+open('out.txt').read()[:12000].replace('%','%25').replace('\n','%0A'))"
