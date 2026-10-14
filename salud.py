@@ -63,11 +63,8 @@ def heatwave(days, tx90, tn90):
 
 
 def load_p90():
-    try:
-        with open(P90_PATH, encoding='utf-8') as f:
-            return json.load(f).get('places') or {}
-    except (OSError, ValueError):
-        return {}
+    import datastore
+    return (datastore.load('calor_p90.json') or {}).get('places') or {}
 
 
 def analyze_place(daily, today_iso, p90=None):

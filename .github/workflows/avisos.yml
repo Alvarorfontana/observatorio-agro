@@ -23,6 +23,8 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
+      - name: Traer datos de la rama datos
+        run: bash scripts/datos_rama.sh traer
       - name: Revisar niveles y avisar
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -33,12 +35,6 @@ jobs:
         run: |
           pip install requests
           python scripts/avisos.py
-      - name: Guardar
-        run: |
-          git config user.name "DOTS avisos"
-          git config user.email "actions@users.noreply.github.com"
-          git add data/avisos_estado.json data/avisos.json 2>/dev/null || true
-          if git diff --cached --quiet; then echo "Sin cambios."; else
-            git commit -q -m "Avisos de crecidas $(date -u +%Y-%m-%d\ %H:%M)"
-            git pull -q --rebase && git push -q
-          fi
+      - name: Guardar en la rama datos (no publica la web)
+        if: always()
+        run: cp scripts/datos_rama.sh /tmp/datos_rama.sh && bash /tmp/datos_rama.sh guardar "Avisos de crecidas $(date -u +%Y-%m-%d\ %H:%M)" data/avisos_estado.json data/avisos.json

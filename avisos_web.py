@@ -15,6 +15,7 @@ import research_connectors as c
 
 FEED = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'avisos.json')
 SITE = 'https://observatorio-agro.vercel.app'
+_DEFAULT_FEED = FEED
 EMAIL = re.compile(r'^[^@\s]{1,64}@[^@\s]{1,190}\.[A-Za-z]{2,24}$')
 
 
@@ -27,11 +28,15 @@ def channels():
 
 
 def feed(localidad=None, limit=50):
-    try:
-        with open(FEED, encoding='utf-8') as f:
-            data = json.load(f)
-    except (OSError, ValueError):
-        data = {'items': []}
+    if FEED == _DEFAULT_FEED:
+        import datastore
+        data = datastore.load('avisos.json', {'items': []}) or {'items': []}
+    else:
+        try:
+            with open(FEED, encoding='utf-8') as f:
+                data = json.load(f)
+        except (OSError, ValueError):
+            data = {'items': []}
     items = data.get('items') or []
     if localidad:
         items = [i for i in items if i.get('id') == localidad]

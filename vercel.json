@@ -74,7 +74,8 @@
   "git": {
     "deploymentEnabled": {
       "diag-*": false,
-      "capturas": false
+      "capturas": false,
+      "datos": false
     }
   }
 }

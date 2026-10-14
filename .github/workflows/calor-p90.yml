@@ -18,17 +18,12 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
+      - name: Traer datos de la rama datos
+        run: bash scripts/datos_rama.sh traer
       - name: Calcular
         run: |
           pip install requests
           python scripts/calor_p90.py data/calor_p90.json
-      - name: Guardar
+      - name: Guardar en la rama datos (no publica la web)
         if: always()
-        run: |
-          git config user.name "DOTS calor"
-          git config user.email "actions@users.noreply.github.com"
-          git add data/calor_p90.json || true
-          if git diff --cached --quiet; then echo "Sin cambios."; else
-            git commit -q -m "Umbrales de ola de calor por localidad"
-            git pull -q --rebase && git push -q
-          fi
+        run: cp scripts/datos_rama.sh /tmp/datos_rama.sh && bash /tmp/datos_rama.sh guardar "Umbrales de ola de calor por localidad $(date -u +%Y-%m-%d\ %H:%M)" data/calor_p90.json

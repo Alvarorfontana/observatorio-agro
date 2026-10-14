@@ -103,11 +103,8 @@ def _cached(key, fn):
 
 
 def load_normals():
-    try:
-        with open(NORMALS, encoding='utf-8') as f:
-            return json.load(f)
-    except (OSError, ValueError):
-        return {}
+    import datastore
+    return datastore.load('cuenca_normales.json', {}) or {}
 
 
 def quantile(xs, q):

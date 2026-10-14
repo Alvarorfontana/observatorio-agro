@@ -100,7 +100,13 @@ def reference_for(mon, phases):
             'cold': slim(ec.impact_from(mon, phases, ec.COLD, 'mayo a septiembre'))}
 
 
+_DEFAULT_REF = REF_PATH
+
+
 def load_ref():
+    if REF_PATH == _DEFAULT_REF:            # en producción: rama `datos` (sin volver a publicar la web)
+        import datastore
+        return datastore.load('enso_sudamerica.json')
     try:
         with open(REF_PATH, encoding='utf-8') as f:
             return json.load(f)
