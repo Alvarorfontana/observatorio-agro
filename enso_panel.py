@@ -96,7 +96,7 @@ def episodes(series, threshold=0.5, min_len=5):
         if r['anom'] >= threshold:
             run.append(r)
         else:
-            if len(run) >= min_len:
+            if len(run) >= min_len or (run and run[-1] is series[-1]):   # el episodio en curso se muestra aunque aún no sume 5
                 peak = max(run, key=lambda x: x['anom'])
                 eps.append({'start': run[0]['year'], 'end': run[-1]['year'], 'from': f"{run[0]['season_es']} {run[0]['year']}",
                             'to': f"{run[-1]['season_es']} {run[-1]['year']}", 'peak': peak['anom'],

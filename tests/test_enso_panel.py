@@ -49,3 +49,9 @@ def test_panel(monkeypatch):
     d = ep.enso_panel()['data']
     assert d['roni']['strength'] == 'fuerte' and d['phase']['phase'] == 'El Niño' and d['status']['es'].startswith('Advertencia')
     assert d['weekly']['nino34'] == 2.1 and len(d['series']['oni']) == 4
+
+
+def test_episodio_en_curso():
+    s = [{'season': x, 'season_es': x, 'year': 2026, 'anom': v} for x, v in zip(ep.SEASONS[:8], [-.5, -.4, -.2, .1, .95, 1.39, 1.8, 2.16])]
+    e = ep.episodes(s)
+    assert len(e) == 1 and e[0]['ongoing'] and e[0]['peak'] == 2.16
