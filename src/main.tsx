@@ -175,6 +175,50 @@ const download = (blob: Blob, name: string) => {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 60000);
 };
+// NASA POWER mensual (30 años): normales por mes, serie anual y lectura en lenguaje llano.
+// Claves YYYYMM; el mes 13 es el anual y se ignora. PRECTOTCORR viene en mm/día.
+const MES = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+const MES_LARGO = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+function powerClimate(data: Data) {
+  const par = data?.properties?.parameter || {}, fill = data?.header?.fill_value ?? -999;
+  if (!par.T2M || !par.PRECTOTCORR) return null;
+  const ok = (v: any) => typeof v === "number" && Number.isFinite(v) && v !== fill;
+  const avg = (a: number[]) => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
+  const days = (y: number, m: number) => new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const tM: number[][] = MES.map(() => []), rM: number[][] = MES.map(() => []), radM: number[][] = MES.map(() => []);
+  const years: Record<string, { rain: number; n: number; t: number[] }> = {};
+  for (const k of Object.keys(par.T2M)) {
+    const y = Number(k.slice(0, 4)), m = Number(k.slice(4, 6));
+    if (m < 1 || m > 12) continue;
+    const t = par.T2M[k], r = par.PRECTOTCORR[k], rad = par.ALLSKY_SFC_SW_DWN?.[k];
+    const yr = (years[y] ??= { rain: 0, n: 0, t: [] });
+    if (ok(t)) { tM[m - 1].push(t); yr.t.push(t); }
+    if (ok(r)) { rM[m - 1].push(r * days(y, m)); yr.rain += r * days(y, m); yr.n++; }
+    if (ok(rad)) radM[m - 1].push(rad);
+  }
+  const temp = tM.map(avg), rain = rM.map(avg), rad = radM.map(avg);
+  if (temp.some(v => v == null) || rain.some(v => v == null)) return null;
+  const T = temp as number[], R = rain as number[];
+  const full = Object.keys(years).filter(y => years[y].n === 12 && years[y].t.length === 12).sort();
+  const annualRain = full.map(y => Math.round(years[y].rain)), annualTemp = full.map(y => avg(years[y].t) as number);
+  const rainYear = R.reduce((a, b) => a + b, 0), tYear = T.reduce((a, b) => a + b, 0) / 12;
+  const iMax = (a: number[]) => a.indexOf(Math.max(...a)), iMin = (a: number[]) => a.indexOf(Math.min(...a));
+  const wet = R.map((v, i) => v >= rainYear / 12 * 1.15 ? i : -1).filter(i => i >= 0);
+  const dry = R.map((v, i) => v < rainYear / 12 * 0.6 ? i : -1).filter(i => i >= 0);
+  const sortedRain = [...annualRain].sort((a, b) => a - b), medRain = sortedRain[Math.floor(sortedRain.length / 2)] ?? null;
+  const dryYears = annualRain.filter(v => medRain != null && v < medRain * 0.75).length;
+  const half = Math.floor(annualTemp.length / 2);
+  const warming = annualTemp.length >= 20 ? (avg(annualTemp.slice(half)) as number) - (avg(annualTemp.slice(0, half)) as number) : null;
+  const insights = [
+    `Temperatura media anual de ${tYear.toFixed(1)} °C: ${MES_LARGO[iMax(T)]} es el mes más cálido (${T[iMax(T)].toFixed(1)} °C) y ${MES_LARGO[iMin(T)]} el más fresco (${T[iMin(T)].toFixed(1)} °C).`,
+    `Llueven unos ${Math.round(rainYear)} mm por año. ${wet.length ? "Los meses más lluviosos son " + wet.map(i => MES_LARGO[i]).join(", ") + "." : "La lluvia se reparte bastante pareja en el año."}`,
+    dry.length ? `Meses secos (menos del 60 % del promedio mensual): ${dry.map(i => MES_LARGO[i]).join(", ")}. Conviene planificar reservas de forraje y agua para ese período.` : "No hay meses claramente secos en el promedio; las sequías dependen del año.",
+    medRain != null ? `En ${dryYears} de ${annualRain.length} años llovió menos del 75 % de lo habitual (${Math.round(medRain)} mm, mediana). Esa es la frecuencia de un año seco en el lugar.` : "",
+    warming != null ? `La segunda mitad del período fue ${Math.abs(warming).toFixed(1)} °C ${warming >= 0 ? "más cálida" : "más fresca"} que la primera (comparación simple; la tendencia con prueba estadística está en Estadística del lote).` : "",
+  ].filter(Boolean);
+  return { temp: T, rain: R, rad, years: full, annualRain, medRain, rainYear, tYear, insights, from: full[0], to: full[full.length - 1] };
+}
+
 function Chart({
   dates,
   series,
@@ -1153,6 +1197,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
             (1.8 * cur.temperature_2m - 26)
         : null,
     annualData = annual(sources[view]?.payload?.data || {}),
+    pclim = view === "nasa-power-30" ? powerClimate(sources[view]?.payload?.data) : null,
     dates: string[] = (daily.time || []).map((d: string) =>
       d.slice(5).split("-").reverse().join("/"),
     ),
@@ -1368,6 +1413,15 @@ function Observatory({onHome}:{onHome:()=>void}) {
               {RESEARCH.includes(view) && <>
                 <p className="footnote">{SOURCES.find(([key])=>key===view)?.[2]} · consulta real · {sources[view]?.payload?.consulted_at||"Sin fecha de consulta"}</p>
                 {view==="aire" && <><p className="footnote">Pronóstico CAMS en grilla. NO₂ y amoníaco atmosféricos no son nitrógeno del suelo.</p>{Object.keys(payload?.hourly||{}).filter(k=>k!=="time").map(k=><div className="soil" key={k}><span>{k.replaceAll("_"," ")}</span><strong>{fmt(payload.hourly[k]?.[0])} <small>{payload?.hourly_units?.[k]}</small></strong></div>)}<p className="footnote">Hora mostrada: {payload?.hourly?.time?.[0]||"Sin fecha"}. Valores ausentes se conservan.</p></>}
+                {view==="nasa-power-30" && (pclim ? <>
+                  <div className="lot-vars-title">Clima del lugar · {pclim.from}–{pclim.to}</div>
+                  <div className="soil"><span>Temperatura media anual</span><strong>{fmt(pclim.tYear,1)} °C</strong></div>
+                  <div className="soil"><span>Lluvia anual promedio</span><strong>{fmt(pclim.rainYear,0)} mm</strong></div>
+                  {pclim.medRain!=null && <div className="soil"><span>Lluvia anual · mediana</span><strong>{fmt(pclim.medRain,0)} mm</strong></div>}
+                  <div className="lot-vars-title" style={{marginTop:12}}>Lectura del clima</div>
+                  {pclim.insights.map((t,i)=><p className="small" key={i} style={{margin:"0 0 8px"}}>{t}</p>)}
+                  <p className="footnote">NASA POWER (comunidad AG) · grilla de ~50 km: describe la zona, no el lote. Lluvia corregida con satélite y modelo; para el lote, comparar con pluviómetro propio.</p>
+                </> : <p className="footnote">{sources[view]?.status==="consultando"?"Consultando NASA POWER…":"NASA POWER no devolvió una serie completa para este punto."}</p>)}
                 {view==="elevacion" && <div className="key"><span>Elevación estimada DEM</span><strong>{fmt(payload?.elevation?.[0])} m</strong></div>}
                 {view==="ina" && <><label className="small">Serie de estación · Bella Vista<select style={{width:"100%",marginTop:8}} value={inaSeries} onChange={e=>{setInaSeries(e.target.value);void load("ina",point,years,e.target.value)}}><option value="22">Altura Paraná · 30 días</option><option value="25500">Altura mensual · 30 años</option><option value="37299">Temperatura RMA08 · 2 días</option></select></label><p className="footnote">Estación Bella Vista · serie {inaSeries} · unidad y procedimiento de la fuente. No cambia de estación al mover el mapa.</p><div className="key"><span>Último registro · {payload?.data?.at(-1)?.timestart||"Sin fecha"}</span><strong>{fmt(payload?.data?.at(-1)?.valor)} {payload?.responseHeader?.seriesmetadata?.unit_abrev||""}</strong></div><p className="footnote">{payload?.data?.length||0} registros recibidos · exportables en JSON.</p></>}
                 {["nasa-catalogo","productos-nasa","landsat","radar","copernicus-stac","cnes-stac","dlr-stac","deafrica-stac"].includes(view) && <><p className="footnote">Catálogo y metadatos. Todavía no se extraen valores de NDVI, temperatura de superficie ni píxeles de radar.</p>{(payload?.features||payload?.feed?.entry||Object.values(payload||{})).slice(0,5).map((item:any,i:number)=><div className="soil" key={i}><span style={{overflowWrap:"anywhere"}}>{item?.id||item?.title||item?.long_name||item?.short_name||"Producto NASA"}<small style={{display:"block"}}>{item?.properties?.datetime||item?.time_start||"Metadatos de catálogo"}</small></span></div>)}</>}
@@ -2019,6 +2073,10 @@ function Observatory({onHome}:{onHome:()=>void}) {
             <section className="panel chart"><h2>Margen según el precio de venta</h2><p className="small">$ totales · precio −20 % a +20 % · con la tarifa de flete actual y con +25 %</p><Chart dates={payload.sensitivity.map((r:Data)=>`${Math.round((r.price_factor-1)*100)>0?"+":""}${Math.round((r.price_factor-1)*100)} %`)} unit="$" series={[{name:"Margen",values:payload.sensitivity.map((r:Data)=>r.net),type:"bar",color:"#22c55e"},...(payload.sensitivity[0].net_freight_up!=null?[{name:"Flete +25 %",values:payload.sensitivity.map((r:Data)=>r.net_freight_up),color:"#f79009"}]:[])]}/></section>
           </> : view==="sustentabilidad" && payload?.deforestation?.series?.length ? <>
             <section className="panel chart"><h2>Cobertura del lote por año</h2><p className="small">Impact Observatory 10 m · % del lote · árboles, pastizal y cultivo · corte EUDR 2020</p><Chart dates={payload.deforestation.series.map((r:Data)=>String(r.year))} unit="%" series={[{name:"Árboles",values:payload.deforestation.series.map((r:Data)=>r.trees!=null?r.trees*100:null),color:"#22c55e"},{name:"Pastizal",values:payload.deforestation.series.map((r:Data)=>r.rangeland!=null?r.rangeland*100:null),color:"#e9bd72"},{name:"Cultivo",values:payload.deforestation.series.map((r:Data)=>r.crops!=null?r.crops*100:null),color:"#a7a5ff"}]}/></section>
+          </> : view==="nasa-power-30" && pclim ? <>
+            <section className="panel chart"><h2>Temperatura media por mes</h2><p className="small">NASA POWER · promedio {pclim.from}–{pclim.to} · °C a 2 m</p><Chart dates={MES} unit="°C" series={[{name:"Temperatura media",values:pclim.temp,color:"#f0b974"}]}/></section>
+            <section className="panel chart"><h2>Lluvia por mes</h2><p className="small">NASA POWER · promedio {pclim.from}–{pclim.to} · mm por mes</p><Chart dates={MES} unit="mm" series={[{name:"Lluvia",values:pclim.rain.map(v=>Math.round(v)),type:"bar",color:"#06b6d4"}]}/></section>
+            <section className="panel chart"><h2>Lluvia de cada año</h2><p className="small">Total anual · la línea marca la mediana del período</p><Chart dates={pclim.years} unit="mm" series={[{name:"Lluvia anual",values:pclim.annualRain,type:"bar",color:"#3a8ee6"},...(pclim.medRain!=null?[{name:"Mediana",values:pclim.years.map(()=>pclim.medRain),color:"#77868b"}]:[])]}/></section>
           </> : view==="estadistica" && payload?.climatology ? <>
             <section className="panel chart"><h2>Probabilidad de helada y calor por mes</h2><p className="small">ERA5 1991–{new Date().getFullYear()-1} · % de años con al menos una helada · días con máxima ≥ 35 °C</p><Chart dates={payload.climatology.map((m:Data)=>m.label)} unit="%" series={[{name:"Prob. de helada",values:payload.climatology.map((m:Data)=>m.p_frost),type:"bar",color:"#93c5fd"},{name:"Días ≥ 35 °C",values:payload.climatology.map((m:Data)=>m.heat_days),color:"#fd9c91"}]}/></section>
             <section className="panel chart"><h2>Lluvia mensual típica</h2><p className="small">Terciles 1991–hoy · seco por debajo, lluvioso por encima · mm</p><Chart dates={payload.climatology.map((m:Data)=>m.label)} unit="mm" series={[{name:"Tercil seco",values:payload.climatology.map((m:Data)=>m.rain_p33),color:"#e9bd72"},{name:"Mediana",values:payload.climatology.map((m:Data)=>m.rain_med),type:"bar",color:"#06b6d4"},{name:"Tercil lluvioso",values:payload.climatology.map((m:Data)=>m.rain_p67),color:"#a7a5ff"}]}/></section>
