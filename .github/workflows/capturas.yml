@@ -14,6 +14,7 @@ jobs:
       - run: mkdir -p capturas && node scripts/capturas.mjs https://observatorio-agro.vercel.app capturas
       - name: Guardar en la rama capturas
         run: |
+          echo '{"git":{"deploymentEnabled":false}}' > capturas/vercel.json
           cd capturas && git init -q && git checkout -q -b capturas && git add . \
             && git -c user.name=dots-bot -c user.email=dots-bot@users.noreply.github.com commit -qm "capturas $(date -u +%F_%H%M)" \
             && git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" capturas
