@@ -12,8 +12,8 @@ def test_sin_clave(monkeypatch):
 def test_resumen():
     s = w.summarize({'risk_acrop': 'low', 'EUFO_2020': 0, 'Ind_01_treecover': 'no', 'Ind_04_disturbance_after_2020': 'no'}, 'soja')
     assert s['risk'] == 'low' and 'riesgo bajo' in s['text'] and 'Ningún mapa' in s['text']
-    s = w.summarize({'risk_acrop': 'high', 'EUFO_2020': 12.5, 'Ind_01_treecover': 'yes', 'Ind_04_disturbance_after_2020': 'yes'})
-    assert s['risk'] == 'high' and '12.5 %' in s['text'] and 'después de 2020' in s['text']
+    s = w.summarize({'risk_acrop': 'high', 'EUFO_2020': 12.5, 'Area': 50, 'Ind_01_treecover': 'yes', 'Ind_04_disturbance_after_2020': 'yes'})
+    assert s['risk'] == 'high' and '12.5 ha (25.0 % del lote)' in s['text'] and 'después de 2020' in s['text']
 
 
 def test_flujo_async(monkeypatch):
