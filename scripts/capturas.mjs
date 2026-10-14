@@ -4,7 +4,7 @@ const base = process.argv[2] || 'https://observatorio-agro.vercel.app';
 const out = process.argv[3] || 'capturas';
 const V = [[-28.56,-58.71],[-28.56,-58.69],[-28.54,-58.69],[-28.54,-58.71]];
 const lot = { id: 'control', name: 'Lote control', vertices: V, center: [-28.55,-58.70], areaHa: 432, perimeterKm: 8.3 };
-const views = [['El Niño en tu lote','enso-lote'],['Bosque y deforestación','bosque'],['Suelo y nitrógeno','suelo'],['Balance de agua','balance']];
+const views = [['Caminos y lluvia','caminos'],['Emergencia agropecuaria','emergencia'],['Pronóstico estacional','estacional'],['Ganado','ganado']];
 const b = await chromium.launch();
 const p = await b.newPage({ viewport: { width: 1600, height: 1000 } });
 await p.goto(base + '/observatorio');

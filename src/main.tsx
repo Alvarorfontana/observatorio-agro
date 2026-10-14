@@ -160,6 +160,7 @@ const SOURCES = [
   ["balance-agua", "Balance de agua y sequía", "ERA5 desde 1991 · lluvia − evapotranspiración"],
   ["costos", "Costos y logística", "OSRM · OpenStreetMap · DolarAPI · valores del productor"],
   ["sustentabilidad", "Deforestación y carbono", "Impact Observatory · ESA WorldCover · SoilGrids · IPCC"],
+  ["estacional", "Pronóstico estacional", "ECMWF SEAS5 (Copernicus) vía Open-Meteo · próximos meses"],
   ["emergencia", "Emergencia agropecuaria", "Ley 26.509 · respaldo técnico ERA5 y Sentinel-1"],
   ["caminos", "Caminos y transitabilidad", "OpenStreetMap · lluvia de 72 h · Open-Meteo"],
   ["ganado", "Ganado", "Rodeo, carga, agua, calor y valor · DOTS · Open-Meteo · Cañuelas"],
@@ -1552,6 +1553,11 @@ function Observatory({onHome}:{onHome:()=>void}) {
                   <p className="footnote">{payload.method}</p>
                 </>}
               </>}
+              {view==="estacional" && payload?.seasonal?.length>0 && <>
+                <div className="verdict ok"><span>Próximos meses · {payload.seasonal[0].members} escenarios del modelo europeo</span><b>{payload.seasonal[0].period}: {payload.seasonal[0].rain_reading}</b><small>Temperatura: {payload.seasonal[0].temp_reading}</small></div>
+                {payload.seasonal.map((m:Data)=><div className="soil" key={m.period}><span>{m.period}<small style={{display:"block"}}>Lluvia: {m.rain_reading} · mediana {fmt(m.rain_median,0)} mm (normal {fmt(m.rain_normal,0)} mm)</small><small style={{display:"block"}}>Temperatura: {m.temp_reading}</small></span><strong>{m.rain?`${m.rain.above}%`:"—"}</strong></div>)}
+                <p className="footnote">El número es la probabilidad de un mes más lluvioso que lo normal (tercil superior de 1991–2020 en este punto). Una perspectiva estacional da probabilidades, no fechas: conviene leerla junto con El Niño y la perspectiva trimestral del SMN.</p>
+              </>}
               {view==="emergencia" && payload?.steps && <>
                 <div className={"verdict "+(["sequía","exceso de agua"].includes(payload.kind)?"warn":"ok")}><span>Respaldo técnico del lote · {payload.last_month||""}</span><b>{payload.kind}</b><small>{payload.reading}</small></div>
                 {payload.spei && <div className="wx-grid">{["3","6","12"].map(k=><div key={k}><span>SPEI {k} meses</span><b>{payload.spei[k]?.index??"—"}<small> {payload.spei[k]?.class}</small></b></div>)}
@@ -2207,6 +2213,9 @@ function Observatory({onHome}:{onHome:()=>void}) {
             <section className="panel chart"><h2>Agua y calor · próximos 7 días</h2><p className="small">Litros por día que necesita el rodeo e índice de temperatura y humedad (ITH) máximo · 72 alerta · 79 peligro · 84 emergencia</p><Chart dates={payload.days.map((d:Data)=>String(d.date).slice(8,10)+"/"+String(d.date).slice(5,7))} unit="litros" series={[{name:"Agua del rodeo",values:payload.days.map((d:Data)=>d.water_l),type:"bar",color:"#06b6d4"}]}/></section>
             <section className="panel chart"><h2>Índice de calor (ITH) máximo por día</h2><p className="small">Open-Meteo · temperatura y humedad horarias</p><Chart dates={payload.days.map((d:Data)=>String(d.date).slice(8,10)+"/"+String(d.date).slice(5,7))} unit="ITH" series={[{name:"ITH máximo",values:payload.days.map((d:Data)=>d.thi_max),color:"#fd9c91"},{name:"Alerta (72)",values:payload.days.map(()=>72),color:"#f0b974"},{name:"Peligro (79)",values:payload.days.map(()=>79),color:"#e5484d"}]}/></section>
             {payload.forage && <section className="panel chart"><h2>Pasto que crece y pasto que come el rodeo</h2><p className="small">kg de materia seca por día en todo el lote · crecimiento de los últimos 30 días × uso {Math.round((payload.forage.use||0.5)*100)} %</p><Chart dates={["Crece (aprovechable)","Come el rodeo"]} unit="kg MS/día" series={[{name:"kg MS/día",values:[payload.forage.supply_kg_ms_day,payload.demand_kg_ms_day],type:"bar",color:"#19b98a"}]}/></section>}
+          </> : view==="estacional" && payload?.seasonal?.length ? <>
+            <section className="panel chart"><h2>Lluvia de los próximos meses: probabilidades</h2><p className="small">ECMWF SEAS5 · % de escenarios por debajo, cerca o por encima de lo normal (terciles 1991–2020 del punto)</p><Chart dates={payload.seasonal.map((m:Data)=>m.period)} unit="%" series={[{name:"Más seco",values:payload.seasonal.map((m:Data)=>m.rain?.below??null),type:"bar",color:"#e9bd72"},{name:"Normal",values:payload.seasonal.map((m:Data)=>m.rain?.normal??null),type:"bar",color:"#98a2b3"},{name:"Más lluvioso",values:payload.seasonal.map((m:Data)=>m.rain?.above??null),type:"bar",color:"#06b6d4"}]}/></section>
+            <section className="panel chart"><h2>Temperatura de los próximos meses: probabilidades</h2><p className="small">ECMWF SEAS5 · % de escenarios más frescos, normales o más cálidos</p><Chart dates={payload.seasonal.map((m:Data)=>m.period)} unit="%" series={[{name:"Más fresco",values:payload.seasonal.map((m:Data)=>m.temp?.below??null),type:"bar",color:"#93c5fd"},{name:"Normal",values:payload.seasonal.map((m:Data)=>m.temp?.normal??null),type:"bar",color:"#98a2b3"},{name:"Más cálido",values:payload.seasonal.map((m:Data)=>m.temp?.above??null),type:"bar",color:"#fd9c91"}]}/></section>
           </> : view==="enso-tablero" && payload?.advice ? <>
             {payload.impact?.seasons?.length>0 && <section className="panel chart"><h2>Lluvia de octubre a marzo en cada temporada</h2><p className="small">ERA5 en el punto del lote · mm · color según la fase de El Niño (ONI de NOAA) · {payload.impact.reading}</p><Chart dates={payload.impact.seasons.map((x:Data)=>x.season)} unit="mm" series={[
               {name:"El Niño",values:payload.impact.seasons.map((x:Data)=>String(x.phase).startsWith("El Niño")?x.rain_mm:null),type:"bar",color:"#e5484d"},

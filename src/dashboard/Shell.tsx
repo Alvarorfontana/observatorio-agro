@@ -43,6 +43,7 @@ export function buildNav(go: (k: string) => void, draw: () => void, pdf: () => v
       { key: "modelos", label: "Clima · modelos", icon: <CloudSun />, onClick: () => go("modelos") },
       { key: "firms", label: "Riesgos · focos", icon: <Flame />, onClick: () => go("firms") },
       { key: "estadistica", label: "Probabilidades", icon: <Sigma />, onClick: () => go("estadistica") },
+      { key: "estacional", label: "Pronóstico estacional", icon: <CloudSun />, onClick: () => go("estacional") },
       { key: "indices", label: "Índices agroclimáticos", icon: <Thermometer />, onClick: () => go("indices") },
       { key: "enso-tablero", label: "El Niño en tu lote", icon: <Gauge />, onClick: () => go("enso-tablero") },
       { key: "teleconexiones", label: "El Niño · teleconexiones", icon: <Gauge />, onClick: () => go("teleconexiones") },

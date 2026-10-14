@@ -368,7 +368,7 @@ def research_data(name):
           'suelo':lambda:c.soil_full(lat,lon),'balance-agua':lambda:wbal.water_balance(lat,lon),'enso-cadena':lambda:enso.chain(),'enso-lote':lambda:enso.lot_impact(lat,lon),'enso-tablero':lambda:enso_report.board(lat,lon),'caminos':lambda:cmn.analyze(lat,lon),'emergencia':lambda:emg.analyze(lat,lon,polygon),'catalogo-indices':lambda:c.envelope(spectral.catalog_summary(),'','catálogo de índices','awesome-spectral-indices'),
           'serie':lambda:c.external('https://archive-api.open-meteo.com/v1/archive',{'latitude':lat,'longitude':lon,'start_date':f'{endyear-years+1}-01-01','end_date':f'{endyear}-12-31','daily':'temperature_2m_mean,precipitation_sum','models':'era5','timezone':'UTC'}),
           'proyeccion':lambda:c.projection(lat,lon),
-          'estadistica':lambda:fst.analyze(lat,lon),'humedad-nasa':lambda:sw.analyze(lat,lon),
+          'estadistica':lambda:fst.analyze(lat,lon),'estacional':lambda:fst.analyze(lat,lon),'humedad-nasa':lambda:sw.analyze(lat,lon),
           'indices':lambda:ci.agro_indices(lat,lon,_int(request.args,'index_years',10,3,30)),'teleconexiones':lambda:ci.psl_indices(),'el-nino':lambda:__import__('enso_panel').enso_panel(),
           'nws':lambda:c.nws(lat,lon),'metnorway':lambda:c.met_norway(lat,lon),
           'aire':lambda:c.air_quality(lat,lon),'elevacion':lambda:c.elevation(lat,lon),
