@@ -50,6 +50,7 @@ export function buildNav(go: (k: string) => void, draw: () => void, pdf: () => v
     { title: "Salidas", items: [
       { key: "alertas", label: "Alertas", icon: <BellRing />, onClick: () => go("alertas") },
       { key: "costos", label: "Costos y logística", icon: <Truck />, onClick: () => go("costos") },
+      { key: "caminos", label: "Caminos y lluvia", icon: <Truck />, onClick: () => go("caminos") },
       { key: "plataformas", label: "Fuentes y APIs", icon: <Network />, onClick: () => go("plataformas") },
       { key: "__pdf", label: "Informe PDF", icon: <FileText />, onClick: pdf },
     ]},

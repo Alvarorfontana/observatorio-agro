@@ -160,6 +160,7 @@ const SOURCES = [
   ["balance-agua", "Balance de agua y sequía", "ERA5 desde 1991 · lluvia − evapotranspiración"],
   ["costos", "Costos y logística", "OSRM · OpenStreetMap · DolarAPI · valores del productor"],
   ["sustentabilidad", "Deforestación y carbono", "Impact Observatory · ESA WorldCover · SoilGrids · IPCC"],
+  ["caminos", "Caminos y transitabilidad", "OpenStreetMap · lluvia de 72 h · Open-Meteo"],
   ["ganado", "Ganado", "Rodeo, carga, agua, calor y valor · DOTS · Open-Meteo · Cañuelas"],
   ["enso-tablero", "El Niño en tu lote", "NOAA CPC · PSL · PMEL · ERA5 · cadena, historia y lluvia actual"],
   ["teleconexiones", "El Niño y teleconexiones", "NOAA PSL · ENSO, SOI, AAO, TSA, PDO"],
@@ -748,6 +749,17 @@ function Observatory({onHome}:{onHome:()=>void}) {
       setSources(p => ({ ...p, ganado: { status: j.status, payload: j } }));
     } catch (e) { setSources(p => ({ ...p, ganado: { status: "sin dato", error: (e as Error).message } })); }
   };
+  const roadLayer = useRef<L.LayerGroup | null>(null);
+  useEffect(() => {
+    roadLayer.current?.remove(); roadLayer.current = null;
+    const d = (sources.caminos?.payload as any)?.data;
+    if (!mapRef.current || view !== "caminos" || !d?.lines?.length) return;
+    const bad = d.state_dirt === "intransitable" || d.state_dirt === "riesgo de intransitable";
+    const col = (k: string) => k === "pavimento" ? "#344054" : k === "ripio" ? "#b08968" : bad ? "#d92d20" : d.state_dirt === "precaución" ? "#f79009" : "#12b76a";
+    const g = L.layerGroup(d.lines.map((x: any) => L.polyline(x.line, { color: col(x.kind), weight: x.kind === "pavimento" ? 4 : 3, opacity: .85, dashArray: x.kind === "tierra" ? "6 5" : undefined }).bindTooltip(`${x.name} · ${x.kind}`))).addTo(mapRef.current);
+    roadLayer.current = g;
+    return () => { g.remove(); };
+  }, [view, sources.caminos]);
   const routeLine = useRef<L.Polyline | null>(null);
   useEffect(() => {
     routeLine.current?.remove(); routeLine.current = null;
@@ -1538,6 +1550,19 @@ function Observatory({onHome}:{onHome:()=>void}) {
                   <div className={"verdict "+(payload.latest.water_fraction>0.1?"warn":"ok")}><span>Agua en el lote · {String(payload.latest.datetime||"").slice(0,10)}</span><b>{fmt(payload.latest.water_fraction*100,1)} % · {fmt(payload.latest.water_ha,1)} ha</b><small>{payload.trend||""}</small></div>
                   <p className="footnote">{payload.method}</p>
                 </>}
+              </>}
+              {view==="caminos" && payload?.km && <>
+                <div className={"verdict "+(["intransitable","riesgo de intransitable"].includes(payload.state_dirt)?"warn":"ok")}><span>Caminos de tierra · ahora</span><b>{payload.state_dirt}</b><small>{payload.reading}</small></div>
+                <div className="wx-grid">
+                  <div><span>Lluvia 72 h</span><b>{payload.rain_72h_mm??"—"}<small> mm</small></b></div>
+                  <div><span>Próximas 48 h</span><b>{payload.rain_next48_mm??"—"}<small> mm</small></b></div>
+                  <div><span>Tierra</span><b>{fmt(payload.km.tierra,1)}<small> km</small></b></div>
+                  <div><span>Pavimento y ripio</span><b>{fmt(payload.km.pavimento+payload.km.ripio,1)}<small> km</small></b></div>
+                </div>
+                {payload.state_dirt_next && <p className="small">En dos días: <b>{payload.state_dirt_next}</b>.</p>}
+                <div className="lot-vars-title" style={{marginTop:10}}>Caminos principales en {payload.radius_km} km</div>
+                <div className="cover-table">{payload.main_roads.map((r:Data,i:number)=><div className="cover-row" key={i}><span>{r.name}</span><b>{r.kind}</b><span>{fmt(r.km,1)} km</span><span></span><span></span><span></span></div>)}</div>
+                <p className="footnote">Rangos para caminos de tierra: menos de 10 mm en 72 h transitable · 10 a 30 precaución · 30 a 60 riesgo · más de 60 intransitable. En el mapa: gris pavimento, marrón ripio, punteado tierra con el color del estado. OpenStreetMap (ODbL). No reemplaza el parte de Vialidad.</p>
               </>}
               {view==="ganado" && <HerdPanel rows={herdAll[herdKey]||[]} setRows={setHerdRows} movements={movAll[herdKey]||[]} setMovements={setMovements}
                 onRun={()=>void loadHerd()} busy={sources.ganado?.status==="consultando"} data={(sources.ganado?.payload as any)?.data} error={(sources.ganado as any)?.error} hasLot={vertices.length>=3}/>}
