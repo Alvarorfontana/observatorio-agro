@@ -23,7 +23,11 @@
       "destination": "/api/index"
     },
     {
-      "source": "/((?!api/|ftw/|dem/|assets/).*)",
+      "source": "/poblacion",
+      "destination": "/poblacion/index.html"
+    },
+    {
+      "source": "/((?!api/|ftw/|dem/|assets/|poblacion).*)",
       "destination": "/index.html"
     }
   ],

@@ -2440,6 +2440,7 @@ function PublicHeader({onDemo}:{onDemo:()=>void}){return <header className="site
   <SiteLink to="/que-es-dots">Qué es DOTS</SiteLink>
   <SiteLink to="/libre-deforestacion" className="nav-highlight">Vender a Europa</SiteLink>
   <SiteLink to="/el-nino" className="nav-highlight">El Niño</SiteLink>
+  <a href="/poblacion">Población y riesgo</a>
   <SiteLink to="/panel">Panel regional</SiteLink>
   <SiteLink to="/modulos">Módulos</SiteLink>
   <details className="nav-more"><summary>Más</summary><div>
@@ -2449,7 +2450,7 @@ function PublicHeader({onDemo}:{onDemo:()=>void}){return <header className="site
 </nav><div className="site-head-actions"><SiteLink to="/alertas" className="alert-btn">⚠ Alertas</SiteLink><SiteLink to="/acceso" className="ghost-link">Ingresar</SiteLink><button className="demo-btn" onClick={onDemo}>Abrir Observatorio →</button>
   <details className="nav-mobile"><summary aria-label="Menú">☰</summary><div>
     <button className="nav-mobile-demo" onClick={onDemo}>Abrir Observatorio →</button>
-    {([["/que-es-dots","Qué es DOTS"],["/libre-deforestacion","Vender a Europa"],["/el-nino","El Niño"],["/panel","Panel regional"],["/alertas","Alertas de crecidas"],["/modulos","Módulos"],["/guia","Cómo funciona"],["/cultivos","Cultivos"],["/capas","Capas del mapa"],["/tecnologia","Fuentes"],["/conexiones","APIs"],["/casos","Casos"],["/contacto","Contacto"],["/acceso","Ingresar"]] as [string,string][]).map(([to,l])=><SiteLink key={to} to={to}>{l}</SiteLink>)}
+    {([["/que-es-dots","Qué es DOTS"],["/libre-deforestacion","Vender a Europa"],["/el-nino","El Niño"],["/poblacion","Población y riesgo"],["/panel","Panel regional"],["/alertas","Alertas de crecidas"],["/modulos","Módulos"],["/guia","Cómo funciona"],["/cultivos","Cultivos"],["/capas","Capas del mapa"],["/tecnologia","Fuentes"],["/conexiones","APIs"],["/casos","Casos"],["/contacto","Contacto"],["/acceso","Ingresar"]] as [string,string][]).map(([to,l])=>to==="/poblacion"?<a key={to} href={to}>{l}</a>:<SiteLink key={to} to={to}>{l}</SiteLink>)}
   </div></details></div></header>}
 const sourceGroups=[
  ["ARGENTINA",["CONAE · SAOCOM","SMN","INA"]],
