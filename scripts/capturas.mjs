@@ -19,7 +19,7 @@ for (const [label, file] of views) {
   const btn = p.getByRole('button', { name: label }).first();
   if (!(await btn.count())) { console.log('sin botón', label); continue; }
   await btn.click().catch(e => console.log('click', label, e.message));
-  await p.waitForTimeout(label.startsWith('Balance') ? 25000 : 15000);
+  await p.waitForTimeout((label.startsWith('Balance') || label.startsWith('El Niño')) ? 30000 : 15000);
   await p.screenshot({ path: `${out}/${file}.png` });
   console.log('ok', file);
 }
