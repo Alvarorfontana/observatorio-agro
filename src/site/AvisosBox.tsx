@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 
 type Feed = { updated?: string; items: { id: string; place: string; river: string; from: string; to: string; up: boolean; text: string; at: string }[];
-  channels: { email: boolean; telegram_url: string | null; feed_rss: string; feed_json: string; widget: string } };
+  channels: { email: boolean; telegram_url: string | null; ntfy_topic?: string; ntfy_url?: string; feed_rss: string; feed_json: string; widget: string } };
 
 export function AvisosBox() {
   const [feed, setFeed] = useState<Feed | null>(null);
@@ -30,9 +30,10 @@ export function AvisosBox() {
         {msg && <p className="small">{msg}</p>}
         {ch && !ch.email && <p className="small">La lista de correo se activa en estos días; mientras tanto usá Telegram o el feed.</p>}
         <p className="small">Cada correo trae un enlace para darse de baja.</p></article>
-      <article><b>En el teléfono (Telegram)</b>
-        {ch?.telegram_url ? <><p className="small">Unite al canal público y recibí cada aviso como notificación.</p><a className="avisos-btn" href={ch.telegram_url} target="_blank" rel="noopener">Abrir el canal</a></>
-          : <p className="small">El canal público de Telegram está en preparación.</p>}</article>
+      <article><b>En el teléfono</b>
+        <p className="small">Instalá la app gratuita <b>ntfy</b> (Android o iPhone), tocá <b>+</b> y suscribite al tema <b>{ch?.ntfy_topic || "dots-crecidas-cuenca-plata"}</b>. No pide cuenta ni número de teléfono.</p>
+        <a className="avisos-btn" href={ch?.ntfy_url || "https://ntfy.sh/dots-crecidas-cuenca-plata"} target="_blank" rel="noopener">Abrir en ntfy</a>
+        {ch?.telegram_url && <p className="small" style={{marginTop:8}}>También en el <a href={ch.telegram_url} target="_blank" rel="noopener">canal de Telegram</a>.</p>}</article>
       <article><b>En otras páginas web</b>
         <p className="small">Municipios, medios y escuelas pueden mostrar los avisos en su sitio, o seguirlos por RSS.</p>
         <button className="avisos-btn ghost" onClick={() => { navigator.clipboard?.writeText(widget).then(() => setCopied(true)).catch(() => {}); }}>{copied ? "Código copiado" : "Copiar código para insertar"}</button>

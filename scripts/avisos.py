@@ -70,6 +70,20 @@ def text(a):
     return t
 
 
+NTFY_TOPIC = os.environ.get('NTFY_TOPIC', 'dots-crecidas-cuenca-plata')
+
+
+def ntfy(msgs, worst):
+    """Notificación al celular por ntfy.sh (gratis, sin cuenta): quien instala la app ntfy y se suscribe al tema la recibe."""
+    if os.environ.get('NTFY_DISABLED') == '1':
+        return 'desactivado'
+    body = '\n\n'.join(msgs) + f'\n\nDetalle y fuentes: {SITE}/alertas'
+    r = requests.post(f'https://ntfy.sh/{NTFY_TOPIC}', data=body.encode('utf-8'), timeout=30, headers={
+        'Title': f'DOTS · Crecidas: {worst}'.encode('utf-8'), 'Priority': 'high' if 'Evacuación' in worst or 'Alerta' in worst else 'default',
+        'Click': f'{SITE}/alertas', 'Tags': 'ocean'})
+    return 'enviado' if r.ok else f'error {r.status_code}'
+
+
 def telegram(msgs):
     tok, chat = os.environ.get('TELEGRAM_BOT_TOKEN'), os.environ.get('TELEGRAM_CHAT_ID')
     if not (tok and chat):
@@ -121,14 +135,14 @@ def main():
     msgs = [text(a) for a in found]
     worst = max(found, key=lambda a: ORDER[a['to']])
     head = f"{worst['place']} en {worst['to']}" + (f' y {len(found) - 1} cambio(s) más' if len(found) > 1 else '')
-    tg, em = telegram(msgs), email(msgs, head)
+    tg, em, nt = telegram(msgs), email(msgs, head), ntfy(msgs, head)
     feed = load(FEED, {'items': []})
     for a, m in zip(found, msgs):
         feed['items'].insert(0, {**a, 'text': m, 'at': now})
     feed['items'] = feed['items'][:MAX_FEED]
     feed['updated'] = now
     save(FEED, feed)
-    print(f'{len(found)} aviso(s). Telegram: {tg}. Correo: {em}.')
+    print(f'{len(found)} aviso(s). ntfy: {nt}. Telegram: {tg}. Correo: {em}.')
     for m in msgs:
         print(' -', m)
 

@@ -23,7 +23,7 @@ def channels():
     return {'email': bool(os.environ.get('RESEND_API_KEY') and os.environ.get('RESEND_AUDIENCE_ID')),
             'telegram_url': tg if tg.startswith('https://t.me/') else None,
             'feed_json': f'{SITE}/api/fuentes/avisos', 'feed_rss': f'{SITE}/api/fuentes/avisos?formato=rss',
-            'widget': f'{SITE}/avisos-widget/'}
+            'widget': f'{SITE}/avisos-widget/', 'ntfy_topic': 'dots-crecidas-cuenca-plata', 'ntfy_url': 'https://ntfy.sh/dots-crecidas-cuenca-plata'}
 
 
 def feed(localidad=None, limit=50):
