@@ -512,6 +512,25 @@ def readiness_block(r, de, area):
             'tone': {'ok': 'ok', 'warn': 'warn'}.get(res.get('tone'), 'idle'), 'auto': auto, 'declared': declared}
 
 
+def _mapbiomas_block(mb):
+    if not mb or not mb.get('years'):
+        return None
+    rows = mb['years']
+    by = {r['year']: r for r in rows}
+    pick = []
+    for y in (rows[0]['year'], 2000, 2010, 2020, rows[-1]['year']):
+        if y in by and y not in pick:
+            pick.append(y)
+    g = mb.get('eudr') or {}
+    return {'country': (mb.get('country') or '').capitalize(), 'period': f"{rows[0]['year']}-{rows[-1]['year']}",
+            'verdict': g.get('verdict') or '', 'forest_cutoff': num(g.get('forest_cutoff_ha'), 1), 'forest_last': num(g.get('forest_last_ha'), 1),
+            'last_year': str(g.get('forest_last_year') or rows[-1]['year']),
+            'rows': [{'year': str(y), 'cut': y == 2020, 'bosque': num(by[y]['groups_ha']['bosque'], 1), 'natural': num(by[y]['groups_ha']['natural'], 1),
+                      'plantacion': num(by[y]['groups_ha']['plantacion'], 1), 'uso': num(by[y]['groups_ha']['uso'], 1),
+                      'agua': num(by[y]['groups_ha']['agua'], 1)} for y in pick],
+            'reading': mb.get('reading') or ''}
+
+
 def eudr_data(lot, establishment, sust, generated=None, readiness=None):
     import hashlib
     vertices = lot.get('vertices') or []
@@ -583,6 +602,7 @@ def eudr_data(lot, establishment, sust, generated=None, readiness=None):
         'series_note': ('Porcentaje del polígono en cada clase según Impact Observatory 10 m (Sentinel-2). '
                         'La fila resaltada es el año de corte (2020).'),
         'worldcover': wc,
+        'mapbiomas': _mapbiomas_block((sust or {}).get('mapbiomas')),
         'criteria': [
             ['Sin pérdida detectada', 'Pérdida estimada menor a 0,5 ha o variación de cobertura arbórea mayor a −1 punto entre 2020 y el último año.'],
             ['Pérdida menor · revisar', 'Pérdida estimada entre 0,5 y 5 ha, o mayor pero dentro del doble de la variación interanual del mapa, o que no se sostiene en los dos últimos años: puede ser poda, sombra, error de clasificación o desmonte puntual.'],
@@ -605,6 +625,7 @@ def eudr_data(lot, establishment, sust, generated=None, readiness=None):
             ['Impact Observatory 10 m Annual LULC v2', 'Clasificación anual 2017-2023 a partir de Sentinel-2; clase 2 = árboles. Licencia CC-BY 4.0. Vía Microsoft Planetary Computer.'],
             ['ESA WorldCover 10 m', 'Clasificación 2020 y 2021 (Sentinel-1 y Sentinel-2); clase 10 = cobertura arbórea. Licencia CC-BY 4.0.'],
             ['Cálculo DOTS', 'Fracción de píxeles de cada clase dentro del polígono (estadística zonal en el servidor de datos) × superficie del lote.'],
+            ['MapBiomas', 'Clasificación anual de uso y cobertura del suelo desde 1985 a partir de Landsat (30 m), hecha por la red MapBiomas de cada país. Licencia CC BY 4.0. Vía Google Earth Engine.'],
             ['ISRIC SoilGrids', 'Stock de carbono orgánico 0-30 cm, 250 m, media y percentiles 5 y 95.'],
             ['IPCC', 'Directrices 2006, Vol. 4, Cap. 10, cuadro 10.11 (56 kg CH₄/cabeza/año) y AR6 (GWP100 del metano = 27).'],
         ],

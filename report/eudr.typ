@@ -77,6 +77,19 @@
   ..d.series.map(r => (text(weight: if r.cut { "bold" } else { "regular" })[#r.year], [#r.trees], [#r.trees_ha], [#r.rangeland], [#r.crops], [#r.water])).flatten())
 #v(4pt)
 #if d.worldcover != "" [#card(fill: soft)[#text(size: 8.5pt)[*Control independiente.* #d.worldcover]]]
+#if d.at("mapbiomas", default: none) != none [
+  #let m = d.mapbiomas
+  #v(6pt)
+  #card(fill: soft)[
+    #text(size: 8.5pt)[*Control de largo plazo · MapBiomas #m.country (#m.period, 30 m).* #m.verdict. Bosque nativo: #m.forest_cutoff ha en 2020 y #m.forest_last ha en #m.last_year.]
+    #v(3pt)
+    #table(columns: (0.6fr, 1fr, 1fr, 1fr, 1fr, 0.8fr), stroke: (x, y) => (bottom: 0.4pt + line-c), inset: (x: 4pt, y: 3.5pt),
+      align: (left, right, right, right, right, right),
+      table.header(..("Año", "Bosque nativo (ha)", "Otra veg. natural (ha)", "Plantación (ha)", "Agric. y pasturas (ha)", "Agua (ha)").map(h => text(size: 7pt, weight: "semibold", fill: muted)[#h])),
+      ..m.rows.map(r => (text(weight: if r.cut { "bold" } else { "regular" })[#r.year], [#r.bosque], [#r.natural], [#r.plantacion], [#r.uso], [#r.agua])).flatten())
+    #text(size: 7.5pt, fill: muted)[#m.reading]
+  ]
+]
 
 #section("02", "Criterio de evaluación")
 #table(columns: (1.2fr, 2fr), stroke: (x, y) => (bottom: 0.5pt + line-c), inset: (x: 5pt, y: 4.5pt),

@@ -20,6 +20,7 @@ import radar as rdr
 import water_balance as wbal
 import enso_chain as enso
 import enso_sa
+import mapbiomas as mbx
 import enso_report
 import monitor as mon
 import soil_wetness as sw
@@ -54,6 +55,7 @@ VEGETATION={
   'gee-ndvi':lambda p,a:veg.gee_ndvi(p,_int(a,'ndvi_years',10,1,25)),
   'indices-espectrales':lambda p,a:spectral.compute(p,[x.strip() for x in a.get('indices','').split(',') if x.strip()] or None,_int(a,'days',120,15,365)),
   'radar-agua':lambda p,a:rdr.flooding(p,_int(a,'days',60,12,365)),
+  'mapbiomas':lambda p,a:mbx.history(p),
 }
 
 @research_api.get('/monitor')
@@ -275,9 +277,10 @@ def research_data(name):
         if name=='sustentabilidad':
             heads=_int(request.args,'heads',0,0,200000)
             def _both():
-                out={'deforestation':None,'carbon':None,'errors':{}}
+                out={'deforestation':None,'carbon':None,'mapbiomas':None,'errors':{}}
                 from concurrent.futures import ThreadPoolExecutor
-                with ThreadPoolExecutor(max_workers=2) as pool:
+                with ThreadPoolExecutor(max_workers=3) as pool:
+                    fm=pool.submit(mbx.history,polygon) if polygon else None
                     fd=pool.submit(sus.deforestation,polygon) if polygon else None
                     fc=pool.submit(sus.carbon,lat,lon,veg.area_ha(polygon) if polygon else None,heads or None)
                     try: out['carbon']=fc.result()['data']
@@ -286,7 +289,14 @@ def research_data(name):
                         try: out['deforestation']=fd.result()['data']
                         except Exception as e: out['errors']['deforestación']=type(e).__name__
                     else: out['errors']['deforestación']='Dibujá un lote para verificar cobertura arbórea'
-                ok=out['carbon'] or out['deforestation']
+                    if fm:
+                        try:
+                            rm=fm.result(timeout=50)
+                            out['mapbiomas']=rm.get('data')
+                            if not out['mapbiomas']: out['errors']['mapbiomas']=rm.get('error') or 'sin dato'
+                        except PermissionError: out['errors']['mapbiomas']='Earth Engine sin credencial'
+                        except Exception as e: out['errors']['mapbiomas']=type(e).__name__
+                ok=out['carbon'] or out['deforestation'] or out['mapbiomas']
                 return c.envelope(out,'multi','deforestación, carbono y emisiones','Impact Observatory · ESA · ISRIC · IPCC','recibido' if ok else 'sin dato',None if ok else 'Sin datos')
             return jsonify(_both())
         if name in VEGETATION:
