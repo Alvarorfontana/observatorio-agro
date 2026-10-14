@@ -27,4 +27,6 @@ const tab = p.getByRole('tab', { name: 'Tablero' }).first();
 if (await tab.count()) { await tab.click().catch(()=>{}); await p.waitForTimeout(12000); await p.screenshot({ path: `${out}/tablero.png` }); console.log('ok tablero'); }
 await p.goto(base + '/capas'); await p.waitForTimeout(2000);
 await p.screenshot({ path: `${out}/pagina-capas.png` });
+await p.goto(base + '/el-nino'); await p.waitForTimeout(20000);
+await p.screenshot({ path: `${out}/el-nino.png`, fullPage: true });
 await b.close();

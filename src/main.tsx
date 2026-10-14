@@ -52,6 +52,7 @@ import { RISK_COLORS, DRAIN_COLOR } from "./dashboard/terrainCore";
 import { VariablesPanel } from "./dashboard/VariablesPanel";
 import { LotDashboard } from "./dashboard/LotDashboard";
 import { OPEN_LAYERS, LAYER_GROUPS } from "./dashboard/openLayers";
+import { PacificSection, SAImpactMap } from "./site/NinoIllustrations";
 import { GuideContent } from "./site/GuideContent";
 import { CuencaPanel, AlertasTeaser, AlertasPortada } from "./site/CuencaPanel";
 import { CultivosPanel } from "./site/Cultivos";
@@ -2126,6 +2127,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
             <section className="panel chart"><h2>Lluvia anual y días de lluvia intensa</h2><p className="small">ERA5 · mm por año · días con 20 mm o más</p><Chart dates={payload.years.map((r:Data)=>String(r.year))} unit="mm" series={[{name:"Lluvia anual",values:payload.years.map((r:Data)=>r.prcptot),type:"bar",color:"#06b6d4"}]}/></section>
             <section className="panel chart"><h2>Heladas y calor extremo</h2><p className="small">Días por año · mínima menor a 0 °C · máxima de 35 °C o más</p><Chart dates={payload.years.map((r:Data)=>String(r.year))} unit="días" series={[{name:"Heladas",values:payload.years.map((r:Data)=>r.frost_days),color:"#93c5fd"},{name:"Máx ≥ 35 °C",values:payload.years.map((r:Data)=>r.tx35),color:"#fd9c91"},{name:"Racha seca",values:payload.years.map((r:Data)=>r.cdd),color:"#e9bd72"}]}/></section>
           </> : view==="teleconexiones" && payload?.indices ? <>
+            <section className="panel chart"><h2>La cadena completa de El Niño</h2><p className="small">Alisios, calor bajo el mar, superficie, atmósfera y qué pasó en tu zona en los Niño anteriores.</p><p><a href="/el-nino" onClick={e=>{e.preventDefault();history.pushState({},"","/el-nino");dispatchEvent(new PopStateEvent("popstate"));}}>Ver la página El Niño →</a></p></section>
             {[["Pacífico ecuatorial · El Niño",["nino34","oni","meiv2"]],["Hemisferio sur y Atlántico",["aao","soi","tsa"]]].map(([title,keys]:any)=><section className="panel chart" key={title}><h2>{title}</h2><p className="small">NOAA PSL · últimos 12 meses publicados</p><Chart dates={(payload.indices[keys[0]]?.data?.last12||[]).map((r:Data)=>r.period)} unit="índice" series={keys.map((k:string,i:number)=>({name:payload.indices[k]?.data?.name||k,values:(payload.indices[k]?.data?.last12||[]).map((r:Data)=>r.value),color:["#06b6d4","#e9bd72","#a7a5ff"][i]}))}/></section>)}
           </> : NDVI_VIEWS.includes(view) ? <section className="panel chart"><h2>NDVI del lote · serie</h2><p className="small">{payload?.sensor||"Sentinel-2"} · media zonal dentro del polígono · escenas nubladas en el lote excluidas</p><Chart dates={(payload?.series||[]).filter((r:Data)=>r.status==="válida").map((r:Data)=>(r.datetime||r.from||"").slice(0,10))} unit="NDVI" series={[{name:"NDVI medio",values:(payload?.series||[]).filter((r:Data)=>r.status==="válida").map((r:Data)=>r.ndvi_mean??null),color:"#19b98a"}]}/></section> : view==="ina" ? <><section className="panel chart"><h2>{inaSeries==="37299"?"Temperatura observada":"Río Paraná · altura observada"}</h2><p className="small">INA · Bella Vista · serie {inaSeries} · fechas originales</p><Chart dates={(payload?.data||[]).map((r:Data)=>r.timestart)} unit={payload?.responseHeader?.seriesmetadata?.unit_abrev||"m"} series={[{name:"Altura",values:(payload?.data||[]).map((r:Data)=>r.valor??null),color:"#06b6d4"}]}/></section><section className="panel chart"><h2>Estación hidrométrica</h2><p className="footnote">Nivel del río medido en una estación; no describe inundación del lote. Para evaluar riesgo hacen falta relieve, umbrales y delimitación de la cuenca.</p></section></> : view==="aire" ? <>{["pm2_5","pm10"].map((k,i)=><section className="panel chart" key={k}><h2>{i===0?"Partículas PM2.5":"Partículas PM10"}</h2><p className="small">CAMS · pronóstico modelado · UTC</p><Chart dates={payload?.hourly?.time||[]} unit={payload?.hourly_units?.[k]||""} series={[{name:k,values:payload?.hourly?.[k]||[],color:i===0?"#06b6d4":"#b7c989"}]}/></section>)}</> : NATIONAL.includes(view) ? (
             <>
@@ -2355,6 +2357,7 @@ function Brand(){return <SiteLink to="/" className="site-brand"><img className="
 function PublicHeader({onDemo}:{onDemo:()=>void}){return <header className="site-header"><Brand/><nav>
   <SiteLink to="/que-es-dots">Qué es DOTS</SiteLink>
   <SiteLink to="/libre-deforestacion" className="nav-highlight">Vender a Europa</SiteLink>
+  <SiteLink to="/el-nino" className="nav-highlight">El Niño</SiteLink>
   <SiteLink to="/panel">Panel regional</SiteLink>
   <SiteLink to="/modulos">Módulos</SiteLink>
   <details className="nav-more"><summary>Más</summary><div>
@@ -2364,7 +2367,7 @@ function PublicHeader({onDemo}:{onDemo:()=>void}){return <header className="site
 </nav><div className="site-head-actions"><SiteLink to="/alertas" className="alert-btn">⚠ Alertas</SiteLink><SiteLink to="/acceso" className="ghost-link">Ingresar</SiteLink><button className="demo-btn" onClick={onDemo}>Abrir Observatorio →</button>
   <details className="nav-mobile"><summary aria-label="Menú">☰</summary><div>
     <button className="nav-mobile-demo" onClick={onDemo}>Abrir Observatorio →</button>
-    {([["/que-es-dots","Qué es DOTS"],["/libre-deforestacion","Vender a Europa"],["/panel","Panel regional"],["/alertas","Alertas de crecidas"],["/modulos","Módulos"],["/guia","Cómo funciona"],["/cultivos","Cultivos"],["/capas","Capas del mapa"],["/tecnologia","Fuentes"],["/conexiones","APIs"],["/casos","Casos"],["/contacto","Contacto"],["/acceso","Ingresar"]] as [string,string][]).map(([to,l])=><SiteLink key={to} to={to}>{l}</SiteLink>)}
+    {([["/que-es-dots","Qué es DOTS"],["/libre-deforestacion","Vender a Europa"],["/el-nino","El Niño"],["/panel","Panel regional"],["/alertas","Alertas de crecidas"],["/modulos","Módulos"],["/guia","Cómo funciona"],["/cultivos","Cultivos"],["/capas","Capas del mapa"],["/tecnologia","Fuentes"],["/conexiones","APIs"],["/casos","Casos"],["/contacto","Contacto"],["/acceso","Ingresar"]] as [string,string][]).map(([to,l])=><SiteLink key={to} to={to}>{l}</SiteLink>)}
   </div></details></div></header>}
 const sourceGroups=[
  ["ARGENTINA",["CONAE · SAOCOM","SMN","INA"]],
@@ -2784,6 +2787,131 @@ function LayersPage({onDemo}:{onDemo:()=>void}){
     <p className="footnote layer-credits">Catálogo base: xyzservices (github.com/geopandas/xyzservices, licencia BSD-3). Atribuciones: Esri, OpenStreetMap (ODbL), OpenTopoMap (CC-BY-SA), CyclOSM, Carto, OpenRailwayMap, NASA GIBS/EOSDIS, Hansen/UMD/Google/USGS/NASA vía Global Forest Watch (CC-BY 4.0), EC JRC/Google Global Surface Water, Instituto Geográfico Nacional de Argentina.</p>
   </main><SiteFooter/></div>
 }
+const NINO_PLACES: [string, number, number][] = [
+  ["Corrientes", -27.47, -58.83], ["Resistencia", -27.45, -58.99], ["Posadas", -27.37, -55.90], ["Formosa", -26.18, -58.18],
+  ["Reconquista", -29.15, -59.65], ["Santa Fe", -31.63, -60.70], ["Paraná", -31.73, -60.53], ["Rosario", -32.95, -60.65],
+  ["Concordia", -31.39, -58.02], ["Pergamino", -33.89, -60.57], ["Asunción", -25.28, -57.63], ["Porto Alegre", -30.03, -51.20],
+];
+const NINO_REGIONS: [string, string, string, string][] = [
+  ["wet", "Litoral, NEA, centro-este de Argentina, sur de Brasil, Uruguay y Paraguay", "Más lluvia", "Sobre todo en primavera (octubre a diciembre) y de nuevo en otoño (abril y mayo). Suben el Paraná, el Uruguay, el Paraguay y el Iguazú, con semanas o meses de demora. Es la zona de las grandes inundaciones de 1982-83, 1997-98, 2015-16 y 2023-24."],
+  ["wet", "Costa de Ecuador y norte de Perú", "Lluvias torrenciales", "El mar se calienta frente a la costa (Niño 1+2) y llueve donde casi nunca llueve: desbordes y aludes."],
+  ["dry", "Norte de Sudamérica y Amazonia (Colombia, Venezuela, norte de Brasil)", "Menos lluvia y más calor", "Sequía, ríos amazónicos bajos e incendios forestales."],
+  ["dry", "Altiplano y noreste de Brasil", "Menos lluvia", "Temporada de lluvias más pobre en el altiplano boliviano-peruano y en el sertón brasileño."],
+  ["mixed", "Patagonia y centro de Chile", "Variable", "En el centro de Chile suele llover más en invierno; en Patagonia la señal es débil."],
+];
+const NINO_EVENTS: [string,string,string,string][] = [
+  ["1982-83","nino","El Niño muy fuerte","Grandes inundaciones en el Litoral argentino, Paraguay y el sur de Brasil, con el Paraná muy crecido durante meses. Lluvias catastróficas en la costa de Ecuador y Perú."],
+  ["1997-98","nino","El Niño muy fuerte","Crecida extraordinaria del Paraná y sus afluentes: evacuados en Corrientes, Chaco, Santa Fe y Entre Ríos y grandes pérdidas ganaderas. Desastre en la costa del Pacífico sudamericano."],
+  ["2015-16","nino","El Niño muy fuerte","Inundaciones en el Litoral y en la cuenca del Uruguay; miles de evacuados en Argentina, Uruguay y Paraguay entre fines de 2015 y abril de 2016."],
+  ["2023-24","nino","El Niño fuerte","Lluvias extremas en el sur de Brasil (Rio Grande do Sul, 2024) y crecidas en el Litoral. Puso fin a la sequía de la triple Niña."],
+  ["2020-23","nina","Triple La Niña","Lo opuesto: sequía histórica en Argentina en 2022-23, gran pérdida de cosecha y bajante extraordinaria del Paraná."],
+];
+function ElNinoPage({onDemo}:{onDemo:()=>void}){
+  const [chain, setChain] = useState<any>(null);
+  const [place, setPlace] = useState(0);
+  const [impact, setImpact] = useState<any>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { fetch("/api/fuentes/enso-cadena?lat=-28.5&lon=-58.7").then(r => r.json()).then(j => setChain(j.data)).catch(() => setChain({ steps: [] })); }, []);
+  useEffect(() => {
+    const [, la, lo] = NINO_PLACES[place]; setBusy(true); setImpact(null);
+    fetch(`/api/fuentes/enso-lote?lat=${la}&lon=${lo}`).then(r => r.json()).then(j => setImpact(j.data || { error: j.error })).catch(() => setImpact({ error: "No se pudo consultar" })).finally(() => setBusy(false));
+  }, [place]);
+  const step = (k: string) => chain?.steps?.find((s: any) => s.key === k);
+  const sup = step("superficie");
+  const tone = (sig?: string) => sig === "Niño" ? "nino" : sig === "Niña" ? "nina" : "neutral";
+  const order = [["alisios","Alisios","Viento del este sobre el Pacífico"],["calor","Calor bajo el mar","0 a 300 m de profundidad"],["superficie","Mar en superficie","Niño 3.4 y ONI"],["atmosfera","Atmósfera","Presión y nubosidad"]];
+  return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner nino-page">
+    <PageHero eyebrow="EL NIÑO · DEL PACÍFICO A TU CAMPO" title="Cómo un viento en el Pacífico termina en una crecida del Paraná." lead="El Niño es una cadena: se debilitan los alisios, el agua cálida avanza hacia América, el mar se calienta, la atmósfera cambia y la lluvia se corre hacia el sur de Sudamérica. DOTS mide cada eslabón con datos de NOAA y muestra qué pasó en tu zona en los El Niño anteriores."/>
+    <section className="nino-now">
+      <div><span className="section-tag">AHORA</span><h2>{sup?.phase ? sup.phase : "Consultando…"}</h2><p>{chain?.verdict || "Leyendo las mediciones de NOAA…"}</p></div>
+      {sup && <ul><li><b>{sup.value!=null?(sup.value>0?"+":"")+fmt(sup.value,1):"—"} °C</b>Niño 3.4 · {sup.date}</li><li><b>{sup.oni!=null?(sup.oni>0?"+":"")+fmt(sup.oni,2):"—"}</b>ONI (define la fase)</li><li><b>{sup.nino12!=null?(sup.nino12>0?"+":"")+fmt(sup.nino12,1):"—"} °C</b>Niño 1+2 · costa de Perú</li></ul>}
+    </section>
+    <section className="nino-explain">
+      <div><span className="section-tag">CÓMO FUNCIONA</span><h2>El Pacífico cambia de lado su agua caliente</h2>
+        <p>En un año normal, los vientos alisios soplan de este a oeste sobre el Pacífico ecuatorial y amontonan el agua más caliente del planeta junto a Indonesia y Australia. Allí se forman las grandes tormentas. Frente a Perú, en cambio, sube agua fría del fondo.</p>
+        <p>Cuando los alisios se debilitan, esa agua caliente "se desborda" hacia el este, primero por debajo de la superficie y después arriba. El mar del centro y el este del Pacífico se calienta, las tormentas lo siguen y toda la circulación de vientos del hemisferio se reacomoda. Eso es El Niño. La Niña es lo contrario: alisios más fuertes y Pacífico este más frío.</p>
+        <p>Los dos conviven en un ciclo irregular de 2 a 7 años llamado ENSO. Un Niño suele empezar a formarse en otoño-invierno del hemisferio sur, alcanza su pico entre noviembre y enero y se disipa en el otoño siguiente.</p>
+      </div>
+      <PacificSection/>
+    </section>
+    <section className="nino-chain">
+      {order.map(([k,t,sub],i)=>{const s=step(k);return <React.Fragment key={k}><article className={"nino-step "+tone(s?.signal)}>
+        <span className="nino-n">{i+1}</span><h3>{s?.title||t}</h3><small>{sub}</small>
+        <b className="nino-val">{s?.value!=null?`${s.value>0?"+":""}${fmt(s.value, Math.abs(s.value)<10?1:0)}`:"—"}<em> {s?.unit||""}</em></b>
+        <p>{s?.reading||s?.what||""}</p>
+        {s?.records && <div className="nino-rec"><span>máx. <b>{fmt(s.records.max.value,1)}</b> {s.records.max.date}</span><span>mín. <b>{fmt(s.records.min.value,1)}</b> {s.records.min.date}</span><em>Hoy: {s.records.since_text}</em></div>}
+        <span className="nino-src">{s?.source||""} {s?.date?`· ${s.date}`:""}</span>
+      </article>{i<order.length-1&&<div className="nino-arrow" aria-hidden="true">→</div>}</React.Fragment>})}
+      <div className="nino-arrow" aria-hidden="true">→</div>
+      <article className="nino-step land"><span className="nino-n">5</span><h3>Lluvia e inundaciones en Sudamérica</h3><small>El efecto en el campo</small><p>La humedad del Amazonas baja hacia la cuenca del Plata y los frentes se frenan sobre el Litoral. Ver abajo cómo y dónde.</p></article>
+    </section>
+    <section className="about-body">
+      <section className="about-block"><div className="about-side"><span className="module-num">EL VÍNCULO</span><h2>Por qué El Niño trae lluvia e inundaciones al Litoral</h2></div><div className="about-text">
+        <p><b>1. Las tormentas tropicales se mudan.</b> Con el agua caliente en el centro y el este del Pacífico, las grandes tormentas que normalmente están sobre Indonesia se corren hacia el centro del océano. Eso reacomoda la circulación de vientos de todo el hemisferio, como una piedra que cambia la corriente de un río.</p>
+        <p><b>2. La corriente en chorro se refuerza sobre Sudamérica.</b> El viento fuerte de altura que cruza el sur del continente se intensifica y se ubica sobre el norte argentino, el sur de Brasil y Uruguay. Esa franja se vuelve un camino preferido para las tormentas.</p>
+        <p><b>3. Llega más humedad del Amazonas.</b> El "chorro de capas bajas" es un río de aire húmedo que baja desde la Amazonia por el este de los Andes. En años Niño trae más humedad hacia la cuenca del Plata.</p>
+        <p><b>4. Los frentes se quedan quietos.</b> Los sistemas que traen lluvia se frenan sobre el Litoral y descargan varios días seguidos sobre el mismo lugar. Llueve mucho y sobre suelos ya saturados.</p>
+        <p><b>5. Los ríos crecen con demora.</b> La cuenca del Plata es enorme: el agua que cae en Brasil, Paraguay y el NEA tarda semanas o meses en llegar al Paraná medio y bajo. Por eso las crecidas pueden seguir después de que bajan las lluvias, y el otoño siguiente a un Niño fuerte suele ser crítico.</p>
+        <p className="footnote">Cada El Niño es distinto: la fuerza, el momento y otros factores (el Atlántico, el Modo Anular del Sur) cambian el resultado. Por eso DOTS muestra probabilidades y antecedentes, no certezas.</p>
+      </div></section>
+    </section>
+    <h2 className="layer-section-title">Dónde y cuándo impacta en Sudamérica</h2>
+    <section className="nino-mapwrap"><SAImpactMap/></section>
+    <section className="nino-regions">{NINO_REGIONS.map(([t,r,e,d])=><article key={r} className={t}><span>{e}</span><h3>{r}</h3><p>{d}</p></article>)}</section>
+    <h2 className="layer-section-title">Los grandes eventos y sus consecuencias</h2>
+    <section className="nino-events">{NINO_EVENTS.map(([y,k,t,d])=><article key={y} className={k}><span>{y}</span><h3>{t}</h3><p>{d}</p></article>)}</section>
+    <h2 className="layer-section-title">Qué pasó en tu zona en los El Niño anteriores</h2>
+    <section className="nino-local">
+      <label className="small">Elegí una localidad <select value={place} onChange={e=>setPlace(Number(e.target.value))}>{NINO_PLACES.map(([n],i)=><option key={n} value={i}>{n}</option>)}</select></label>
+      {busy && <p className="small">Calculando 35 temporadas de lluvia…</p>}
+      {impact?.error && <p className="error">{impact.error}</p>}
+      {impact?.seasons?.length>0 && <>
+        <p className="nino-reading">{impact.reading}</p>
+        <div className="nino-groups">{Object.entries(impact.groups||{}).map(([k,g]:any)=><div key={k}><b>{g.vs_neutral_pct!=null?(g.vs_neutral_pct>0?"+":"")+g.vs_neutral_pct+" %":"—"}</b><span>{k}</span><small>{g.n} temporadas · mediana {g.median_mm} mm</small></div>)}</div>
+        <Chart dates={impact.seasons.map((x:any)=>x.season)} unit="mm" series={[
+          {name:"El Niño",values:impact.seasons.map((x:any)=>x.phase.startsWith("El Niño")?x.rain_mm:null),type:"bar",color:"#e5484d"},
+          {name:"La Niña",values:impact.seasons.map((x:any)=>x.phase.startsWith("La Niña")?x.rain_mm:null),type:"bar",color:"#3a8ee6"},
+          {name:"Neutral",values:impact.seasons.map((x:any)=>x.phase==="neutral"?x.rain_mm:null),type:"bar",color:"#98a2b3"}]}/>
+        <div className="nino-extremes">
+          <div><b>Temporadas más lluviosas</b>{(impact.wettest||[]).map((x:any)=><span key={x.season}>{x.season} · {x.rain_mm} mm ({x.anomaly_pct>0?"+":""}{x.anomaly_pct} %) · {x.phase}</span>)}</div>
+          <div><b>Temporadas más secas</b>{(impact.driest||[]).map((x:any)=><span key={x.season}>{x.season} · {x.rain_mm} mm ({x.anomaly_pct>0?"+":""}{x.anomaly_pct} %) · {x.phase}</span>)}</div>
+        </div>
+        <p className="footnote">{impact.method} Temporadas con El Niño fuerte o muy fuerte: {impact.analog_seasons.join(", ")||"ninguna"}.</p>
+      </>}
+      <div className="cover-actions"><button onClick={onDemo}>Ver el impacto en mi lote →</button></div>
+    </section>
+    <section className="nino-why">
+      <div><span className="section-tag">POR QUÉ UN OBSERVATORIO</span><h2>El Niño avisa con meses de anticipación. Hay que saber leerlo.</h2>
+        <p>Cada eslabón de la cadena llega antes que el siguiente. El calor que viaja bajo el océano anticipa lo que va a pasar en superficie, la superficie anticipa la lluvia, y la lluvia en la cuenca anticipa la crecida río abajo. Ese desfasaje es tiempo para prepararse, pero sólo si alguien mira todos los datos juntos, todos los días, y los traduce al campo.</p>
+        <p>Los datos existen, pero están dispersos en decenas de organismos, en inglés, en formatos técnicos y sin relación con un lote concreto. DOTS los reúne, los actualiza y los cruza con la historia de cada zona y con el estado del pasto, el suelo y el río.</p>
+      </div>
+      <ol className="nino-timeline">
+        <li><b>6 a 9 meses antes</b><span>Se debilitan los alisios y aparece calor bajo la superficie del Pacífico.</span></li>
+        <li><b>3 a 6 meses antes</b><span>El mar se calienta en superficie (Niño 3.4) y los modelos coinciden en el pronóstico.</span></li>
+        <li><b>1 a 3 meses antes</b><span>La atmósfera se acopla (SOI, nubosidad) y cambian las perspectivas de lluvia regionales.</span></li>
+        <li><b>Semanas</b><span>Lluvias persistentes en la cuenca: suelos saturados, balance de agua positivo, ríos en ascenso.</span></li>
+        <li><b>Días</b><span>Crecidas que viajan aguas abajo: alertas por puerto del INA y del observatorio.</span></li>
+      </ol>
+      <div className="nino-why-grid">
+        <article><h3>Anticipar</h3><p>Mover hacienda, reservar forraje, planificar ventas y sanidad antes del pico, no durante la emergencia.</p></article>
+        <article><h3>Reducir pérdidas</h3><p>Las inundaciones de 1998, 2016 y 2024 golpearon a productores que no tuvieron tiempo de reaccionar.</p></article>
+        <article><h3>Decidir con datos</h3><p>Cada Niño es distinto: la historia de tu zona y el balance de agua del lote dicen cuánto pesa en tu campo.</p></article>
+        <article><h3>Bien público</h3><p>Información abierta, con fuentes oficiales y sin costo, para productores, municipios y organismos.</p></article>
+      </div>
+    </section>
+    <section className="about-body"><section className="about-block"><div className="about-side"><span className="module-num">EN EL CAMPO</span><h2>Qué conviene hacer con un Niño fuerte</h2></div><div className="about-text">
+      <p>• <b>Mover la hacienda a las lomas</b> antes de los picos de lluvia y de crecida, y ubicar la parición lejos de los bajos.</p>
+      <p>• <b>Revisar caminos, alambrados y aguadas</b> que quedan aislados con agua. Planificar la salida de hacienda antes de que los caminos se corten.</p>
+      <p>• <b>Sanidad:</b> más humedad trae más pietín, parásitos y mosca. Ajustar el calendario sanitario.</p>
+      <p>• <b>Pasto:</b> suele sobrar en primavera y verano. Es una oportunidad para hacer reservas (rollos, silo) para el invierno o un año seco siguiente.</p>
+      <p>• <b>Seguir el río:</b> en DOTS, las alertas del INA y el balance de agua del lote avisan cuando la situación cambia.</p>
+    </div></section>
+    <section className="about-block"><div className="about-side"><span className="module-num">FUENTES</span><h2>De dónde salen los datos</h2></div><div className="about-text">
+      <p>Alisios, calor oceánico y nubosidad: NOAA Climate Prediction Center. Temperaturas Niño, ONI, SOI y MEI: NOAA Physical Sciences Laboratory. Lluvia histórica por zona: ERA5 (Copernicus) vía Open-Meteo.</p>
+      <p>Pronósticos oficiales: {(chain?.forecast_links||[]).map((l:any,i:number)=><React.Fragment key={l.url}>{i>0?" · ":""}<a href={l.url} target="_blank" rel="noopener">{l.name}</a></React.Fragment>)}</p>
+    </div></section></section>
+  </main><SiteFooter/></div>
+}
 function PageHero({eyebrow,title,lead}:{eyebrow:string;title:string;lead:string}){return <section className="page-hero"><span className="section-tag">{eyebrow}</span><h1>{title}</h1><p>{lead}</p></section>}
 const cards={producto:[["01","Territorio primero","Todo análisis comienza en el polígono real del lote o potrero."],["02","Observación multifuente","Satélites, estaciones, modelos y bases territoriales se consultan por lugar y fecha."],["03","Interpretación trazable","Cada variable indica fuente, unidad, fecha, método, estado y alcance."],["04","Decisión y seguimiento","DOTS reúne hallazgos, recomendaciones, tareas e informe en una sola lectura."]],soluciones:[["Lotes y potreros","Superficie, perímetro, centroides, historial y análisis por unidad de manejo."],["Pasturas","Escenas y evolución espectral cuando existe procesamiento raster verificable."],["Agua","Lluvia, balance, ríos e infraestructura hídrica declarada o detectada con su nivel de evidencia."],["Suelos","Humedad, temperatura, relieve y propiedades modeladas con profundidad y fuente declaradas."],["Ganado","THI, carga y rotación cuando existe inventario o dato aportado por el productor."],["Riesgos","FIRMS, calor, sequía y exceso hídrico sin convertir ausencia de detección en ausencia de riesgo."]],ganaderia:[["Potrero como unidad","Cada lectura parte de un límite territorial y su historia."],["Agua para el rodeo","Cobertura, distancias y estado de la infraestructura hídrica."],["Pastura y carga","Condición vegetal cruzada con ocupación y presión de pastoreo cuando hay datos."],["Bienestar térmico","THI y meteorología para anticipar condiciones de estrés por calor."],["Rotación","Entrada, salida, descanso y recuperación del potrero."],["Tareas","Del diagnóstico a inspecciones, movimientos y acciones verificables."]]};
 function InstitutionalDepth({kind}:{kind:"producto"|"soluciones"|"ganaderia"}){
@@ -2943,6 +3071,7 @@ function App(){
   if(path==="/tecnologia")return <Technology onDemo={openDemo}/>;
   if(path==="/licencias")return <Licenses onDemo={openDemo}/>;
   if(path==="/capas")return <LayersPage onDemo={openDemo}/>;
+  if(path==="/el-nino")return <ElNinoPage onDemo={openDemo}/>;
   if(path==="/conexiones")return <ApiConnections onDemo={openDemo}/>;
   if(path==="/casos")return <Cases onDemo={openDemo}/>;
   if(path==="/precios")return <Pricing onDemo={openDemo}/>;
