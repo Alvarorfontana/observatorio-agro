@@ -61,6 +61,8 @@ export function NinoNowSA({ data, onPick }: { data: NinoNowData | null | { error
           <div key={k} className={c}><b>{d.counts[k] || 0}</b><span>{k}</span></div>)}
       </div>
     </div>
+    {(d as any).live_error && <p className="nn-warn">{(d as any).live_error}</p>}
+    {d.reference.available && (d.reference as any).places < d.places.length && <p className="nn-warn">Referencia histórica lista para {(d.reference as any).places} de {d.places.length} localidades; el resto se completa en el próximo cálculo.</p>}
     {!d.reference.available && <p className="nn-warn">Se está calculando la lluvia normal e histórica de cada localidad (35 años por lugar). Los colores del mapa y los porcentajes aparecen cuando termina; mientras tanto, la tabla muestra los milímetros caídos en los últimos 90 días.</p>}
     <div className="nn-metrics" role="tablist">{METRICS.map(([k, l]) => <button key={k} role="tab" aria-selected={metric === k} className={metric === k ? "on" : ""} onClick={() => setMetric(k)}>{l}</button>)}</div>
     <div className="nn-grid">

@@ -199,8 +199,14 @@ def live():
     today = c._now().date()
     end = today - timedelta(days=6)
     start = end - timedelta(days=89)
-    past = c._get(ARCHIVE, {'latitude': lat, 'longitude': lon, 'start_date': start.isoformat(), 'end_date': end.isoformat(),
-                            'daily': 'precipitation_sum', 'models': 'era5', 'timezone': 'UTC'}, timeout=40).json()
+    live_error = None
+    try:
+        past = c._get(ARCHIVE, {'latitude': lat, 'longitude': lon, 'start_date': start.isoformat(), 'end_date': end.isoformat(),
+                                'daily': 'precipitation_sum', 'models': 'era5', 'timezone': 'UTC'}, timeout=40).json()
+    except Exception as e:   # sin lluvia reciente igual se muestra lo que trae El Niño en cada lugar
+        past, live_error = [], f'La lluvia reciente no respondió ({type(e).__name__}); se muestra sólo la referencia histórica.'
+        if not rplaces:
+            raise
     try:
         fut = _as_list(c._get(FORECAST, {'latitude': lat, 'longitude': lon, 'daily': 'precipitation_sum', 'forecast_days': 16,
                                          'timezone': 'UTC'}, timeout=30).json())
@@ -240,10 +246,12 @@ def live():
     out = {'places': rows, 'counts': counts, 'phase_now': _phase_now(),
            'season': 'octubre a marzo' if skey == 'warm' else 'mayo a septiembre',
            'window': {'from': start.isoformat(), 'to': end.isoformat(), 'forecast_from': today.isoformat()},
-           'reference': {'available': bool(rplaces), 'built': ref.get('built'), 'period': ref.get('period')},
+           'reference': {'available': bool(rplaces), 'built': ref.get('built'), 'period': ref.get('period'), 'places': len(rplaces)},
+           'live_error': live_error,
            'method': __doc__.split('\n\n', 1)[1].strip()}
     env = c.envelope(out, 'multi', 'El Niño en Sudamérica: esperado y observado', 'Copernicus ERA5 vía Open-Meteo · NOAA PSL')
-    _LIVE[key] = (time.monotonic(), env)
+    if not live_error:
+        _LIVE[key] = (time.monotonic(), env)
     return env
 
 

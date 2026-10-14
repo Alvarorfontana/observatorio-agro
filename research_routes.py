@@ -224,8 +224,9 @@ def research_data(name):
         except Exception as e: return _upstream_error(e)
     if name=='enso-sudamerica':
         try:
-            r=jsonify(enso_sa.live())
-            r.headers['Cache-Control']='public, s-maxage=10800, stale-while-revalidate=86400'
+            out=enso_sa.live()
+            r=jsonify(out)
+            r.headers['Cache-Control']='public, s-maxage=600' if (out.get('data') or {}).get('live_error') else 'public, s-maxage=10800, stale-while-revalidate=86400'
             return r
         except Exception as e: return _upstream_error(e)
     if name=='enso-localidad':

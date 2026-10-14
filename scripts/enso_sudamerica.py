@@ -58,7 +58,10 @@ def main(out):
     except (OSError, ValueError):
         old = {}
     places = old.get('places') or {}
+    same_month = str(old.get('period', '')).endswith(end[:7])
     for pid, name, country, lat, lon in enso_sa.PLACES:
+        if same_month and pid in places:      # ya calculada este mes: no gastar consultas
+            continue
         try:
             d, cached = fetch(pid, lat, lon, end)
         except Exception as e:
