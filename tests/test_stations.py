@@ -65,3 +65,16 @@ def test_dmc_con_clave(monkeypatch):
     env = c.national('dmc', -33.45, -70.66)
     assert seen['usuario'] == 'x@y.cl' and env['data']['source_mode'] == 'nativa'
     assert env['data']['observations'][0]['value'] == 18.2
+
+
+def test_metar_cuerpo_vacio_no_rompe(monkeypatch):
+    class Empty:
+        content = b''
+        def json(self): raise ValueError('Expecting value')
+    calls = []
+    def get(url, params=None, headers=None, timeout=None):
+        calls.append(params['hours']); return Empty() if params['hours'] == 3 else R(METARS)
+    monkeypatch.setattr(c, '_get', get)
+    monkeypatch.delenv('INMET_TOKEN', raising=False)
+    d = c.national('inmet', -28.55, -58.70)['data']
+    assert calls == [3, 8] and d['observations']

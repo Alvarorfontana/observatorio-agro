@@ -54,8 +54,16 @@ def metar(key, lat, lon, n=3):
     name = COUNTRY[key][0]
     dlat = MAX_KM / 111.0
     dlon = MAX_KM / (111.0 * max(0.2, math.cos(math.radians(lat))))
-    js = c._get(AWC, {'bbox': f'{lat - dlat:.2f},{lon - dlon:.2f},{lat + dlat:.2f},{lon + dlon:.2f}',
-                      'format': 'json', 'hours': 3}, timeout=25).json() or []
+    js = []
+    for hours in (3, 8):   # el servicio responde vacío (sin cuerpo) cuando no hay partes en la ventana
+        r = c._get(AWC, {'bbox': f'{lat - dlat:.2f},{lon - dlon:.2f},{lat + dlat:.2f},{lon + dlon:.2f}',
+                         'format': 'json', 'hours': hours}, timeout=25)
+        try:
+            js = r.json() if (getattr(r, 'content', b'x') or b'').strip() else []
+        except ValueError:
+            js = []
+        if js:
+            break
     latest = {}
     for m in js if isinstance(js, list) else []:
         if not str(m.get('name') or '').endswith(SUFFIX[key]):

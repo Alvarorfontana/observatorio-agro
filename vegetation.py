@@ -426,8 +426,10 @@ def openeo_ndvi(polygon, days=120):
             e = r.json(); msg = f"{e.get('code', '')}: {e.get('message', '')}"[:300]
         except ValueError:
             msg = r.text[:200]
+        hint = (' La clave de Sentinel Hub no habilita openEO; no hace falta: el NDVI de Copernicus ya llega por Sentinel Hub.'
+                if r.status_code in (401, 403) else '')
         return c.envelope(None, OPENEO + '/result', 'NDVI zonal · openEO', 'Copernicus Data Space openEO', 'sin dato',
-                          f'openEO respondió HTTP {r.status_code} · {msg}')
+                          f'openEO respondió HTTP {r.status_code} · {msg}.{hint}')
     raw = r.json()
     rows = []
     for date, vals in sorted((raw or {}).items()):
