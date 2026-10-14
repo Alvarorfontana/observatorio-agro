@@ -1,0 +1,17 @@
+name: Diagnóstico fuentes nuevas (temporal)
+on: workflow_dispatch
+permissions:
+  contents: read
+jobs:
+  d:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          {
+          for u in https://www.pmel.noaa.gov/tao/wwv/data/wwv.dat https://www.pmel.noaa.gov/elnino/wwv/data/wwv.dat \
+                   http://www.bom.gov.au/climate/mjo/graphics/rmm.74toRealtime.txt \
+                   https://psl.noaa.gov/gcos_wgsp/Timeseries/Data/dmi.had.long.data https://psl.noaa.gov/data/correlation/nina4.anom.data \
+                   https://www.cpc.ncep.noaa.gov/products/precip/CWlink/daily_mjo_index/proj_norm_order.ascii; do
+            echo "== $u"; curl -sS -L -m 30 -A "Mozilla/5.0 DOTS" -o f.txt -w "%{http_code} %{content_type} %{size_download}\n" "$u"; head -4 f.txt; echo ..; tail -3 f.txt; done
+          } > out.txt 2>&1
+          python3 -c "print('::notice title=diag::'+open('out.txt').read()[:12000].replace('%','%25').replace('\n','%0A'))"
