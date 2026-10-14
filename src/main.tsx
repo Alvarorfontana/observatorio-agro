@@ -160,6 +160,7 @@ const SOURCES = [
   ["balance-agua", "Balance de agua y sequía", "ERA5 desde 1991 · lluvia − evapotranspiración"],
   ["costos", "Costos y logística", "OSRM · OpenStreetMap · DolarAPI · valores del productor"],
   ["sustentabilidad", "Deforestación y carbono", "Impact Observatory · ESA WorldCover · SoilGrids · IPCC"],
+  ["emergencia", "Emergencia agropecuaria", "Ley 26.509 · respaldo técnico ERA5 y Sentinel-1"],
   ["caminos", "Caminos y transitabilidad", "OpenStreetMap · lluvia de 72 h · Open-Meteo"],
   ["ganado", "Ganado", "Rodeo, carga, agua, calor y valor · DOTS · Open-Meteo · Cañuelas"],
   ["enso-tablero", "El Niño en tu lote", "NOAA CPC · PSL · PMEL · ERA5 · cadena, historia y lluvia actual"],
@@ -1550,6 +1551,17 @@ function Observatory({onHome}:{onHome:()=>void}) {
                   <div className={"verdict "+(payload.latest.water_fraction>0.1?"warn":"ok")}><span>Agua en el lote · {String(payload.latest.datetime||"").slice(0,10)}</span><b>{fmt(payload.latest.water_fraction*100,1)} % · {fmt(payload.latest.water_ha,1)} ha</b><small>{payload.trend||""}</small></div>
                   <p className="footnote">{payload.method}</p>
                 </>}
+              </>}
+              {view==="emergencia" && payload?.steps && <>
+                <div className={"verdict "+(["sequía","exceso de agua"].includes(payload.kind)?"warn":"ok")}><span>Respaldo técnico del lote · {payload.last_month||""}</span><b>{payload.kind}</b><small>{payload.reading}</small></div>
+                {payload.spei && <div className="wx-grid">{["3","6","12"].map(k=><div key={k}><span>SPEI {k} meses</span><b>{payload.spei[k]?.index??"—"}<small> {payload.spei[k]?.class}</small></b></div>)}
+                  {payload.radar_water && <div><span>Agua por radar</span><b>{fmt(payload.radar_water.water_fraction*100,1)}<small> % del lote</small></b></div>}</div>}
+                <div className="lot-vars-title" style={{marginTop:10}}>Cómo se pide</div>
+                <ol className="small" style={{paddingLeft:18,margin:0}}>{payload.steps.map((x:string)=><li key={x} style={{marginBottom:4}}>{x}</li>)}</ol>
+                <div className="lot-vars-title" style={{marginTop:10}}>Qué beneficios da</div>
+                <ul className="small" style={{paddingLeft:18,margin:0}}>{payload.benefits.map((x:string)=><li key={x} style={{marginBottom:4}}>{x}</li>)}</ul>
+                <p className="footnote">{payload.note} {payload.links.map((l:Data,i:number)=><React.Fragment key={l.url}>{i?" · ":""}<a href={l.url} target="_blank" rel="noopener">{l.name}</a></React.Fragment>)}</p>
+                <p className="footnote">SPEI: −1,5 o menos es sequía severa; +1,5 o más, exceso de agua. Se puede imprimir esta vista o el informe PDF del lote para adjuntarlo a la declaración jurada.</p>
               </>}
               {view==="caminos" && payload?.km && <>
                 <div className={"verdict "+(["intransitable","riesgo de intransitable"].includes(payload.state_dirt)?"warn":"ok")}><span>Caminos de tierra · ahora</span><b>{payload.state_dirt}</b><small>{payload.reading}</small></div>

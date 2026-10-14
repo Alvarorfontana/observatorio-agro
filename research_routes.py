@@ -26,6 +26,7 @@ import pasture_gpw as gpw
 import avisos_web as avw
 import salud as sld
 import caminos as cmn
+import emergencia as emg
 import enso_report
 import monitor as mon
 import soil_wetness as sw
@@ -364,7 +365,7 @@ def research_data(name):
           'variables':lambda:c.variables(lat,lon),'historico':lambda:c.historical(lat,lon),'escenas':lambda:c.scenes(lat,lon,polygon),
           'modelos':lambda:c.external('https://api.open-meteo.com/v1/forecast',{'latitude':lat,'longitude':lon,'hourly':'temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m','models':'gfs_global,ecmwf_ifs025,icon_global,gem_global,jma_gsm,cma_grapes_global,meteofrance_arpege_world','forecast_days':3,'timezone':'auto'}),
           'rios':lambda:c.external('https://flood-api.open-meteo.com/v1/flood',{'latitude':lat,'longitude':lon,'daily':'river_discharge','forecast_days':7}),
-          'suelo':lambda:c.soil_full(lat,lon),'balance-agua':lambda:wbal.water_balance(lat,lon),'enso-cadena':lambda:enso.chain(),'enso-lote':lambda:enso.lot_impact(lat,lon),'enso-tablero':lambda:enso_report.board(lat,lon),'caminos':lambda:cmn.analyze(lat,lon),'catalogo-indices':lambda:c.envelope(spectral.catalog_summary(),'','catálogo de índices','awesome-spectral-indices'),
+          'suelo':lambda:c.soil_full(lat,lon),'balance-agua':lambda:wbal.water_balance(lat,lon),'enso-cadena':lambda:enso.chain(),'enso-lote':lambda:enso.lot_impact(lat,lon),'enso-tablero':lambda:enso_report.board(lat,lon),'caminos':lambda:cmn.analyze(lat,lon),'emergencia':lambda:emg.analyze(lat,lon,polygon),'catalogo-indices':lambda:c.envelope(spectral.catalog_summary(),'','catálogo de índices','awesome-spectral-indices'),
           'serie':lambda:c.external('https://archive-api.open-meteo.com/v1/archive',{'latitude':lat,'longitude':lon,'start_date':f'{endyear-years+1}-01-01','end_date':f'{endyear}-12-31','daily':'temperature_2m_mean,precipitation_sum','models':'era5','timezone':'UTC'}),
           'proyeccion':lambda:c.projection(lat,lon),
           'estadistica':lambda:fst.analyze(lat,lon),'humedad-nasa':lambda:sw.analyze(lat,lon),
