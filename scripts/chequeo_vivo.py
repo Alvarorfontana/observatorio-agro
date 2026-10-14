@@ -10,7 +10,7 @@ Q = {'lat': LAT, 'lon': LON, 'polygon': json.dumps(LOT)}
 S = requests.Session(); S.headers['User-Agent'] = 'DOTS-chequeo-vivo/1.0'
 
 GET = ['variables', 'modelos', 'historico', 'escenas', 'rios', 'aire', 'elevacion', 'ndvi', 'ndvi-modis', 'indices',
-       'enso-cadena', 'enso-lote', 'enso-tablero', 'enso-sudamerica', 'mapbiomas', 'precios-hacienda', 'indices-espectrales', 'radar-agua', 'balance-agua', 'sentinel-hub-ndvi', 'openeo-ndvi', 'gee-ndvi', 'gee', 'teleconexiones', 'estadistica', 'enso', 'suelo', 'serie', 'proyeccion', 'sustentabilidad', 'plataformas',
+       'enso-cadena', 'enso-lote', 'enso-tablero', 'enso-sudamerica', 'mapbiomas', 'pasto-historia', 'precios-hacienda', 'indices-espectrales', 'radar-agua', 'balance-agua', 'sentinel-hub-ndvi', 'openeo-ndvi', 'gee-ndvi', 'gee', 'teleconexiones', 'estadistica', 'enso', 'suelo', 'serie', 'proyeccion', 'sustentabilidad', 'plataformas',
        'smn', 'nasa-power-30', 'landsat', 'radar', 'copernicus-stac', 'firms', 'ina']
 POST = {
     'forraje': {'lat': LAT, 'lon': LON, 'polygon': LOT, 'kind': 'pastizal', 'use': 0.5, 'heads': 120},
@@ -21,6 +21,7 @@ POST = {
     'analizar': {'lat': LAT, 'lon': LON, 'polygon': LOT, 'nombre': 'Lote control'},
     'eudr/pdf': {'lot': {'name': 'Lote control', 'vertices': LOT}, 'establecimiento': 'Control'},
     'eudr/geojson': {'lot': {'name': 'Lote control', 'vertices': LOT}},
+    'ganado': {'lat': LAT, 'lon': LON, 'vertices': LOT, 'herd': [{'cat': 'vaca', 'heads': 120, 'weight': 420}, {'cat': 'ternero', 'heads': 60}]},
 }
 
 

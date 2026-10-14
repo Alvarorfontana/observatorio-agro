@@ -22,6 +22,7 @@ import enso_chain as enso
 import enso_sa
 import mapbiomas as mbx
 import herd as hrd
+import pasture_gpw as gpw
 import enso_report
 import monitor as mon
 import soil_wetness as sw
@@ -57,6 +58,7 @@ VEGETATION={
   'indices-espectrales':lambda p,a:spectral.compute(p,[x.strip() for x in a.get('indices','').split(',') if x.strip()] or None,_int(a,'days',120,15,365)),
   'radar-agua':lambda p,a:rdr.flooding(p,_int(a,'days',60,12,365)),
   'mapbiomas':lambda p,a:mbx.history(p),
+  'pasto-historia':lambda p,a:gpw.history(p),
 }
 
 @research_api.get('/monitor')

@@ -694,6 +694,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
   const loadForage = async () => {
     if (vertices.length < 3) { setSources(p => ({ ...p, forraje: { status: "sin dato", error: "Dibujá un lote para estimar el pasto" } })); return; }
     setSources(p => ({ ...p, forraje: { status: "consultando" } }));
+    void load("pasto-historia");
     try {
       const r = await fetch("/api/fuentes/forraje", { method: "POST", headers: { "Content-Type": "application/json" }, signal: AbortSignal.timeout(58000),
         body: JSON.stringify({ lat: point[0], lon: point[1], polygon: vertices, kind: forageKind, use: forageUse, heads: herdHeads || null,
@@ -1500,6 +1501,10 @@ function Observatory({onHome}:{onHome:()=>void}) {
                   <p className="footnote">Se muestran hasta 35 valores; exportá JSON para ver toda la respuesta. La antigüedad y la distancia de cada registro importan.</p>
                 </>
               )}
+              {view==="forraje" && (()=>{const g=(sources["pasto-historia"]?.payload as any)?.data;const st=sources["pasto-historia"]?.status;if(st==="consultando")return <p className="small">Consultando la productividad del lote desde 2000 (Global Pasture Watch)…</p>;if(!g?.years)return (sources["pasto-historia"] as any)?.error||(sources["pasto-historia"]?.payload as any)?.error?<p className="footnote">Global Pasture Watch: {String((sources["pasto-historia"] as any)?.error||(sources["pasto-historia"]?.payload as any)?.error).slice(0,200)}</p>:null;const tone=g.last.vs_mean_pct<-5?"warn":"ok";return <>
+                <div className={"verdict "+tone}><span>Pasto {g.last.year} contra {g.years[0].year}–{g.last.year} · Global Pasture Watch</span><b>Año {g.last.class} · {g.last.vs_mean_pct>0?"+":""}{g.last.vs_mean_pct} %</b><small>{g.rank_last}.º de {g.n} años · tendencia {g.trend_pct>0?"+":""}{g.trend_pct} % (2.ª mitad vs 1.ª)</small></div>
+                <p className="footnote">Rangos: {g.ranges.map((r:string[])=>`${r[1]} ${r[0]}`).join(" · ")}. Productividad satelital sin calibrar (30 m): sirve para comparar años del mismo lote.</p>
+              </>})()}
               {view==="forraje" && <>
                 <div className="forage-form">
                   <label>Tipo de recurso<select value={forageKind} onChange={e=>setForageKind(e.target.value)}><option value="pastizal">Pastizal natural</option><option value="templada">Pastura templada</option><option value="megatermica">Pastura megatérmica</option><option value="verdeo">Verdeo de invierno</option></select></label>
@@ -2157,6 +2162,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
             <section className="panel chart"><h2>Distribución de cotas del lote</h2><p className="small">Copernicus DEM 30 m · % del lote por franja de altura · m s. n. m.</p><Chart dates={payload.histogram.map((h:Data)=>`${fmt(h.from,1)}–${fmt(h.to,1)}`)} unit="% del lote" series={[{name:"Superficie",values:payload.histogram.map((h:Data)=>h.pct),type:"bar",color:"#06b6d4"}]}/></section>
             <section className="panel chart"><h2>Propensión a anegarse</h2><p className="small">% del lote por clase · bajos cerrados y humedad topográfica</p><Chart dates={["Baja","Media","Alta"]} unit="% del lote" series={[{name:"Superficie",values:[payload.riskPct.bajo,payload.riskPct.medio,payload.riskPct.alto],type:"bar",color:"#e9bd72"}]}/></section>
           </> : view==="forraje" && payload?.daily ? <>
+            {(sources["pasto-historia"]?.payload as any)?.data?.years && (()=>{const g=(sources["pasto-historia"]?.payload as any).data;return <section className="panel chart"><h2>Productividad del pasto, año por año</h2><p className="small">Global Pasture Watch · Landsat 30 m · % contra el promedio del lote {g.years[0].year}–{g.last.year} · {g.reading}</p><Chart dates={g.years.map((r:Data)=>String(r.year))} unit="% vs promedio" series={[{name:"Año contra el promedio",values:g.years.map((r:Data)=>r.vs_mean_pct),type:"bar",color:"#22c55e"}]}/></section>})()}
             <section className="panel chart"><h2>Crecimiento diario del pasto</h2><p className="small">kg MS/ha/día · {payload.kind_label} · últimos 60 días</p><Chart dates={payload.daily.map((d:Data)=>d.date.slice(5))} unit="kg MS/ha/día" series={[{name:"Crecimiento",values:payload.daily.map((d:Data)=>d.ppna),color:"#19b98a"}]}/></section>
             <section className="panel chart"><h2>Producción por mes</h2><p className="small">kg MS/ha acumulados en cada mes</p><Chart dates={payload.monthly.map((m:Data)=>m.month)} unit="kg MS/ha" series={[{name:"Producción",values:payload.monthly.map((m:Data)=>m.total),type:"bar",color:"#22c55e"}]}/></section>
           </> : view==="ganado" && payload?.days?.length ? <>
