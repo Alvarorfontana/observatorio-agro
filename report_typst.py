@@ -535,7 +535,7 @@ def eudr_data(lot, establishment, sust, generated=None):
         'carbon_note': ('El stock de carbono proviene de un modelo global a 250 m (ISRIC SoilGrids) y sirve como línea de base; un proyecto de bonos '
                         'de carbono requiere muestreo de suelo. Emisiones: IPCC 2006 Nivel 1 (fermentación entérica, otros bovinos, Latinoamérica), GWP100 de IPCC AR6.'),
         'framework': [
-            'El Reglamento (UE) 2023/1115 sobre productos libres de deforestación alcanza, entre otros, al ganado bovino, la carne vacuna y el cuero. '
+            'El Reglamento (UE) 2023/1115 sobre productos libres de deforestación alcanza, entre otros, al ganado bovino y la carne vacuna; el acto delegado de julio de 2026 dejó fuera del alcance a los cueros. '
             'Exige que los productos no provengan de tierras deforestadas después del 31 de diciembre de 2020, que se hayan producido conforme a la '
             'legislación del país de origen y que estén cubiertos por una declaración de debida diligencia.',
             'Tras las modificaciones de 2025, las obligaciones se aplican desde el 30 de diciembre de 2026 para operadores grandes y medianos, y desde '

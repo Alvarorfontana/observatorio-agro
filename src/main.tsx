@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { EudrReadiness } from "./dashboard/EudrReadiness";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import * as echarts from "echarts/core";
@@ -1529,6 +1530,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
                   {coverYear && <div className="dots-legend-inline">{[["#397d49","Árboles"],["#e3e2c3","Pastizal"],["#e49635","Cultivo"],["#419bdf","Agua"],["#7a87c6","Veg. inundada"],["#a59b8f","Suelo desnudo"]].map(([c,l])=><span key={l}><i style={{background:c}}/>{l}</span>)}</div>}
                   <p className="footnote">Fila resaltada: año de corte. Tocá ◧ para ver la cobertura de ese año sobre el lote y comparar 2020 con el último.</p>
                 </>}
+                <EudrReadiness d={payload?.deforestation}/>
                 <div className="eudr-actions">
                   <label className="small">Establecimiento (para el informe)<input value={estName} placeholder="Nombre · partido · provincia" onChange={e=>{setEstName(e.target.value);try{localStorage.setItem("dots-establishment",e.target.value)}catch{}}}/></label>
                   <button className="primary" disabled={eudrBusy} onClick={()=>void eudrDownload("pdf")}>{eudrBusy?"Generando…":"Informe de verificación (PDF)"}</button>
