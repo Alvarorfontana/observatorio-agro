@@ -1532,6 +1532,14 @@ function Observatory({onHome}:{onHome:()=>void}) {
                 <label className="small" style={{display:"block",marginBottom:8}}>Destino de la hacienda<input value={costDest} placeholder="ej. Mercado Agroganadero Cañuelas, Corrientes, frigorífico…" onChange={e=>{setCostDest(e.target.value);try{localStorage.setItem("dots-cost-dest",e.target.value)}catch{}}}/></label>
                 <div className="cost-form">{COST_FIELDS.map(([k,l,u])=><label key={k}>{l}{u&&<small> · {u}</small>}<input type="number" min={0} value={costParams[k]??""} placeholder={k==="heads"&&herdHeads?String(herdHeads):""} onChange={e=>setCost(k,e.target.value)}/></label>)}</div>
                 <button className="primary" style={{width:"100%",marginTop:8}} onClick={()=>void loadCosts()}>Calcular costos y ruta</button>
+                {payload?.market?.categories?.length>0 && <>
+                  <div className="lot-vars-title" style={{marginTop:12}}>Precios de referencia · Mercado Agroganadero{payload.market.date?` · ${payload.market.date}`:""}</div>
+                  <div className="cover-table"><div className="cover-head"><span>Categoría</span><span>Mín.</span><span>Máx.</span><span></span><span></span><span></span></div>
+                    {payload.market.categories.map((r:Data)=><div className="cover-row" key={r.category}><span>{r.category}</span><b>{fmt(r.min,0)}</b><span>{fmt(r.max,0)}</span><span></span><span></span><span></span></div>)}
+                  </div>
+                  {payload.market.indices?.INMAG!=null && <button style={{width:"100%",marginTop:6}} onClick={()=>setCost("price_kg",String(payload.market.indices.INMAG))}>Usar INMAG como precio ({fmt(payload.market.indices.INMAG,2)} $/kg)</button>}
+                  <p className="footnote">$/kg vivo. {payload.market.note} Fuente: mercadoagroganadero.com.ar.</p>
+                </>}
                 <p className="footnote">Los precios y costos los cargás vos y quedan guardados en este navegador. DOTS aporta la distancia por camino, el tiempo de viaje y el dólar del día. Referencias: Mercado Agroganadero de Cañuelas (precios), CATAC (tarifas de flete).</p>
                 {payload?.logistics && <>
                   <div className="lot-vars-title" style={{marginTop:10}}>Logística</div>

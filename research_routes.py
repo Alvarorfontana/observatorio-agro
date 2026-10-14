@@ -195,6 +195,12 @@ def research_data(name):
             return jsonify(sus.carbon(lat,lon))
         except ValueError: return jsonify({'status':'sin dato','error':'Coordenadas inválidas'}),400
         except Exception as e: return _upstream_error(e)
+    if name=='precios-hacienda':
+        try:
+            r=jsonify(c.envelope(cst.mag_prices(),cst.MAG,'precios de hacienda de referencia','Mercado Agroganadero de Cañuelas'))
+            r.headers['Cache-Control']='public, s-maxage=3600'
+            return r
+        except Exception as e: return _upstream_error(e)
     if name=='enso-sudamerica':
         try:
             r=jsonify(enso_sa.live())

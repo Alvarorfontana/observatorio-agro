@@ -17,6 +17,8 @@ import research_connectors as c
 NOMINATIM = 'https://nominatim.openstreetmap.org/search'
 OSRM = 'https://router.project-osrm.org/route/v1/driving'
 DOLAR = 'https://dolarapi.com/v1/dolares'
+MAG = 'https://www.mercadoagroganadero.com.ar/dll/inicio.dll'
+MAG_CATS = ['Novillos', 'Novillitos', 'Vaquillonas', 'Vacas', 'Toros', 'MEJ']
 BLUELYTICS = 'https://api.bluelytics.com.ar/v2/latest'
 ROAD_FACTOR = 1.3   # sinuosidad típica de la red vial rural respecto de la línea recta
 
@@ -149,11 +151,50 @@ def _r(v, n=0):
     return None if v is None else round(v, n) if n else round(v)
 
 
+def _ar(v):
+    return float(v.replace('.', '').replace(',', '.'))
+
+
+def parse_mag(html):
+    """Portada del Mercado Agroganadero (Cañuelas): precio mínimo y máximo por categoría ($/kg vivo) e índices INMAG/IGMAG."""
+    import html as h
+    import re
+    txt = h.unescape(re.sub(r'<script.*?</script>|<style.*?</style>', ' ', html, flags=re.S | re.I))
+    txt = re.sub(r'<[^>]+>', ' ', txt)
+    txt = re.sub(r'\s+', ' ', txt)
+    num = r'\$?\s*(\d{1,3}(?:\.\d{3})*,\d{2})'
+    cats = []
+    for cat in MAG_CATS:
+        m = re.search(rf'\b{cat}\b\s*(?:\(\$/kg\)\s*)?{num}\s*/?\s*{num}', txt)
+        if m:
+            lo, hi = _ar(m.group(1)), _ar(m.group(2))
+            if 0 < lo <= hi < 1e6:
+                cats.append({'category': cat, 'min': lo, 'max': hi})
+    idx = {}
+    for k in ('INMAG', 'IGMAG'):
+        m = re.search(rf'\b{k}\b\s*:?\s*\$?\s*(\d{{1,3}}(?:\.\d{{3}})*,\d{{2}})', txt)
+        if m:
+            idx[k] = _ar(m.group(1))
+    d = re.search(r'(\d{2}/\d{2}/\d{4})', txt)
+    return {'date': d.group(1) if d else None, 'categories': cats, 'indices': idx}
+
+
+def mag_prices():
+    r = c._get(MAG, timeout=15)
+    data = parse_mag(r.content.decode(r.encoding or 'latin-1', errors='replace'))
+    if not data['categories'] and not data['indices']:
+        raise ValueError('La portada del Mercado Agroganadero no trajo precios legibles')
+    data.update(unit='$/kg vivo', source='Mercado Agroganadero de Cañuelas (portada del sitio)', url='https://www.mercadoagroganadero.com.ar',
+                note='INMAG: índice novillo del Mercado Agroganadero. Son valores de referencia del mercado; el precio de cada lote depende de categoría, peso y calidad.')
+    return data
+
+
 def analyze(lat, lon, destination=None, dest_lat=None, dest_lon=None, params=None):
     p = clean(params)
     errors, logistics, fx = {}, None, None
-    with ThreadPoolExecutor(max_workers=2) as pool:
+    with ThreadPoolExecutor(max_workers=3) as pool:
         ffx = pool.submit(exchange)
+        fmag = pool.submit(mag_prices)
         try:
             if dest_lat is not None and dest_lon is not None:
                 d = {'lat': float(dest_lat), 'lon': float(dest_lon), 'name': str(destination or 'Destino')[:200]}
@@ -172,6 +213,12 @@ def analyze(lat, lon, destination=None, dest_lat=None, dest_lon=None, params=Non
             fx = ffx.result()
         except Exception as e:
             errors['dólar'] = type(e).__name__
+        try:
+            market = fmag.result(timeout=20)
+        except Exception as e:
+            market = None
+            errors['precios'] = f'Mercado Agroganadero no respondió ({type(e).__name__})'
+
     km = logistics['km'] if logistics else None
     m = margin(p, km)
     usd = fx.get('oficial_venta') if fx else None
@@ -184,7 +231,7 @@ def analyze(lat, lon, destination=None, dest_lat=None, dest_lon=None, params=Non
     if logistics and 'freight_km' not in p:
         missing.append('tarifa de flete por km')
     out = {
-        'capability': 'ANALYSIS', 'inputs': p, 'logistics': logistics, 'exchange': fx, 'margin': m,
+        'capability': 'ANALYSIS', 'inputs': p, 'logistics': logistics, 'exchange': fx, 'market': market, 'margin': m,
         'sensitivity': sensitivity(p, km), 'missing': missing, 'errors': errors,
         'method': ('Margen bruto = kg vendidos × precio − comisión − costos por cabeza − mano de obra − arrendamiento y estructura − flete. '
                    'kg vendidos = cabezas × peso × (1 − desbaste). Flete = viajes × km × tarifa por km; viajes = cabezas ÷ capacidad de la jaula. '
@@ -192,6 +239,6 @@ def analyze(lat, lon, destination=None, dest_lat=None, dest_lon=None, params=Non
         'scope': ('Valores cargados por el usuario; DOTS sólo aporta distancia, tiempo de viaje y tipo de cambio en vivo. '
                   'Referencias de precios: Mercado Agroganadero de Cañuelas e índices de la Bolsa; tarifas de flete: CATAC.'),
     }
-    ok = bool(logistics or fx or m.get('gross') is not None)
+    ok = bool(logistics or fx or market or m.get('gross') is not None)
     return c.envelope(out, OSRM, 'costos, logística y margen', 'OSRM · OpenStreetMap · DolarAPI · DOTS',
                       'recibido' if ok else 'sin dato', None if ok else 'Cargá al menos un destino o los datos de venta')
