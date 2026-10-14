@@ -8,14 +8,18 @@ if ROOT not in sys.path:
 from flask import Flask, jsonify
 from research_routes import research_api   # si algo falla acá, falla fuerte (no se esconde)
 from lotes_store import lotes_api
-from poblacion.routes import bp as population_bp
+try:
+    from poblacion.routes import bp as population_bp
+except ImportError:   # el módulo de población necesita shapely
+    population_bp = None
 import security
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024
 app.register_blueprint(research_api)
 app.register_blueprint(lotes_api)
-app.register_blueprint(population_bp)
+if population_bp is not None:
+    app.register_blueprint(population_bp)
 security.install(app)
 
 
