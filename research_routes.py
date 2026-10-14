@@ -265,7 +265,7 @@ def research_data(name):
           'serie':lambda:c.external('https://archive-api.open-meteo.com/v1/archive',{'latitude':lat,'longitude':lon,'start_date':f'{endyear-years+1}-01-01','end_date':f'{endyear}-12-31','daily':'temperature_2m_mean,precipitation_sum','models':'era5','timezone':'UTC'}),
           'proyeccion':lambda:c.projection(lat,lon),
           'estadistica':lambda:fst.analyze(lat,lon),'humedad-nasa':lambda:sw.analyze(lat,lon),
-          'indices':lambda:ci.agro_indices(lat,lon,_int(request.args,'index_years',10,3,30)),'teleconexiones':lambda:ci.psl_indices(),
+          'indices':lambda:ci.agro_indices(lat,lon,_int(request.args,'index_years',10,3,30)),'teleconexiones':lambda:ci.psl_indices(),'el-nino':lambda:__import__('enso_panel').enso_panel(),
           'nws':lambda:c.nws(lat,lon),'metnorway':lambda:c.met_norway(lat,lon),
           'aire':lambda:c.air_quality(lat,lon),'elevacion':lambda:c.elevation(lat,lon),
           'ina':lambda:c.ina_series(request.args.get('series',''),request.args.get('days','30'),request.args.get('years') if request.args.get('series')=='25500' else None),

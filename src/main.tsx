@@ -2426,6 +2426,64 @@ function AlertsPage({onDemo}:{onDemo:()=>void}){
   </main><SiteFooter/></div>;
 }
 
+// El Niño para toda la región: estado oficial NOAA, ONI/RONI, Niño 3.4 semanal, mar por satélite, historia y rangos.
+const NINO_RANGES:[string,string,string][]=[["≥ 2,0","Muy fuerte","#b42318"],["1,5 a 1,9","Fuerte","#e8590c"],["1,0 a 1,4","Moderado","#f79009"],["0,5 a 0,9","Débil","#fdb022"],["−0,5 a 0,5","Neutro","#77868b"],["≤ −0,5","La Niña","#1f5fbf"]];
+const ninoColor=(v:number|null|undefined)=>v==null?"#77868b":v>=2?"#b42318":v>=1.5?"#e8590c":v>=1?"#f79009":v>=.5?"#fdb022":v<=-.5?"#1f5fbf":"#77868b";
+function gibsPacific(day:string){
+  const q=(layer:string,extra:Record<string,string>={})=>"https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?"+new URLSearchParams({SERVICE:"WMS",REQUEST:"GetMap",VERSION:"1.1.1",LAYERS:layer,STYLES:"",SRS:"EPSG:4326",BBOX:"-160,-30,-70,30",WIDTH:"900",HEIGHT:"600",FORMAT:"image/png",TRANSPARENT:"TRUE",...extra}).toString();
+  return {sst:q("GHRSST_L4_MUR_Sea_Surface_Temperature_Anomalies",{TIME:day}),coast:q("Coastlines_15m")};
+}
+function ElNinoPanel(){
+  const [d,setD]=useState<any>(null),[err,setErr]=useState(""),[mapOk,setMapOk]=useState(true);
+  useEffect(()=>{let live=true;fetch("/api/fuentes/el-nino?lat=-28.5&lon=-59").then(r=>r.json()).then(j=>{if(!live)return;if(j.status==="recibido")setD(j.data);else setErr(j.error||"NOAA CPC no respondió.")}).catch(()=>live&&setErr("NOAA CPC no respondió."));return()=>{live=false}},[]);
+  const day=new Date(Date.now()-3*86400000).toISOString().slice(0,10), map=gibsPacific(day);
+  const ref=d?.roni||d?.oni, ph=ref?.phase, st=ref?.strength;
+  const head=ph==="El Niño"?`El Niño ${st||""}`.trim():ph==="La Niña"?`La Niña ${st||""}`.trim():ph?"Fase neutra":"Consultando…";
+  const card=(label:string,v:any,val:number|undefined,when:string,help:string)=><article className="nino-card" style={{borderColor:ninoColor(val)}}><span>{label}</span><b style={{color:ninoColor(val)}}>{val!=null?`${val>0?"+":""}${fmt(val,2)} °C`:"—"}</b><em>{v?.phase?(v.phase==="Neutro"?"Neutro":`${v.phase} ${v.strength||""}`):"sin dato"} · {when}</em><small>{help}</small></article>;
+  const s=d?.series;
+  return <section className="nino-panel">
+    <div className="nino-head">
+      <div><span className="section-tag">EL NIÑO · TODA LA REGIÓN</span><h2>{head}</h2>
+        <p>{d?.status?<><b className="nino-chip">{d.status.es}</b> según el sistema de alerta de NOAA.</>:"Estado oficial de NOAA CPC."} La fase se decide con el RONI, el índice relativo que NOAA usa desde 2026: descuenta que todo el océano tropical está más caliente.</p>
+        {err && <p className="rp-error">{err} No se muestran valores supuestos.</p>}
+      </div>
+      <div className="nino-cards">
+        {card("Niño 3.4 · semanal",d?.weekly,d?.weekly?.nino34,d?.weekly?.week?`semana del ${d.weekly.week.slice(0,2)}/${d.weekly.week.slice(2,5).toLowerCase()}`:"",`Temperatura del mar en el Pacífico central frente a 1991–2020. Reacciona primero.`)}
+        {card("ONI · trimestral",d?.oni,d?.oni?.anom,d?.oni?`${d.oni.season_es} ${d.oni.year}`:"","Índice clásico: promedio de 3 meses del Niño 3.4.")}
+        {card("RONI · oficial",d?.roni,d?.roni?.anom,d?.roni?`${d.roni.season_es} ${d.roni.year}`:"","Índice relativo: el que usa NOAA para declarar la fase.")}
+      </div>
+    </div>
+    <div className="nino-ranges" aria-label="Rangos de intensidad">{NINO_RANGES.map(([r,l,c])=><span key={l}><i style={{background:c}}/><b>{l}</b> {r} °C</span>)}<small>Anomalía trimestral de la temperatura del mar en la región Niño 3.4. Hace falta sostenerla 5 trimestres para que cuente como episodio.</small></div>
+    {s && <div className="rp-charts">
+      <div className="rp-chart"><h3>ONI y RONI · últimos 6 años</h3><Chart dates={(s.roni?.length?s.roni:s.oni).map((r:Data)=>`${r.season_es} ${String(r.year).slice(2)}`)} unit="°C" series={[{name:"RONI (oficial)",values:(s.roni?.length?s.roni:s.oni).map((r:Data)=>r.anom),color:"#e8590c"},...(s.roni?.length?[{name:"ONI",values:(()=>{const m=new Map(s.oni.map((r:Data)=>[r.season+r.year,r.anom]));return s.roni.map((r:Data)=>m.get(r.season+r.year)??null)})(),color:"#a7a5ff"}]:[]),{name:"Umbral El Niño",values:(s.roni?.length?s.roni:s.oni).map(()=>.5),color:"#fdb022"},{name:"Umbral muy fuerte",values:(s.roni?.length?s.roni:s.oni).map(()=>2),color:"#b42318"}]}/></div>
+      <div className="rp-chart"><h3>Niño 3.4 semana a semana · último año</h3><Chart dates={(s.weekly||[]).map((r:Data)=>r.week.slice(0,5))} unit="°C" series={[{name:"Anomalía Niño 3.4",values:(s.weekly||[]).map((r:Data)=>r.nino34),type:"bar",color:"#06b6d4"},{name:"Niño 1+2 (costa de Perú)",values:(s.weekly||[]).map((r:Data)=>r.nino12),color:"#fd9c91"}]}/></div>
+    </div>}
+    <div className="nino-grid">
+      {mapOk && <figure className="cp-map nino-map"><div className="cp-map-img"><img src={map.sst} alt="Anomalía de la temperatura del mar en el Pacífico" onError={()=>setMapOk(false)}/><img src={map.coast} alt="" aria-hidden="true" className="over"/></div>
+        <figcaption><b>El Pacífico visto por satélite</b> · {day.split("-").reverse().join("/")} — GHRSST MUR (NASA JPL) vía NASA GIBS. Rojo: mar más cálido que lo normal; azul: más frío. La lengua roja sobre el ecuador es El Niño.</figcaption>
+        <div className="cp-scale"><span>−3 °C</span><i/><span>+3 °C</span></div></figure>}
+      <div className="nino-impact"><h3>Qué suele traer a la Cuenca del Plata</h3><ul>
+        <li><b>Primavera y verano:</b> más lluvia que lo normal en el NEA, Entre Ríos, Uruguay, el sur de Brasil y el este de Paraguay.</li>
+        <li><b>Ríos:</b> el Uruguay responde en días a las lluvias del sur de Brasil; el Paraná crece semanas o meses después, con el agua de toda la cuenca alta.</li>
+        <li><b>Campo:</b> más pasto, pero bajos anegados, caminos cortados, más parásitos y problemas de patas en el rodeo. Conviene sacar hacienda de los bajos con tiempo.</li>
+        <li><b>Cuanto más fuerte, más probable:</b> un Niño fuerte no garantiza inundación, pero las grandes crecidas del Litoral ocurrieron con Niños fuertes o muy fuertes.</li>
+      </ul><p className="footnote">Patrón documentado por el SMN, el INA y el CIIFEN. Seguí el panel de crecidas de abajo para el agua real en cada río.</p></div>
+    </div>
+    {d?.events?.length>0 && <div className="nino-events"><h3>Los Niños más fuertes desde 1950 · y qué pasó en la región</h3>
+      <div className="nino-table"><div className="nt-head"><span>Período</span><span>Pico (ONI)</span><span>Intensidad</span><span>En la región</span></div>
+        {d.events.map((e:Data)=><div className={"nt-row"+(e.ongoing?" now":"")} key={e.from}><span>{e.from} – {e.ongoing?"en curso":e.to}</span><b style={{color:ninoColor(e.peak)}}>+{fmt(e.peak,1)} °C<small> {e.peak_at}</small></b><span>{e.strength}</span><span>{e.region||(e.ongoing?"Evento actual: seguir el panel de crecidas.":"—")}</span></div>)}
+      </div></div>}
+    <div className="nino-links"><h3>Pronósticos de los centros del mundo</h3><div>
+      <a href="https://iri.columbia.edu/our-expertise/climate/forecasts/enso/current/" target="_blank" rel="noreferrer"><b>IRI · Universidad de Columbia</b><span>Pluma de 22 modelos y probabilidades por trimestre</span></a>
+      <a href="https://cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/ensodisc_Sp.shtml" target="_blank" rel="noreferrer"><b>NOAA CPC · en español</b><span>Discusión diagnóstica mensual y sistema de alerta</span></a>
+      <a href="https://climate.copernicus.eu/seasonal-forecasts" target="_blank" rel="noreferrer"><b>Copernicus C3S</b><span>Pronóstico estacional multimodelo europeo</span></a>
+      <a href="https://ciifen.org/" target="_blank" rel="noreferrer"><b>CIIFEN</b><span>Boletín de El Niño para Sudamérica</span></a>
+      <a href="https://www.pmel.noaa.gov/gtmba/" target="_blank" rel="noreferrer"><b>Boyas TAO/TRITON · NOAA PMEL</b><span>Calor bajo la superficie del Pacífico</span></a>
+    </div></div>
+    <p className="rp-note">NOAA CPC (ONI, RONI y Niño 3.4 semanal, base 1991–2020), dominio público. Mapa: NASA GIBS. Se consulta en el momento; si una fuente no responde, se deja vacío.</p>
+  </section>;
+}
+
 function RegionalPanel({onDemo}:{onDemo:()=>void}){
   const [reg,setReg]=useState(REGIONS[0]);
   const [tele,setTele]=useState<any>(null),[idx,setIdx]=useState<any>(null),[err,setErr]=useState("");
@@ -2441,8 +2499,9 @@ function RegionalPanel({onDemo}:{onDemo:()=>void}){
     <PageHero eyebrow="PANEL REGIONAL" title="El clima de la zona, abierto a todos." lead="El Niño, las crecidas de la Cuenca del Plata, heladas, calor y lluvia de los últimos diez años. Datos oficiales consultados en el momento."/>
     <div className="rp-tabs">{REGIONS.map(r=><button key={r[0]} className={r[0]===reg[0]?"active":""} onClick={()=>setReg(r)}>{r[1]}</button>)}</div>
     {err && <p className="rp-error">{err} No se muestran valores supuestos.</p>}
+    <ElNinoPanel/>
     <section className="rp-enso">
-      <div><span className="section-tag">EL NIÑO · NOAA</span><h2>{tele?.enso_consensus?`Fase ${tele.enso_consensus}`:"Consultando…"}</h2><p>{tele?.enso_agreement?`${tele.enso_agreement} índices del Pacífico coinciden. Último dato: ${tele?.indices?.nino34?.data?.period||""}.`:"Niño 3.4, ONI y MEI v2."}</p></div>
+      <div><span className="section-tag">OTRAS SEÑALES · NOAA PSL</span><h2>Teleconexiones</h2><p>{tele?.enso_agreement?`${tele.enso_agreement} índices del Pacífico (Niño 3.4, ONI, MEI v2) dan fase ${tele.enso_consensus}. Último dato mensual: ${tele?.indices?.nino34?.data?.period||""}.`:"Niño 3.4, ONI y MEI v2."} SOI negativo acompaña a El Niño; AAO y Atlántico Sur (TSA) modulan la lluvia del Litoral.</p></div>
       <div className="rp-telegrid">{Object.entries(tele?.indices||{}).filter(([,e]:any)=>e?.status==="recibido").slice(0,6).map(([k,e]:any)=><article key={k}><span>{e.data.name}</span><b>{fmt(e.data.value,2)}</b><em>{e.data.phase}</em></article>)}</div>
     </section>
     <AlertasTeaser/>
