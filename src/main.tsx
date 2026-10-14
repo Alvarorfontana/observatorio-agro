@@ -2376,9 +2376,49 @@ const sourceGroups=[
 const tech=sourceGroups.flatMap(([,xs])=>xs);
 const STRIP:[string,string,boolean][]=[["NASA","EE.UU.",true],["NOAA","EE.UU.",true],["ESA · Copernicus","Unión Europea",true],["ECMWF","Unión Europea",true],["USGS · Landsat","EE.UU.",true],["Microsoft Planetary Computer","Sentinel-2",true],["Climate Hazards Center","UCSB · CHIRPS",true],["ISRIC","Países Bajos",true],["SMN","Argentina",true],["INA","Argentina",true],["Fields of the World","Lotes",true],["CONAE · SAOCOM","Argentina",false],["JAXA","Japón",false],["ISRO","India",false],["CMA · FengYun","China",false],["EUMETSAT","Europa",false]];
 function SourceStrip(){const items=[...STRIP,...STRIP];return <section className="source-strip marquee"><span>FUENTES OFICIALES<br/>Y TRAZABLES</span><div className="marquee-viewport" aria-label="Fuentes de datos de DOTS"><div className="marquee-track">{items.map(([n,c,on],i)=><b key={i} className={on?"on":"soon"} aria-hidden={i>=STRIP.length}><i/>{n}<small>{on?c:c+" · requiere cuenta"}</small></b>)}</div></div></section>}
+// Portada sobria (línea Our World in Data): sin animaciones, fondo claro, datos del día con su fuente.
+function HomeLead({onDemo}:{onDemo:()=>void}){
+  const [nino,setNino]=useState<any>(null),[ninoErr,setNinoErr]=useState(false),[rios,setRios]=useState<any>(null),[riosErr,setRiosErr]=useState(false);
+  useEffect(()=>{let live=true;
+    fetch("/api/fuentes/el-nino?lat=-28.5&lon=-59").then(r=>r.json()).then(j=>{if(!live)return;j.status==="recibido"?setNino(j.data):setNinoErr(true)}).catch(()=>live&&setNinoErr(true));
+    fetch("/api/fuentes/alertas-resumen").then(r=>r.json()).then(j=>{if(!live)return;j.status==="recibido"?setRios(j.data):setRiosErr(true)}).catch(()=>live&&setRiosErr(true));
+    return()=>{live=false}},[]);
+  const c=rios?.counts||{}, ref=nino?.roni||nino?.oni;
+  const riosTxt=rios?(c["Evacuación"]?`${c["Evacuación"]} en evacuación`:c.Alerta?`${c.Alerta} en alerta`:c["Atención"]?`${c["Atención"]} en atención`:"Sin alertas"):riosErr?"Sin respuesta del INA":"Consultando…";
+  const riosSub=rios?`${rios.stations?.length||0} puertos medidos · ${rios.rising??0} subiendo`:riosErr?"Se reintenta al volver a entrar":"";
+  const ninoTxt=ref?(ref.phase==="Neutro"?"Neutro":`${ref.phase} ${ref.strength||""}`.trim()):ninoErr?"Sin respuesta de NOAA":"Consultando…";
+  const ninoSub=ref?`RONI ${ref.anom>0?"+":""}${fmt(ref.anom,2)} °C · ${ref.season_es} ${ref.year}`:"";
+  const doors:[string,string,string][]=[
+    ["Productor","Dibujá tu lote y mirá el pasto, el agua, la lluvia frente a lo normal y el riesgo de crecida.","demo"],
+    ["Exportador o frigorífico","Evidencia libre de deforestación por proveedor, en el formato que pide Europa.","/libre-deforestacion"],
+    ["Municipio o vecino ribereño","Alerta de crecidas por localidad, con informe formal para compartir.","/alertas"],
+    ["Estudiante o periodista","Datos abiertos con su fuente, El Niño explicado y guías para leer cada número.","/panel"],
+  ];
+  return <>
+    <section className="hl-hero">
+      <div className="hl-copy">
+        <span className="hl-kicker">Observatorio territorial abierto · Litoral, NEA y Cuenca del Plata</span>
+        <h1>El campo, leído desde el satélite y contado para todos.</h1>
+        <p>Pasto, agua, clima, suelo y crecidas, ordenados alrededor de cada potrero. Cada número dice de dónde viene, cuándo se midió y a qué escala. Gratis y con fuentes oficiales.</p>
+        <div className="hl-actions"><button onClick={onDemo}>Abrir el Observatorio</button><SiteLink to="/que-es-dots">Qué es DOTS</SiteLink></div>
+      </div>
+      <aside className="hl-now" aria-label="Ahora en la región">
+        <h2>Ahora en la región</h2>
+        <SiteLink to="/alertas" className="hl-stat"><span>Ríos de la Cuenca del Plata</span><b>{riosTxt}</b><small>{riosSub}</small><em>Fuente: INA y Prefectura Naval</em></SiteLink>
+        <SiteLink to="/panel" className="hl-stat"><span>El Niño</span><b>{ninoTxt}</b><small>{ninoSub}</small><em>Fuente: NOAA CPC{nino?.status?` · ${nino.status.es}`:""}</em></SiteLink>
+        <SiteLink to="/libre-deforestacion" className="hl-stat"><span>Exportar a la Unión Europea</span><b>EUDR desde el 30/12/2026</b><small>Corte de deforestación: 31/12/2020</small><em>Fuente: Reglamento (UE) 2023/1115</em></SiteLink>
+      </aside>
+    </section>
+    <section className="hl-doors"><h2>¿Por dónde empezar?</h2><div>
+      {doors.map(([t,d,to],i)=>to==="demo"
+        ?<button key={t} onClick={onDemo}><span>{String(i+1).padStart(2,"0")}</span><b>{t}</b><p>{d}</p></button>
+        :<SiteLink key={t} to={to}><span>{String(i+1).padStart(2,"0")}</span><b>{t}</b><p>{d}</p></SiteLink>)}
+    </div></section>
+  </>;
+}
+
 function Home({onDemo}:{onDemo:()=>void}){return <div className="public-site"><PublicHeader onDemo={onDemo}/><main>
- <AlertasPortada/>
- <section className="cover-hero"><img src="/dots-hero.jpg" alt="Satélite observando lotes de un campo ganadero con índice de vegetación"/><div className="cover-shade"></div><div className="cover-copy"><div className="cover-kicker">INTELIGENCIA TERRITORIAL PARA LA GESTIÓN GANADERA</div><h1>Conocé tu campo<br/><em>como nunca antes.</em></h1><p>Unificamos el lote real con observación satelital, clima, suelo, agua, pasturas, riesgos e historia. Cada dato conserva su fuente, fecha y alcance.</p><div className="cover-actions"><button onClick={onDemo}>Ver demostración →</button><SiteLink to="/que-es-dots">Qué es DOTS</SiteLink></div><div className="truth-row"><span>DATOS REALES</span><span>POLÍGONOS REALES</span><span>FUENTES TRAZABLES</span></div></div></section>
+ <HomeLead onDemo={onDemo}/>
  <SourceStrip/>
  <section className="home-intro editorial"><div><span className="section-tag">UN CAMPO · UNA LECTURA</span><h2>Del límite del potrero a la decisión.</h2></div><p>DOTS no reemplaza la recorrida ni el análisis profesional. Ordena información dispersa alrededor de una unidad territorial concreta y muestra qué fue observado, modelado, calculado o pronosticado.</p></section>
  <section className="journey"><article><b>01</b><h3>Delimitá</h3><p>Triángulo, rectángulo o polígono libre. Superficie, perímetro y centroide.</p></article><article><b>02</b><h3>Observá</h3><p>Escenas, clima, agua, suelo, vegetación y riesgos sobre el mismo territorio.</p></article><article><b>03</b><h3>Compará</h3><p>Fechas, modelos y fuentes sin perder procedencia ni calidad.</p></article><article><b>04</b><h3>Decidí</h3><p>Hallazgos, alertas, tareas e Informe Territorial DOTS unificado.</p></article></section>

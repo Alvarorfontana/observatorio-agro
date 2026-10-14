@@ -841,3 +841,43 @@
   .brand-logo { width: 40px !important; height: 40px !important; }
 }
 html, body { overflow-x: hidden; }
+/* ───── Portada sobria (línea Our World in Data): fondo claro, sin animaciones ───── */
+.hl-hero { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 56px; align-items: start; padding: 72px 6vw 64px; background: #f7f6f2; color: #13232b; border-bottom: 1px solid #dcdfd9; }
+.hl-kicker { display: block; font: 500 12.5px "IBM Plex Mono", monospace; letter-spacing: .06em; color: #4c5f66; text-transform: uppercase; }
+.hl-copy h1 { font-family: "IBM Plex Serif", Georgia, serif; font-weight: 600; font-size: clamp(36px, 4.2vw, 58px); line-height: 1.08; letter-spacing: -0.015em; margin: 18px 0 20px; color: #0f1e25; }
+.hl-copy p { font-size: 19px; line-height: 1.6; color: #3f525a; max-width: 640px; margin: 0; }
+.hl-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+.hl-actions button { background: #0f4c5c; color: #fff; border: 0; border-radius: 4px; padding: 14px 22px; font: 600 16px "IBM Plex Sans", sans-serif; cursor: pointer; }
+.hl-actions button:hover { background: #0b3a47; }
+.hl-actions a { display: inline-flex; align-items: center; padding: 14px 22px; border: 1px solid #9aa9ae; border-radius: 4px; color: #13232b; text-decoration: none; font-weight: 600; }
+.hl-actions a:hover { border-color: #0f4c5c; color: #0f4c5c; }
+.hl-now { background: #fff; border: 1px solid #dcdfd9; border-radius: 4px; padding: 6px 22px 10px; }
+.hl-now h2 { font: 600 13px "IBM Plex Sans", sans-serif; text-transform: uppercase; letter-spacing: .08em; color: #4c5f66; margin: 14px 0 4px; }
+.hl-stat { display: grid; gap: 3px; padding: 16px 0; border-top: 1px solid #e6e8e3; text-decoration: none; color: inherit; }
+.hl-stat:first-of-type { border-top: 0; }
+.hl-stat span { font-size: 14px; color: #4c5f66; }
+.hl-stat b { font-family: "IBM Plex Serif", Georgia, serif; font-size: 24px; font-weight: 600; color: #0f1e25; }
+.hl-stat small { font-size: 14px; color: #3f525a; }
+.hl-stat em { font-style: normal; font-size: 12.5px; color: #6b7b80; }
+.hl-stat:hover b { color: #0f4c5c; text-decoration: underline; text-underline-offset: 3px; }
+.hl-doors { padding: 56px 6vw 64px; background: #fff; color: #13232b; }
+.hl-doors h2 { font-family: "IBM Plex Serif", Georgia, serif; font-weight: 600; font-size: 30px; margin: 0 0 22px; }
+.hl-doors > div { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 2px solid #13232b; }
+.hl-doors > div > * { display: grid; align-content: start; gap: 8px; padding: 22px 22px 26px 0; text-align: left; background: none; border: 0; border-bottom: 1px solid #dcdfd9; color: inherit; text-decoration: none; font: inherit; cursor: pointer; }
+.hl-doors span { font: 500 12.5px "IBM Plex Mono", monospace; color: #0f4c5c; }
+.hl-doors b { font-family: "IBM Plex Serif", Georgia, serif; font-size: 21px; font-weight: 600; }
+.hl-doors p { margin: 0; color: #3f525a; line-height: 1.55; font-size: 15.5px; }
+.hl-doors > div > *:hover b { color: #0f4c5c; text-decoration: underline; text-underline-offset: 3px; }
+/* Sin movimiento: marquesina de fuentes fija y botón de alertas sin destello */
+.marquee-track { animation: none !important; flex-wrap: wrap; width: auto !important; row-gap: 12px; }
+.marquee-track b[aria-hidden="true"] { display: none !important; }
+.source-strip.marquee b i { box-shadow: none !important; }
+.site-head-actions .alert-btn { animation: none !important; }
+@media (max-width: 960px) {
+  .hl-hero { grid-template-columns: 1fr; gap: 32px; padding: 44px 18px 40px; }
+  .hl-doors { padding: 40px 18px 44px; }
+  .hl-doors > div { grid-template-columns: 1fr; }
+  .hl-doors > div > * { padding-right: 0; }
+}
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+.marquee-viewport { -webkit-mask-image: none !important; mask-image: none !important; }
