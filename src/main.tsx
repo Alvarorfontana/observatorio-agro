@@ -53,6 +53,7 @@ import { VariablesPanel } from "./dashboard/VariablesPanel";
 import { LotDashboard } from "./dashboard/LotDashboard";
 import { OPEN_LAYERS, LAYER_GROUPS } from "./dashboard/openLayers";
 import { PacificSection, SAImpactMap } from "./site/NinoIllustrations";
+import { NinoNowSA } from "./site/NinoNow";
 import { GuideContent } from "./site/GuideContent";
 import { CuencaPanel, AlertasTeaser, AlertasPortada } from "./site/CuencaPanel";
 import { CultivosPanel } from "./site/Cultivos";
@@ -157,6 +158,7 @@ const SOURCES = [
   ["balance-agua", "Balance de agua y sequía", "ERA5 desde 1991 · lluvia − evapotranspiración"],
   ["costos", "Costos y logística", "OSRM · OpenStreetMap · DolarAPI · valores del productor"],
   ["sustentabilidad", "Deforestación y carbono", "Impact Observatory · ESA WorldCover · SoilGrids · IPCC"],
+  ["enso-tablero", "El Niño en tu lote", "NOAA CPC · PSL · PMEL · ERA5 · cadena, historia y lluvia actual"],
   ["teleconexiones", "El Niño y teleconexiones", "NOAA PSL · ENSO, SOI, AAO, TSA, PDO"],
   ["rios", "Ríos y caudales", "GloFAS / Open-Meteo"],
   ["humedad-nasa", "Humedad del suelo vs lo normal", "NASA POWER · MERRA-2"],
@@ -1508,6 +1510,19 @@ function Observatory({onHome}:{onHome:()=>void}) {
                   <p className="footnote">{payload.method}</p>
                 </>}
               </>}
+              {view==="enso-tablero" && payload?.advice && <>
+                <div className={"verdict "+(String(payload.phase||"").startsWith("El Niño")?"warn":"ok")}><span>Fase oficial · NOAA</span><b>{payload.phase||"sin dato"}</b><small>ONI {payload.oni??"—"} · {payload.verdict||""}</small></div>
+                <div className="wx-grid">
+                  <div><span>Niño fuerte, histórico (oct–mar)</span><b>{payload.expected_pct!=null?(payload.expected_pct>0?"+":"")+payload.expected_pct+" %":"—"}<small> vs neutral</small></b></div>
+                  <div><span>Últimos 90 días</span><b>{payload.now?.now90_pct!=null?(payload.now.now90_pct>0?"+":"")+payload.now.now90_pct+" %":"—"}<small> {payload.now?.obs90_mm??"—"} mm</small></b></div>
+                  <div><span>Último mes</span><b>{payload.now?.now30_pct!=null?(payload.now.now30_pct>0?"+":"")+payload.now.now30_pct+" %":"—"}<small> {payload.now?.obs30_mm??"—"} mm</small></b></div>
+                  <div><span>Próximos 16 días</span><b>{payload.now?.next16_mm??"—"}<small> mm {payload.now?.next16_pct!=null?`(${payload.now.next16_pct>0?"+":""}${payload.now.next16_pct} %)`:""}</small></b></div>
+                </div>
+                <h3 className="small" style={{margin:"12px 0 4px"}}>Qué conviene revisar</h3>
+                <ul className="small" style={{paddingLeft:18,margin:0}}>{payload.advice.map((a:string)=><li key={a} style={{marginBottom:4}}>{a}</li>)}</ul>
+                <a className="primary" style={{display:"block",textAlign:"center",marginTop:10,padding:"8px 10px",borderRadius:8,textDecoration:"none"}} href={`/api/fuentes/enso-informe?lat=${point[0]}&lon=${point[1]}&nombre=${encodeURIComponent(lots.find(x=>x.id===selectedLotId)?.name||placeLabel.split(",")[0])}`} download>Descargar informe El Niño (PDF)</a>
+                <p className="footnote">Reglas declaradas sobre datos de NOAA y ERA5. <a href="/el-nino" onClick={e=>{e.preventDefault();history.pushState({},"","/el-nino");dispatchEvent(new PopStateEvent("popstate"));}}>Ver El Niño en toda Sudamérica →</a></p>
+              </>}
               {view==="balance-agua" && payload?.spei && <>
                 <div className={"verdict "+(String(payload.spei["3"]?.class).includes("sequía")?"warn":"ok")}><span>Últimos 3 meses · hasta {payload.last_month}</span><b>{payload.spei["3"]?.class}</b><small>Índice {payload.spei["3"]?.index} · balance {payload.spei["3"]?.balance_mm} mm (normal {payload.spei["3"]?.normal_mm} mm)</small></div>
                 <div className="wx-grid">{["1","3","6","12"].map(k=><div key={k}><span>{k} {k==="1"?"mes":"meses"}</span><b>{payload.spei[k]?.index??"—"}<small> {payload.spei[k]?.class}</small></b></div>)}</div>
@@ -2102,6 +2117,18 @@ function Observatory({onHome}:{onHome:()=>void}) {
           </> : view==="forraje" && payload?.daily ? <>
             <section className="panel chart"><h2>Crecimiento diario del pasto</h2><p className="small">kg MS/ha/día · {payload.kind_label} · últimos 60 días</p><Chart dates={payload.daily.map((d:Data)=>d.date.slice(5))} unit="kg MS/ha/día" series={[{name:"Crecimiento",values:payload.daily.map((d:Data)=>d.ppna),color:"#19b98a"}]}/></section>
             <section className="panel chart"><h2>Producción por mes</h2><p className="small">kg MS/ha acumulados en cada mes</p><Chart dates={payload.monthly.map((m:Data)=>m.month)} unit="kg MS/ha" series={[{name:"Producción",values:payload.monthly.map((m:Data)=>m.total),type:"bar",color:"#22c55e"}]}/></section>
+          </> : view==="enso-tablero" && payload?.advice ? <>
+            {payload.impact?.seasons?.length>0 && <section className="panel chart"><h2>Lluvia de octubre a marzo en cada temporada</h2><p className="small">ERA5 en el punto del lote · mm · color según la fase de El Niño (ONI de NOAA) · {payload.impact.reading}</p><Chart dates={payload.impact.seasons.map((x:Data)=>x.season)} unit="mm" series={[
+              {name:"El Niño",values:payload.impact.seasons.map((x:Data)=>String(x.phase).startsWith("El Niño")?x.rain_mm:null),type:"bar",color:"#e5484d"},
+              {name:"La Niña",values:payload.impact.seasons.map((x:Data)=>String(x.phase).startsWith("La Niña")?x.rain_mm:null),type:"bar",color:"#3a8ee6"},
+              {name:"Neutral",values:payload.impact.seasons.map((x:Data)=>x.phase==="neutral"?x.rain_mm:null),type:"bar",color:"#98a2b3"}]}/></section>}
+            <section className="panel chart"><h2>La cadena del Pacífico</h2><p className="small">Cada eslabón llega antes que el siguiente · NOAA CPC, PSL y PMEL</p>
+              <div className="idx-table">
+                <div className="idx-head"><span>Eslabón</span><span>Valor</span><span>Fecha</span><span>Señal</span></div>
+                {(payload.steps||[]).map((st:Data)=><div className="idx-row" key={st.key} title={st.reading}><span>{st.n}. {st.title}<small>{st.records?.since_text||st.reading}</small></span><strong>{fmt(st.value,2)}</strong><span>{st.date}</span><span className={st.signal==="Niño"?"up":st.signal==="Niña"?"down":""}>{st.signal}</span></div>)}
+                {(payload.extras||[]).map((e:Data)=><div className="idx-row" key={e.key} title={e.reading}><span>{e.name}<small>{e.reading}</small></span><strong>{fmt(e.value,2)}</strong><span>{e.date}</span><span>{e.unit}</span></div>)}
+              </div>
+            </section>
           </> : view==="balance-agua" && payload?.recent ? <>
             <section className="panel chart"><h2>Balance de agua mes a mes</h2><p className="small">ERA5 · lluvia − evapotranspiración de referencia · mm · últimos 12 meses</p><Chart dates={payload.recent.map((r:Data)=>r.period)} unit="mm" series={[{name:"Balance",values:payload.recent.map((r:Data)=>r.balance_mm),type:"bar",color:"#3a8ee6"},{name:"Normal 1991–2020",values:payload.recent.map((r:Data)=>r.normal_balance_mm),color:"#98a2b3"}]}/></section>
             <section className="panel chart"><h2>Balance anual desde 1991</h2><p className="small">mm por año · negativo = el ambiente pidió más agua de la que llovió</p><Chart dates={payload.annual.map((r:Data)=>String(r.year))} unit="mm" series={[{name:"Balance anual",values:payload.annual.map((r:Data)=>r.balance_mm),type:"bar",color:"#f79009"}]}/></section>
@@ -2816,14 +2843,22 @@ const NINO_GLOSSARY: [string,string,string,string][] = [
 ];
 function ElNinoPage({onDemo}:{onDemo:()=>void}){
   const [chain, setChain] = useState<any>(null);
-  const [place, setPlace] = useState(0);
+  const [place, setPlace] = useState("corrientes");
   const [impact, setImpact] = useState<any>(null);
   const [busy, setBusy] = useState(false);
+  const [sa, setSa] = useState<any>(null);
   useEffect(() => { fetch("/api/fuentes/enso-cadena?lat=-28.5&lon=-58.7").then(r => r.json()).then(j => setChain(j.data)).catch(() => setChain({ steps: [] })); }, []);
+  useEffect(() => { fetch("/api/fuentes/enso-sudamerica").then(r => r.json()).then(j => setSa(j.data || { error: j.error || "Sin datos" })).catch(() => setSa({ error: "No se pudo consultar la lluvia de Sudamérica." })); }, []);
+  const placeList: [string, string, number, number][] = sa?.places?.length ? sa.places.map((p: any) => [p.id, `${p.name} · ${p.country}`, p.lat, p.lon])
+    : NINO_PLACES.map(([n, la, lo]) => [n, n, la, lo]);
   useEffect(() => {
-    const [, la, lo] = NINO_PLACES[place]; setBusy(true); setImpact(null);
-    fetch(`/api/fuentes/enso-lote?lat=${la}&lon=${lo}`).then(r => r.json()).then(j => setImpact(j.data || { error: j.error })).catch(() => setImpact({ error: "No se pudo consultar" })).finally(() => setBusy(false));
-  }, [place]);
+    const p = placeList.find(x => x[0] === place) || placeList[0]; if (!p) return;
+    const [, , la, lo] = p; setBusy(true); setImpact(null);
+    const viaLote = () => fetch(`/api/fuentes/enso-lote?lat=${la}&lon=${lo}`).then(r => r.json()).then(j => setImpact(j.data || { error: j.error }));
+    (sa?.reference?.available ? fetch(`/api/fuentes/enso-localidad?id=${p[0]}`).then(r => r.ok ? r.json().then(j => setImpact(j.data)) : viaLote()) : viaLote())
+      .catch(() => setImpact({ error: "No se pudo consultar" })).finally(() => setBusy(false));
+  }, [place, sa?.reference?.available]);
+  const pickPlace = (id: string) => { setPlace(id); document.getElementById("nino-local")?.scrollIntoView({ behavior: "smooth", block: "start" }); };
   const step = (k: string) => chain?.steps?.find((s: any) => s.key === k);
   const sup = step("superficie");
   const tone = (sig?: string) => sig === "Niño" ? "nino" : sig === "Niña" ? "nina" : "neutral";
@@ -2885,12 +2920,15 @@ function ElNinoPage({onDemo}:{onDemo:()=>void}){
     <h2 className="layer-section-title">Dónde y cuándo impacta en Sudamérica</h2>
     <section className="nino-mapwrap"><SAImpactMap/></section>
     <section className="nino-regions">{NINO_REGIONS.map(([t,r,e,d])=><article key={r} className={t}><span>{e}</span><h3>{r}</h3><p>{d}</p></article>)}</section>
+    <h2 className="layer-section-title">El impacto ahora, localidad por localidad</h2>
+    <NinoNowSA data={sa} onPick={pickPlace}/>
     <h2 className="layer-section-title">Los grandes eventos y sus consecuencias</h2>
     <section className="nino-events">{NINO_EVENTS.map(([y,k,t,d])=><article key={y} className={k}><span>{y}</span><h3>{t}</h3><p>{d}</p></article>)}</section>
     <h2 className="layer-section-title">Qué pasó en tu zona en los El Niño anteriores</h2>
-    <section className="nino-local">
-      <label className="small">Elegí una localidad <select value={place} onChange={e=>setPlace(Number(e.target.value))}>{NINO_PLACES.map(([n],i)=><option key={n} value={i}>{n}</option>)}</select></label>
+    <section className="nino-local" id="nino-local">
+      <label className="small">Elegí una localidad <select value={place} onChange={e=>setPlace(e.target.value)}>{placeList.map(([id,n])=><option key={id} value={id}>{n}</option>)}</select></label>
       {busy && <p className="small">Calculando 35 temporadas de lluvia…</p>}
+      {impact?.cold?.groups?.["El Niño fuerte o muy fuerte"] && <p className="small">De mayo a septiembre, con El Niño fuerte: {(()=>{const g=impact.cold.groups["El Niño fuerte o muy fuerte"];return `${g.vs_neutral_pct>0?"+":""}${g.vs_neutral_pct} % respecto de los años neutrales (${g.n} temporadas).`})()}</p>}
       {impact?.error && <p className="error">{impact.error}</p>}
       {impact?.seasons?.length>0 && <>
         <p className="nino-reading">{impact.reading}</p>

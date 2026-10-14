@@ -39,6 +39,7 @@ export function buildNav(go: (k: string) => void, draw: () => void, pdf: () => v
       { key: "firms", label: "Riesgos · focos", icon: <Flame />, onClick: () => go("firms") },
       { key: "estadistica", label: "Probabilidades", icon: <Sigma />, onClick: () => go("estadistica") },
       { key: "indices", label: "Índices agroclimáticos", icon: <Thermometer />, onClick: () => go("indices") },
+      { key: "enso-tablero", label: "El Niño en tu lote", icon: <Gauge />, onClick: () => go("enso-tablero") },
       { key: "teleconexiones", label: "El Niño · teleconexiones", icon: <Gauge />, onClick: () => go("teleconexiones") },
     ]},
     { title: "Salidas", items: [

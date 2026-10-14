@@ -270,30 +270,37 @@ def lot_impact(lat, lon):
     for t, p in zip(d.get('time') or [], d.get('precipitation_sum') or []):
         if p is not None:
             k = (int(t[:4]), int(t[5:7])); mon[k] = mon.get(k, 0) + p
-    return c.envelope(impact_from(mon, season_phase(oni)), 'multi', 'lluvia de octubre a marzo según fase ENSO', 'ERA5 · NOAA PSL')
+    import enso_sa
+    out = impact_from(mon, season_phase(oni))
+    out['normals'] = enso_sa.normals_from({k: v for k, v in mon.items() if k < (end.year, end.month)})
+    return c.envelope(out, 'multi', 'lluvia de octubre a marzo según fase ENSO', 'ERA5 · NOAA PSL')
 
 
-def impact_from(mon, phases):
+WARM = ((0, 10), (0, 11), (0, 12), (1, 1), (1, 2), (1, 3))   # octubre a marzo
+COLD = ((0, 5), (0, 6), (0, 7), (0, 8), (0, 9))              # mayo a septiembre del año en que se forma
+
+
+def impact_from(mon, phases, months=WARM, label='octubre a marzo'):
     seasons = []
     for y, (o, ph) in sorted(phases.items()):
-        keys = [(y, m) for m in (10, 11, 12)] + [(y + 1, m) for m in (1, 2, 3)]
+        keys = [(y + dy, m) for dy, m in months]
         if all(k in mon for k in keys):
-            seasons.append({'season': f'{y}-{str(y + 1)[2:]}', 'oni': o, 'phase': ph, 'rain_mm': round(sum(mon[k] for k in keys))})
+            seasons.append({'season': f'{y}-{str(y + 1)[2:]}' if months[-1][0] else str(y), 'oni': o, 'phase': ph, 'rain_mm': round(sum(mon[k] for k in keys))})
     neutral = [s['rain_mm'] for s in seasons if s['phase'] == 'neutral']
     base = median(neutral) if neutral else (median([s['rain_mm'] for s in seasons]) if seasons else None)
     for s in seasons:
         s['anomaly_pct'] = round((s['rain_mm'] / base - 1) * 100) if base else None
     groups = {}
-    for label, test in (('El Niño', lambda p: p.startswith('El Niño')), ('El Niño fuerte o muy fuerte', lambda p: p in ('El Niño fuerte', 'El Niño muy fuerte')),
+    for gname, test in (('El Niño', lambda p: p.startswith('El Niño')), ('El Niño fuerte o muy fuerte', lambda p: p in ('El Niño fuerte', 'El Niño muy fuerte')),
                         ('Neutral', lambda p: p == 'neutral'), ('La Niña', lambda p: p.startswith('La Niña'))):
         vals = [s['rain_mm'] for s in seasons if test(s['phase'])]
         if vals:
-            groups[label] = {'n': len(vals), 'median_mm': round(median(vals)),
+            groups[gname] = {'n': len(vals), 'median_mm': round(median(vals)),
                              'vs_neutral_pct': round((median(vals) / base - 1) * 100) if base else None,
                              'wetter_than_neutral': sum(1 for v in vals if base and v > base)}
     strong = [s for s in seasons if s['phase'] in ('El Niño fuerte', 'El Niño muy fuerte')]
     g = groups.get('El Niño fuerte o muy fuerte') or groups.get('El Niño')
-    reading = (f"En este punto, las temporadas de octubre a marzo con El Niño fuerte llovieron en la mediana {g['vs_neutral_pct']:+d} % respecto de los años neutrales "
+    reading = (f"En este punto, las temporadas de {label} con El Niño fuerte llovieron en la mediana {g['vs_neutral_pct']:+d} % respecto de los años neutrales "
                f"({g['wetter_than_neutral']} de {g['n']} temporadas por encima)." if g and g.get('vs_neutral_pct') is not None else
                'No hay suficientes temporadas para comparar.')
     wettest = sorted(seasons, key=lambda x: -x['rain_mm'])[:3]
@@ -301,5 +308,5 @@ def impact_from(mon, phases):
     return {'seasons': seasons, 'groups': groups, 'neutral_base_mm': round(base) if base else None,
             'wettest': wettest, 'driest': driest,
             'analog_seasons': [s['season'] for s in strong], 'reading': reading,
-            'method': ('Lluvia acumulada de octubre a marzo (ERA5) en cada temporada desde 1991-92. La fase sale del ONI promedio de octubre a diciembre. '
+            'method': (f'Lluvia acumulada de {label} (ERA5) en cada temporada desde 1991. La fase sale del ONI promedio de octubre a diciembre. '
                        'Es la historia del punto, no un pronóstico: cada El Niño es distinto.')}
