@@ -32,4 +32,5 @@ jobs:
           python scripts/normales_cuenca.py data/cuenca_normales.json
       - name: Guardar en la rama datos (no publica la web)
         if: always()
-        run: cp scripts/datos_rama.sh /tmp/datos_rama.sh && bash /tmp/datos_rama.sh guardar "Cifras de referencia de la Cuenca del Plata $(date -u +%Y-%m-%d\ %H:%M)" data/cuenca_normales.json scripts/cache
+        run: |
+          cp scripts/datos_rama.sh /tmp/datos_rama.sh && bash /tmp/datos_rama.sh guardar "Cifras de referencia de la Cuenca del Plata $(date -u +%Y-%m-%d\ %H:%M)" data/cuenca_normales.json scripts/cache

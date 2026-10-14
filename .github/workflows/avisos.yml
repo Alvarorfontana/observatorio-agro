@@ -37,4 +37,5 @@ jobs:
           python scripts/avisos.py
       - name: Guardar en la rama datos (no publica la web)
         if: always()
-        run: cp scripts/datos_rama.sh /tmp/datos_rama.sh && bash /tmp/datos_rama.sh guardar "Avisos de crecidas $(date -u +%Y-%m-%d\ %H:%M)" data/avisos_estado.json data/avisos.json
+        run: |
+          cp scripts/datos_rama.sh /tmp/datos_rama.sh && bash /tmp/datos_rama.sh guardar "Avisos de crecidas $(date -u +%Y-%m-%d\ %H:%M)" data/avisos_estado.json data/avisos.json

@@ -31,15 +31,19 @@ def main(out):
     for pid, name, country, lat, lon in enso_sa.PLACES:
         if pid in places:
             continue
+        r = None
         for i in range(5):
-            r = requests.get('https://archive-api.open-meteo.com/v1/archive', timeout=120, params={
+            try:
+                r = requests.get('https://archive-api.open-meteo.com/v1/archive', timeout=120, params={
                 'latitude': lat, 'longitude': lon, 'start_date': '2001-01-01', 'end_date': '2020-12-31',
                 'daily': 'temperature_2m_max,temperature_2m_min', 'models': 'era5', 'timezone': 'UTC'})
+            except requests.RequestException:
+                time.sleep(60); continue
             if r.status_code == 429 or r.status_code >= 500:
                 time.sleep(120 * (i + 1)); continue
             break
-        if not r.ok:
-            print(f'{name}: HTTP {r.status_code}', flush=True); continue
+        if r is None or not r.ok:
+            print(f"{name}: sin respuesta ({getattr(r, 'status_code', 'error de red')})", flush=True); continue
         d = r.json().get('daily') or {}
         warm = [i for i, t in enumerate(d.get('time') or []) if int(t[5:7]) in (10, 11, 12, 1, 2, 3)]
         tx = p90([d['temperature_2m_max'][i] for i in warm]); tn = p90([d['temperature_2m_min'][i] for i in warm])

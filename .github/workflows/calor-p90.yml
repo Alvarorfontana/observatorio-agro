@@ -26,4 +26,5 @@ jobs:
           python scripts/calor_p90.py data/calor_p90.json
       - name: Guardar en la rama datos (no publica la web)
         if: always()
-        run: cp scripts/datos_rama.sh /tmp/datos_rama.sh && bash /tmp/datos_rama.sh guardar "Umbrales de ola de calor por localidad $(date -u +%Y-%m-%d\ %H:%M)" data/calor_p90.json
+        run: |
+          cp scripts/datos_rama.sh /tmp/datos_rama.sh && bash /tmp/datos_rama.sh guardar "Umbrales de ola de calor por localidad $(date -u +%Y-%m-%d\ %H:%M)" data/calor_p90.json

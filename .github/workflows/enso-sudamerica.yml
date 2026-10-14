@@ -31,4 +31,5 @@ jobs:
           python scripts/enso_sudamerica.py data/enso_sudamerica.json
       - name: Guardar en la rama datos (no publica la web)
         if: always()
-        run: cp scripts/datos_rama.sh /tmp/datos_rama.sh && bash /tmp/datos_rama.sh guardar "El Niño en Sudamérica: referencia $(date -u +%Y-%m-%d\ %H:%M)" data/enso_sudamerica.json
+        run: |
+          cp scripts/datos_rama.sh /tmp/datos_rama.sh && bash /tmp/datos_rama.sh guardar "El Niño en Sudamérica: referencia $(date -u +%Y-%m-%d\ %H:%M)" data/enso_sudamerica.json
