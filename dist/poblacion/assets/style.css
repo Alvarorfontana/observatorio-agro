@@ -20,3 +20,10 @@
 .flood th,.flood td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right}.flood th:first-child,.flood td:first-child{text-align:left}
 .flood th{background:#f3f6f6;font-size:12px;color:var(--muted);font-weight:600}
 @media(max-width:860px){.intro-grid{grid-template-columns:1fr}.intro-cards{grid-template-columns:1fr}.intro{padding:18px}.flood table{font-size:12.5px}}
+
+.health-tools{display:flex;flex-wrap:wrap;gap:14px;margin:8px 0}.health-tools select{margin-left:6px;padding:6px;border:1px solid var(--line);border-radius:6px;font:inherit;background:#fff}
+.health-table{max-height:560px;overflow:auto;border:1px solid var(--line);border-radius:9px;background:#fff}
+.health-table table{border:0}.health-table th{position:sticky;top:0;z-index:1}
+.health-table small{color:var(--muted)}td.hot{color:#b42318;font-weight:600}
+.hlv{font-size:11.5px;font-weight:700;border-radius:999px;padding:2px 8px;background:#f2f4f7;color:#475467}
+.h-low{background:#e7f6ee;color:#05603a}.h-mod{background:#fff3d6;color:#93370d}.h-high{background:#ffe2cc;color:#b42318}.h-vhigh{background:#b42318;color:#fff}

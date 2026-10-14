@@ -24,6 +24,7 @@ import mapbiomas as mbx
 import herd as hrd
 import pasture_gpw as gpw
 import avisos_web as avw
+import salud as sld
 import enso_report
 import monitor as mon
 import soil_wetness as sw
@@ -222,6 +223,11 @@ def research_data(name):
             if not (-60<=lat<=15 and -90<=lon<=-30): return jsonify({'status':'sin dato','error':'Fuera de Sudamérica'}),400
             return jsonify(sus.carbon(lat,lon))
         except ValueError: return jsonify({'status':'sin dato','error':'Coordenadas inválidas'}),400
+        except Exception as e: return _upstream_error(e)
+    if name=='salud-sudamerica':
+        try:
+            r=jsonify(sld.live()); r.headers['Cache-Control']='public, s-maxage=10800'
+            return r
         except Exception as e: return _upstream_error(e)
     if name=='avisos':
         data=avw.feed(request.args.get('localidad') or None)

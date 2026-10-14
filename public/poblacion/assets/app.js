@@ -149,3 +149,21 @@ $('flood-place').addEventListener('change',async()=>{const id=$('flood-place').v
     for(const b of d.bands){const tr=make('tr','');tr.append(make('td',`${b.up_to_m} m`),make('td',number(b.people)),make('td',number(b.under5)),make('td',number(b.over65)),make('td',d.total?number(100*b.people/d.total,1)+' %':'Sin dato'));t.append(tr);}
     box.append(grid,t);
   }catch(e){$('flood-status').textContent='No se pudo calcular: '+e.message;}});
+
+// Dengue y olas de calor en 80 localidades
+let health=null;const DCLS={'bajo':'h-low','moderado':'h-mod','alto':'h-high','muy alto':'h-vhigh','sin dato':''};
+function drawHealth(){if(!health)return;const box=$('health-table');box.replaceChildren();const c=$('health-country').value,sort=$('health-sort').value;
+  let rows=health.places.filter(p=>c==='Todos'||p.country===c);
+  rows=rows.slice().sort((a,b)=>sort==='heat'?((b.heatwaves.length-a.heatwaves.length)||((b.tmax_next??-99)-(a.tmax_next??-99))):((b.dengue_index??-1)-(a.dengue_index??-1)));
+  const t=make('table','');const hr=make('tr','');for(const h of ['Localidad','Dengue hoy','Próximos 16 días','Lluvia 30 días','Máxima próxima','Calor'])hr.append(make('th',h));t.append(hr);
+  for(const p of rows){const tr=make('tr','');const d=make('td','');const sp=make('span',p.dengue_class);sp.className='hlv '+(DCLS[p.dengue_class]||'');d.append(sp,make('small',' '+(p.dengue_index==null?'':number(p.dengue_index,2))));
+    const nx=make('td','');const sp2=make('span',p.dengue_next_class);sp2.className='hlv '+(DCLS[p.dengue_next_class]||'');nx.append(sp2);
+    const heat=make('td',p.heatwaves.length?`Ola de calor ${p.heatwaves[0].from.slice(8,10)}/${p.heatwaves[0].from.slice(5,7)} al ${p.heatwaves[0].to.slice(8,10)}/${p.heatwaves[0].to.slice(5,7)}`:p.hot_days?`${p.hot_days} día(s) muy caluroso(s)`:'Sin ola de calor');
+    if(p.heatwaves.length)heat.className='hot';
+    const name=make('td','');name.append(make('b',p.name),make('small',' '+p.country));
+    tr.append(name,d,nx,make('td',p.rain_30d_mm==null?'Sin dato':number(p.rain_30d_mm)+' mm'),make('td',p.tmax_next==null?'Sin dato':number(p.tmax_next,1)+' °C'),heat);t.append(tr);}
+  box.append(t);}
+jsonFetch('/api/fuentes/salud-sudamerica').then(j=>{health=j.data;const cs=[...new Set(health.places.map(p=>p.country))];for(const c of cs){const o=make('option',c);$('health-country').append(o);}
+  const k=health.dengue_counts||{};$('health-status').textContent=`Dengue: ${k['muy alto']||0} localidades con riesgo muy alto, ${k['alto']||0} alto, ${k['moderado']||0} moderado. Olas de calor en los próximos 16 días: ${health.heatwave_places.length?health.heatwave_places.join(', '):'ninguna'}.`+(health.p90_available?'':' Umbrales de calor provisorios (35 °C y 22 °C) hasta completar los de cada localidad.');drawHealth();})
+  .catch(e=>{$('health-status').textContent='No se pudo consultar: '+e.message;});
+$('health-country').addEventListener('change',drawHealth);$('health-sort').addEventListener('change',drawHealth);
