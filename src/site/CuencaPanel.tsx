@@ -288,6 +288,7 @@ function Locality({ stations, alerts, actions, weather }: { stations: Data[]; al
         {lvl && <span className={`cp-big-level ${LEVEL_TONE[lvl]}`}>{lvl}</span>}
         <div className="cp-share">
           <a className="cp-pdf-local" href={`/api/fuentes/localidad-informe?id=${s.id}`} download>Informe de {s.place} · PDF</a>
+          <a className="cp-pdf-local" href={`/poblacion?localidad=${s.id}#crecidas`}>Personas en la zona baja de {s.place} →</a>
           <a className="cp-wa" href={wa} target="_blank" rel="noreferrer">Enviar parte por WhatsApp</a>
           <button className="cp-img" onClick={() => void shareCard(s, arrivals, wx)}>Compartir imagen</button>
         </div>

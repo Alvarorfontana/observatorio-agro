@@ -133,3 +133,19 @@ $('pdf').addEventListener('click',async()=>{if(!last)return;const b=$('pdf');b.d
     if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.error||'No se pudo generar el PDF.');}
     const url=URL.createObjectURL(await r.blob());const a=make('a','');a.href=url;a.download=`DOTS-poblacion-expuesta-${(last.event?.date||'')}.pdf`;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);}
   catch(e){status(e.message);}finally{b.textContent=t;b.disabled=false;}});
+
+// Personas cerca del río en las localidades de las alertas de crecidas
+jsonFetch('/api/poblacion/localidades').then(d=>{for(const p of d.places){const o=make('option',`${p.place} · río ${p.river}`);o.value=p.id;$('flood-place').append(o);}
+  const q=new URLSearchParams(location.search).get('localidad');if(q){$('flood-place').value=q;$('flood-place').dispatchEvent(new Event('change'));document.getElementById('crecidas').scrollIntoView();}}).catch(()=>{});
+$('flood-place').addEventListener('change',async()=>{const id=$('flood-place').value;const box=$('flood-result');box.replaceChildren();if(!id)return;
+  $('flood-status').textContent='Calculando con Earth Engine (puede tardar hasta 30 segundos)…';
+  try{const j=await jsonFetch('/api/poblacion/crecida?id='+encodeURIComponent(id));const d=j.data;if(!d)throw new Error(j.error||'Sin datos');
+    $('flood-status').textContent=`${d.place} · río ${d.river} · ${number(d.total)} personas en ${d.radius_km} km a la redonda (WorldPop 2020).`;
+    const grid=make('div','');grid.className='flood-grid';
+    for(const sc of d.scenarios||[]){const a=make('article','');a.className=sc.key==='evac'?'risk':'warn';
+      a.append(make('span',`${sc.label} (${number(sc.level_m,2)} m · sube ${number(sc.rise_m,2)} m sobre aguas bajas)`),make('strong',number(sc.people)),
+        make('span',`personas hasta ${sc.band_m} m sobre el río · ${number(sc.under5)} menores de 5 · ${number(sc.over65)} mayores de 65`));grid.append(a);}
+    const t=make('table','');const hr=make('tr','');for(const h of ['Hasta … m sobre el río','Personas','Menores de 5','Mayores de 65','% de la zona'])hr.append(make('th',h));t.append(hr);
+    for(const b of d.bands){const tr=make('tr','');tr.append(make('td',`${b.up_to_m} m`),make('td',number(b.people)),make('td',number(b.under5)),make('td',number(b.over65)),make('td',d.total?number(100*b.people/d.total,1)+' %':'Sin dato'));t.append(tr);}
+    box.append(grid,t);
+  }catch(e){$('flood-status').textContent='No se pudo calcular: '+e.message;}});

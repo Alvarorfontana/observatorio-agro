@@ -140,3 +140,24 @@ def report_pdf():
         return Response(out,mimetype='application/pdf',headers={'Content-Disposition':f'attachment; filename="{name}"','Cache-Control':'no-store'})
     except InputError as exc: return jsonify(error=str(exc)),400
     except Exception: return jsonify(error='No se pudo generar el informe PDF.'),500
+
+
+@bp.get('/api/poblacion/localidades')
+def riverside_places():
+    import cuenca as cc
+    r=jsonify(places=[{'id':s['id'],'place':s['place'],'river':s['river']} for s in cc.STATIONS])
+    r.headers['Cache-Control']='public, s-maxage=86400'
+    return r
+
+
+@bp.get('/api/poblacion/crecida')
+def flood_people():
+    from . import crecida
+    try:
+        out=crecida.at_station(request.args.get('id',''))
+        r=jsonify(out)
+        if out.get('status')=='recibido': r.headers['Cache-Control']='public, s-maxage=604800'
+        return r
+    except LookupError as exc: return jsonify(error=str(exc)),404
+    except PermissionError: return jsonify(error='Earth Engine sin credencial en el servidor.'),503
+    except Exception as exc: return jsonify(error=f'No se pudo calcular ({type(exc).__name__}).'),502

@@ -81,3 +81,17 @@ def test_report_pdf():
     pdf = report.pdf(d)
     assert pdf[:5] == b'%PDF-'
     open('/tmp/claude-0/-home-claude-observatorio-agro/7430de8f-4cd8-57d3-a5ea-bf5e24ee75bb/scratchpad/pob.pdf', 'wb').write(pdf) if os.path.isdir('/tmp/claude-0/-home-claude-observatorio-agro/7430de8f-4cd8-57d3-a5ea-bf5e24ee75bb/scratchpad') else None
+
+
+def test_crecida_summary_and_expression():
+    from poblacion import crecida as cr
+    raw = {'total': 400000, 'u5_total': 30000, 'o65_total': 40000}
+    for t in cr.BANDS_T:
+        raw.update({f'pop_le{t}': t * 10000, f'u5_le{t}': t * 700, f'o65_le{t}': t * 900})
+    s = cr.summarize(raw, {'alert': 6.5, 'evac': 7, 'low': 1.83})
+    assert s['bands'][0] == {'up_to_m': 1, 'people': 10000, 'under5': 700, 'over65': 900}
+    ev = next(x for x in s['scenarios'] if x['key'] == 'evac')
+    assert ev['rise_m'] == 5.17 and ev['band_m'] == 10 and ev['people'] == 100000
+    assert cr.band_for(4.67) == 5 and cr.band_for(0) is None
+    e = cr.expression(-27.47, -58.83)
+    assert e['expression']['values']['out']['functionInvocationValue']['functionName'] == 'Image.reduceRegion'
