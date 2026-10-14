@@ -777,3 +777,30 @@
   .nino-table > div { grid-template-columns: 1fr 1fr; }
   .nino-table .nt-head { display: none; }
 }
+.eu-show { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.eu-show b { display: block; font-size: 16px; color: #10222b; margin-bottom: 4px; }
+.eu-show p { margin: 0; }
+.eu-flow { padding: 56px 8vw; background: #07151e; color: #fff; }
+.eu-flow h2 { font-size: clamp(26px, 2.6vw, 38px); margin: 0 0 24px; letter-spacing: -0.02em; }
+.eu-flow ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+.eu-flow li { display: grid; gap: 10px; align-content: start; padding: 18px; border-radius: 16px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08); }
+.eu-flow li > span { color: #25efb5; font-weight: 700; font-size: 13px; }
+.eu-flow em { font-style: normal; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: #8fb1bd; display: block; }
+.eu-flow b { display: block; font-size: 17px; margin: 4px 0 6px; }
+.eu-flow p { margin: 0; color: #b7c8cf; font-size: 14px; line-height: 1.55; }
+.eu-tools { padding: 48px 8vw 8px; }
+.eu-tools h2, .eu-dots h2 { font-size: clamp(24px, 2.4vw, 34px); margin: 0 0 18px; letter-spacing: -0.02em; color: #10222b; }
+.eu-tools > div { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.eu-tools a { display: grid; gap: 4px; padding: 18px; border: 1px solid #dfe5e1; border-radius: 16px; text-decoration: none; color: #10222b; background: #fff; }
+.eu-tools a b { font-size: 17px; }
+.eu-tools a em { font-style: normal; font-size: 12px; color: #0f9fa6; text-transform: uppercase; letter-spacing: .05em; }
+.eu-tools a span { font-size: 14px; color: #52656c; line-height: 1.5; }
+.eu-dots { margin: 40px 8vw 0; padding: 32px; border-radius: 22px; background: #eef7f3; }
+.eu-dots ol { margin: 0 0 12px; padding-left: 20px; display: grid; gap: 8px; color: #34474e; font-size: 15.5px; line-height: 1.55; }
+@media (max-width: 900px) {
+  .eu-show { grid-template-columns: 1fr; }
+  .eu-flow { padding: 40px 16px; }
+  .eu-flow ol { grid-template-columns: 1fr; }
+  .eu-tools { padding: 36px 16px 4px; }
+  .eu-dots { margin: 28px 16px 0; padding: 22px; }
+}

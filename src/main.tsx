@@ -736,12 +736,30 @@ function Observatory({onHome}:{onHome:()=>void}) {
   const [eudrBusy, setEudrBusy] = useState(false);
   const coverOverlay = useRef<L.ImageOverlay | null>(null);
   const currentLot = () => { const l = lots.find(x => x.id === selectedLotId); return l ? { name: l.name, vertices: l.vertices, areaHa: l.areaHa, perimeterKm: l.perimeterKm, ftw: l.ftw } : (vertices.length >= 3 ? { name: "Lote", vertices, areaHa: lotAreaHa, perimeterKm: lotPerimeterKm } : null); };
+  const eudrReady = useRef<any>(null);
+  const [whisp, setWhisp] = useState<any>(null), [whispBusy, setWhispBusy] = useState(false);
+  const askWhisp = async (product: string) => {
+    const lot = currentLot(); if (!lot) { notify("Dibujá o seleccioná un lote primero."); return; }
+    setWhispBusy(true); setWhisp(null);
+    try {
+      let token: string | undefined;
+      for (let i = 0; i < 4; i++) {
+        const r = await fetch("/api/fuentes/eudr/whisp", { method: "POST", headers: { "Content-Type": "application/json" }, signal: AbortSignal.timeout(58000),
+          body: JSON.stringify(token ? { token, product } : { lot, product }) });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok) { setWhisp({ error: j.error || "Whisp no respondió." }); return; }
+        if (j.data?.status === "en proceso" && j.data?.token) { token = j.data.token; continue; }
+        setWhisp(j.data?.status === "requiere credencial" ? { status: "requiere credencial" } : j.data); return;
+      }
+      setWhisp({ error: "Whisp sigue procesando. Probá de nuevo en unos minutos." });
+    } catch { setWhisp({ error: "Whisp no respondió." }); } finally { setWhispBusy(false); }
+  };
   const eudrDownload = async (kind: "pdf" | "geojson") => {
     const lot = currentLot(); if (!lot) { notify("Dibujá o seleccioná un lote primero."); return; }
     setEudrBusy(true);
     try {
       const r = await fetch(`/api/fuentes/eudr/${kind}`, { method: "POST", headers: { "Content-Type": "application/json" }, signal: AbortSignal.timeout(58000),
-        body: JSON.stringify({ lot, establecimiento: estName, heads: herdHeads || null, sustentabilidad: (sources.sustentabilidad?.payload as any)?.data }) });
+        body: JSON.stringify({ lot, establecimiento: estName, heads: herdHeads || null, sustentabilidad: (sources.sustentabilidad?.payload as any)?.data, readiness: eudrReady.current }) });
       if (!r.ok) { const j = await r.json().catch(() => ({})); throw Error(j.error || "No se pudo generar"); }
       download(await r.blob(), kind === "pdf" ? "DOTS-libre-de-deforestacion.pdf" : "DOTS-lote-geolocalizacion.geojson");
     } catch (e) { notify((e as Error).message); } finally { setEudrBusy(false); }
@@ -1530,7 +1548,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
                   {coverYear && <div className="dots-legend-inline">{[["#397d49","Árboles"],["#e3e2c3","Pastizal"],["#e49635","Cultivo"],["#419bdf","Agua"],["#7a87c6","Veg. inundada"],["#a59b8f","Suelo desnudo"]].map(([c,l])=><span key={l}><i style={{background:c}}/>{l}</span>)}</div>}
                   <p className="footnote">Fila resaltada: año de corte. Tocá ◧ para ver la cobertura de ese año sobre el lote y comparar 2020 con el último.</p>
                 </>}
-                <EudrReadiness d={payload?.deforestation}/>
+                <EudrReadiness d={payload?.deforestation} onState={r=>{eudrReady.current=r}} whisp={whisp} onWhisp={p=>void askWhisp(p)} whispBusy={whispBusy}/>
                 <div className="eudr-actions">
                   <label className="small">Establecimiento (para el informe)<input value={estName} placeholder="Nombre · partido · provincia" onChange={e=>{setEstName(e.target.value);try{localStorage.setItem("dots-establishment",e.target.value)}catch{}}}/></label>
                   <button className="primary" disabled={eudrBusy} onClick={()=>void eudrDownload("pdf")}>{eudrBusy?"Generando…":"Informe de verificación (PDF)"}</button>
@@ -2334,7 +2352,7 @@ function SiteLink({to,children,className=""}:{to:string;children:React.ReactNode
   return <a href={to} className={className} onClick={(e)=>{e.preventDefault();history.pushState({},"",to);window.dispatchEvent(new PopStateEvent("popstate"));window.scrollTo({top:0,behavior:"smooth"});}}>{children}</a>
 }
 function Brand(){return <SiteLink to="/" className="site-brand"><img className="brand-logo" src="/dots-logo.svg" alt="DOTS Campo"/><span><b>DOTS <em>CAMPO</em></b><small>DATOS · OBSERVACIÓN · TERRITORIO · SATÉLITE</small></span></SiteLink>}
-function PublicHeader({onDemo}:{onDemo:()=>void}){return <header className="site-header"><Brand/><nav><SiteLink to="/que-es-dots">Qué es DOTS</SiteLink><SiteLink to="/guia">Cómo funciona</SiteLink><SiteLink to="/libre-deforestacion" className="nav-highlight">Libre de deforestación</SiteLink><SiteLink to="/modulos">Módulos</SiteLink><SiteLink to="/cultivos">Cultivos</SiteLink><SiteLink to="/panel">Panel regional</SiteLink><SiteLink to="/tecnologia">Fuentes</SiteLink><SiteLink to="/conexiones">APIs</SiteLink><button className="nav-demo" onClick={onDemo}>Demo</button></nav><div className="site-head-actions"><SiteLink to="/alertas" className="alert-btn">⚠ Alertas</SiteLink><SiteLink to="/capas" className="layers-btn">◧ Capas<span className="lb-long">&nbsp;del mapa</span></SiteLink><SiteLink to="/acceso" className="ghost-link">Ingresar</SiteLink><button className="demo-btn" onClick={onDemo}>Abrir Observatorio →</button></div></header>}
+function PublicHeader({onDemo}:{onDemo:()=>void}){return <header className="site-header"><Brand/><nav><SiteLink to="/que-es-dots">Qué es DOTS</SiteLink><SiteLink to="/guia">Cómo funciona</SiteLink><SiteLink to="/libre-deforestacion" className="nav-highlight">Vender a Europa</SiteLink><SiteLink to="/modulos">Módulos</SiteLink><SiteLink to="/cultivos">Cultivos</SiteLink><SiteLink to="/panel">Panel regional</SiteLink><SiteLink to="/tecnologia">Fuentes</SiteLink><SiteLink to="/conexiones">APIs</SiteLink><button className="nav-demo" onClick={onDemo}>Demo</button></nav><div className="site-head-actions"><SiteLink to="/alertas" className="alert-btn">⚠ Alertas</SiteLink><SiteLink to="/capas" className="layers-btn">◧ Capas<span className="lb-long">&nbsp;del mapa</span></SiteLink><SiteLink to="/acceso" className="ghost-link">Ingresar</SiteLink><button className="demo-btn" onClick={onDemo}>Abrir Observatorio →</button></div></header>}
 const sourceGroups=[
  ["ARGENTINA",["CONAE · SAOCOM","SMN","INA"]],
  ["EUROPA",["Copernicus · Sentinel","ECMWF · C3S","EUMETSAT","DLR · Alemania","CNES · Francia"]],
@@ -2351,7 +2369,7 @@ function Home({onDemo}:{onDemo:()=>void}){return <div className="public-site"><P
  <SourceStrip/>
  <section className="home-intro editorial"><div><span className="section-tag">UN CAMPO · UNA LECTURA</span><h2>Del límite del potrero a la decisión.</h2></div><p>DOTS no reemplaza la recorrida ni el análisis profesional. Ordena información dispersa alrededor de una unidad territorial concreta y muestra qué fue observado, modelado, calculado o pronosticado.</p></section>
  <section className="journey"><article><b>01</b><h3>Delimitá</h3><p>Triángulo, rectángulo o polígono libre. Superficie, perímetro y centroide.</p></article><article><b>02</b><h3>Observá</h3><p>Escenas, clima, agua, suelo, vegetación y riesgos sobre el mismo territorio.</p></article><article><b>03</b><h3>Compará</h3><p>Fechas, modelos y fuentes sin perder procedencia ni calidad.</p></article><article><b>04</b><h3>Decidí</h3><p>Hallazgos, alertas, tareas e Informe Territorial DOTS unificado.</p></article></section>
- <section className="layers-teaser"><div><span className="section-tag">CAPAS DEL MAPA</span><h2>{OPEN_LAYERS.length + DOTS_LAYERS.length} capas abiertas sobre tu lote.</h2><p>Bosque, agua, anegamiento, imagen satelital diaria, rutas y vías, más lo que DOTS calcula para cada lote. Superponelas para ver lo que ninguna muestra sola.</p></div><SiteLink to="/capas" className="layers-btn big">Ver qué es una capa y para qué sirve →</SiteLink></section><section className="eudr-feature"><div><span className="section-tag">NUEVO · UNIÓN EUROPEA</span><h2>Libre de deforestación, verificado por satélite.</h2><p>Desde el 30/12/2026 la carne y el cuero que se exporten a Europa deben probar que no vienen de tierras deforestadas después de 2020. DOTS lo verifica lote por lote y entrega el informe y la geolocalización listos para la debida diligencia, con el carbono del suelo y las emisiones del rodeo.</p><div className="cover-actions"><SiteLink to="/libre-deforestacion">Cómo funciona →</SiteLink><button onClick={onDemo}>Verificar un lote</button></div></div><ul><li><b>2017–2023</b>cobertura anual a 10 m</li><li><b>2 fuentes</b>Impact Observatory y ESA</li><li><b>6 decimales</b>polígono GeoJSON</li><li><b>t C/ha</b>carbono del suelo</li></ul></section>
+ <section className="layers-teaser"><div><span className="section-tag">CAPAS DEL MAPA</span><h2>{OPEN_LAYERS.length + DOTS_LAYERS.length} capas abiertas sobre tu lote.</h2><p>Bosque, agua, anegamiento, imagen satelital diaria, rutas y vías, más lo que DOTS calcula para cada lote. Superponelas para ver lo que ninguna muestra sola.</p></div><SiteLink to="/capas" className="layers-btn big">Ver qué es una capa y para qué sirve →</SiteLink></section><section className="eudr-feature"><div><span className="section-tag">NUEVO · UNIÓN EUROPEA</span><h2>Libre de deforestación, verificado por satélite.</h2><p>Desde el 30/12/2026 la carne, la soja y la madera que se exporten a Europa deben probar que no vienen de tierras deforestadas después de 2020. DOTS lo verifica lote por lote y entrega el informe y la geolocalización listos para la debida diligencia, con el carbono del suelo y las emisiones del rodeo.</p><div className="cover-actions"><SiteLink to="/libre-deforestacion">Cómo funciona →</SiteLink><button onClick={onDemo}>Verificar un lote</button></div></div><ul><li><b>2017–2023</b>cobertura anual a 10 m</li><li><b>2 fuentes</b>Impact Observatory y ESA</li><li><b>6 decimales</b>polígono GeoJSON</li><li><b>t C/ha</b>carbono del suelo</li></ul></section>
  <section className="field-story"><div className="field-visual"><img src="/dots-hero.jpg" alt="Lotes de un establecimiento con índice de vegetación por sector"/></div><div><span className="section-tag">GEMELO DIGITAL GANADERO</span><h2>Cada potrero tiene contexto.</h2><p>Límites, pasturas, agua, infraestructura, ganado, clima, suelo, satélite, riesgos e historial se leen juntos. El mapa permanece como centro operativo mientras cambian las capas de análisis.</p><button onClick={onDemo}>Explorar el Observatorio</button></div></section>
  <section className="cap-grid">{[[MapPinned,"Lotes y potreros","Geometría, hectáreas, perímetro, historial y comparación."],[Droplets,"Agua e infraestructura","Fuentes de agua, cobertura, balance hídrico e inspecciones."],[Layers,"Pasturas y suelos","Vegetación, humedad y propiedades del suelo con método declarado."],[Thermometer,"Clima y ganado","Pronósticos, THI y contexto térmico para el rodeo."],[TriangleAlert,"Riesgos","Fuego, sequía, exceso hídrico y anomalías con evidencia."],[FileText,"Informe territorial","Un único PDF con mapa, gráficos, interpretación y trazabilidad."]].map(([Icon,t,d]:any)=><article key={t}><Icon/><h3>{t}</h3><p>{d}</p><SiteLink to="/modulos" className="cap-more">Cómo funciona →</SiteLink></article>)}</section>
  <section className="demo-call"><div><span className="section-tag">DEMOSTRACIÓN</span><h2>El mapa es el centro. Los datos explican el territorio.</h2><p>Delimitá un lote y consultá las fuentes disponibles. Si una fuente no responde o una variable no está medida, DOTS lo declara.</p></div><button onClick={onDemo}>Abrir Observatorio →</button></section>
@@ -2554,6 +2572,60 @@ function About({onDemo}:{onDemo:()=>void}){
   </main><SiteFooter/></div>;
 }
 
+// Guía pública para vender a Europa: acuerdo, sanidad, EUDR, trámite, quién certifica, herramientas y otros países.
+function EuropeGuide(){
+  const flow:[string,string,string][]=[
+    ["Productor","Demuestra el origen","Polígono de cada campo, sin desmonte después de 2020, papeles en regla (título o contrato, RENSPA, OTBN, registros laborales) y animales identificados con DT-e."],
+    ["Frigorífico o acopio","Junta los orígenes","Pide a cada proveedor la geolocalización y la evidencia. Separa lo que va a Europa de lo que no tiene respaldo."],
+    ["Exportador","Arma el legajo","Reúne geolocalizaciones, evaluación de riesgo y documentación del lote exportado y lo entrega al importador."],
+    ["Importador europeo","Presenta la declaración","Es el operador: carga la declaración de diligencia debida en el sistema de información de la UE (TRACES) con los polígonos en GeoJSON y obtiene un número de referencia."],
+    ["Autoridad del país europeo","Controla","Revisa una parte de los envíos según el riesgo del país de origen. Para Argentina, riesgo estándar, el 3 % de los operadores. Si algo no cierra, puede frenar la mercadería y aplicar multas."],
+  ];
+  const show:[string,string][]=[
+    ["Libre de deforestación","La tierra no se convirtió de bosque a uso agropecuario después del 31/12/2020. Se prueba con imágenes satelitales y mapas de cobertura."],
+    ["Legalidad","Se produjo cumpliendo las leyes del país: uso de la tierra, ambiente (en Argentina, la Ley de Bosques 26.331 y su ordenamiento provincial), trabajo, impuestos y derechos de comunidades indígenas."],
+    ["Geolocalización","Coordenadas de cada predio de origen con 6 decimales, en polígono si supera 4 ha. Para ganado, la ubicación de cada establecimiento donde estuvo el animal."],
+    ["Trazabilidad","Poder seguir el producto desde ese campo hasta el embarque, sin mezclarlo con mercadería de origen desconocido."],
+  ];
+  const tools:[string,string,string,string][]=[
+    ["DOTS","Argentina · gratis","Verificación de cobertura 2017–2023 por lote, GeoJSON con el formato de TRACES, lista para el comprador en PDF y segunda opinión de Whisp.","/guia"],
+    ["VISEC","Cadena argentina · gratis","Plataforma sectorial reconocida por el Estado para soja libre de deforestación; usa el RENSPA de SENASA. El IPCVA la presentó también para carne.","https://argentina.controlunion.com/programa-de-certificacion/visec-plataforma-de-trazabilidad-para-soja-y-carne-sin-deforestacion/"],
+    ["Whisp","FAO · código MIT","Cruza decenas de mapas públicos, incluido el mapa de bosques 2020 de la Comisión Europea (JRC), y devuelve un riesgo por producto.","https://github.com/forestdatapartnership/whisp"],
+    ["GeoRoots","Código abierto","Valida, repara, une y separa archivos GeoJSON en el navegador, sin subir datos a ningún servidor.","https://georoots.eu/"],
+    ["Open Foris Ground · KoboToolbox","FAO y Google · AGPL","Apps de celular para relevar polígonos y fotos en el campo, sin señal, y exportarlos en GeoJSON.","https://www.openforis.org/ground/"],
+    ["INATrace · WHIMO","GIZ · Instituto Forestal Europeo","Trazabilidad abierta del campo al comprador, con mapas de fincas y registro de entregas.","https://inatrace.org/en"],
+  ];
+  return <>
+    <section className="about-body">
+      <section className="about-block"><div className="about-side"><span className="module-num">EL ACUERDO</span><h2>UE-Mercosur: más mercado, mismas reglas</h2></div><div className="about-text">
+        <p>El acuerdo comercial se aplica de forma provisional desde el 1 de mayo de 2026 para Argentina, Brasil, Paraguay y Uruguay. La UE elimina aranceles sobre el 92 % de lo que importa del Mercosur y abre cuotas con arancel reducido para otro 7,5 %; la carne vacuna dentro de la cuota paga 7,5 % desde el primer día.</p>
+        <p>Lo que no cambia: las normas sanitarias son las mismas que para los productores europeos, y el reglamento de deforestación se aplica igual, con o sin acuerdo. El acuerdo abre la puerta; la sanidad y el EUDR deciden quién pasa.</p></div></section>
+      <section className="about-block"><div className="about-side"><span className="module-num">LLAVE 1</span><h2>Sanidad: SENASA</h2></div><div className="about-text">
+        <p>Para carne, solo pueden exportar frigoríficos habilitados por la UE, con hacienda de campos inscriptos en el registro de SENASA de establecimientos proveedores para Europa, animales identificados individualmente y sin anabólicos ni hormonas, que Europa prohíbe. El estatus sanitario de cada zona frente a la aftosa define qué productos y con qué tratamiento se pueden enviar.</p>
+        <p>Esto lo certifica SENASA con su firma oficial en cada embarque. DOTS no interviene en esta llave: conviene confirmar con el veterinario del establecimiento y con SENASA que el campo esté en el registro.</p></div></section>
+      <section className="about-block"><div className="about-side"><span className="module-num">LLAVE 2</span><h2>EUDR: qué hay que demostrar</h2></div><div className="about-text">
+        <div className="eu-show">{show.map(([t,d])=><div key={t}><b>{t}</b><p>{d}</p></div>)}</div></div></section>
+    </section>
+    <section className="eu-flow"><h2>Cómo se procesa, paso a paso</h2><ol>{flow.map(([w,t,d],i)=><li key={w}><span>{String(i+1).padStart(2,"0")}</span><div><em>{w}</em><b>{t}</b><p>{d}</p></div></li>)}</ol></section>
+    <section className="about-body">
+      <section className="about-block"><div className="about-side"><span className="module-num">QUIÉN CERTIFICA</span><h2>Nadie te da un sello obligatorio</h2></div><div className="about-text">
+        <p>El EUDR no exige un certificado. El responsable legal es la empresa que introduce el producto en Europa: ella hace la debida diligencia y firma la declaración. Las autoridades de cada país europeo controlan.</p>
+        <p>Las certificaciones privadas y plataformas como VISEC ayudan a respaldar la evaluación de riesgo, pero según la guía de la Comisión ninguna reemplaza la debida diligencia. La Comisión prepara un registro de esquemas de certificación, previsto para fines de 2026.</p>
+        <p>Hay una declaración simplificada para micro y pequeños productores primarios, pero solo en países de riesgo bajo. Argentina figura como riesgo estándar, así que acá no aplica: el productor no presenta nada en Europa, pero tiene que entregarle la evidencia a quien le compra.</p>
+        <p>La revisión de la Comisión de mayo de 2026 confirmó las fechas sin más postergaciones: 30 de diciembre de 2026 para empresas grandes y medianas y 30 de junio de 2027 para micro y pequeñas.</p></div></section>
+      <section className="about-block"><div className="about-side"><span className="module-num">OTROS PAÍSES</span><h2>Cómo lo resuelven</h2></div><div className="about-text">
+        <p><b>Uruguay</b> tiene trazabilidad bovina individual obligatoria hace casi dos décadas, a cargo del Estado: cada animal se sigue desde que nace. Es la base que más ayuda frente al EUDR.</p>
+        <p><b>Argentina</b> se organizó desde la cadena: VISEC nació en las cámaras de la soja, usa el RENSPA y el Estado la reconoce; el IPCVA la presentó para carne.</p>
+        <p><b>En el Mercosur</b> un relevamiento de Proforest, Solidaridad y la Tropical Forest Alliance identificó 15 instrumentos que ayudan a cumplir en la cadena de la carne, casi todos públicos o público-privados: registros de trazabilidad, controles de legalidad y monitoreo de proveedores.</p>
+        <p><b>Del lado europeo</b> la FAO, la Comisión y el Instituto Forestal Europeo publican herramientas gratuitas y abiertas, como las de abajo.</p></div></section>
+    </section>
+    <section className="eu-tools"><h2>Herramientas gratuitas para preparar la evidencia</h2><div>{tools.map(([n,o,d,u])=>u.startsWith("/")?<SiteLink key={n} to={u}><b>{n}</b><em>{o}</em><span>{d}</span></SiteLink>:<a key={n} href={u} target="_blank" rel="noreferrer"><b>{n}</b><em>{o}</em><span>{d}</span></a>)}</div></section>
+    <section className="eu-dots"><div><span className="section-tag">CÓMO TE AYUDA DOTS</span><h2>Del potrero al legajo del comprador, en cuatro pasos.</h2>
+      <ol><li>Dibujás el campo en el Observatorio o lo tomás del mapa de lotes.</li><li>En Sustentabilidad, DOTS mide la cobertura de árboles desde 2017 y la compara con 2020.</li><li>Marcás la lista de lo que podés demostrar y, si querés, pedís la segunda opinión de Whisp con el mapa oficial europeo.</li><li>Descargás el informe PDF para el comprador y el GeoJSON con el formato de TRACES, listo para que el importador lo cargue.</li></ol>
+      <p className="footnote">Es evidencia técnica gratuita para la debida diligencia, no un certificado. Fuentes: Comisión Europea (Access2Markets, guía y FAQ del EUDR, documentación de TRACES), Reglamento (UE) 2023/1115 y 2025/2650, FAO, Instituto Forestal Europeo y Proforest.</p></div></section>
+  </>;
+}
+
 function Deforestation({onDemo}:{onDemo:()=>void}){
   const steps:[string,string,string][]=[
     ["01","Delimitá el lote","Dibujalo o tomalo con un clic del mapa global de lotes. DOTS guarda el polígono en WGS84 con seis decimales, como pide la norma."],
@@ -2563,15 +2635,16 @@ function Deforestation({onDemo}:{onDemo:()=>void}){
   ];
   return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner eudr-page">
     <section className="eudr-hero"><div>
-      <span className="section-tag">LIBRE DE DEFORESTACIÓN · CARBONO</span>
-      <h1>La evidencia satelital que pide Europa, por lote.</h1>
-      <p>Desde el 30 de diciembre de 2026 la carne vacuna y el cuero que entren a la Unión Europea tienen que demostrar que no vienen de tierras deforestadas después del 31 de diciembre de 2020. DOTS verifica la cobertura de cada lote con imágenes satelitales y entrega un informe listo para la debida diligencia.</p>
+      <span className="section-tag">VENDER A EUROPA · EUDR</span>
+      <h1>Lo que pide Europa para comprarte, explicado y verificado por lote.</h1>
+      <p>Con el acuerdo UE-Mercosur en marcha, Europa compra con menos aranceles, pero exige dos llaves: la sanitaria de siempre y, desde el 30 de diciembre de 2026, la prueba de que la carne, la soja o la madera no vienen de tierras deforestadas después del 31 de diciembre de 2020. Esta guía explica el trámite completo y DOTS te da la evidencia satelital, la geolocalización y la lista para el comprador, gratis.</p>
       <div className="cover-actions"><button onClick={onDemo}>Verificar un lote →</button><SiteLink to="/contacto">Consultar para frigoríficos y exportadores</SiteLink></div>
     </div><div className="eudr-badge"><b>31/12/2020</b><span>fecha de corte</span><b>30/12/2026</b><span>aplicación para operadores grandes y medianos</span><b>30/06/2027</b><span>microempresas y personas humanas</span></div></section>
     <section className="eudr-steps">{steps.map(([n,t,d])=><article key={n}><span>{n}</span><h3>{t}</h3><p>{d}</p></article>)}</section>
+    <EuropeGuide/>
     <section className="about-body">
       <section className="about-block"><div className="about-side"><span className="module-num">QUÉ PIDE LA NORMA</span><h2>Reglamento (UE) 2023/1115</h2></div><div className="about-text">
-        <p>El reglamento alcanza, entre otros productos, al ganado bovino, la carne vacuna y el cuero. Para venderlos en la Unión Europea, el operador tiene que demostrar tres cosas: que no provienen de tierras deforestadas después del 31 de diciembre de 2020, que se produjeron según la legislación del país de origen y que están cubiertos por una declaración de debida diligencia.</p>
+        <p>El reglamento alcanza, entre otros productos, al ganado bovino y la carne vacuna, la soja y la madera. El cuero bovino quedó fuera del alcance con el acto delegado de julio de 2026. Para venderlos en la Unión Europea, el operador tiene que demostrar tres cosas: que no provienen de tierras deforestadas después del 31 de diciembre de 2020, que se produjeron según la legislación del país de origen y que están cubiertos por una declaración de debida diligencia.</p>
         <p>La geolocalización se expresa con al menos seis decimales. Para el ganado se admite la ubicación de cada establecimiento donde se crió el animal; DOTS entrega además el polígono completo del lote, que es la evidencia más sólida ante una consulta o una alerta.</p>
         <p>Tras las modificaciones de 2025, las obligaciones rigen desde el 30 de diciembre de 2026 para operadores grandes y medianos y desde el 30 de junio de 2027 para microempresas y personas humanas.</p></div></section>
       <section className="about-block"><div className="about-side"><span className="module-num">CÓMO SE DECIDE</span><h2>Criterios publicados</h2></div><div className="about-text">

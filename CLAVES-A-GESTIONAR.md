@@ -59,6 +59,7 @@ Mientras no estén las claves, DOTS obtiene las mismas variables de fuentes abie
 | Cobertura y deforestación | Global Forest Watch | Impact Observatory + ESA WorldCover (Planetary Computer) | — |
 | Suelo y carbono | — | ISRIC SoilGrids | puntos vecinos a ~500 m |
 | Focos de calor | NASA FIRMS (clave gratuita, 1 minuto) | — | — |
+| Segunda opinión EUDR | Whisp (FAO), clave gratuita `WHISP_API_KEY`: crear cuenta en https://whisp.openforis.org, generar la clave en la cuenta (dura 365 días) | — | — |
 
 Licencias: Open-Meteo y el plan Hobby de Vercel son de uso no comercial. Alcanza mientras DOTS no cobre; al empezar a cobrar, pasar a Open-Meteo API comercial y Vercel Pro.
 

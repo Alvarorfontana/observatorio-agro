@@ -443,19 +443,76 @@ def pdf(result, name='Lote DOTS', extras=None):
 EUDR_TEMPLATE = os.path.join(BASE, 'eudr.typ')
 
 
-def geojson_lot(vertices, name='Lote', area_ha=None):
-    """GeoJSON (WGS84, lon/lat, 6 decimales) con el polígono y su centroide, como pide la geolocalización EUDR."""
-    ring = [[round(float(lo), 6), round(float(la), 6)] for la, lo in vertices]
-    if ring and ring[0] != ring[-1]:
-        ring.append(ring[0])
-    cy = sum(p[1] for p in ring[:-1]) / max(1, len(ring) - 1); cx = sum(p[0] for p in ring[:-1]) / max(1, len(ring) - 1)
-    props = {'name': name, 'area_ha': None if area_ha is None else round(float(area_ha), 2), 'crs': 'EPSG:4326', 'source': 'DOTS / Campo'}
+def _segments_cross(a, b, c, d):
+    def o(p, q, r):
+        v = (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0])
+        return 0 if abs(v) < 1e-12 else (1 if v > 0 else -1)
+    return o(a, b, c) * o(a, b, d) < 0 and o(c, d, a) * o(c, d, b) < 0
+
+
+def eudr_ring(vertices):
+    """Anillo lon/lat con 6 decimales, sin puntos repetidos y cerrado. Error si no es un polígono válido para TRACES."""
+    ring = []
+    for la, lo in vertices:
+        p = [round(float(lo), 6), round(float(la), 6)]
+        if not (-180 <= p[0] <= 180 and -90 <= p[1] <= 90):
+            raise ValueError('Coordenada fuera de rango')
+        if not ring or ring[-1] != p:
+            ring.append(p)
+    if len(ring) > 1 and ring[0] == ring[-1]:
+        ring.pop()
+    if len({tuple(p) for p in ring}) < 3:
+        raise ValueError('El lote necesita al menos tres vértices distintos')
+    n = len(ring)
+    for i in range(n):
+        for j in range(i + 1, n):
+            if abs(i - j) in (1, n - 1):
+                continue
+            if _segments_cross(ring[i], ring[(i + 1) % n], ring[j], ring[(j + 1) % n]):
+                raise ValueError('El contorno del lote se cruza a sí mismo: TRACES lo rechaza. Redibujalo sin cruces.')
+    return ring + [ring[0]]
+
+
+def geojson_lot(vertices, name='Lote', area_ha=None, country='AR'):
+    """GeoJSON para el sistema de información EUDR (TRACES): WGS84, lon/lat, 6 decimales, un Feature por parcela,
+    propiedades ProductionPlace, ProducerCountry (ISO2) y Area en hectáreas como número."""
+    ring = eudr_ring(vertices)
+    props = {'ProductionPlace': str(name)[:80], 'ProducerCountry': country}
+    if area_ha is not None:
+        props['Area'] = round(float(area_ha), 2)
     return {'type': 'FeatureCollection', 'features': [
-        {'type': 'Feature', 'properties': {**props, 'geometry_role': 'plot polygon'}, 'geometry': {'type': 'Polygon', 'coordinates': [ring]}},
-        {'type': 'Feature', 'properties': {**props, 'geometry_role': 'centroid'}, 'geometry': {'type': 'Point', 'coordinates': [round(cx, 6), round(cy, 6)]}}]}
+        {'type': 'Feature', 'properties': props, 'geometry': {'type': 'Polygon', 'coordinates': [ring]}}]}
 
 
-def eudr_data(lot, establishment, sust, generated=None):
+def lot_centroid(ring):
+    pts = ring[:-1]
+    return [round(sum(p[0] for p in pts) / len(pts), 6), round(sum(p[1] for p in pts) / len(pts), 6)]
+
+
+def readiness_block(r, de, area):
+    """Lista para el comprador: lo que mide DOTS más lo que declara el productor (enviado por la web)."""
+    r = r if isinstance(r, dict) else {}
+    verdict = str(de.get('verdict') or 'sin dato')
+    forest = 'ok' if verdict.startswith('sin pérdida') else 'warn' if verdict.startswith('pérdida menor') else 'risk' if verdict.startswith('pérdida de cobertura') else 'idle'
+    auto = [{'label': 'Geolocalización del lote', 'tone': 'ok' if area else 'idle',
+             'detail': f'Polígono de {num(area, 1)} ha en formato TRACES.' if area else 'Sin polígono.'},
+            {'label': 'Libre de deforestación desde el 31/12/2020', 'tone': forest, 'detail': verdict},
+            {'label': 'Riesgo país', 'tone': 'warn', 'detail': 'Argentina: riesgo estándar. Debida diligencia completa; controles sobre el 3 % de los operadores.'}]
+    w = r.get('whisp') if isinstance(r.get('whisp'), dict) else None
+    if w and w.get('risk'):
+        auto.append({'label': 'Segunda opinión · Whisp (FAO)', 'tone': {'low': 'ok', 'high': 'risk'}.get(w['risk'], 'warn'),
+                     'detail': str(w.get('text') or '')[:300]})
+    declared = []
+    for x in (r.get('declared') or [])[:20]:
+        if isinstance(x, dict) and x.get('text'):
+            declared.append({'text': str(x['text'])[:200], 'done': bool(x.get('done'))})
+    res = r.get('result') if isinstance(r.get('result'), dict) else {}
+    return {'product': str(r.get('product') or '')[:80], 'in_scope': r.get('in_scope', True) is not False,
+            'title': str(res.get('title') or '')[:120], 'text': str(res.get('text') or '')[:400],
+            'tone': {'ok': 'ok', 'warn': 'warn'}.get(res.get('tone'), 'idle'), 'auto': auto, 'declared': declared}
+
+
+def eudr_data(lot, establishment, sust, generated=None, readiness=None):
     import hashlib
     vertices = lot.get('vertices') or []
     if len(vertices) < 3:
@@ -468,7 +525,7 @@ def eudr_data(lot, establishment, sust, generated=None):
     gj = geojson_lot(vertices, lot.get('name') or 'Lote', area)
     gtxt = json.dumps(gj, ensure_ascii=False, separators=(',', ':'), sort_keys=True)
     ring = gj['features'][0]['geometry']['coordinates'][0]
-    cen = gj['features'][1]['geometry']['coordinates']
+    cen = lot_centroid(ring)
     verdict = str(de.get('verdict') or 'sin dato')
     vt = 'ok' if verdict.startswith('sin pérdida') else 'idle' if verdict == 'sin dato' else 'warn'
     base_y, last_y = de.get('baseline_year'), de.get('last_year')
@@ -557,8 +614,9 @@ def eudr_data(lot, establishment, sust, generated=None):
             'La verificación cubre el polígono declarado; animales que pasaron por otros establecimientos requieren la geolocalización de cada uno.',
             'No reemplaza la verificación documental ni, cuando haya alertas, la revisión con imágenes de mayor resolución o la visita a campo.',
         ],
+        'readiness': readiness_block(readiness, de, area) if readiness else None,
         'coords': coords,
-        'geo_note': 'Vértices del polígono en orden. El mismo polígono y su centroide se entregan en un archivo GeoJSON para cargar en el sistema de información de la UE.',
+        'geo_note': 'Vértices del polígono en orden. El mismo polígono se entrega en un archivo GeoJSON con el formato del sistema de información de la UE (TRACES): WGS84, longitud y latitud, 6 decimales, propiedades ProductionPlace, ProducerCountry y Area.',
         'geo_hash': hashlib.sha256(gtxt.encode()).hexdigest(),
         'geojson': gj,
         'attributions': ('Datos: Impact Observatory, Esri y Microsoft (10 m Annual LULC, CC-BY 4.0); ESA WorldCover (CC-BY 4.0); ISRIC SoilGrids; '
@@ -566,9 +624,9 @@ def eudr_data(lot, establishment, sust, generated=None):
     }
 
 
-def eudr_pdf(lot, establishment, sust):
+def eudr_pdf(lot, establishment, sust, readiness=None):
     import typst
-    data = eudr_data(lot, establishment, sust)
+    data = eudr_data(lot, establishment, sust, readiness=readiness)
     gj = data.pop('geojson')
     out = typst.compile(EUDR_TEMPLATE, root=BASE, font_paths=[FONTS], ignore_system_fonts=True,
                         sys_inputs={'data': json.dumps(data, ensure_ascii=False, default=str)})

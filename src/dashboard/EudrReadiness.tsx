@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 // ¿Puedo vender a la Unión Europea? Autoevaluación frente al Reglamento (UE) 2023/1115 (EUDR).
 // Junta lo que DOTS mide (geolocalización y cobertura arbórea) con lo que sólo el productor puede declarar.
@@ -29,7 +29,7 @@ function load(): Record<string, boolean> {
   try { return JSON.parse(localStorage.getItem("dots-eudr-checks") || "{}"); } catch { return {}; }
 }
 
-export function EudrReadiness({ d }: { d?: Data }) {
+export function EudrReadiness({ d, onState, whisp, onWhisp, whispBusy }: { d?: Data; onState?: (r: Data) => void; whisp?: Data | null; onWhisp?: (product: string) => void; whispBusy?: boolean }) {
   const [product, setProduct] = useState<string>(() => { try { return localStorage.getItem("dots-eudr-product") || "bovino"; } catch { return "bovino"; } });
   const [checks, setChecks] = useState<Record<string, boolean>>(load);
   const p = PRODUCTS.find(x => x[0] === product) || PRODUCTS[0];
@@ -68,6 +68,11 @@ export function EudrReadiness({ d }: { d?: Data }) {
     text = "El lote cumple lo que DOTS puede medir y declaraste el resto. El exportador igual hace su propia debida diligencia.";
   }
 
+  useEffect(() => {
+    onState?.({ product: p[1], in_scope: inScope, result: { title, text, tone }, declared: list.map(c => ({ text: c.text, done: !!checks[c.id] })),
+      whisp: whisp?.risk ? { risk: whisp.risk, text: whisp.text } : null });
+  }, [product, checks, title, text, tone, whisp?.risk]);
+
   const mark = (s: "ok" | "warn" | "bad" | "na") => s === "ok" ? "✓" : s === "na" ? "·" : "!";
 
   return <div className="eudr-ready">
@@ -86,7 +91,12 @@ export function EudrReadiness({ d }: { d?: Data }) {
         <li className={geo ? "ok" : "na"}><i>{mark(geo ? "ok" : "na")}</i><span>Geolocalización del lote<small>{geo ? `Polígono de ${Number(d?.area_ha).toLocaleString("es-AR", { maximumFractionDigits: 1 })} ha listo para exportar en GeoJSON.` : "Sin polígono todavía."}</small></span></li>
         <li className={forest}><i>{mark(forest)}</i><span>Libre de deforestación desde el 31/12/2020<small>{v}</small></span></li>
         <li className="warn"><i>!</i><span>Riesgo país: estándar<small>Argentina figura como riesgo estándar en la clasificación de la Comisión: debida diligencia completa y controles sobre el 3 % de los operadores.</small></span></li>
+        {whisp?.risk && <li className={whisp.risk === "low" ? "ok" : whisp.risk === "high" ? "bad" : "warn"}><i>{whisp.risk === "low" ? "✓" : "!"}</i><span>Segunda opinión · Whisp (FAO)<small>{whisp.text}</small></span></li>}
       </ul>
+      {onWhisp && <button disabled={whispBusy || !geo} onClick={() => onWhisp(product)}>{whispBusy ? "Consultando a Whisp… puede tardar un minuto" : whisp?.risk ? "Volver a consultar Whisp" : "Pedir segunda opinión a Whisp (FAO)"}</button>}
+      {whisp?.status === "requiere credencial" && <p className="footnote">Whisp es gratis pero pide una clave: crear cuenta en whisp.openforis.org, generarla y cargarla en Vercel como WHISP_API_KEY.</p>}
+      {whisp?.error && <p className="footnote">{whisp.error}</p>}
+      <p className="footnote">Whisp cruza decenas de mapas públicos, incluido el mapa de bosques 2020 que la Comisión Europea usa como referencia (JRC).</p>
 
       <div className="eudr-sub">Lo que declarás vos</div>
       <ul className="eudr-list">

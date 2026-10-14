@@ -95,18 +95,37 @@
 ]
 
 // ───────── marco y método ─────────
+#if d.readiness != none [
+  #section("04", "Lista para el comprador · Reglamento (UE) 2023/1115")
+  #block(width: 100%, radius: 8pt, inset: 10pt, fill: tone(d.readiness.tone).transparentize(90%), stroke: 0.8pt + tone(d.readiness.tone))[
+    #text(size: 7.5pt, fill: muted)[PRODUCTO · #upper(d.readiness.product)]
+    #linebreak()#text(size: 13pt, weight: "bold", fill: tone(d.readiness.tone))[#d.readiness.title]
+    #linebreak()#text(size: 8.5pt)[#d.readiness.text]
+  ]
+  #v(4pt)
+  #text(size: 8pt, weight: "semibold", fill: muted)[LO QUE MIDE DOTS]
+  #table(columns: (auto, 1.1fr, 2fr), stroke: (x, y) => (bottom: 0.5pt + line-c), inset: (x: 5pt, y: 4pt),
+    ..d.readiness.auto.map(a => (text(fill: tone(a.tone), weight: "bold")[#if a.tone == "ok" [✓] else if a.tone == "idle" [·] else [!]], text(size: 8.5pt, weight: "semibold")[#a.label], text(size: 8.5pt)[#a.detail])).flatten())
+  #if d.readiness.declared.len() > 0 [
+    #v(4pt)
+    #text(size: 8pt, weight: "semibold", fill: muted)[LO QUE DECLARA EL PRODUCTOR]
+    #table(columns: (auto, 1fr), stroke: (x, y) => (bottom: 0.5pt + line-c), inset: (x: 5pt, y: 4pt),
+      ..d.readiness.declared.map(x => (text(fill: if x.done { ok } else { warn }, weight: "bold")[#if x.done [✓] else [✗]], text(size: 8.5pt)[#x.text #if not x.done [#text(fill: warn)[· pendiente]]])).flatten())
+    #text(size: 7.5pt, fill: muted)[Declaración del productor, no verificada por DOTS. El comprador puede pedir la documentación respaldatoria: título o contrato, RENSPA, DT-e, constancias de OTBN y registros laborales.]
+  ]
+]
 #pagebreak()
-#section("04", "Marco normativo")
+#section("05", "Marco normativo")
 #for p in d.framework [#par(justify: true)[#p] #v(2pt)]
 
-#section("05", "Fuentes y método")
+#section("06", "Fuentes y método")
 #table(columns: (1.1fr, 2fr), stroke: (x, y) => (bottom: 0.5pt + line-c), inset: (x: 5pt, y: 4.5pt),
   ..d.sources.map(r => (text(weight: "semibold", size: 8.5pt)[#r.at(0)], text(size: 8.5pt)[#r.at(1)])).flatten())
 
-#section("06", "Límites del análisis")
+#section("07", "Límites del análisis")
 #for l in d.limits [- #text(size: 9pt)[#l]]
 
-#section("07", "Geolocalización (WGS84, 6 decimales)")
+#section("08", "Geolocalización (WGS84, 6 decimales)")
 #text(size: 8pt, fill: muted)[#d.geo_note]
 #v(4pt)
 #table(columns: (0.4fr, 1fr, 1fr, 0.4fr, 1fr, 1fr), stroke: (x, y) => (bottom: 0.4pt + line-c), inset: (x: 4pt, y: 3pt),

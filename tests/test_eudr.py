@@ -10,12 +10,22 @@ SUST = {'deforestation': {'verdict': 'sin pérdida de cobertura arbórea detecta
         'carbon': {'soc_t_ha': 48.0, 'soc_t_ha_range': [30, 70], 'soc_total_t': 20700, 'soc_total_tco2e': 75900}}
 
 
-def test_geojson_six_decimals_and_closed():
+def test_geojson_norma_traces():
     gj = rt.geojson_lot(LOT['vertices'], 'X', 431.2)
-    poly, pt = gj['features']
-    ring = poly['geometry']['coordinates'][0]
-    assert ring[0] == ring[-1] and ring[0] == [-59.05, -28.51]
-    assert pt['geometry']['type'] == 'Point' and poly['properties']['crs'] == 'EPSG:4326'
+    assert len(gj['features']) == 1
+    f = gj['features'][0]; ring = f['geometry']['coordinates'][0]
+    assert ring[0] == ring[-1] and ring[0] == [-59.05, -28.51] and len(ring) == 5
+    assert f['properties'] == {'ProductionPlace': 'X', 'ProducerCountry': 'AR', 'Area': 431.2}
+    assert isinstance(f['properties']['Area'], float)
+
+
+def test_geojson_rechaza_cruces_y_repetidos():
+    with pytest.raises(ValueError):
+        rt.geojson_lot([[-28.51, -59.05], [-28.49, -59.03], [-28.51, -59.03], [-28.49, -59.05]])   # moño
+    with pytest.raises(ValueError):
+        rt.geojson_lot([[-28.5, -59.0], [-28.5, -59.0], [-28.5000001, -59.0]])
+    gj = rt.geojson_lot([[-28.51, -59.05], [-28.51, -59.05], [-28.51, -59.03], [-28.49, -59.03], [-28.51, -59.05]])
+    assert len(gj['features'][0]['geometry']['coordinates'][0]) == 4
 
 
 def test_eudr_data():

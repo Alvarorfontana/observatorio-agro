@@ -102,7 +102,7 @@ def eudr_pdf():
         if not sust or not sust.get('deforestation'):
             cen=[sum(v[0] for v in verts)/len(verts),sum(v[1] for v in verts)/len(verts)]
             sust={'deforestation':sus.deforestation(verts)['data'],'carbon':sus.carbon(cen[0],cen[1],veg.area_ha(verts),d.get('heads') or None)['data']}
-        pdf,gj,h=rt.eudr_pdf(lot,str(d.get('establecimiento') or '')[:160],sust)
+        pdf,gj,h=rt.eudr_pdf(lot,str(d.get('establecimiento') or '')[:160],sust,d.get('readiness') if isinstance(d.get('readiness'),dict) else None)
         return Response(pdf,mimetype='application/pdf',headers={'Content-Disposition':'attachment; filename=DOTS-libre-de-deforestacion.pdf','X-DOTS-GeoJSON-SHA256':h})
     except ValueError as e: return jsonify({'error':str(e)}),400
     except Exception as e: return jsonify({'status':'sin dato','error':'No se pudo generar la verificación','type':type(e).__name__}),502
@@ -117,6 +117,23 @@ def eudr_geojson():
         gj=rt.geojson_lot(verts,str(lot.get('name') or 'Lote')[:80],lot.get('areaHa'))
         return Response(json.dumps(gj,ensure_ascii=False,indent=2),mimetype='application/geo+json',headers={'Content-Disposition':'attachment; filename=DOTS-lote-geolocalizacion.geojson'})
     except ValueError as e: return jsonify({'error':str(e)}),400
+
+@research_api.post('/eudr/whisp')
+def eudr_whisp():
+    import whisp_eudr
+    try:
+        d=request.get_json(silent=True) or {}
+        product=str(d.get('product') or 'bovino')[:20]
+        token=str(d.get('token') or '')[:80] or None
+        gj=None
+        if not token:
+            lot=d.get('lot') if isinstance(d.get('lot'),dict) else {}
+            verts=lot.get('vertices') or []
+            veg.require_polygon(verts)
+            gj=rt.geojson_lot(verts,str(lot.get('name') or 'Lote')[:80],lot.get('areaHa'))
+        return jsonify(whisp_eudr.check(gj,token,product))
+    except ValueError as e: return jsonify({'status':'sin dato','error':str(e)}),400
+    except Exception as e: return jsonify({'status':'sin dato','error':'Whisp no respondió','type':type(e).__name__}),502
 
 @research_api.post('/alertas')
 def lot_alerts():
