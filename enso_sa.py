@@ -200,18 +200,35 @@ def live():
     end = today - timedelta(days=6)
     start = end - timedelta(days=89)
     live_error = None
+    # Las tres consultas van en paralelo y sin reintentos: la función de Vercel tiene 60 s en total.
+    from concurrent.futures import ThreadPoolExecutor
+
+    def get(url, params, t):
+        r = c.SESSION.get(url, params=params, timeout=t)
+        r.raise_for_status()
+        return r.json()
+    pool = ThreadPoolExecutor(max_workers=3)
     try:
-        past = c._get(ARCHIVE, {'latitude': lat, 'longitude': lon, 'start_date': start.isoformat(), 'end_date': end.isoformat(),
-                                'daily': 'precipitation_sum', 'models': 'era5', 'timezone': 'UTC'}, timeout=40).json()
-    except Exception as e:   # sin lluvia reciente igual se muestra lo que trae El Niño en cada lugar
-        past, live_error = [], f'La lluvia reciente no respondió ({type(e).__name__}); se muestra sólo la referencia histórica.'
-        if not rplaces:
-            raise
-    try:
-        fut = _as_list(c._get(FORECAST, {'latitude': lat, 'longitude': lon, 'daily': 'precipitation_sum', 'forecast_days': 16,
-                                         'timezone': 'UTC'}, timeout=30).json())
-    except Exception:
-        fut = []
+        fp = pool.submit(get, ARCHIVE, {'latitude': lat, 'longitude': lon, 'start_date': start.isoformat(), 'end_date': end.isoformat(),
+                                        'daily': 'precipitation_sum', 'models': 'era5', 'timezone': 'UTC'}, 35)
+        ff = pool.submit(get, FORECAST, {'latitude': lat, 'longitude': lon, 'daily': 'precipitation_sum', 'forecast_days': 16, 'timezone': 'UTC'}, 25)
+        fph = pool.submit(_phase_now)
+        try:
+            past = fp.result(timeout=40)
+        except Exception as e:   # sin lluvia reciente igual se muestra lo que trae El Niño en cada lugar
+            past, live_error = [], f'La lluvia reciente no respondió ({type(e).__name__}); se muestra sólo la referencia histórica.'
+            if not rplaces:
+                raise
+        try:
+            fut = _as_list(ff.result(timeout=30))
+        except Exception:
+            fut = []
+        try:
+            phase_now = fph.result(timeout=30)
+        except Exception:
+            phase_now = None
+    finally:
+        pool.shutdown(wait=False)   # no esperar a una fuente lenta
     past = _as_list(past)
     skey = season_key(today.month)
     rows = []
@@ -243,7 +260,7 @@ def live():
     counts = {}
     for r in rows:
         counts[r['signal']] = counts.get(r['signal'], 0) + 1
-    out = {'places': rows, 'counts': counts, 'phase_now': _phase_now(),
+    out = {'places': rows, 'counts': counts, 'phase_now': phase_now,
            'season': 'octubre a marzo' if skey == 'warm' else 'mayo a septiembre',
            'window': {'from': start.isoformat(), 'to': end.isoformat(), 'forecast_from': today.isoformat()},
            'reference': {'available': bool(rplaces), 'built': ref.get('built'), 'period': ref.get('period'), 'places': len(rplaces)},

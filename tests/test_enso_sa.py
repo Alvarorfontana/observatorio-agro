@@ -56,6 +56,13 @@ def test_live_uses_reference(monkeypatch, tmp_path):
             return _R([{'daily': {'precipitation_sum': [5.0] * 90}} for _ in range(n)])
         return _R([{'daily': {'precipitation_sum': [1.0] * 16}} for _ in range(n)])
     monkeypatch.setattr(sa.c, '_get', fake_get)
+
+    class _S:
+        def get(self, url, params=None, timeout=None):
+            r = fake_get(url, params)
+            r.raise_for_status = lambda: None
+            return r
+    monkeypatch.setattr(sa.c, 'SESSION', _S())
     out = sa.live()['data']
     cor = next(r for r in out['places'] if r['id'] == 'corrientes')
     assert cor['obs90_mm'] == 450 and cor['expected_pct'] == 57
