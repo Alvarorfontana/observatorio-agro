@@ -2839,11 +2839,28 @@ function ElNinoPage({onDemo}:{onDemo:()=>void}){
         <span className="nino-n">{i+1}</span><h3>{s?.title||t}</h3><small>{sub}</small>
         <b className="nino-val">{s?.value!=null?`${s.value>0?"+":""}${fmt(s.value, Math.abs(s.value)<10?1:0)}`:"—"}<em> {s?.unit||""}</em></b>
         <p>{s?.reading||s?.what||""}</p>
+        {s?.wwv && <div className="nino-sub"><b>Volumen de agua cálida: {s.wwv.value>0?"+":""}{fmt(s.wwv.value,1)}</b> ×10¹⁴ m³ · {s.wwv.date}<small>{s.wwv.records?.since_text}</small></div>}
+        {s?.mjo && <div className="nino-sub"><b>MJO sobre {s.mjo.center}</b> · {s.mjo.date}<small>{s.mjo.pacific?"Favorece ráfagas del oeste":"No empuja El Niño ahora"}</small></div>}
         {s?.records && <div className="nino-rec"><span>máx. <b>{fmt(s.records.max.value,1)}</b> {s.records.max.date}</span><span>mín. <b>{fmt(s.records.min.value,1)}</b> {s.records.min.date}</span><em>Hoy: {s.records.since_text}</em></div>}
         <span className="nino-src">{s?.source||""} {s?.date?`· ${s.date}`:""}</span>
       </article>{i<order.length-1&&<div className="nino-arrow" aria-hidden="true">→</div>}</React.Fragment>})}
       <div className="nino-arrow" aria-hidden="true">→</div>
       <article className="nino-step land"><span className="nino-n">5</span><h3>Lluvia e inundaciones en Sudamérica</h3><small>El efecto en el campo</small><p>La humedad del Amazonas baja hacia la cuenca del Plata y los frentes se frenan sobre el Litoral. Ver abajo cómo y dónde.</p></article>
+    </section>
+    {chain?.extras?.length>0 && <><h2 className="layer-section-title">Más indicadores que vigila DOTS</h2>
+    <section className="nino-extras">{chain.extras.map((x:any)=><article key={x.key}><span>{x.name}</span><b>{typeof x.value==="number"&&x.value>0&&x.key!=="mjo"?"+":""}{fmt(x.value,2)} <em>{x.unit}</em></b><small>{x.date}</small><p>{x.reading}</p>{x.records&&<small className="rec">máx. {fmt(x.records.max.value,2)} ({x.records.max.date}) · mín. {fmt(x.records.min.value,2)} ({x.records.min.date})</small>}</article>)}</section></>}
+    <section className="nino-exact">
+      <div><span className="section-tag">DATOS EXACTOS Y OFICIALES</span><h2>No son estimaciones: son las mediciones que publican los organismos que vigilan el océano.</h2>
+        <p>Cada número de esta página es la última medición oficial disponible, con su fecha y su fuente: boyas ancladas en el Pacífico ecuatorial (red TAO de NOAA PMEL), flotadores Argo, satélites y reanálisis de NOAA, y la lluvia diaria de ERA5 (Copernicus) para cada localidad. DOTS los descarga directamente de cada organismo, los actualiza todos los días y conserva la serie completa desde 1979 (vientos y océano) o 1948-1950 (temperaturas del mar). Así se pueden comparar con precisión el valor de hoy, los máximos y mínimos históricos y lo que pasó en cada El Niño anterior.</p>
+        <p className="footnote">Lo que sí es interpretación de DOTS está indicado como tal: la lectura de cada indicador y los antecedentes por zona. Un pronóstico estacional siempre es una probabilidad.</p>
+      </div>
+      <ul>
+        <li><b>Viento</b>NOAA CPC · 850 hPa · mensual desde 1979</li>
+        <li><b>Calor y agua cálida</b>NOAA CPC y PMEL (boyas TAO) · desde 1979-1980</li>
+        <li><b>Temperatura del mar</b>NOAA PSL · Niño 1+2, 3.4 y 4 · desde 1948-1950</li>
+        <li><b>Atmósfera</b>SOI, MEI, OLR y MJO · NOAA PSL y CPC</li>
+        <li><b>Lluvia local</b>ERA5 / Copernicus · diaria desde 1991</li>
+      </ul>
     </section>
     <section className="about-body">
       <section className="about-block"><div className="about-side"><span className="module-num">EL VÍNCULO</span><h2>Por qué El Niño trae lluvia e inundaciones al Litoral</h2></div><div className="about-text">

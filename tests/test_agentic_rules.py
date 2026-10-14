@@ -42,3 +42,11 @@ def test_engine_merges_rules(monkeypatch):
     r = ae.analyze(-28.5, -59.0, 'clima', known={'lluvia': {'spi': {'3': {'spi': -1.2, 'mm': 1, 'normal': 2, 'class': 'sequía moderada'}}}})
     assert r['modules'] == ['lluvia'] and r['recommendations'][0].startswith('Prioridad media')
     assert 'módulos del lote' in r['summary']
+
+
+def test_enso_strong_nino_wet_zone():
+    k = {'enso': {'phase': 'El Niño muy fuerte', 'oni': 2.16, 'lot': {'analog_seasons': ['1997-98', '2015-16'],
+          'groups': {'El Niño fuerte o muy fuerte': {'n': 3, 'vs_neutral_pct': 57, 'wetter_than_neutral': 2}}}}}
+    out = ar.evaluate(k)
+    assert 'enso' in out['modules'] and out['recommendations'][0]['priority'] == 1
+    assert 'preparar bajos' in out['recommendations'][0]['text'] and '+57 %' in out['findings'][0]['text']

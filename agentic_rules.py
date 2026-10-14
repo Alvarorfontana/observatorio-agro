@@ -153,6 +153,29 @@ def evaluate(known):
         if cl.get('hours') and cl['hours'] > 8:
             rec(3, 'Viaje de más de 8 horas: planificar descanso, agua y desbaste; considerar la ley de bienestar animal en tránsito.', f"{cl['hours']:.1f} h por camino.")
 
+    # ── El Niño / La Niña frente a la historia del punto ──
+    en = k.get('enso') or {}
+    ph = str(en.get('phase') or '')
+    lot = en.get('lot') or {}
+    if ph and ph != 'sin dato':
+        used.append('enso')
+        g = (lot.get('groups') or {})
+        strong = g.get('El Niño fuerte o muy fuerte') or g.get('El Niño')
+        nina = g.get('La Niña')
+        txt = f"Fase actual del Pacífico: {ph} (ONI {en.get('oni')})."
+        if ph.startswith('El Niño') and strong and strong.get('vs_neutral_pct') is not None:
+            txt += (f" En este punto, las temporadas de octubre a marzo con El Niño fuerte llovieron {strong['vs_neutral_pct']:+d} % "
+                    f"respecto de los años neutrales ({strong['wetter_than_neutral']} de {strong['n']} por encima).")
+            if ph in ('El Niño fuerte', 'El Niño muy fuerte') and strong['vs_neutral_pct'] >= 20:
+                rec(1, 'El Niño fuerte en curso y esta zona suele recibir mucha más lluvia: preparar bajos, aguadas, caminos y la salida de hacienda antes del pico de primavera-verano; planificar reservas de forraje con el excedente de pasto.',
+                    f"{ph}; temporadas Niño fuerte {strong['vs_neutral_pct']:+d} % de lluvia en este punto ({', '.join(lot.get('analog_seasons') or [])}).")
+        elif ph.startswith('La Niña') and nina and nina.get('vs_neutral_pct') is not None:
+            txt += f" Con La Niña, esta zona llovió en la mediana {nina['vs_neutral_pct']:+d} % respecto de los años neutrales."
+            if nina['vs_neutral_pct'] <= -15:
+                rec(1, 'La Niña en curso y esta zona suele quedar más seca: asegurar agua de bebida, ajustar la carga y reservar forraje temprano.',
+                    f"{ph}; temporadas Niña {nina['vs_neutral_pct']:+d} % de lluvia en este punto.")
+        F.append({'topic': 'El Niño / La Niña', 'status': 'observado + historia local', 'text': txt})
+
     # ── cruces entre módulos ──
     if over_ev and (dry or dry_outlook):
         why = (f'SPI 3 meses {spi3:+.2f}' if dry else 'perspectiva más seca que lo normal en ' + ', '.join(dry_outlook))

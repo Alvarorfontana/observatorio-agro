@@ -71,3 +71,12 @@ def test_records_since():
     assert r['max']['value'] == 2.6 and r['since'] == 'dic 2015' and 'desde dic 2015' in r['since_text']
     neg = ec.records([(2010, 1, -3.0), (2021, 1, -1.0), (2026, 9, -2.5)])
     assert neg['since'] == 'ene 2010' and 'más bajo' in neg['since_text']
+
+
+def test_parse_wwv_and_mjo():
+    w = ec.parse_wwv("Warm Water Volume\n202607 0.27E+16 0.3244526E+15\n202608 0.27E+16 0.3459717E+15\n")
+    assert w[-1] == (2026, 8, 3.46)
+    mjo = ("  INDEX_9  INDEX_10 ...\n 20261009  0.1 0.2 0.1 0.3 0.4 0.9 1.6 1.1 0.2 -0.1\n"
+           " 20261014  *****    *****    *****    *****    *****    *****    *****    *****    *****    *****\n")
+    m = ec.parse_mjo(mjo)
+    assert m['center'] == '160°E' and m['pacific'] and m['date'] == '09/10/2026'

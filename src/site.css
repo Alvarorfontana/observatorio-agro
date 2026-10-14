@@ -949,3 +949,16 @@ html, body { overflow-x: hidden; }
 .nino-why-grid article{background:#fff;border-radius:10px;padding:14px;border:1px solid #e4e7ec}
 .nino-why-grid h3{margin:0 0 6px;font-size:15px;color:#0f766e}.nino-why-grid p{font-size:13px;color:#475467;margin:0;line-height:1.5}
 @media (max-width:900px){.nino-explain{grid-template-columns:1fr}.nino-timeline{grid-template-columns:1fr;gap:6px}.nino-timeline li{border-top:0;border-left:4px solid #25b98a;padding:4px 0 8px 18px}.nino-timeline li:before{top:6px;left:-9px}.nino-why-grid{grid-template-columns:1fr 1fr}.nino-extremes{grid-template-columns:1fr}}
+.nino-sub{font-size:12px;color:#344054;background:#fff7ed;border-radius:8px;padding:6px 8px;margin-top:6px;display:flex;flex-direction:column}
+.nino-sub small{color:#b42318;font-weight:600}
+.nino-extras{max-width:1200px;margin:0 auto 26px;padding:0 24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;box-sizing:border-box}
+.nino-extras article{background:#fff;border:1px solid #e4e7ec;border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:3px}
+.nino-extras span{font-size:13px;font-weight:700;color:#10222b}.nino-extras b{font-size:24px;color:#10222b}.nino-extras em{font-style:normal;font-size:12px;color:#667085}
+.nino-extras small{color:#667085;font-size:12px}.nino-extras small.rec{color:#475467}.nino-extras p{font-size:13px;color:#475467;margin:4px 0}
+.nino-exact{max-width:1200px;margin:6px auto 30px;padding:24px;box-sizing:border-box;display:grid;grid-template-columns:1.4fr 1fr;gap:28px;background:#0b2b33;color:#fff;border-radius:16px}
+.nino-exact h2{font-size:clamp(22px,2.4vw,32px);line-height:1.2;margin:8px 0 12px}
+.nino-exact p{color:#c9d6db;line-height:1.65;font-size:15.5px}.nino-exact .footnote{color:#9fb4bc}
+.nino-exact ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;align-self:center}
+.nino-exact li{display:flex;flex-direction:column;font-size:13px;color:#a8bbc4;border-left:3px solid #25efb5;padding-left:10px}
+.nino-exact li b{color:#fff;font-size:15px}
+@media (max-width:900px){.nino-exact{grid-template-columns:1fr}}

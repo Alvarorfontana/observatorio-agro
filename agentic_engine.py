@@ -339,6 +339,15 @@ def analyze(lat, lon, prompt='', polygon=None, ina_id=None, water_assets=None, f
 
     score = _quality(received, warnings)
 
+    known = dict(known or {})
+    if 'enso' not in known and intent in ('integral', 'agua', 'sequia', 'clima'):
+        try:
+            import enso_chain
+            ch = enso_chain.chain()['data']
+            sup = next((st for st in ch.get('steps') or [] if st.get('key') == 'superficie'), {})
+            known['enso'] = {'phase': sup.get('phase'), 'oni': sup.get('oni'), 'lot': enso_chain.lot_impact(lat, lon)['data']}
+        except Exception as e:
+            warnings.append(f'No se pudo evaluar El Niño para el lote ({type(e).__name__}).')
     mod = agentic_rules.evaluate(known)
     findings = mod['findings'] + findings
     metrics = mod['metrics'] + metrics
