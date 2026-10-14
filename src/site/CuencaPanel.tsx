@@ -382,7 +382,7 @@ export function AlertasPortada() {
     return () => { live = false; };
   }, []);
   const c = d?.counts || {};
-  const head = !d ? (err ? "Sistema de Alerta de Crecidas" : "Consultando los ríos…")
+  const head = !d ? (err ? "Sistema de Alerta de Crecidas de la Cuenca del Plata" : "Consultando los ríos…")
     : c["Evacuación"] ? `Crecida: ${c["Evacuación"]} ${c["Evacuación"] === 1 ? "localidad" : "localidades"} en evacuación${c.Alerta ? ` y ${c.Alerta} en alerta` : ""}.`
     : c.Alerta ? `Crecida: ${c.Alerta} ${c.Alerta === 1 ? "localidad" : "localidades"} en alerta${c["Atención"] ? ` y ${c["Atención"]} en atención` : ""}.`
     : c["Atención"] ? `Ríos en atención en ${c["Atención"]} ${c["Atención"] === 1 ? "localidad" : "localidades"}.` : "Ríos sin alertas por ahora.";
@@ -390,7 +390,7 @@ export function AlertasPortada() {
   const top: Data[] = (d?.stations || []).slice(0, 8);
   const max = Math.max(130, ...top.map(r => r.evac && r.alert ? Math.round(100 * r.evac / r.alert) + 10 : 0), ...top.map(r => (r.pct_alert || 0) + 5));
   const last = d?.stations?.map((r: Data) => r.date).sort().slice(-1)[0];
-  return <section className={`ap ap-${tone}`} aria-label="Crecidas en vivo">
+  return <section className={`ap ap-${tone}${err ? " ap-compact" : ""}`} aria-label="Crecidas en vivo">
     <div className="ap-copy">
       <span className="ap-kicker"><i /> EN VIVO · CRECIDAS DE LA CUENCA DEL PLATA</span>
       <h2>{head}</h2>
@@ -407,7 +407,7 @@ export function AlertasPortada() {
         <a href="/api/fuentes/cuenca-informe" download>Informe PDF ↓</a>
       </div>
     </div>
-    <div className="ap-chart">
+    {!err && <div className="ap-chart">
       <div className="ap-chart-head"><b>Cuánto del nivel de alerta alcanzó cada puerto</b><span>altura de hoy · INA, escalas de Prefectura{last ? ` · ${dm(last)}` : ""}</span></div>
       {top.length ? <ul>
         {top.map(r => { const ev = r.evac && r.alert ? (100 * r.evac) / r.alert : null;
@@ -422,7 +422,7 @@ export function AlertasPortada() {
           </li>; })}
       </ul> : <p className="ap-wait">{err ? "El INA no respondió. Abrí el sistema de alertas para ver el resto de los datos." : "Cargando alturas del INA…"}</p>}
       <div className="ap-legend"><span><i className="mk-alert" /> nivel de alerta</span><span><i className="mk-evac" /> nivel de evacuación</span></div>
-    </div>
+    </div>}
   </section>;
 }
 

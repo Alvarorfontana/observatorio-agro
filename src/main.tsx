@@ -2352,7 +2352,20 @@ function SiteLink({to,children,className=""}:{to:string;children:React.ReactNode
   return <a href={to} className={className} onClick={(e)=>{e.preventDefault();history.pushState({},"",to);window.dispatchEvent(new PopStateEvent("popstate"));window.scrollTo({top:0,behavior:"smooth"});}}>{children}</a>
 }
 function Brand(){return <SiteLink to="/" className="site-brand"><img className="brand-logo" src="/dots-logo.svg" alt="DOTS Campo"/><span><b>DOTS <em>CAMPO</em></b><small>DATOS · OBSERVACIÓN · TERRITORIO · SATÉLITE</small></span></SiteLink>}
-function PublicHeader({onDemo}:{onDemo:()=>void}){return <header className="site-header"><Brand/><nav><SiteLink to="/que-es-dots">Qué es DOTS</SiteLink><SiteLink to="/guia">Cómo funciona</SiteLink><SiteLink to="/libre-deforestacion" className="nav-highlight">Vender a Europa</SiteLink><SiteLink to="/modulos">Módulos</SiteLink><SiteLink to="/cultivos">Cultivos</SiteLink><SiteLink to="/panel">Panel regional</SiteLink><SiteLink to="/tecnologia">Fuentes</SiteLink><SiteLink to="/conexiones">APIs</SiteLink><button className="nav-demo" onClick={onDemo}>Demo</button></nav><div className="site-head-actions"><SiteLink to="/alertas" className="alert-btn">⚠ Alertas</SiteLink><SiteLink to="/capas" className="layers-btn">◧ Capas<span className="lb-long">&nbsp;del mapa</span></SiteLink><SiteLink to="/acceso" className="ghost-link">Ingresar</SiteLink><button className="demo-btn" onClick={onDemo}>Abrir Observatorio →</button></div></header>}
+function PublicHeader({onDemo}:{onDemo:()=>void}){return <header className="site-header"><Brand/><nav>
+  <SiteLink to="/que-es-dots">Qué es DOTS</SiteLink>
+  <SiteLink to="/libre-deforestacion" className="nav-highlight">Vender a Europa</SiteLink>
+  <SiteLink to="/panel">Panel regional</SiteLink>
+  <SiteLink to="/modulos">Módulos</SiteLink>
+  <details className="nav-more"><summary>Más</summary><div>
+    <SiteLink to="/guia">Cómo funciona</SiteLink><SiteLink to="/cultivos">Cultivos</SiteLink><SiteLink to="/capas">Capas del mapa</SiteLink>
+    <SiteLink to="/tecnologia">Fuentes</SiteLink><SiteLink to="/conexiones">APIs</SiteLink><SiteLink to="/casos">Casos</SiteLink><SiteLink to="/contacto">Contacto</SiteLink>
+  </div></details>
+</nav><div className="site-head-actions"><SiteLink to="/alertas" className="alert-btn">⚠ Alertas</SiteLink><SiteLink to="/acceso" className="ghost-link">Ingresar</SiteLink><button className="demo-btn" onClick={onDemo}>Abrir Observatorio →</button>
+  <details className="nav-mobile"><summary aria-label="Menú">☰</summary><div>
+    <button className="nav-mobile-demo" onClick={onDemo}>Abrir Observatorio →</button>
+    {([["/que-es-dots","Qué es DOTS"],["/libre-deforestacion","Vender a Europa"],["/panel","Panel regional"],["/alertas","Alertas de crecidas"],["/modulos","Módulos"],["/guia","Cómo funciona"],["/cultivos","Cultivos"],["/capas","Capas del mapa"],["/tecnologia","Fuentes"],["/conexiones","APIs"],["/casos","Casos"],["/contacto","Contacto"],["/acceso","Ingresar"]] as [string,string][]).map(([to,l])=><SiteLink key={to} to={to}>{l}</SiteLink>)}
+  </div></details></div></header>}
 const sourceGroups=[
  ["ARGENTINA",["CONAE · SAOCOM","SMN","INA"]],
  ["EUROPA",["Copernicus · Sentinel","ECMWF · C3S","EUMETSAT","DLR · Alemania","CNES · Francia"]],
