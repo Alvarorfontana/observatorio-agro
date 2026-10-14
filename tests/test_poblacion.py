@@ -71,3 +71,13 @@ def test_self_intersection_and_holes_and_disjoint():
     assert abs(area_km2(g) / area_km2(polygon(rect(0, 0, 2, 2))) - 0.75) < 0.01
     r = prepare({**req(), 'hazard': rect(-60, -30, -59.9, -29.9)})
     assert r['intersection'] is None and r['hazard_in_area_km2'] == 0
+
+
+def test_report_pdf():
+    from poblacion import report
+    r = prepare(req())
+    d = {**r, 'population_total': 131773.9, 'population_exposed': 21197.0, 'exposed_percent': 16.09, 'population_group': 'Población total',
+         'source': {'provider': 'WorldPop'}, 'method': 'm', 'interpretation': 'i', 'notes': ['nota']}
+    pdf = report.pdf(d)
+    assert pdf[:5] == b'%PDF-'
+    open('/tmp/claude-0/-home-claude-observatorio-agro/7430de8f-4cd8-57d3-a5ea-bf5e24ee75bb/scratchpad/pob.pdf', 'wb').write(pdf) if os.path.isdir('/tmp/claude-0/-home-claude-observatorio-agro/7430de8f-4cd8-57d3-a5ea-bf5e24ee75bb/scratchpad') else None

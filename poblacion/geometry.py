@@ -161,6 +161,6 @@ def prepare(data):
     enso=event.get('enso','sin_especificar')
     if enso not in ('el_nino','la_nina','neutral','sin_especificar'):
         raise InputError('Fase ENOS inválida.')
-    return {'area':aoi.mapping(),'intersection':inter.mapping() if not inter.is_empty else None,
+    return {'area':aoi.mapping(),'hazard':hazard.mapping(),'intersection':inter.mapping() if not inter.is_empty else None,
             'year':year,'area_km2':area_km2(aoi),'hazard_in_area_km2':area_km2(inter),
             'event':{'kind':kind,'category':category,'source':source.strip(),'date':when,'enso':enso}}

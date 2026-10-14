@@ -862,7 +862,7 @@ html, body { overflow-x: hidden; }
 .hl-stat:hover b { color: #0f4c5c; text-decoration: underline; text-underline-offset: 3px; }
 .hl-doors { padding: 56px 6vw 64px; background: #fff; color: #13232b; }
 .hl-doors h2 { font-family: "IBM Plex Serif", Georgia, serif; font-weight: 600; font-size: 30px; margin: 0 0 22px; }
-.hl-doors > div { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 2px solid #13232b; }
+.hl-doors > div { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border-top: 2px solid #13232b; }
 .hl-doors > div > * { display: grid; align-content: start; gap: 8px; padding: 22px 22px 26px 0; text-align: left; background: none; border: 0; border-bottom: 1px solid #dcdfd9; color: inherit; text-decoration: none; font: inherit; cursor: pointer; }
 .hl-doors span { font: 500 12.5px "IBM Plex Mono", monospace; color: #0f4c5c; }
 .hl-doors b { font-family: "IBM Plex Serif", Georgia, serif; font-size: 21px; font-weight: 600; }

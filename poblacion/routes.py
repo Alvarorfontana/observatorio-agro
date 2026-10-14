@@ -128,3 +128,15 @@ def result():
     except (BadSignature,SignatureExpired): return jsonify(error='Consulta vencida o token inválido. Iniciá un nuevo cálculo.'),400
     except worldpop.UpstreamError as exc: return jsonify(error=str(exc)),502
     except RuntimeError: return jsonify(error='Configuración de firma no disponible.'),503
+
+
+@bp.post('/api/poblacion/informe')
+def report_pdf():
+    from flask import Response
+    from . import report
+    try:
+        out=report.pdf(request.get_json(silent=True))
+        name='DOTS-poblacion-expuesta-'+datetime.now(timezone.utc).strftime('%Y-%m-%d')+'.pdf'
+        return Response(out,mimetype='application/pdf',headers={'Content-Disposition':f'attachment; filename="{name}"','Cache-Control':'no-store'})
+    except InputError as exc: return jsonify(error=str(exc)),400
+    except Exception: return jsonify(error='No se pudo generar el informe PDF.'),500

@@ -2479,6 +2479,7 @@ function HomeLead({onDemo}:{onDemo:()=>void}){
     ["Exportador o frigorífico","Evidencia libre de deforestación por proveedor, en el formato que pide Europa.","/libre-deforestacion"],
     ["Municipio o vecino ribereño","Alerta de crecidas por localidad, con informe formal para compartir.","/alertas"],
     ["Estudiante o periodista","Datos abiertos con su fuente, El Niño explicado y guías para leer cada número.","/panel"],
+    ["Defensa Civil o planificación","Cuántas personas viven dentro de un área inundada, en sequía o con fuego, con informe en PDF.","/poblacion"],
   ];
   return <>
     <section className="hl-hero">
@@ -2492,12 +2493,14 @@ function HomeLead({onDemo}:{onDemo:()=>void}){
         <h2>Ahora en la región</h2>
         <SiteLink to="/alertas" className="hl-stat"><span>Ríos de la Cuenca del Plata</span><b>{riosTxt}</b><small>{riosSub}</small><em>Fuente: INA y Prefectura Naval</em></SiteLink>
         <SiteLink to="/panel" className="hl-stat"><span>El Niño</span><b>{ninoTxt}</b><small>{ninoSub}</small><em>Fuente: NOAA CPC{nino?.status?` · ${nino.status.es}`:""}</em></SiteLink>
+        <a href="/poblacion" className="hl-stat"><span>Población y riesgo climático</span><b>¿Cuánta gente vive en la zona afectada?</b><small>Dibujá el área de inundación, sequía o fuego y obtené el informe</small><em>Fuente: WorldPop · Universidad de Southampton</em></a>
         <SiteLink to="/libre-deforestacion" className="hl-stat"><span>Exportar a la Unión Europea</span><b>EUDR desde el 30/12/2026</b><small>Corte de deforestación: 31/12/2020</small><em>Fuente: Reglamento (UE) 2023/1115</em></SiteLink>
       </aside>
     </section>
     <section className="hl-doors"><h2>¿Por dónde empezar?</h2><div>
       {doors.map(([t,d,to],i)=>to==="demo"
         ?<button key={t} onClick={onDemo}><span>{String(i+1).padStart(2,"0")}</span><b>{t}</b><p>{d}</p></button>
+        :to==="/poblacion"?<a key={t} href={to}><span>{String(i+1).padStart(2,"0")}</span><b>{t}</b><p>{d}</p></a>
         :<SiteLink key={t} to={to}><span>{String(i+1).padStart(2,"0")}</span><b>{t}</b><p>{d}</p></SiteLink>)}
     </div></section>
   </>;

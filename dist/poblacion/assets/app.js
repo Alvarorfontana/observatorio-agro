@@ -2,38 +2,45 @@ const $=id=>document.getElementById(id);
 const number=(v,digits=0)=>v==null?'Sin dato':new Intl.NumberFormat('es-AR',{maximumFractionDigits:digits}).format(v);
 const make=(tag,text)=>{const e=document.createElement(tag);e.textContent=text;return e;};
 const colors={area:'#246fa6',hazard:'#b76d27',intersection:'#bc3647'};
-let map=null,layers={},draw=null,vertices=[],draft=null,last=null,token=null,busy=false,generation=0;
+let map=null,layers={},draw=null,rectMode=false,vertices=[],draft=null,last=null,token=null,busy=false,generation=0;
 const today=new Date();$('event-date').value=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
 function status(text){$('status').textContent=text;}
 function clearResult(){last=null;token=null;generation++;$('resume').hidden=true;
   for(const id of ['total','exposed','percent','surface'])$(id).textContent='—';
-  for(const id of ['export-json','export-csv','print'])$(id).disabled=true;
+  for(const id of ['export-json','export-csv','print','pdf'])$(id).disabled=true;
   $('population-year').textContent='Esperando cálculo';$('event-label').textContent='Sin área analizada';
   $('details').replaceChildren(make('h3','Resultados con trazabilidad'),make('p','La consulta se actualiza al calcular. Las cifras anteriores se eliminan cuando cambian los parámetros.'));
   if(map&&layers.intersection){map.removeLayer(layers.intersection);delete layers.intersection;}
 }
-function geometry(id){const value=JSON.parse($(id).value);return value.type==='Feature'?value.geometry:value;}
+function geometry(id){const raw=$(id).value.trim();if(!raw)throw new Error(id==='area'?'Falta dibujar la zona de estudio (azul).':'Falta dibujar el área de amenaza (naranja).');let value;try{value=JSON.parse(raw);}catch{throw new Error('El GeoJSON pegado no es válido.');}return value.type==='Feature'?value.geometry:value;}
 function setShape(id,value){
   if(!['Polygon','MultiPolygon'].includes(value?.type))throw new Error('Se requiere Polygon o MultiPolygon.');
   $(id).value=JSON.stringify(value,null,2);
-  if(map){if(layers[id])map.removeLayer(layers[id]);layers[id]=L.geoJSON(value,{style:{color:colors[id],weight:2,fillOpacity:.13}}).addTo(map);}
+  if(map){if(layers[id])map.removeLayer(layers[id]);layers[id]=L.geoJSON(value,{interactive:false,style:{color:colors[id],weight:2,fillOpacity:.13}}).addTo(map);}
 }
 function fit(){if(!map)return;const available=Object.values(layers).filter(Boolean);if(available.length)map.fitBounds(L.featureGroup(available).getBounds(),{padding:[30,30],maxZoom:14});}
 function initialiseMap(){
   if(!window.L){$('map-fallback').hidden=false;status('Mapa no disponible. Podés importar ambas geometrías en el formulario.');return;}
   map=L.map('map').setView([-27.47,-58.83],11);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(map).on('tileerror',()=>{$('map-fallback').hidden=false;});
-  map.on('click',e=>{if(!draw)return;vertices.push([e.latlng.lng,e.latlng.lat]);if(draft)map.removeLayer(draft);
-    draft=L.polyline(vertices.map(([x,y])=>[y,x]),{color:colors[draw],dashArray:'5 5'}).addTo(map);
-    status(`${vertices.length} vértices. Presioná “Cerrar polígono” con al menos tres puntos.`);
+  map.on('click',e=>{if(!draw)return;vertices.push([e.latlng.lng,e.latlng.lat]);
+    if(rectMode&&vertices.length===2){const [[x1,y1],[x2,y2]]=vertices;if(x1===x2||y1===y2){vertices=[vertices[0]];return;}
+      vertices=[[x1,y1],[x2,y1],[x2,y2],[x1,y2]];finishShape();return;}
+    if(draft)map.removeLayer(draft);
+    draft=(rectMode?L.circleMarker([e.latlng.lat,e.latlng.lng],{radius:5,color:colors[draw],interactive:false}):L.polyline(vertices.map(([x,y])=>[y,x]),{color:colors[draw],dashArray:'5 5',interactive:false})).addTo(map);
+    status(rectMode?'Ahora marcá la esquina opuesta del rectángulo.':`${vertices.length} vértices. Doble clic o “Cerrar polígono” para terminar (mínimo tres).`);
   });
+  map.on('dblclick',e=>{if(!draw||rectMode)return;L.DomEvent.stop(e);vertices.pop();if(vertices.length>=3)finishShape();});
 }
 if(document.readyState==='complete')initialiseMap();else window.addEventListener('load',initialiseMap,{once:true});
-function cancelDraw(){draw=null;vertices=[];if(map&&draft)map.removeLayer(draft);draft=null;}
-for(const id of ['area','hazard'])$('draw-'+id).addEventListener('click',()=>{if(!map){status('Usá la importación GeoJSON: el mapa no cargó.');return;}cancelDraw();draw=id;status(`Marcá los vértices de ${id==='area'?'la zona':'la amenaza'} en el mapa.`);});
+function cancelDraw(){draw=null;rectMode=false;vertices=[];if(map&&draft)map.removeLayer(draft);draft=null;if(map)map.doubleClickZoom.enable();$('map').classList.remove('drawing');}
+function startDraw(id,rect){if(!map){status('Usá la importación GeoJSON: el mapa no cargó.');return;}cancelDraw();draw=id;rectMode=rect;map.doubleClickZoom.disable();$('map').classList.add('drawing');
+  status(rect?`Rectángulo de ${id==='area'?'la zona':'la amenaza'}: marcá una esquina en el mapa.`:`Marcá los vértices de ${id==='area'?'la zona':'la amenaza'} en el mapa. Doble clic para terminar.`);}
+for(const id of ['area','hazard']){$('draw-'+id).addEventListener('click',()=>startDraw(id,false));const r=$('rect-'+id);if(r)r.addEventListener('click',()=>startDraw(id,true));}
+function finishShape(){const id=draw;setShape(id,{type:'Polygon',coordinates:[[...vertices,vertices[0]]]});cancelDraw();clearResult();
+  status(id==='area'?(layers.hazard?'Zona guardada. Ya podés calcular.':'Zona guardada. Ahora dibujá el área de amenaza (puede superponerse con la zona).'):(layers.area?'Amenaza guardada. Tocá “Calcular población expuesta”.':'Amenaza guardada. Falta dibujar la zona de estudio.'));}
 $('cancel').addEventListener('click',()=>{cancelDraw();status('Dibujo cancelado.');});
-$('finish').addEventListener('click',()=>{if(!draw||vertices.length<3){status('Marcá al menos tres vértices antes de cerrar.');return;}const id=draw;
-  setShape(id,{type:'Polygon',coordinates:[[...vertices,vertices[0]]]});cancelDraw();clearResult();status('Geometría guardada. Completá los parámetros y calculá.');});
+$('finish').addEventListener('click',()=>{if(!draw||rectMode||vertices.length<3){status(rectMode?'En modo rectángulo se cierra solo con la segunda esquina.':'Marcá al menos tres vértices antes de cerrar.');return;}finishShape();});
 $('apply').addEventListener('click',()=>{try{clearResult();setShape('area',geometry('area'));setShape('hazard',geometry('hazard'));fit();status('Geometrías importadas. El servidor validará su forma antes de calcular.');}catch(e){status(`GeoJSON: ${e.message}`);}});
 for(const id of ['area','hazard','year','dataset','kind','category','event-date','event-source','enso'])$(id).addEventListener('input',()=>{clearResult();status('Parámetros modificados. Volvé a calcular para actualizar los resultados.');});
 
@@ -41,39 +48,48 @@ async function jsonFetch(path,payload){const controller=new AbortController(),ti
   try{const r=await fetch(path,{method:payload?'POST':'GET',headers:payload?{'Content-Type':'application/json'}:{},body:payload?JSON.stringify(payload):undefined,signal:controller.signal});
     const data=await r.json();if(!r.ok)throw new Error(data.error||'La consulta no pudo completarse.');return data;
   }finally{clearTimeout(timer);}}
-async function poll(startGeneration){
+async function poll(startGeneration,note){
   for(let i=0;i<30;i++){
     if(generation!==startGeneration)return;
     const result=await jsonFetch('/api/poblacion/resultado',{token});
     if(generation!==startGeneration)return;
-    if(result.status!=='pending'){show(result);token=null;return;}
+    if(result.status!=='pending'){show(result,note);token=null;return;}
     status(`WorldPop está procesando la zona. Consulta ${i+1}/30…`);
     await new Promise(resolve=>setTimeout(resolve,3000));
   }
   status('El cálculo sigue pendiente en WorldPop. Podés continuar la consulta sin iniciar otro trabajo.');$('resume').hidden=false;
 }
 function setBusy(value){busy=value;$('calculate').disabled=value;$('resume').disabled=value;}
+async function run(year,current,note){
+  const payload={area:geometry('area'),hazard:geometry('hazard'),year,dataset:$('dataset').value,
+    event:{kind:$('kind').value,category:$('category').value,source:$('event-source').value,date:$('event-date').value,enso:$('enso').value}};
+  setShape('area',payload.area);setShape('hazard',payload.hazard);fit();status(note||'Enviando geometrías y consultando población en WorldPop…');
+  const data=await jsonFetch('/api/poblacion/exposicion',payload);if(generation!==current)return;
+  if(data.status==='pending'){token=data.token;await poll(current,note);}else show(data,note);
+}
 $('analysis').addEventListener('submit',async e=>{
-  e.preventDefault();if(busy)return;clearResult();setBusy(true);const current=generation;
-  try{
-    const payload={area:geometry('area'),hazard:geometry('hazard'),year:Number($('year').value),dataset:$('dataset').value,
-      event:{kind:$('kind').value,category:$('category').value,source:$('event-source').value,date:$('event-date').value,enso:$('enso').value}};
-    setShape('area',payload.area);setShape('hazard',payload.hazard);fit();status('Enviando geometrías y consultando población…');
-    const data=await jsonFetch('/api/poblacion/exposicion',payload);if(generation!==current)return;
-    if(data.status==='pending'){token=data.token;await poll(current);}else show(data);
-  }catch(error){if(generation===current){status(error.name==='AbortError'?'El servidor excedió el tiempo de respuesta.':'No se pudo completar: '+error.message);if(token)$('resume').hidden=false;}}
+  e.preventDefault();if(busy)return;clearResult();setBusy(true);const current=generation;const year=Number($('year').value);
+  try{await run(year,current);}
+  catch(error){
+    if(generation!==current)return;
+    // Si WorldPop no tiene el año pedido para esta zona, se usa 2025 (último año con datos confirmados) y se avisa.
+    if(year!==2025&&!/Falta dibujar|GeoJSON|geometr|vértices|Reducí/i.test(error.message)&&error.name!=='AbortError'){
+      try{token=null;await run(2025,current,`WorldPop no devolvió datos para ${year}; se calculó con 2025.`);return;}
+      catch(e2){error=e2;}
+    }
+    status(error.name==='AbortError'?'El servidor excedió el tiempo de respuesta.':'No se pudo completar: '+error.message);if(token)$('resume').hidden=false;}
   finally{setBusy(false);}
 });
 $('resume').addEventListener('click',async()=>{if(!token||busy)return;setBusy(true);try{await poll(generation);}catch(e){status(e.message);}finally{setBusy(false);}});
 
-function show(data){
-  last=data;$('resume').hidden=true;
+function show(data,note){
+  last=data;if(note)data.notes=[note,...(data.notes||[])];$('resume').hidden=true;
   $('total').textContent=number(data.population_total);$('exposed').textContent=number(data.population_exposed);
   $('percent').textContent=data.exposed_percent==null?'Sin dato':number(data.exposed_percent,1)+'%';
   $('surface').textContent=number(data.hazard_in_area_km2,2)+' km²';
   $('population-year').textContent=`${data.source.provider} · ${data.year} · ${data.population_group}`;
   $('event-label').textContent=`${data.event.kind} · ${data.event.date}`;
-  if(map&&data.intersection){layers.intersection=L.geoJSON(data.intersection,{style:{color:colors.intersection,weight:3,fillOpacity:.3}}).addTo(map);}
+  if(map&&data.intersection){layers.intersection=L.geoJSON(data.intersection,{interactive:false,style:{color:colors.intersection,weight:3,fillOpacity:.3}}).addTo(map);}
   const rows=[['Fuente de población',data.source.provider],['Grupo',data.population_group],['Año de población',String(data.year)],
     ['Densidad',number(data.density_per_km2,1)+' personas/km²'],['Tipo de amenaza',data.event.category],
     ['Fuente de amenaza',data.event.source],['Contexto ENOS',data.event.enso],
@@ -82,8 +98,8 @@ function show(data){
   $('details').replaceChildren(make('h3',data.status==='partial_coverage'?'Resultado con cobertura parcial':data.status==='no_data'?'Sin cobertura poblacional':'Resultado del análisis'));
   const dl=make('dl','');for(const [key,val]of rows)dl.append(make('dt',key),make('dd',val));$('details').append(dl,make('p',data.interpretation));
   for(const note of data.notes||[])$('details').append(make('p',note));
-  status(data.status==='complete'?'Consulta completada. Podés descargar los resultados y el informe.':data.status==='no_data'?'No hay datos válidos para esta zona; no equivale a población cero.':'La cobertura es parcial; las cifras corresponden al sector con datos.');
-  for(const id of ['export-json','export-csv','print'])$(id).disabled=false;
+  status(note?note+' Consulta completada.':data.status==='complete'?'Consulta completada. Podés descargar el informe en PDF.':data.status==='no_data'?'No hay datos válidos para esta zona; no equivale a población cero.':'La cobertura es parcial; las cifras corresponden al sector con datos.');
+  for(const id of ['export-json','export-csv','print','pdf'])$(id).disabled=false;
   document.dispatchEvent(new CustomEvent('dots:population-result',{detail:data}));
 }
 function save(name,text,type){const url=URL.createObjectURL(new Blob([text],{type}));const a=make('a','');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
@@ -111,3 +127,9 @@ window.dotsPopulation={setStudyArea(value){clearResult();setShape('area',value.t
 document.addEventListener('dots:population-area',e=>window.dotsPopulation.setStudyArea(e.detail));
 document.addEventListener('dots:population-hazard',e=>window.dotsPopulation.setHazard(e.detail.geometry,e.detail.event));
 jsonFetch('/api/poblacion/datasets').then(data=>{for(const d of data.datasets.filter(x=>x.id!=='worldpop-api')){const o=make('option',`${d.provider} · ${d.group} · ${d.year}`);o.value=d.id;$('dataset').append(o);}}).catch(e=>status('Registro de fuentes: '+e.message));
+
+$('pdf').addEventListener('click',async()=>{if(!last)return;const b=$('pdf');b.disabled=true;const t=b.textContent;b.textContent='Generando PDF…';
+  try{const r=await fetch('/api/poblacion/informe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(last)});
+    if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.error||'No se pudo generar el PDF.');}
+    const url=URL.createObjectURL(await r.blob());const a=make('a','');a.href=url;a.download=`DOTS-poblacion-expuesta-${(last.event?.date||'')}.pdf`;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);}
+  catch(e){status(e.message);}finally{b.textContent=t;b.disabled=false;}});
