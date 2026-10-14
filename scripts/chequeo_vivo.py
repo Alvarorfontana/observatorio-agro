@@ -21,6 +21,7 @@ POST = {
     'analizar': {'lat': LAT, 'lon': LON, 'polygon': LOT, 'nombre': 'Lote control'},
     'eudr/pdf': {'lot': {'name': 'Lote control', 'vertices': LOT}, 'establecimiento': 'Control'},
     'eudr/geojson': {'lot': {'name': 'Lote control', 'vertices': LOT}},
+    'eudr/whisp': {'lot': {'name': 'Lote control', 'vertices': LOT}, 'product': 'bovino'},
     'ganado': {'lat': LAT, 'lon': LON, 'vertices': LOT, 'herd': [{'cat': 'vaca', 'heads': 120, 'weight': 420}, {'cat': 'ternero', 'heads': 60}]},
 }
 
