@@ -672,6 +672,14 @@ def maps(alerts=None, today=None):
                             gibs_url('MODIS_Terra_CorrectedReflectance_TrueColor', zone_bbox, y1, 900, 600, 'image/jpeg')],
                  'overlay': gibs_url('Coastlines_15m', zone_bbox, None, 900, 600),
                  'caption': 'VIIRS (Suomi NPP) color real, NASA GIBS. Muestra nubes y ríos desbordados cuando el cielo está despejado; resolución ~250-375 m.'},
+        'flood': {'title': f'Agua detectada por satélite · 3 días · {zone_name}', 'date': y1, 'bbox': zone_bbox,
+                  'layers': [gibs_url('MODIS_Combined_Flood_3-Day', zone_bbox, y1, 900, 600),
+                             gibs_url('VIIRS_Combined_Flood_3-Day', zone_bbox, y1, 900, 600)],
+                  'base': gibs_url('VIIRS_SNPP_CorrectedReflectance_TrueColor', zone_bbox, y1, 900, 600, 'image/jpeg'),
+                  'overlay': gibs_url('Coastlines_15m', zone_bbox, None, 900, 600),
+                  'caption': 'Producto global de crecidas MODIS/VIIRS (NASA LANCE) vía GIBS, acumulado de 3 días, ~250 m. '
+                             'Celeste: agua habitual; amarillo: anegamiento recurrente de la zona; rojo: agua fuera de lo habitual. '
+                             'Gris: sin dato por nubes o relieve. Las sombras de nubes pueden dar falsas detecciones: confirmar con la imagen del día.'},
         'rain': {'title': 'Lluvia satelital sobre la Cuenca del Plata', 'date': y1, 'bbox': PLATA_BBOX,
                  'layers': [gibs_url('IMERG_Precipitation_Rate', PLATA_BBOX, y1, 840, 800)],
                  'base': gibs_url('VIIRS_SNPP_CorrectedReflectance_TrueColor', PLATA_BBOX, y1, 840, 800, 'image/jpeg'),

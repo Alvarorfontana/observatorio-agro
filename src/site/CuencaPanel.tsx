@@ -29,6 +29,9 @@ function Spark({ values, height = 44 }: { values: (number | null)[]; height?: nu
   </svg>;
 }
 
+// Colores del producto global de crecidas MODIS/VIIRS (NASA LANCE) tal como los sirve GIBS
+const FLOOD_CLASSES: [string, string][] = [["#00e5ff", "Agua habitual"], ["#ffd400", "Anegamiento recurrente"], ["#ff1a1a", "Agua fuera de lo habitual"], ["#9e9e9e", "Sin dato (nubes o relieve)"]];
+
 // Imagen de NASA GIBS: prueba las capas en orden y se oculta si ninguna responde
 function GibsImg({ m, alt }: { m: Data; alt: string }) {
   const [i, setI] = useState(0), [gone, setGone] = useState(false), [ovl, setOvl] = useState(true);
@@ -617,7 +620,8 @@ export function CuencaPanel() {
 
     {res?.maps && (res.maps.zone || res.maps.rain) && <div className="cp-block">
       <h3>Imágenes de la zona <small>NASA GIBS · día anterior · las nubes pueden tapar el suelo</small></h3>
-      <div className="cp-maps2"><GibsImg m={res.maps.zone} alt="Imagen satelital de la zona en alerta" /><GibsImg m={res.maps.rain} alt="Lluvia satelital sobre la Cuenca del Plata" /></div>
+      <div className="cp-maps2"><GibsImg m={res.maps.zone} alt="Imagen satelital de la zona en alerta" /><GibsImg m={res.maps.flood} alt="Agua detectada por satélite en los últimos 3 días" /><GibsImg m={res.maps.rain} alt="Lluvia satelital sobre la Cuenca del Plata" /></div>
+      {res.maps.flood && <div className="cp-swatches" aria-label="Leyenda del mapa de crecidas">{FLOOD_CLASSES.map(([c, l]) => <span key={l}><i style={{ background: c }} />{l}</span>)}</div>}
     </div>}
 
     {dm2?.dams && <div className="cp-block">

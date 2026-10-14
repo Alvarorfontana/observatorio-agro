@@ -379,3 +379,10 @@ def test_carbono_soilgrids_en_t_ha(monkeypatch):
     monkeypatch.setattr(sus.c, 'soilgrids', lambda *a, **k: {'data': raw, 'point_used': None, 'source_url': 'x'})
     d = sus.carbon(-29.2, -59.04, area_ha=100)['data']
     assert d['soc_t_ha'] == 35 and d['soc_t_ha_range'] == [20, 52] and d['soc_total_t'] == 3500
+
+
+def test_maps_incluye_crecidas_gibs():
+    m = cc.maps()
+    f = m['flood']
+    assert 'MODIS_Combined_Flood_3-Day' in f['layers'][0] and 'VIIRS_Combined_Flood_3-Day' in f['layers'][1]
+    assert 'epsg4326' in f['layers'][0] and f['base'] and f['caption']

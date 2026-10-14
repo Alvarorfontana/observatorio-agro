@@ -158,12 +158,12 @@ def build_data(d, images=None, today=None):
 
     maps = d.get('maps') or {}
     pics = []
-    for k in ('sst', 'zone', 'rain'):
+    for k in ('sst', 'zone', 'flood', 'rain'):
         m = maps.get(k)
         if not m:
             continue
         main = img(k)
-        if not main and not img(k, 'base'):
+        if not main and (k == 'flood' or not img(k, 'base')):   # sin la capa de crecidas, la foto sola ya está en 'zone'
             continue
         pics.append({'key': k, 'title': m['title'], 'date': dm(m.get('date')) + '/' + str(m.get('date', ''))[:4], 'caption': m['caption'],
                      'image': main, 'overlay': img(k, 'overlay'), 'base': img(k, 'base')})

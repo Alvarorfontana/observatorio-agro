@@ -76,6 +76,9 @@ type Source = {
 const RESEARCH = ["plataformas","sentinel-hub-ndvi","openeo-ndvi","gee-ndvi","inta-suelos-wms","aire","elevacion","ina","usgs","nasa-catalogo","productos-nasa","landsat","radar","copernicus-stac","cnes-stac","dlr-stac","deafrica-stac","firms","nasa-power-30","enso","era5-cds","sentinel-hub","noaa-cdo","usgs-m2m","nasa-earthdata","copernicus-marine","gee","openaq","gfw","aemet","eumetsat","jaxa","mosdac","kma","fengyun"];
 const NDVI_VIEWS = ["ndvi","sentinel-hub-ndvi","openeo-ndvi","gee-ndvi"];
 const GIBS_WMS = "https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi";
+// Crecidas y focos de calor sólo se publican en coordenadas geográficas: se piden en EPSG:4326.
+const GIBS_WMS_4326 = "https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi";
+const FLOOD_CLASSES: [string,string][] = [["#00e5ff","Agua habitual"],["#ffd400","Anegamiento recurrente"],["#ff1a1a","Agua fuera de lo habitual"],["#9e9e9e","Sin dato"]];
 const WORLDCOVER = "esa-worldcover-map-10m-2021-v2_map";
 const WORLDCOVER_CLASSES: [string,string][] = [["#006400","Árboles / monte"],["#ffbb22","Arbustal"],["#ffff4c","Pastizal"],["#f096ff","Cultivo"],["#fa0000","Construido"],["#b4b4b4","Suelo desnudo"],["#0064c8","Agua"],["#0096a0","Humedal herbáceo"]];
 const GIBS_LAYERS: [string,string,string,string?][] = [
@@ -85,6 +88,9 @@ const GIBS_LAYERS: [string,string,string,string?][] = [
   ["SMAP_L4_Analyzed_Surface_Soil_Moisture","Humedad de suelo SMAP · 9 km","Modelo asimilado, 0–5 cm. Escala regional."],
   ["IMERG_Precipitation_Rate","Lluvia GPM IMERG · 30 min","Tasa de lluvia satelital estimada, no pluviómetro."],
   ["GOES-East_ABI_Band13_Clean_Infrared","Nubes GOES-East · infrarrojo · 10 min","Satélite meteorológico geoestacionario: topes nubosos fríos = tormentas. Última imagen disponible."],
+  ["MODIS_Combined_Flood_3-Day","Crecidas MODIS · 3 días · 250 m","Celeste: agua habitual · amarillo: anegamiento recurrente · rojo: agua fuera de lo habitual · gris: sin dato. Confirmar con la imagen del día: las sombras de nubes dan falsas detecciones.",GIBS_WMS_4326],
+  ["VIIRS_Combined_Flood_3-Day","Crecidas VIIRS · 3 días · 375 m","Mismo producto con los satélites NOAA-20 y NOAA-21. Sirve de respaldo cuando MODIS no tiene pasada.",GIBS_WMS_4326],
+  ["VIIRS_NOAA20_Thermal_Anomalies_375m_All","Focos de calor VIIRS · 375 m","Anomalías térmicas (quemas e incendios) detectadas por NOAA-20, último día disponible.",GIBS_WMS_4326],
   [WORLDCOVER,"Cobertura ESA WorldCover · 10 m","Árboles, pastizal, cultivo, agua y humedales (2021). Fuente: ESA / VITO Terrascope, CC-BY 4.0.","https://titiler.terrascope.be/wms"],
 ];
 const NATIONAL = ["smn", "inmet", "dmc", "eccc", "nws"];
@@ -585,7 +591,8 @@ function Observatory({onHome}:{onHome:()=>void}) {
     const cfg = GIBS_LAYERS.find(([k])=>k===gibsLayer);
     const isWC = gibsLayer === WORLDCOVER;
     const wms = L.tileLayer.wms(cfg?.[3] || GIBS_WMS, {
-      layers: gibsLayer, format: "image/png", transparent: true, opacity: isWC ? .6 : .7,
+      layers: gibsLayer, format: "image/png", transparent: true, opacity: isWC ? .6 : gibsLayer.includes("Flood") ? .85 : .7,
+      ...(cfg?.[3] === GIBS_WMS_4326 ? { crs: L.CRS.EPSG4326 } : {}),
       attribution: isWC ? "ESA WorldCover 2021 / VITO Terrascope (CC-BY 4.0)" : "NASA GIBS / EOSDIS",
     } as L.WMSOptions).addTo(mapRef.current);
     let warned = false;
@@ -1918,6 +1925,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
             ? "LÍMITE DELIMITADO POR EL USUARIO"
             : "SIN LÍMITES CATASTRALES"}
         </div>
+        {gibsLayer.includes("_Flood_") && <div className="dots-legend wc-legend" aria-label="Leyenda de crecidas">{FLOOD_CLASSES.map(([c,l])=><span key={l}><i style={{background:c}}/>{l}</span>)}</div>}
         {gibsLayer===WORLDCOVER && <div className="dots-legend wc-legend" aria-label="Leyenda WorldCover">{WORLDCOVER_CLASSES.map(([c,l])=><span key={l}><i style={{background:c}}/>{l}</span>)}</div>}
         <MarkerLegend types={[...fieldMarkers.map((m:any)=>m.type),...waterAssets.map((a:any)=>a.type)]}/>
         </section>
