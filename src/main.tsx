@@ -93,6 +93,15 @@ const GIBS_LAYERS: [string,string,string,string?][] = [
   ["VIIRS_NOAA20_Thermal_Anomalies_375m_All","Focos de calor VIIRS · 375 m","Anomalías térmicas (quemas e incendios) detectadas por NOAA-20, último día disponible.",GIBS_WMS_4326],
   [WORLDCOVER,"Cobertura ESA WorldCover · 10 m","Árboles, pastizal, cultivo, agua y humedales (2021). Fuente: ESA / VITO Terrascope, CC-BY 4.0.","https://titiler.terrascope.be/wms"],
 ];
+// Rangos de lectura para cada capa NASA: orientativos, para que cualquiera sepa qué está mirando.
+const GIBS_RANGES: Record<string,{title:string;rows:[string,string][];note?:string}> = {
+  "MODIS_Terra_NDVI_8Day":{title:"NDVI · vigor de la vegetación",rows:[["< 0,2","Suelo desnudo, agua o quemado"],["0,2 – 0,4","Pastizal seco o vegetación rala"],["0,4 – 0,6","Pastura o cultivo en crecimiento"],["> 0,6","Vegetación densa y activa"]]},
+  "MODIS_Terra_Land_Surface_Temp_Day":{title:"Temperatura de la superficie · día",rows:[["< 15 °C","Superficie fresca"],["15 – 30 °C","Rango templado habitual"],["30 – 40 °C","Superficie caliente"],["> 40 °C","Muy caliente: suelo seco o desnudo"]],note:"Es la temperatura del suelo o canopeo, suele superar a la del aire."},
+  "SMAP_L4_Analyzed_Surface_Soil_Moisture":{title:"Humedad del suelo · 0–5 cm",rows:[["< 0,15 m³/m³","Seco"],["0,15 – 0,30","Humedad intermedia"],["> 0,30","Húmedo, cerca de saturar"]],note:"El punto de saturación cambia con la textura del suelo."},
+  "IMERG_Precipitation_Rate":{title:"Intensidad de lluvia",rows:[["< 2,5 mm/h","Débil"],["2,5 – 10 mm/h","Moderada"],["10 – 50 mm/h","Fuerte"],["> 50 mm/h","Muy fuerte"]],note:"Clasificación de la OMM. Estimación satelital, no pluviómetro."},
+  "GOES-East_ABI_Band13_Clean_Infrared":{title:"Temperatura del tope de nubes",rows:[["> 0 °C","Suelo o nubes bajas"],["0 a −30 °C","Nubes medias"],["−30 a −50 °C","Nubes altas, posible lluvia"],["< −50 °C","Tormenta fuerte"]]},
+  "VIIRS_NOAA20_Thermal_Anomalies_375m_All":{title:"Focos de calor",rows:[["Cada punto","Píxel de 375 m más caliente que su entorno"]],note:"No confirma un incendio: puede ser una quema, una chimenea o un techo caliente."},
+};
 const NATIONAL = ["smn", "inmet", "dmc", "eccc", "nws"];
 const SOURCES = [
   ["plataformas","Matriz de conexiones","REST · STAC · WMS/WMTS · OAuth"],
@@ -216,7 +225,10 @@ function powerClimate(data: Data) {
     medRain != null ? `En ${dryYears} de ${annualRain.length} años llovió menos del 75 % de lo habitual (${Math.round(medRain)} mm, mediana). Esa es la frecuencia de un año seco en el lugar.` : "",
     warming != null ? `La segunda mitad del período fue ${Math.abs(warming).toFixed(1)} °C ${warming >= 0 ? "más cálida" : "más fresca"} que la primera (comparación simple; la tendencia con prueba estadística está en Estadística del lote).` : "",
   ].filter(Boolean);
-  return { temp: T, rain: R, rad, years: full, annualRain, medRain, rainYear, tYear, insights, from: full[0], to: full[full.length - 1] };
+  const q = (a: number[], p: number) => { const b = [...a].sort((x, y) => x - y); return b.length ? b[Math.min(b.length - 1, Math.max(0, Math.round(p * (b.length - 1))))] : null; };
+  const range = { rainLo: q(annualRain, .1), rainHi: q(annualRain, .9), rainMin: annualRain.length ? Math.min(...annualRain) : null, rainMax: annualRain.length ? Math.max(...annualRain) : null,
+    tMin: Math.min(...T), tMax: Math.max(...T), rMonthMin: Math.min(...R), rMonthMax: Math.max(...R) };
+  return { temp: T, rain: R, rad, years: full, annualRain, medRain, rainYear, tYear, insights, range, from: full[0], to: full[full.length - 1] };
 }
 
 function Chart({
@@ -1418,6 +1430,12 @@ function Observatory({onHome}:{onHome:()=>void}) {
                   <div className="soil"><span>Temperatura media anual</span><strong>{fmt(pclim.tYear,1)} °C</strong></div>
                   <div className="soil"><span>Lluvia anual promedio</span><strong>{fmt(pclim.rainYear,0)} mm</strong></div>
                   {pclim.medRain!=null && <div className="soil"><span>Lluvia anual · mediana</span><strong>{fmt(pclim.medRain,0)} mm</strong></div>}
+                  <div className="lot-vars-title" style={{marginTop:12}}>Rangos del lugar</div>
+                  <div className="soil"><span>Temperatura media mensual<small style={{display:"block"}}>del mes más fresco al más cálido</small></span><strong>{fmt(pclim.range.tMin,1)} a {fmt(pclim.range.tMax,1)} °C</strong></div>
+                  <div className="soil"><span>Lluvia mensual promedio<small style={{display:"block"}}>del mes más seco al más lluvioso</small></span><strong>{fmt(pclim.range.rMonthMin,0)} a {fmt(pclim.range.rMonthMax,0)} mm</strong></div>
+                  {pclim.range.rainLo!=null && <div className="soil"><span>Lluvia anual habitual<small style={{display:"block"}}>8 de cada 10 años caen en este rango</small></span><strong>{fmt(pclim.range.rainLo,0)} a {fmt(pclim.range.rainHi,0)} mm</strong></div>}
+                  {pclim.range.rainMin!=null && <div className="soil"><span>Lluvia anual extrema<small style={{display:"block"}}>el año más seco y el más lluvioso</small></span><strong>{fmt(pclim.range.rainMin,0)} a {fmt(pclim.range.rainMax,0)} mm</strong></div>}
+                  {pclim.medRain!=null && <p className="footnote">Cómo leer un año: seco si llueve menos de {fmt(pclim.medRain*.75,0)} mm (75 % de la mediana) · normal entre {fmt(pclim.medRain*.75,0)} y {fmt(pclim.medRain*1.25,0)} mm · lluvioso por encima de {fmt(pclim.medRain*1.25,0)} mm.</p>}
                   <div className="lot-vars-title" style={{marginTop:12}}>Lectura del clima</div>
                   {pclim.insights.map((t,i)=><p className="small" key={i} style={{margin:"0 0 8px"}}>{t}</p>)}
                   <p className="footnote">NASA POWER (comunidad AG) · grilla de ~50 km: describe la zona, no el lote. Lluvia corregida con satélite y modelo; para el lote, comparar con pluviómetro propio.</p>
@@ -1979,6 +1997,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
             ? "LÍMITE DELIMITADO POR EL USUARIO"
             : "SIN LÍMITES CATASTRALES"}
         </div>
+        {GIBS_RANGES[gibsLayer] && <div className="dots-legend wc-legend gibs-ranges" aria-label={"Rangos: "+GIBS_RANGES[gibsLayer].title}><b>{GIBS_RANGES[gibsLayer].title}</b>{GIBS_RANGES[gibsLayer].rows.map(([r,l])=><span key={r}><em>{r}</em>{l}</span>)}{GIBS_RANGES[gibsLayer].note && <small>{GIBS_RANGES[gibsLayer].note}</small>}</div>}
         {gibsLayer.includes("_Flood_") && <div className="dots-legend wc-legend" aria-label="Leyenda de crecidas">{FLOOD_CLASSES.map(([c,l])=><span key={l}><i style={{background:c}}/>{l}</span>)}</div>}
         {gibsLayer===WORLDCOVER && <div className="dots-legend wc-legend" aria-label="Leyenda WorldCover">{WORLDCOVER_CLASSES.map(([c,l])=><span key={l}><i style={{background:c}}/>{l}</span>)}</div>}
         <MarkerLegend types={[...fieldMarkers.map((m:any)=>m.type),...waterAssets.map((a:any)=>a.type)]}/>
@@ -2076,7 +2095,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
           </> : view==="nasa-power-30" && pclim ? <>
             <section className="panel chart"><h2>Temperatura media por mes</h2><p className="small">NASA POWER · promedio {pclim.from}–{pclim.to} · °C a 2 m</p><Chart dates={MES} unit="°C" series={[{name:"Temperatura media",values:pclim.temp,color:"#f0b974"}]}/></section>
             <section className="panel chart"><h2>Lluvia por mes</h2><p className="small">NASA POWER · promedio {pclim.from}–{pclim.to} · mm por mes</p><Chart dates={MES} unit="mm" series={[{name:"Lluvia",values:pclim.rain.map(v=>Math.round(v)),type:"bar",color:"#06b6d4"}]}/></section>
-            <section className="panel chart"><h2>Lluvia de cada año</h2><p className="small">Total anual · la línea marca la mediana del período</p><Chart dates={pclim.years} unit="mm" series={[{name:"Lluvia anual",values:pclim.annualRain,type:"bar",color:"#3a8ee6"},...(pclim.medRain!=null?[{name:"Mediana",values:pclim.years.map(()=>pclim.medRain),color:"#77868b"}]:[])]}/></section>
+            <section className="panel chart"><h2>Lluvia de cada año</h2><p className="small">Total anual · líneas: mediana, límite de año seco y de año lluvioso</p><Chart dates={pclim.years} unit="mm" series={[{name:"Lluvia anual",values:pclim.annualRain,type:"bar",color:"#3a8ee6"},...(pclim.medRain!=null?[{name:"Mediana",values:pclim.years.map(()=>pclim.medRain),color:"#77868b"},{name:"Límite año seco (75 %)",values:pclim.years.map(()=>Math.round((pclim.medRain as number)*.75)),color:"#e9bd72"},{name:"Límite año lluvioso (125 %)",values:pclim.years.map(()=>Math.round((pclim.medRain as number)*1.25)),color:"#a7a5ff"}]:[])]}/></section>
           </> : view==="estadistica" && payload?.climatology ? <>
             <section className="panel chart"><h2>Probabilidad de helada y calor por mes</h2><p className="small">ERA5 1991–{new Date().getFullYear()-1} · % de años con al menos una helada · días con máxima ≥ 35 °C</p><Chart dates={payload.climatology.map((m:Data)=>m.label)} unit="%" series={[{name:"Prob. de helada",values:payload.climatology.map((m:Data)=>m.p_frost),type:"bar",color:"#93c5fd"},{name:"Días ≥ 35 °C",values:payload.climatology.map((m:Data)=>m.heat_days),color:"#fd9c91"}]}/></section>
             <section className="panel chart"><h2>Lluvia mensual típica</h2><p className="small">Terciles 1991–hoy · seco por debajo, lluvioso por encima · mm</p><Chart dates={payload.climatology.map((m:Data)=>m.label)} unit="mm" series={[{name:"Tercil seco",values:payload.climatology.map((m:Data)=>m.rain_p33),color:"#e9bd72"},{name:"Mediana",values:payload.climatology.map((m:Data)=>m.rain_med),type:"bar",color:"#06b6d4"},{name:"Tercil lluvioso",values:payload.climatology.map((m:Data)=>m.rain_p67),color:"#a7a5ff"}]}/></section>
