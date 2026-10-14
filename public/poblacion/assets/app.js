@@ -12,7 +12,7 @@ function clearResult(){last=null;token=null;generation++;$('resume').hidden=true
   $('details').replaceChildren(make('h3','Resultados con trazabilidad'),make('p','La consulta se actualiza al calcular. Las cifras anteriores se eliminan cuando cambian los parámetros.'));
   if(map&&layers.intersection){map.removeLayer(layers.intersection);delete layers.intersection;}
 }
-function geometry(id){const raw=$(id).value.trim();if(!raw)throw new Error(id==='area'?'Falta dibujar la zona de estudio (azul).':'Falta dibujar el área de amenaza (naranja).');let value;try{value=JSON.parse(raw);}catch{throw new Error('El GeoJSON pegado no es válido.');}return value.type==='Feature'?value.geometry:value;}
+function geometry(id,optional){const raw=$(id).value.trim();if(!raw){if(optional)return null;throw new Error(id==='area'?'Falta dibujar la zona de estudio (azul).':'Falta dibujar el área de amenaza (naranja).');}let value;try{value=JSON.parse(raw);}catch{throw new Error('El GeoJSON pegado no es válido.');}return value.type==='Feature'?value.geometry:value;}
 function setShape(id,value){
   if(!['Polygon','MultiPolygon'].includes(value?.type))throw new Error('Se requiere Polygon o MultiPolygon.');
   $(id).value=JSON.stringify(value,null,2);
@@ -38,10 +38,10 @@ function startDraw(id,rect){if(!map){status('Usá la importación GeoJSON: el ma
   status(rect?`Rectángulo de ${id==='area'?'la zona':'la amenaza'}: marcá una esquina en el mapa.`:`Marcá los vértices de ${id==='area'?'la zona':'la amenaza'} en el mapa. Doble clic para terminar.`);}
 for(const id of ['area','hazard']){$('draw-'+id).addEventListener('click',()=>startDraw(id,false));const r=$('rect-'+id);if(r)r.addEventListener('click',()=>startDraw(id,true));}
 function finishShape(){const id=draw;setShape(id,{type:'Polygon',coordinates:[[...vertices,vertices[0]]]});cancelDraw();clearResult();
-  status(id==='area'?(layers.hazard?'Zona guardada. Ya podés calcular.':'Zona guardada. Ahora dibujá el área de amenaza (puede superponerse con la zona).'):(layers.area?'Amenaza guardada. Tocá “Calcular población expuesta”.':'Amenaza guardada. Falta dibujar la zona de estudio.'));}
+  status(id==='area'?(layers.hazard?'Zona guardada. Ya podés calcular.':'Zona guardada. Podés calcular ya la población de la zona, o dibujar un área de amenaza para saber cuántos quedan expuestos.'):(layers.area?'Amenaza guardada. Tocá “Calcular población expuesta”.':'Amenaza guardada. Falta dibujar la zona de estudio.'));}
 $('cancel').addEventListener('click',()=>{cancelDraw();status('Dibujo cancelado.');});
 $('finish').addEventListener('click',()=>{if(!draw||rectMode||vertices.length<3){status(rectMode?'En modo rectángulo se cierra solo con la segunda esquina.':'Marcá al menos tres vértices antes de cerrar.');return;}finishShape();});
-$('apply').addEventListener('click',()=>{try{clearResult();setShape('area',geometry('area'));setShape('hazard',geometry('hazard'));fit();status('Geometrías importadas. El servidor validará su forma antes de calcular.');}catch(e){status(`GeoJSON: ${e.message}`);}});
+$('apply').addEventListener('click',()=>{try{clearResult();setShape('area',geometry('area'));const h=geometry('hazard',true);if(h)setShape('hazard',h);fit();status('Geometrías importadas. El servidor validará su forma antes de calcular.');}catch(e){status(e.message);}});
 for(const id of ['area','hazard','year','dataset','kind','category','event-date','event-source','enso'])$(id).addEventListener('input',()=>{clearResult();status('Parámetros modificados. Volvé a calcular para actualizar los resultados.');});
 
 async function jsonFetch(path,payload){const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),50000);
@@ -61,9 +61,10 @@ async function poll(startGeneration,note){
 }
 function setBusy(value){busy=value;$('calculate').disabled=value;$('resume').disabled=value;}
 async function run(year,current,note){
-  const payload={area:geometry('area'),hazard:geometry('hazard'),year,dataset:$('dataset').value,
+  const hz=geometry('hazard',true);
+  const payload={area:geometry('area'),...(hz?{hazard:hz}:{}),year,dataset:$('dataset').value,
     event:{kind:$('kind').value,category:$('category').value,source:$('event-source').value,date:$('event-date').value,enso:$('enso').value}};
-  setShape('area',payload.area);setShape('hazard',payload.hazard);fit();status(note||'Enviando geometrías y consultando población en WorldPop…');
+  setShape('area',payload.area);if(hz)setShape('hazard',hz);fit();status(note||(hz?'Consultando población en WorldPop…':'Sin área de amenaza: se calcula sólo la población de la zona…'));
   const data=await jsonFetch('/api/poblacion/exposicion',payload);if(generation!==current)return;
   if(data.status==='pending'){token=data.token;await poll(current,note);}else show(data,note);
 }
@@ -84,7 +85,7 @@ $('resume').addEventListener('click',async()=>{if(!token||busy)return;setBusy(tr
 
 function show(data,note){
   last=data;if(note)data.notes=[note,...(data.notes||[])];$('resume').hidden=true;
-  $('total').textContent=number(data.population_total);$('exposed').textContent=number(data.population_exposed);
+  $('total').textContent=number(data.population_total);$('exposed').textContent=data.hazard_given===false?'Sin amenaza':number(data.population_exposed);
   $('percent').textContent=data.exposed_percent==null?'Sin dato':number(data.exposed_percent,1)+'%';
   $('surface').textContent=number(data.hazard_in_area_km2,2)+' km²';
   $('population-year').textContent=`${data.source.provider} · ${data.year} · ${data.population_group}`;

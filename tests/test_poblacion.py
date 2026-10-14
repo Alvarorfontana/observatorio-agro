@@ -95,3 +95,9 @@ def test_crecida_summary_and_expression():
     assert cr.band_for(4.67) == 5 and cr.band_for(0) is None
     e = cr.expression(-27.47, -58.83)
     assert e['expression']['values']['out']['functionInvocationValue']['functionName'] == 'Image.reduceRegion'
+
+
+def test_zone_only_without_hazard():
+    d = req(); d.pop('hazard')
+    r = prepare(d)
+    assert r['hazard_given'] is False and r['intersection'] is None and r['hazard'] is None

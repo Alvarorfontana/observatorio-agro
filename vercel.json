@@ -73,7 +73,8 @@
   ],
   "git": {
     "deploymentEnabled": {
-      "diag-*": false
+      "diag-*": false,
+      "capturas": false
     }
   }
 }

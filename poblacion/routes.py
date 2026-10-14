@@ -103,14 +103,15 @@ def result():
         job=signer().loads(data['token'],max_age=7200)
         context=job['context']
         total=worldpop.poll(job['total_task'])
-        exposed=worldpop.poll(job['exposure_task']) if job['exposure_task'] else {'status':'complete','population':0.0}
+        given=context.get('hazard_given',True)
+        exposed=worldpop.poll(job['exposure_task']) if job['exposure_task'] else {'status':'complete','population':0.0 if given else None}
         if total['status']!='complete' or exposed['status']!='complete':
             return jsonify(status='pending',poll_after_seconds=3),202
         p,e=total['population'],exposed['population']
         # No ocultar discrepancias de los agregados de un proveedor.
-        if e>p+max(1e-6,p*1e-6):
+        if e is not None and e>p+max(1e-6,p*1e-6):
             return jsonify(error='Los agregados del proveedor no son consistentes: exposición mayor que total.'),502
-        percent=100*e/p if p>0 else None
+        percent=100*e/p if (e is not None and p>0) else None
         return jsonify(status='complete',population_total=p,population_exposed=e,
                        exposed_percent=percent,density_per_km2=p/context['area_km2'],
                        population_group='Población total',

@@ -139,8 +139,9 @@ def polygonal(geom):
 def prepare(data):
     if not isinstance(data,dict): raise InputError('Se requiere JSON.')
     aoi=polygon(data.get('area'),'zona de estudio')
-    hazard=polygon(data.get('hazard'),'área de amenaza')
-    inter=intersection(aoi,hazard)
+    # la amenaza es opcional: sin ella se informa sólo la población de la zona
+    hazard=polygon(data.get('hazard'),'área de amenaza') if data.get('hazard') else None
+    inter=intersection(aoi,hazard) if hazard else Geom([])
     year=data.get('year',2025)
     if isinstance(year,bool) or not isinstance(year,int) or not 2015<=year<=2030:
         raise InputError('WorldPop Global2: usá un año entre 2015 y 2030.')
@@ -161,6 +162,6 @@ def prepare(data):
     enso=event.get('enso','sin_especificar')
     if enso not in ('el_nino','la_nina','neutral','sin_especificar'):
         raise InputError('Fase ENOS inválida.')
-    return {'area':aoi.mapping(),'hazard':hazard.mapping(),'intersection':inter.mapping() if not inter.is_empty else None,
+    return {'area':aoi.mapping(),'hazard':hazard.mapping() if hazard else None,'hazard_given':bool(hazard),'intersection':inter.mapping() if not inter.is_empty else None,
             'year':year,'area_km2':area_km2(aoi),'hazard_in_area_km2':area_km2(inter),
             'event':{'kind':kind,'category':category,'source':source.strip(),'date':when,'enso':enso}}

@@ -75,7 +75,7 @@ def build(d, today=None):
     summary = []
     if total is not None:
         summary.append(f"En la zona de estudio ({fmt(a_km2, 1)} km²) residen unas {fmt(total)} personas según {_txt(src.get('provider'), 40) or 'WorldPop'} {year or ''}.")
-    if exposed is not None:
+    if exposed is not None and hazard is not None:
         summary.append(f"Dentro del área de {KIND.get(ev.get('kind'), 'amenaza').lower()} ({fmt(i_km2, 2)} km² superpuestos) residen unas {fmt(exposed)} personas"
                        + (f", el {fmt(pct, 1)} % de la zona." if pct is not None else '.'))
     return {
