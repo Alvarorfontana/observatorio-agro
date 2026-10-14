@@ -31,15 +31,20 @@ def summarize(props, product='bovino'):
     trees = _yes(props.get('Ind_01_treecover'))
     after = _yes(props.get('Ind_04_disturbance_after_2020'))
     parts = []
+    pct = None
     if jrc is not None:
+        # Whisp informa superficies en hectáreas (salvo que se pida en porcentaje); el % sale del área del lote.
         try:
-            parts.append(f"Mapa de bosques 2020 de la UE (JRC): {float(jrc):.1f} % del lote.")
+            ha = float(jrc)
+            area = float(props.get('Area') or props.get('Plot_area_ha') or 0)
+            pct = round(ha / area * 100, 1) if area > 0 else None
+            parts.append(f"Mapa de bosques 2020 de la UE (JRC): {ha:.1f} ha" + (f" ({pct:.1f} % del lote)." if pct is not None else '.'))
         except (TypeError, ValueError):
             parts.append(f"Mapa de bosques 2020 de la UE (JRC): {jrc}.")
     parts.append('Algún mapa marca árboles en 2020.' if trees else 'Ningún mapa marca bosque en 2020.')
     if trees:
         parts.append('Hay alteraciones después de 2020.' if after else 'Sin alteraciones después de 2020.')
-    return {'risk': risk, 'risk_es': RISK_ES.get(risk, risk), 'field': field, 'jrc_forest_2020_pct': jrc,
+    return {'risk': risk, 'risk_es': RISK_ES.get(risk, risk), 'field': field, 'jrc_forest_2020_ha': jrc, 'jrc_forest_2020_pct': pct,
             'treecover_2020': trees, 'disturbance_after_2020': after,
             'text': f"Whisp: {RISK_ES.get(risk, 'sin resultado')}. " + ' '.join(parts)}
 
