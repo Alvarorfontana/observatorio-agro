@@ -54,6 +54,7 @@ import { LotDashboard } from "./dashboard/LotDashboard";
 import { OPEN_LAYERS, LAYER_GROUPS } from "./dashboard/openLayers";
 import { PacificSection, SAImpactMap } from "./site/NinoIllustrations";
 import { NinoNowSA } from "./site/NinoNow";
+import { HerdPanel, HERD_CATS, type HerdRow, type Movement } from "./dashboard/Herd";
 import { GuideContent } from "./site/GuideContent";
 import { CuencaPanel, AlertasTeaser, AlertasPortada } from "./site/CuencaPanel";
 import { CultivosPanel } from "./site/Cultivos";
@@ -158,6 +159,7 @@ const SOURCES = [
   ["balance-agua", "Balance de agua y sequía", "ERA5 desde 1991 · lluvia − evapotranspiración"],
   ["costos", "Costos y logística", "OSRM · OpenStreetMap · DolarAPI · valores del productor"],
   ["sustentabilidad", "Deforestación y carbono", "Impact Observatory · ESA WorldCover · SoilGrids · IPCC"],
+  ["ganado", "Ganado", "Rodeo, carga, agua, calor y valor · DOTS · Open-Meteo · Cañuelas"],
   ["enso-tablero", "El Niño en tu lote", "NOAA CPC · PSL · PMEL · ERA5 · cadena, historia y lluvia actual"],
   ["teleconexiones", "El Niño y teleconexiones", "NOAA PSL · ENSO, SOI, AAO, TSA, PDO"],
   ["rios", "Ríos y caudales", "GloFAS / Open-Meteo"],
@@ -723,6 +725,27 @@ function Observatory({onHome}:{onHome:()=>void}) {
       setSources(p => ({ ...p, costos: { status: j.status, payload: j } }));
     } catch (e) { setSources(p => ({ ...p, costos: { status: "sin dato", error: (e as Error).message } })); }
   };
+  const herdKey = selectedLotId || "lote";
+  const [herdAll, setHerdAll] = useState<Record<string, HerdRow[]>>(() => { try { return JSON.parse(localStorage.getItem("dots-rodeo") || "{}"); } catch { return {}; } });
+  const [movAll, setMovAll] = useState<Record<string, Movement[]>>(() => { try { return JSON.parse(localStorage.getItem("dots-movimientos") || "{}"); } catch { return {}; } });
+  const setHerdRows = (r: HerdRow[]) => setHerdAll(p => { const n = { ...p, [herdKey]: r }; try { localStorage.setItem("dots-rodeo", JSON.stringify(n)); } catch {} return n; });
+  const setMovements = (m: Movement[]) => setMovAll(p => { const n = { ...p, [herdKey]: m }; try { localStorage.setItem("dots-movimientos", JSON.stringify(n)); } catch {} return n; });
+  const loadHerd = async () => {
+    const rows = (herdAll[herdKey] || []).map(r => ({ cat: r.cat, heads: Number(r.heads) || 0, weight: Number(r.weight) || (HERD_CATS.find(c => c[0] === r.cat)?.[2] ?? 0) })).filter(r => r.heads > 0);
+    if (!rows.length) { setSources(p => ({ ...p, ganado: { status: "sin dato", error: "Cargá cuántas cabezas hay de cada categoría y tocá Calcular." } })); return; }
+    const total = rows.reduce((a, r) => a + r.heads, 0);
+    setHerdHeads(total); try { localStorage.setItem("dots-heads", String(total)); } catch {}
+    setSources(p => ({ ...p, ganado: { status: "consultando" } }));
+    try {
+      const fz = (sources.forraje?.payload as any)?.data;
+      const r = await fetch("/api/fuentes/ganado", { method: "POST", headers: { "Content-Type": "application/json" }, signal: AbortSignal.timeout(58000),
+        body: JSON.stringify({ lat: point[0], lon: point[1], vertices, area_ha: lotAreaHa ? Math.round(lotAreaHa * 10) / 10 : null, herd: rows,
+          forage: fz?.growth_rate_30d != null ? fz : null, kind: forageKind }) });
+      const j = await r.json();
+      if (!r.ok) throw Error(j.error || "No se pudo calcular");
+      setSources(p => ({ ...p, ganado: { status: j.status, payload: j } }));
+    } catch (e) { setSources(p => ({ ...p, ganado: { status: "sin dato", error: (e as Error).message } })); }
+  };
   const routeLine = useRef<L.Polyline | null>(null);
   useEffect(() => {
     routeLine.current?.remove(); routeLine.current = null;
@@ -762,7 +785,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
     setEudrBusy(true);
     try {
       const r = await fetch(`/api/fuentes/eudr/${kind}`, { method: "POST", headers: { "Content-Type": "application/json" }, signal: AbortSignal.timeout(58000),
-        body: JSON.stringify({ lot, establecimiento: estName, heads: herdHeads || null, sustentabilidad: (sources.sustentabilidad?.payload as any)?.data, readiness: eudrReady.current }) });
+        body: JSON.stringify({ lot: { ...lot, movements: movAll[herdKey] || [] }, establecimiento: estName, heads: herdHeads || null, sustentabilidad: (sources.sustentabilidad?.payload as any)?.data, readiness: eudrReady.current }) });
       if (!r.ok) { const j = await r.json().catch(() => ({})); throw Error(j.error || "No se pudo generar"); }
       download(await r.blob(), kind === "pdf" ? "DOTS-libre-de-deforestacion.pdf" : "DOTS-lote-geolocalizacion.geojson");
     } catch (e) { notify((e as Error).message); } finally { setEudrBusy(false); }
@@ -866,7 +889,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
     // Reusing an old payload after changing polygon was a functional bug in earlier versions.
     setView(key);
     setSideTab("datos");
-    if (key === "alertas") { void loadAlerts(); } else if (key === "forraje") { void loadForage(); } else if (key === "relieve") { void loadTerrain(); } else if (key === "costos") { void loadCosts(); } else void load(key);
+    if (key === "alertas") { void loadAlerts(); } else if (key === "forraje") { void loadForage(); } else if (key === "relieve") { void loadTerrain(); } else if (key === "costos") { void loadCosts(); } else if (key === "ganado") { if ((herdAll[herdKey] || []).some(r => Number(r.heads) > 0)) void loadHerd(); } else void load(key);
     requestAnimationFrame(() => { const el = document.getElementById("dots-detail"); const side = el?.closest(".sidebar") as HTMLElement | null; if (el && side) side.scrollTo({ top: Math.max(0, el.offsetTop - side.offsetTop - 16), behavior: "smooth" }); });
   };
   const addFieldMarker = (type = markerType) => {
@@ -1510,6 +1533,8 @@ function Observatory({onHome}:{onHome:()=>void}) {
                   <p className="footnote">{payload.method}</p>
                 </>}
               </>}
+              {view==="ganado" && <HerdPanel rows={herdAll[herdKey]||[]} setRows={setHerdRows} movements={movAll[herdKey]||[]} setMovements={setMovements}
+                onRun={()=>void loadHerd()} busy={sources.ganado?.status==="consultando"} data={(sources.ganado?.payload as any)?.data} error={(sources.ganado as any)?.error} hasLot={vertices.length>=3}/>}
               {view==="enso-tablero" && payload?.advice && <>
                 <div className={"verdict "+(String(payload.phase||"").startsWith("El Niño")?"warn":"ok")}><span>Fase oficial · NOAA</span><b>{payload.phase||"sin dato"}</b><small>ONI {payload.oni??"—"} · {payload.verdict||""}</small></div>
                 <div className="wx-grid">
@@ -2134,6 +2159,10 @@ function Observatory({onHome}:{onHome:()=>void}) {
           </> : view==="forraje" && payload?.daily ? <>
             <section className="panel chart"><h2>Crecimiento diario del pasto</h2><p className="small">kg MS/ha/día · {payload.kind_label} · últimos 60 días</p><Chart dates={payload.daily.map((d:Data)=>d.date.slice(5))} unit="kg MS/ha/día" series={[{name:"Crecimiento",values:payload.daily.map((d:Data)=>d.ppna),color:"#19b98a"}]}/></section>
             <section className="panel chart"><h2>Producción por mes</h2><p className="small">kg MS/ha acumulados en cada mes</p><Chart dates={payload.monthly.map((m:Data)=>m.month)} unit="kg MS/ha" series={[{name:"Producción",values:payload.monthly.map((m:Data)=>m.total),type:"bar",color:"#22c55e"}]}/></section>
+          </> : view==="ganado" && payload?.days?.length ? <>
+            <section className="panel chart"><h2>Agua y calor · próximos 7 días</h2><p className="small">Litros por día que necesita el rodeo e índice de temperatura y humedad (ITH) máximo · 72 alerta · 79 peligro · 84 emergencia</p><Chart dates={payload.days.map((d:Data)=>String(d.date).slice(8,10)+"/"+String(d.date).slice(5,7))} unit="litros" series={[{name:"Agua del rodeo",values:payload.days.map((d:Data)=>d.water_l),type:"bar",color:"#06b6d4"}]}/></section>
+            <section className="panel chart"><h2>Índice de calor (ITH) máximo por día</h2><p className="small">Open-Meteo · temperatura y humedad horarias</p><Chart dates={payload.days.map((d:Data)=>String(d.date).slice(8,10)+"/"+String(d.date).slice(5,7))} unit="ITH" series={[{name:"ITH máximo",values:payload.days.map((d:Data)=>d.thi_max),color:"#fd9c91"},{name:"Alerta (72)",values:payload.days.map(()=>72),color:"#f0b974"},{name:"Peligro (79)",values:payload.days.map(()=>79),color:"#e5484d"}]}/></section>
+            {payload.forage && <section className="panel chart"><h2>Pasto que crece y pasto que come el rodeo</h2><p className="small">kg de materia seca por día en todo el lote · crecimiento de los últimos 30 días × uso {Math.round((payload.forage.use||0.5)*100)} %</p><Chart dates={["Crece (aprovechable)","Come el rodeo"]} unit="kg MS/día" series={[{name:"kg MS/día",values:[payload.forage.supply_kg_ms_day,payload.demand_kg_ms_day],type:"bar",color:"#19b98a"}]}/></section>}
           </> : view==="enso-tablero" && payload?.advice ? <>
             {payload.impact?.seasons?.length>0 && <section className="panel chart"><h2>Lluvia de octubre a marzo en cada temporada</h2><p className="small">ERA5 en el punto del lote · mm · color según la fase de El Niño (ONI de NOAA) · {payload.impact.reading}</p><Chart dates={payload.impact.seasons.map((x:Data)=>x.season)} unit="mm" series={[
               {name:"El Niño",values:payload.impact.seasons.map((x:Data)=>String(x.phase).startsWith("El Niño")?x.rain_mm:null),type:"bar",color:"#e5484d"},

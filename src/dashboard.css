@@ -936,3 +936,18 @@
 .ta-shell .eudr-list small { display: block; color: var(--ta-text-2); font-size: 11px; margin-top: 2px; line-height: 1.4; }
 .ta-shell .eudr-ranges { margin: 0; padding-left: 16px; font-size: 11.5px; color: var(--ta-text-2); display: grid; gap: 3px; }
 .ta-shell .eudr-ranges b { color: var(--ta-text-1, inherit); margin-right: 4px; }
+
+/* Ganado */
+.herd-form{border:1px solid var(--ta-border,#333);border-radius:8px;overflow:hidden}
+.herd-head,.herd-row{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:6px;align-items:center;padding:5px 8px}
+.herd-head{font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--ta-text-3,#8d8d8d);background:var(--ta-layer-2,#262626)}
+.herd-row{border-top:1px solid var(--ta-border,#333);font-size:13px}
+.herd-row input{width:100%;min-width:0;box-sizing:border-box;padding:5px 6px}
+.herd-mv{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.herd-mv input,.herd-mv select{min-width:0;box-sizing:border-box;padding:5px 6px}
+.herd-mv input:nth-of-type(3){grid-column:1/-1}
+.herd-mv button{grid-column:1/-1}
+.herd-mvlist{margin-top:8px;display:flex;flex-direction:column;gap:4px;max-height:220px;overflow:auto}
+.herd-mvlist>div{display:grid;grid-template-columns:auto auto 1fr auto;gap:2px 8px;align-items:center;font-size:12px;padding:5px 8px;border:1px solid var(--ta-border,#333);border-radius:6px}
+.herd-mvlist small{grid-column:1/4;color:var(--ta-text-3,#8d8d8d)}
+.herd-mvlist button{grid-row:1/3;grid-column:4;background:none;border:0;color:var(--ta-text-3,#8d8d8d);font-size:16px;cursor:pointer}

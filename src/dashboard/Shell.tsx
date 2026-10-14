@@ -32,7 +32,7 @@ export function buildNav(go: (k: string) => void, draw: () => void, pdf: () => v
       { key: "rios", label: "Agua y ríos", icon: <Waves />, onClick: () => go("rios") },
       { key: "lluvia", label: "Lluvia y sequía", icon: <CloudRain />, onClick: () => go("lluvia") },
       { key: "suelo", label: "Suelo y nitrógeno", icon: <CircleDot />, onClick: () => go("suelo") },
-      { key: "__ganado", label: "Ganado", icon: <Beef />, soon: true },
+      { key: "ganado", label: "Ganado", icon: <Beef />, onClick: () => go("ganado") },
     ]},
     { title: "Bosque y exportación", items: [
       { key: "sustentabilidad", label: "Bosque y deforestación", icon: <Trees />, onClick: () => go("sustentabilidad") },

@@ -91,6 +91,17 @@
   ]
 ]
 
+#if d.at("movements", default: ()).len() > 0 [
+  #v(6pt)
+  #card[
+    #text(size: 8.5pt)[*Registro de hacienda en este lote* (declarado por el productor en DOTS).]
+    #v(3pt)
+    #table(columns: (auto, auto, 1fr, auto, 1.6fr), stroke: (x, y) => (bottom: 0.4pt + line-c), inset: (x: 4pt, y: 3.5pt),
+      table.header(..("Fecha", "Movimiento", "Categoría", "Cabezas", "Detalle").map(h => text(size: 7pt, weight: "semibold", fill: muted)[#h])),
+      ..d.movements.map(r => ([#r.date], [#r.kind], [#r.cat], [#r.heads], text(size: 8pt)[#r.note])).flatten())
+  ]
+]
+
 #section("02", "Criterio de evaluación")
 #table(columns: (1.2fr, 2fr), stroke: (x, y) => (bottom: 0.5pt + line-c), inset: (x: 5pt, y: 4.5pt),
   ..d.criteria.map(r => (text(weight: "semibold")[#r.at(0)], text(size: 8.5pt)[#r.at(1)])).flatten())

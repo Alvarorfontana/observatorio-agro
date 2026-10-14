@@ -21,6 +21,7 @@ import water_balance as wbal
 import enso_chain as enso
 import enso_sa
 import mapbiomas as mbx
+import herd as hrd
 import enso_report
 import monitor as mon
 import soil_wetness as sw
@@ -95,6 +96,24 @@ def lot_costs():
                                    d.get('params') if isinstance(d.get('params'),dict) else {}))
     except ValueError as e: return jsonify({'status':'sin dato','error':str(e)}),400
     except Exception as e: return jsonify({'status':'sin dato','error':'No se pudieron calcular costos y logística','type':type(e).__name__}),502
+
+@research_api.post('/ganado')
+def herd_analysis():
+    try:
+        d=request.get_json(silent=True) or {}
+        lat,lon=c.coordinates({'lat':[d.get('lat')],'lon':[d.get('lon')]})
+        verts=d.get('vertices') or []
+        area=float(d['area_ha']) if d.get('area_ha') else (veg.area_ha(verts) if len(verts)>=3 else None)
+        forage=d.get('forage') if isinstance(d.get('forage'),dict) and d['forage'].get('growth_rate_30d') is not None else None
+        err=None
+        if not forage and len(verts)>=3:
+            try: forage=fgr.forage(lat,lon,verts,kind=d.get('kind') or 'pastizal')['data']
+            except Exception as e: err=f'Pasto del lote: {str(e)[:140] or type(e).__name__}'
+        out=hrd.analyze(lat,lon,d.get('herd') or [],area,forage)
+        if err: out['data']['errors']['pasto']=err
+        return jsonify(out)
+    except ValueError as e: return jsonify({'status':'sin dato','error':str(e)}),400
+    except Exception as e: return jsonify({'status':'sin dato','error':'No se pudo analizar el rodeo','type':type(e).__name__}),502
 
 @research_api.post('/eudr/pdf')
 def eudr_pdf():

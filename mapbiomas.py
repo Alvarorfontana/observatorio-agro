@@ -202,7 +202,7 @@ def summarize(years, area_ha, country, asset_name):
 def history(polygon):
     pts = veg.require_polygon(polygon)
     area = veg.area_ha(pts)
-    lon = sum(p[0] for p in pts) / len(pts); lat = sum(p[1] for p in pts) / len(pts)
+    lat = sum(p[0] for p in pts) / len(pts); lon = sum(p[1] for p in pts) / len(pts)   # vértices [lat, lon]
     proj, tok = veg.gee_token()
     tried = []
     for country in countries_for(lon, lat) or ['argentina', 'brazil']:

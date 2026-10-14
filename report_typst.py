@@ -512,6 +512,16 @@ def readiness_block(r, de, area):
             'tone': {'ok': 'ok', 'warn': 'warn'}.get(res.get('tone'), 'idle'), 'auto': auto, 'declared': declared}
 
 
+def _movements(rows):
+    out = []
+    for r in (rows or [])[:60]:
+        if not isinstance(r, dict):
+            continue
+        out.append({'date': str(r.get('date') or '')[:10], 'kind': str(r.get('kind') or '')[:20], 'cat': str(r.get('cat') or '')[:30],
+                    'heads': str(r.get('heads') or ''), 'note': str(r.get('note') or '')[:80]})
+    return out
+
+
 def _mapbiomas_block(mb):
     if not mb or not mb.get('years'):
         return None
@@ -603,6 +613,7 @@ def eudr_data(lot, establishment, sust, generated=None, readiness=None):
                         'La fila resaltada es el año de corte (2020).'),
         'worldcover': wc,
         'mapbiomas': _mapbiomas_block((sust or {}).get('mapbiomas')),
+        'movements': _movements(lot.get('movements')),
         'criteria': [
             ['Sin pérdida detectada', 'Pérdida estimada menor a 0,5 ha o variación de cobertura arbórea mayor a −1 punto entre 2020 y el último año.'],
             ['Pérdida menor · revisar', 'Pérdida estimada entre 0,5 y 5 ha, o mayor pero dentro del doble de la variación interanual del mapa, o que no se sostiene en los dos últimos años: puede ser poda, sombra, error de clasificación o desmonte puntual.'],
