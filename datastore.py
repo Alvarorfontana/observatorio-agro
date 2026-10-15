@@ -18,13 +18,14 @@ TTL = 900
 _CACHE = {}
 
 
-def load(name, default=None):
-    hit = _CACHE.get(name)
-    if hit and time.monotonic() - hit[0] < TTL:
+def load(name, default=None, branch=None, ttl=TTL):
+    key = f'{branch or BRANCH}/{name}'
+    hit = _CACHE.get(key)
+    if hit and time.monotonic() - hit[0] < ttl:
         return hit[1]
     data = None
     try:
-        r = c.SESSION.get(f'https://raw.githubusercontent.com/{REPO}/{BRANCH}/data/{name}', timeout=8)
+        r = c.SESSION.get(f'https://raw.githubusercontent.com/{REPO}/{branch or BRANCH}/data/{name}', timeout=8)
         if r.status_code == 200:
             data = r.json()
     except Exception:
@@ -36,5 +37,5 @@ def load(name, default=None):
         except (OSError, ValueError):
             data = default
     if data is not None:
-        _CACHE[name] = (time.monotonic(), data)
+        _CACHE[key] = (time.monotonic(), data)
     return data

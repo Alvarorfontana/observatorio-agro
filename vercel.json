@@ -76,7 +76,8 @@
       "diag-*": false,
       "capturas": false,
       "datos": false,
-      "dependabot/**": false
+      "dependabot/**": false,
+      "rayos": false
     }
   }
 }

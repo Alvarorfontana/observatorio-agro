@@ -250,6 +250,13 @@ def research_data(name):
             r.headers['Cache-Control']='public, s-maxage=3600'
             return r
         except Exception as e: return _upstream_error(e)
+    if name in ('rayos','goes-heladas'):
+        import datastore
+        d=datastore.load('rayos.json',branch='rayos',ttl=300) if name=='rayos' else datastore.load('goes_heladas.json')
+        if not d: return jsonify({'status':'sin dato','error':'Todavía no hay datos del satélite GOES-19: la tarea automática se está poniendo en marcha.'}),404
+        r=jsonify(c.envelope(d,'https://registry.opendata.aws/noaa-goes/','rayos en las últimas 3 horas' if name=='rayos' else 'heladas de la última noche','NOAA GOES-19'))
+        r.headers['Cache-Control']='public, s-maxage=300' if name=='rayos' else 'public, s-maxage=1800'
+        return r
     if name in ('focos','focos-csv'):
         import focos as fz
         try: env=fz.analyze(_int(request.args,'dias',2,1,5))

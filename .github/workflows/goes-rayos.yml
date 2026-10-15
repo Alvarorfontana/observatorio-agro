@@ -1,0 +1,42 @@
+# Rayos de las últimas 3 horas por satélite GOES-19 (GLM). Cada 30 minutos (GitHub puede demorar algunas corridas).
+# Guarda en la rama `rayos`, con un solo commit que se reemplaza: no publica la web ni hace crecer el repositorio.
+name: Rayos GOES
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "4,34 * * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: goes-rayos
+  cancel-in-progress: true
+
+jobs:
+  rayos:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Traer la corrida anterior
+        run: |
+          mkdir -p data
+          curl -sf https://raw.githubusercontent.com/${{ github.repository }}/rayos/data/rayos.json -o data/rayos.json || true
+      - name: Calcular
+        run: |
+          pip install -r requirements.txt netCDF4 numpy
+          python scripts/goes_rayos.py data/rayos.json
+      - name: Guardar en la rama rayos (no publica la web)
+        run: |
+          cp data/rayos.json /tmp/rayos.json
+          git config user.name "DOTS datos"; git config user.email "actions@users.noreply.github.com"
+          git checkout -q --orphan rayos-nuevo && git rm -rqf --cached . >/dev/null
+          mkdir -p data && cp /tmp/rayos.json data/rayos.json
+          echo '{"git":{"deploymentEnabled":false}}' > vercel.json
+          git add data/rayos.json vercel.json && git commit -q -m "Rayos $(date -u +%Y-%m-%d\ %H:%M)"
+          git push -q -f origin rayos-nuevo:rayos
