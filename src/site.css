@@ -1069,3 +1069,9 @@ html, body { overflow-x: hidden; }
 .ra-table .nn-tr{grid-template-columns:1.2fr .8fr 1.8fr .9fr 1.1fr 1.2fr}
 @media (max-width:860px){.ra-table .nn-tr{grid-template-columns:1.2fr 1.6fr 1fr}.ra-table .nn-tr>span:nth-child(2),.ra-table .nn-tr>span:nth-child(5){display:none}}
 @media (max-width:860px){.ra-table .nn-tr>span:nth-child(3){display:block}}
+.dw-dot{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.emb-bars{display:flex;align-items:flex-end;gap:4px;height:70px;margin:6px 0 4px;padding:0 2px}
+.emb-bar{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%}
+.emb-bar span{display:block;width:100%;background:#35978f;border-radius:3px 3px 0 0}
+.emb-bar.hit span{background:#bf812d}
+.emb-bar small{font-size:10px;color:inherit;opacity:.8;margin-top:2px}

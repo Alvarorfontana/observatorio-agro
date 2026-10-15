@@ -1656,6 +1656,19 @@ function Observatory({onHome}:{onHome:()=>void}) {
                   <p className="footnote">Hectáreas del lote por grupo de clases. {m.reading} MapBiomas, CC BY 4.0.</p>
                 </>})()}
                 {payload?.errors?.mapbiomas && !payload?.mapbiomas && <p className="footnote">MapBiomas: {String(payload.errors.mapbiomas).slice(0,220)}</p>}
+                {payload?.recent_cover?.classes?.length>0 && (()=>{const d=payload.recent_cover;return <>
+                  <div className="lot-vars-title" style={{marginTop:10}}>Últimos 90 días · Dynamic World</div>
+                  <div className="cover-table"><div className="cover-head"><span>Clase</span><span>Ahora</span><span>Hace un año</span><span>Cambio</span><span></span><span></span></div>
+                    {d.classes.filter((r:Data)=>r.pct>=1||(r.prev_pct??0)>=1).map((r:Data)=><div className="cover-row" key={r.key}><span><i className="dw-dot" style={{background:r.color}}/>{r.name}</span><b>{fmt(r.pct,0)} %</b><span>{r.prev_pct!=null?`${fmt(r.prev_pct,0)} %`:"—"}</span><span>{r.change_pp!=null?`${r.change_pp>0?"+":""}${fmt(r.change_pp,0)} pp`:"—"}</span><span></span><span></span></div>)}
+                  </div>
+                  <p className="footnote">{d.reading} Sentinel-2 10 m, clase más frecuente de cada píxel. Dynamic World (Google y WRI), CC BY 4.0.</p>
+                </>})()}
+                {payload?.changes?.years?.length>0 && (()=>{const d=payload.changes;return <>
+                  <div className="lot-vars-title" style={{marginTop:10}}>Cambios año a año · Satellite Embedding</div>
+                  <div className="emb-bars" role="list">{d.years.map((r:Data)=><div role="listitem" key={r.year} className={"emb-bar"+(r.year===d.strongest_year?" hit":"")} title={r.similarity!=null?`${r.year-1}→${r.year}: similitud ${fmt(r.similarity,2)} · ${fmt(r.changed_pct,0)} % del lote cambió mucho`:`${r.year}: sin dato`}>
+                    <span style={{height:r.similarity!=null?`${Math.max(4,Math.round(r.similarity*100))}%`:"0"}}/><small>{String(r.year).slice(2)}</small></div>)}</div>
+                  <p className="footnote">{d.reading} Barra alta: el lote se parece al año anterior; barra baja: cambió. Indica que hubo un cambio, no cuál. Google DeepMind AlphaEarth, CC BY 4.0.</p>
+                </>})()}
                 <EudrReadiness d={payload?.deforestation} onState={r=>{eudrReady.current=r}} whisp={whisp} onWhisp={p=>void askWhisp(p)} whispBusy={whispBusy}/>
                 <div className="eudr-actions">
                   <label className="small">Establecimiento (para el informe)<input value={estName} placeholder="Nombre · partido · provincia" onChange={e=>{setEstName(e.target.value);try{localStorage.setItem("dots-establishment",e.target.value)}catch{}}}/></label>
