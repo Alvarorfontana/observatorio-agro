@@ -110,7 +110,7 @@ export function NinoNowSA({ data, onPick }: { data: NinoNowData | null | { error
       <label>País <select value={country} onChange={e => setCountry(e.target.value)}>{countries.map(c => <option key={c}>{c}</option>)}</select></label>
       <label>Ordenar <select value={sort} onChange={e => setSort(e.target.value as any)}><option value="metric">por {mLabel.toLowerCase()}</option><option value="name">por país</option></select></label>
     </div>
-    <div className="nn-table" role="table">
+    <div className="nn-table" role="table" tabIndex={0}>
       <div className="nn-tr nn-th" role="row"><span role="columnheader">Localidad</span><span role="columnheader">Últimos 90 días</span><span role="columnheader">Último mes</span><span role="columnheader">Niño fuerte (histórico)</span><span role="columnheader">Próximos 16 días</span><span role="columnheader">Lectura</span></div>
       {rows.map(p => <div className="nn-tr" role="row" key={p.id} onClick={() => onPick?.(p.id)}>
         <span role="cell"><b>{p.name}</b><small>{p.country}</small></span>

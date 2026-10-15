@@ -23,6 +23,7 @@ RULES = [
     ('/api/fuentes/localidad-informe', 6, 300),  # PDF de localidad
     ('/api/fuentes/cuenca-informe', 6, 300),     # PDF de la cuenca
     ('/api/fuentes/caminos', 10, 300),           # Overpass (OSM) pide pocas consultas
+    ('/api/fuentes/focos', 20, 300),             # FIRMS + Earth Engine
     ('/api/fuentes/ganado', 20, 300),
     ('/api/poblacion/informe', 6, 300),          # PDF de población
     ('/api/poblacion/crecida', 10, 300),         # Earth Engine

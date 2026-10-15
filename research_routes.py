@@ -248,6 +248,16 @@ def research_data(name):
             r.headers['Cache-Control']='public, s-maxage=3600'
             return r
         except Exception as e: return _upstream_error(e)
+    if name in ('focos','focos-csv'):
+        import focos as fz
+        try: env=fz.analyze(_int(request.args,'dias',2,1,5))
+        except PermissionError: return jsonify({'status':'pendiente de credencial','error':'Falta la clave gratuita de NASA FIRMS (FIRMS_MAP_KEY) en Vercel.'}),409
+        except Exception as e: return _upstream_error(e)
+        if name=='focos-csv':
+            rows=(env.get('data') or {}).get('points') or []
+            return Response(fz.to_csv(rows),mimetype='text/csv',headers={'Content-Disposition':f'attachment; filename="DOTS-focos-{datetime.now(timezone.utc).strftime("%Y-%m-%d")}.csv"','Cache-Control':'public, s-maxage=900'})
+        r=jsonify(env); r.headers['Cache-Control']='public, s-maxage=900, stale-while-revalidate=1800'
+        return r
     if name=='rinde-agua':
         import datastore
         d=datastore.load('rinde_agua.json')

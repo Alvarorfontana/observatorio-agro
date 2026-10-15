@@ -61,6 +61,7 @@ import { CuencaPanel, AlertasTeaser, AlertasPortada } from "./site/CuencaPanel";
 import { CultivosPanel } from "./site/Cultivos";
 import { RindeAgua } from "./site/RindeAgua";
 import { CasoBellaVista } from "./site/CasoBellaVista";
+import { Focos } from "./site/Focos";
 import { NdviExtra } from "./site/NdviExtra";
 import { readLotFile, lotsToGeoJSON, lotsToKML } from "./dashboard/lotFiles";
 echarts.use([
@@ -2649,6 +2650,13 @@ function CultivosPage({onDemo}:{onDemo:()=>void}){
     <RindeAgua/>
   </main><div className="no-print"><SiteFooter/></div></div>;
 }
+function FocosPage({onDemo}:{onDemo:()=>void}){
+  useEffect(()=>{document.title="Focos de calor y eventos extremos · DOTS";},[]);
+  return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner">
+    <PageHero eyebrow="FUEGO Y EVENTOS EXTREMOS" title="Focos de calor en el sur de Sudamérica." lead="Cuatro satélites de la NASA, Argentina, Uruguay, Paraguay, Chile, Bolivia y el sur de Brasil. Cada foco con su provincia, qué se está quemando y si cae en un área protegida, más el pronóstico de incendio, heladas, nevadas, calor y lluvia fuerte de los próximos 5 días."/>
+    <Focos/>
+  </main><SiteFooter/></div>;
+}
 function CasoPage({onDemo}:{onDemo:()=>void}){
   useEffect(()=>{document.title="Caso de estudio: Bella Vista, Corrientes · DOTS";},[]);
   return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner">
@@ -3252,7 +3260,7 @@ function Contact({onDemo}:{onDemo:()=>void}){
       {ch?.email_enabled===false && <p className="form-status">El envío se habilita cuando el correo de destino esté configurado. No simulamos envíos.</p>}
     </form></section></main><SiteFooter/></div>}
 function Access({onDemo}:{onDemo:()=>void}){return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner access-page"><PageHero eyebrow="ACCESO" title="Observatorio DOTS" lead="La autenticación real se incorporará con permisos por establecimiento. La demostración no simula una cuenta de usuario."/><button className="big-demo" onClick={onDemo}>Entrar a la demostración →</button></main><SiteFooter/></div>}
-function SiteFooter(){return <footer className="site-footer"><Brand/><p>Inteligencia territorial para la gestión ganadera.</p><div><SiteLink to="/guia">Guía: cómo funciona</SiteLink><SiteLink to="/producto">Cómo funciona</SiteLink><SiteLink to="/tecnologia">Fuentes</SiteLink><SiteLink to="/capas">Capas</SiteLink><SiteLink to="/conexiones">APIs</SiteLink><SiteLink to="/demo">Demo</SiteLink><SiteLink to="/cultivos">Informe de cultivo</SiteLink><SiteLink to="/caso-bella-vista">Caso Bella Vista</SiteLink><SiteLink to="/licencias">Fuentes y licencias</SiteLink><SiteLink to="/contacto">Contacto</SiteLink></div></footer>}
+function SiteFooter(){return <footer className="site-footer"><Brand/><p>Inteligencia territorial para la gestión ganadera.</p><div><SiteLink to="/guia">Guía: cómo funciona</SiteLink><SiteLink to="/producto">Cómo funciona</SiteLink><SiteLink to="/tecnologia">Fuentes</SiteLink><SiteLink to="/capas">Capas</SiteLink><SiteLink to="/conexiones">APIs</SiteLink><SiteLink to="/demo">Demo</SiteLink><SiteLink to="/cultivos">Informe de cultivo</SiteLink><SiteLink to="/caso-bella-vista">Caso Bella Vista</SiteLink><SiteLink to="/focos">Focos de calor</SiteLink><SiteLink to="/licencias">Fuentes y licencias</SiteLink><SiteLink to="/contacto">Contacto</SiteLink></div></footer>}
 
 function App(){
   const [path,setPath]=useState(window.location.pathname);
@@ -3272,6 +3280,7 @@ function App(){
   if(path==="/alertas")return <AlertsPage onDemo={openDemo}/>;
   if(path==="/cultivos")return <CultivosPage onDemo={openDemo}/>;
   if(path==="/caso-bella-vista")return <CasoPage onDemo={openDemo}/>;
+  if(path==="/focos")return <FocosPage onDemo={openDemo}/>;
   if(path==="/tecnologia")return <Technology onDemo={openDemo}/>;
   if(path==="/licencias")return <Licenses onDemo={openDemo}/>;
   if(path==="/capas")return <LayersPage onDemo={openDemo}/>;
