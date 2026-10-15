@@ -6,7 +6,8 @@
 import { useEffect, useState } from "react";
 
 type Outlook = { p10: number; p50: number; p90: number; below: number; near: number; above: number; members: number; vs_normal_pct: number | null };
-type Crop = { normal: { p33: number; p50: number; p67: number }; last_season: { season: string; ratio: number | null } | null; outlook: Outlook | null };
+type Enso = Record<string, { n: number; mean: number | null; vs_neutral_pct?: number | null }>;
+type Crop = { enso?: Enso; normal: { p33: number; p50: number; p67: number }; last_season: { season: string; ratio: number | null } | null; outlook: Outlook | null };
 type Place = { name: string; country: string; obs_until: string; forecast_until: string | null; maiz?: Crop; soja?: Crop };
 type Data = { season: string; updated: string; soil: string; crops: Record<string, string>; normal_period: string; method: string; places: Record<string, Place> };
 
@@ -59,7 +60,7 @@ export function RindeAgua() {
     <p className="small">{d.crops[crop]} · suelo {d.soil.toLowerCase()} · campaña {d.season} · clima observado hasta el {ddmm(anyPlace?.obs_until)} y pronóstico hasta el {ddmm(anyPlace?.forecast_until)}.</p>
     <div className="nn-legend ra-legend"><span><i className="ra-k-normal" />rango normal {d.normal_period} (tercio central)</span><span><i className="ra-k-band" />escenarios de esta campaña (10 a 90 %)</span><span><i className="ra-k-mid" />escenario mediano</span></div>
     <div className="nn-table ra-table" role="table" aria-label={`Rinde por agua de ${crop === "maiz" ? "maíz" : "soja"}`}>
-      <div className="nn-tr nn-th" role="row"><span role="columnheader">Localidad</span><span role="columnheader">Campaña pasada</span><span role="columnheader">Esta campaña (0 a 100 %)</span><span role="columnheader">Mediana vs normal</span><span role="columnheader">Debajo · normal · encima</span><span role="columnheader">Lectura</span></div>
+      <div className="nn-tr nn-th" role="row"><span role="columnheader">Localidad</span><span role="columnheader">Campaña pasada</span><span role="columnheader">Esta campaña (0 a 100 %)</span><span role="columnheader">Mediana vs normal</span><span role="columnheader">Debajo · normal · encima</span><span role="columnheader">Lectura · efecto ENSO</span></div>
       {rows.map(([id, p]) => {
         const c = p[crop]!, o = c.outlook, [txt, cls] = reading(o);
         return <div className="nn-tr" role="row" key={id}>
@@ -68,7 +69,7 @@ export function RindeAgua() {
           <span role="cell"><Range c={c} /><small>{o ? `${pc(o.p10)} a ${pc(o.p90)} · mediana ${pc(o.p50)}` : "sin escenarios"}</small></span>
           <span role="cell">{sg(o?.vs_normal_pct)}<small>normal {pc(c.normal.p50)}</small></span>
           <span role="cell">{o ? `${pc(o.below)} · ${pc(o.near)} · ${pc(o.above)}` : "—"}</span>
-          <span role="cell" className={"nn-sig " + cls}>{txt}</span>
+          <span role="cell"><span className={"nn-sig " + cls}>{txt}</span>{c.enso && <small>Niño {sg(c.enso["El Niño"]?.vs_neutral_pct)} · Niña {sg(c.enso["La Niña"]?.vs_neutral_pct)} vs neutros</small>}</span>
         </div>;
       })}
     </div>

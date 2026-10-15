@@ -1608,6 +1608,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
                   <div className="cover-table"><div className="cover-head"><span>Capa</span><span>mm</span><span>Normal</span><span>Percentil</span><span>Estado</span><span></span></div>
                     {[...payload.profile.layers,payload.profile.to_1m,payload.profile.to_2_5m].map((l:Data,i:number)=><div className={"cover-row"+(i>=4?" cut":"")} key={i}><span>{l.layer||l.label}</span><b>{l.mm}</b><span>{l.normal_mm??"—"}</span><span>{l.percentile??"—"}</span><span>{l.class}</span><span></span></div>)}
                   </div>
+                  {payload.profile.available && <div className={"verdict "+(payload.profile.available.pct<40?"warn":"ok")} style={{marginTop:8}}><span>Agua útil hasta 2 m</span><b>{payload.profile.available.pct} % · {payload.profile.available.class}</b><small>{payload.profile.available.mm!=null?`${payload.profile.available.mm} mm de ${payload.profile.available.capacity_mm} mm · en 10 días ${payload.profile.available.change_10d_mm>0?"+":""}${payload.profile.available.change_10d_mm} mm`:"sin capacidad del suelo (SoilGrids)"}</small></div>}
                   <p className="footnote">{payload.profile.reading} Modelo ERA5-Land (~9 km), no medición en el lote. Referencia oficial: balance hídrico del INTA y reservas de la Oficina de Riesgo Agropecuario.</p>
                 </>}
               </>}

@@ -66,7 +66,8 @@ export function CasoBellaVista() {
       <Block tag="AGUA" title="Sequía o exceso: índice SPEI" s={agua} src="Copernicus ERA5 vía Open-Meteo · SPEI log-logístico, referencia 1991-2020">{d => <>
         <div className="bv-tiles">{["1", "3", "6", "12"].map(k => { const v = d.spei?.[k]; return <div key={k}><b>{sg(v?.index, 1)}</b><span>{k} {k === "1" ? "mes" : "meses"}</span><small>{v?.class || "sin dato"}</small></div>; })}</div>
         <p>{d.reading}</p><p className="small">Último mes completo: {d.last_month}.</p>
-        {d.profile?.to_2_5m && <><div className="bv-tiles" style={{ marginTop: 10 }}>{[d.profile.to_1m, d.profile.to_2_5m].map((l: D) => <div key={l.label}><b>{sg(l.diff_mm)} mm</b><span>agua {l.label}</span><small>{l.class} · percentil {l.percentile ?? "—"}</small></div>)}</div>
+        {d.profile?.to_2_5m && <><div className="bv-tiles" style={{ marginTop: 10 }}>{[d.profile.to_1m, d.profile.to_2_5m].map((l: D) => <div key={l.label}><b>{sg(l.diff_mm)} mm</b><span>agua {l.label}</span><small>{l.class} · percentil {l.percentile ?? "—"}</small></div>)}
+          {d.profile.available && <div><b>{d.profile.available.pct} %</b><span>agua útil hasta 2 m</span><small>{d.profile.available.mm != null ? `${d.profile.available.mm} de ${d.profile.available.capacity_mm} mm` : d.profile.available.class}</small></div>}</div>
           <p className="small">{d.profile.reading} Modelo ERA5-Land, no medición en el lote; referencia oficial: INTA y Oficina de Riesgo Agropecuario.</p></>}
       </>}</Block>
       <Block tag="EL NIÑO" title="Qué trae El Niño a este lugar" s={nino} src="NOAA CPC y PSL · historia desde 1991 con ERA5">{d => <>

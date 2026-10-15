@@ -5,6 +5,10 @@ Agua en el perfil: humedad volumétrica diaria de ERA5-Land (Copernicus, ~9 km) 
 días del año (±10 días) de 1991-2020: percentil y diferencia con la mediana. Es un modelo de superficie terrestre
 alimentado por el reanálisis, no una medición en el lote: no conoce la napa ni el manejo, y el suelo es el de su
 grilla. Sirve para saber si el perfil está más seco o más húmedo que lo normal para la fecha, capa por capa.
+Agua útil hasta 2 m: la humedad de cada capa ubicada entre lo más seco (0 %) y lo más húmedo (100 %) que tuvo ese punto
+desde 1991, y llevada a milímetros con el agua útil del suelo (capacidad de campo menos marchitez) de SoilGrids hasta
+2 m. Es la misma idea que el porcentaje de agua útil y el agua disponible hasta 2 m de SEPA (INTA), que usa suelos y
+estaciones propias: el de SEPA es la referencia oficial.
 Referencia oficial argentina: balance hídrico del INTA (Clima y Agua) y reservas de la Oficina de Riesgo Agropecuario.
 
 Estado de la vegetación: NDVI MODIS (250 m, cada 16 días) del lote desde 2001, vía Earth Engine. Cada compuesto se
@@ -34,6 +38,35 @@ def pclass(p):
     if p <= 75: return 'normal'
     if p <= 90: return 'húmedo'
     return 'muy húmedo'
+
+
+def aclass(p):
+    if p is None: return 'sin dato'
+    if p < 20: return 'muy poca agua'
+    if p < 40: return 'poca agua'
+    if p < 70: return 'agua adecuada'
+    if p <= 90: return 'buena provisión'
+    return 'perfil muy cargado (posible excedente)'
+
+
+def soil_capacity(lat, lon):
+    """Agua útil (capacidad de campo − marchitez) de 0 a 2 m según SoilGrids, en mm. None si no hay dato."""
+    env = c.soilgrids(lat, lon, ['wv0033', 'wv1500'], ['0-5cm', '5-15cm', '15-30cm', '30-60cm', '60-100cm', '100-200cm'],
+                      'mean', 'agua útil del suelo hasta 2 m (SoilGrids)')
+    by = {}
+    for layer in ((env.get('data') or {}).get('properties') or {}).get('layers') or []:
+        f = (layer.get('unit_measure') or {}).get('d_factor') or 1
+        by[layer.get('name')] = {d.get('label'): (None if (d.get('values') or {}).get('mean') is None else d['values']['mean'] / f)
+                                 for d in layer.get('depths') or []}
+    fc, wp = by.get('wv0033') or {}, by.get('wv1500') or {}
+    thick = {'0-5cm': 50, '5-15cm': 100, '15-30cm': 150, '30-60cm': 300, '60-100cm': 400, '100-200cm': 1000}
+    tot = 0.0
+    for dpt, th in thick.items():
+        a, b = fc.get(dpt), wp.get(dpt)
+        if a is None or b is None:
+            return None
+        tot += max((a - b) / (100 if max(a, b) > 1.5 else 1), 0) * th
+    return round(tot)
 
 
 def percentile(v, ref, min_n=30):
@@ -84,6 +117,21 @@ def analyze_profile(daily):
         ref = [tot(r, 4) for r in range(len(t)) if 1991 <= t[r].year <= 2020 and mm[r] is not None and _doy_close(t[r], t[i], 3)]
         recent.append({'date': t[i].isoformat(), 'mm': round(tot(i, 4)), 'normal_mm': round(median(ref)) if ref else None})
     out['recent_90d'] = recent
+    # agua útil relativa por capa: 0 % = lo más seco del registro (percentil 1 desde 1991), 100 % = lo más húmedo (percentil 99)
+    rel_layers, w_tot, rel_sum, rel_10 = [], 0, 0.0, 0.0
+    prev = next((i for i in range(last - 10, -1, -1) if mm[i] is not None), None)
+    for j, (k, label, th) in enumerate(LAYERS):
+        serie = sorted(mm[i][j] for i in range(len(t)) if mm[i] is not None)
+        lo_, hi_ = serie[int(0.01 * (len(serie) - 1))], serie[int(0.99 * (len(serie) - 1))]
+        f = lambda v: max(0.0, min(1.0, (v - lo_) / (hi_ - lo_))) if hi_ > lo_ else None
+        r = f(mm[last][j]); rp = f(mm[prev][j]) if prev is not None else None
+        w = min(th, max(0, 2000 - sum(x[2] for x in LAYERS[:j])))   # hasta 2 m
+        rel_layers.append({'layer': label, 'pct': None if r is None else round(100 * r)})
+        if r is not None and w:
+            w_tot += w; rel_sum += r * w; rel_10 += (rp if rp is not None else r) * w
+    if w_tot:
+        pct2 = round(100 * rel_sum / w_tot)
+        out['available'] = {'pct': pct2, 'pct_10d_ago': round(100 * rel_10 / w_tot), 'class': aclass(pct2), 'layers': rel_layers}
     a, b = out['to_1m'], out['to_2_5m']
     out['reading'] = (f"Al {day.strftime('%d/%m')} el perfil hasta 1 m está {a['class']} (percentil {a['percentile']}, "
                       f"{'+' if (a['diff_mm'] or 0) > 0 else ''}{a['diff_mm']} mm contra lo normal) y hasta 2,55 m está {b['class']} "
@@ -92,11 +140,27 @@ def analyze_profile(daily):
 
 
 def soil_profile(lat, lon):
+    from concurrent.futures import ThreadPoolExecutor
+    pool = ThreadPoolExecutor(max_workers=1)
+    cap = pool.submit(soil_capacity, lat, lon)
     end = c._now().date() - timedelta(days=6)
     env = c.external(ARCHIVE, {'latitude': lat, 'longitude': lon, 'start_date': '1991-01-01', 'end_date': end.isoformat(),
                                'daily': ','.join(k for k, *_ in LAYERS), 'models': 'era5_land', 'timezone': 'UTC'},
                      scope='agua en el perfil del suelo (ERA5-Land)', organism='Copernicus ERA5-Land vía Open-Meteo')
     data = analyze_profile((env['data'] or {}).get('daily') or {})
+    try:
+        awc = cap.result(timeout=30)
+    except Exception:
+        awc = None
+    pool.shutdown(wait=False)
+    av = data.get('available')
+    if av and awc:
+        av['capacity_mm'] = awc
+        av['mm'] = round(awc * av['pct'] / 100)
+        av['change_10d_mm'] = round(awc * (av['pct'] - av['pct_10d_ago']) / 100)
+    if av:
+        data['reading'] += (f" Agua útil hasta 2 m: {av['pct']} % ({av['class']})"
+                            + (f", unos {av['mm']} mm de {awc} mm posibles; en 10 días {'+' if av['change_10d_mm'] > 0 else ''}{av['change_10d_mm']} mm." if av.get('mm') is not None else '.'))
     data.update(method=__doc__.split('\n\n')[1].strip(), official=OFFICIAL)
     return c.envelope(data, ARCHIVE, 'agua en el perfil del suelo hasta 2,55 m', 'Copernicus ERA5-Land vía Open-Meteo')
 

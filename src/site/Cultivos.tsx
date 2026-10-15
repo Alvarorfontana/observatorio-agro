@@ -70,7 +70,12 @@ export function analizar(d: Data, cultivo: string, siembra: string, hoy = new Da
   if (!al.length) al.push({ nivel: "Normal", titulo: "Sin alertas", texto: "No hay heladas, calor extremo ni lluvias fuertes en el pronóstico de 7 días.", reco: "Seguir el calendario planificado." });
   const orden = ["Peligro", "Alerta", "Atención", "Normal"];
   al.sort((a, b) => orden.indexOf(a.nivel) - orden.indexOf(b.nivel));
-  return { c, k, t, obs, fut, bal30, bal7, gdd, gddHoy, gddFin, desde, sinceArchive, alertas: al };
+  // cociente fototermal (Fischer 1985): radiación / (temperatura media − 4,5 °C), clave para el número de granos de trigo
+  const RS: number[] = d.daily.shortwave_radiation_sum || [];
+  const qDia = (i: number) => { const tm = (TX[i] + TN[i]) / 2; return RS[i] == null || TX[i] == null || TN[i] == null || tm <= 5.5 ? null : RS[i] / (tm - 4.5); };
+  const qProm = (i: number, j: number) => { const v = t.slice(i, j).map((_, n) => qDia(i + n)).filter((x): x is number => x != null); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
+  const q = { obs15: qProm(Math.max(0, k - 15), k), fut7: qProm(k, t.length) };
+  return { c, k, t, obs, fut, bal30, bal7, gdd, gddHoy, gddFin, desde, sinceArchive, alertas: al, q };
 }
 
 function Chart({ option, height = 240 }: { option: Data; height?: number }) {
@@ -114,7 +119,7 @@ export function CultivosPanel() {
     try {
       const today = new Date().toISOString().slice(0, 10);
       const past = siembra && siembra < today ? Math.min(92, Math.ceil((Date.parse(today) - Date.parse(siembra)) / 864e5) + 1) : 31;
-      const u = `https://api.open-meteo.com/v1/forecast?latitude=${place.lat}&longitude=${place.lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,et0_fao_evapotranspiration,wind_speed_10m_max,relative_humidity_2m_mean,relative_humidity_2m_max,relative_humidity_2m_min&past_days=${Math.max(31, past)}&forecast_days=7&timezone=America%2FArgentina%2FBuenos_Aires`;
+      const u = `https://api.open-meteo.com/v1/forecast?latitude=${place.lat}&longitude=${place.lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,et0_fao_evapotranspiration,wind_speed_10m_max,relative_humidity_2m_mean,relative_humidity_2m_max,relative_humidity_2m_min,shortwave_radiation_sum&past_days=${Math.max(31, past)}&forecast_days=7&timezone=America%2FArgentina%2FBuenos_Aires`;
       const r = await fetch(u, { signal: AbortSignal.timeout(30000) });
       if (!r.ok) throw new Error();
       const d = await r.json();
@@ -187,7 +192,9 @@ function Informe({ r }: { r: Data }) {
       <div><span>Lluvia próximos 7 días</span><b>{nf(a.fut.lluvia)} mm</b><em>balance {a.bal7 >= 0 ? "+" : ""}{nf(a.bal7)} mm</em></div>
       <div><span>Mín. y máx. pronosticadas</span><b>{nf(a.fut.tmin, 1)} / {nf(a.fut.tmax, 1)} °C</b><em>helada {c.nombre.toLowerCase()}: {c.helada} °C</em></div>
       <div><span>Grados día</span><b>{nf(a.gddHoy)}</b><em>{r.siembra ? "desde la siembra" : `desde el ${dm(a.desde)}`} · base {c.tbase} °C</em></div>
+      {r.cultivo === "trigo" && <div><span>Cociente fototermal (Q)</span><b>{nf(a.q.obs15, 2)}</b><em>últimos 15 días · próximos 7: {nf(a.q.fut7, 2)} MJ/m²·día·°C</em></div>}
     </div>
+    {r.cultivo === "trigo" && <p className="cp-note">Cociente fototermal: radiación solar dividida por la temperatura media menos 4,5 °C (Fischer, 1985). Cuanto más alto en el período crítico (unos 20 días antes a 10 días después de la floración), más granos fija el trigo. Es el mismo indicador que publica SEPA (INTA) en mapas; acá se calcula para el punto elegido.</p>}
     <section className="cult-sec"><h3>Lectura de la situación</h3>{carilla.map((t, i) => <p key={i}>{t}</p>)}</section>
     <section className="cult-sec"><h3>Alertas y recomendaciones</h3>
       {a.alertas.map((x: Alerta) => <div key={x.titulo} className={`cult-alert ${TONE[x.nivel]}`}><b>{x.nivel === "Normal" ? x.titulo : `${x.nivel}: ${x.titulo}`}</b><p>{x.texto}</p><p className="reco">Recomendación: {x.reco}</p></div>)}

@@ -29,3 +29,13 @@ def test_percentile_and_season():
     from datetime import date
     assert ra.season_of(date(2026, 10, 15)) == 2026 and ra.season_of(date(2027, 3, 1)) == 2026
     assert ra.pct([1, 2, 3, 4, 5], .5) == 3 and ra.pct([0, 10], .1) == 1
+
+
+def test_enso_effect():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('ra2', os.path.join(os.path.dirname(__file__), '..', 'scripts', 'rinde_agua.py'))
+    ra = importlib.util.module_from_spec(spec); spec.loader.exec_module(ra)
+    hist = {'2000': 0.9, '2001': 0.8, '2002': 0.6, '2003': 0.8}
+    ph = {2000: 'El Niño', 2001: 'Neutro', 2002: 'La Niña', 2003: 'Neutro'}
+    e = ra.enso_effect(hist, ph)
+    assert e['El Niño']['vs_neutral_pct'] == 12 and e['La Niña']['vs_neutral_pct'] == -25 and e['Neutro']['n'] == 2

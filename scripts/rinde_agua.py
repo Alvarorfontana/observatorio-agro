@@ -38,7 +38,8 @@ METHOD = ('Para cada campaña (julio a junio) se simula el cultivo con AquaCrop 
           'los parámetros del cultivo son los de referencia de la FAO, sin calibrar por lote. La campaña en curso combina lo '
           'observado (ERA5) y el pronóstico de 16 días con el clima de cada campaña 1991-2020 para el resto: 30 escenarios, '
           'resumidos en los percentiles 10, 50 y 90 y en la probabilidad de terminar debajo, cerca o encima de lo normal '
-          '(terciles 1991-2020).')
+          '(terciles 1991-2020). Efecto de El Niño y La Niña: índice medio de las campañas de cada fase (ONI de '
+          'diciembre a febrero, NOAA) contra las neutras, como AgroENSO del INTA pero para cada localidad.')
 NORMAL = (1991, 2020)
 
 
@@ -208,6 +209,29 @@ def place(pid, name, country, lat, lon, prev, today):
     return out, net
 
 
+def oni_phases():
+    """Fase ENSO de cada campaña según el ONI de diciembre-enero-febrero (NOAA PSL): Niño ≥ 0,5, Niña ≤ −0,5."""
+    import climate_indices as ci   # módulo propio (parse_psl)
+    r = get(ci.PSL['oni'][1], {})
+    if r is None:
+        return {}
+    djf = {y: v for y, m, v in ci.parse_psl(r.text) if m == 1}
+    return {y - 1: ('El Niño' if v >= 0.5 else 'La Niña' if v <= -0.5 else 'Neutro') for y, v in djf.items()}
+
+
+def enso_effect(history, phases):
+    """Índice medio de rinde por agua en campañas Niño, Niña y neutras (como AgroENSO, pero por localidad)."""
+    out = {}
+    for ph in ('El Niño', 'Neutro', 'La Niña'):
+        vals = [v for s, v in history.items() if v is not None and phases.get(int(s)) == ph]
+        out[ph] = {'n': len(vals), 'mean': round(sum(vals) / len(vals), 3) if vals else None}
+    base = out['Neutro']['mean']
+    for ph in ('El Niño', 'La Niña'):
+        m = out[ph]['mean']
+        out[ph]['vs_neutral_pct'] = round(100 * (m / base - 1)) if m is not None and base else None
+    return out
+
+
 def main(out_path):
     try:
         res = json.load(open(out_path, encoding='utf-8'))
@@ -217,17 +241,24 @@ def main(out_path):
     today = date.today()
     cur = season_of(today)
     lookup = {p[0]: p for p in enso_sa.PLACES}
+    phases = oni_phases()
     for pid in PLACES:
         if pid not in lookup:
             continue
         _, name, country, lat, lon = lookup[pid]
         if (places.get(pid) or {}).get('obs_until') == (today - timedelta(days=6)).isoformat():
+            for crop in CROPS:
+                if (places[pid].get(crop) or {}).get('history') and phases:
+                    places[pid][crop]['enso'] = enso_effect(places[pid][crop]['history'], phases)
             continue
         try:
             row, net = place(pid, name, country, lat, lon, places.get(pid), today)
         except Exception as e:   # una localidad que falla no frena a las demás
             print(f'{name}: error {type(e).__name__}: {e}', flush=True); continue
         if row:
+            for crop in CROPS:
+                if row.get(crop) and phases:
+                    row[crop]['enso'] = enso_effect(row[crop]['history'], phases)
             places[pid] = row
             mz = (row.get('maiz') or {}).get('outlook') or {}
             print(f"{name}: maíz p50 {mz.get('p50')} (abajo {mz.get('below')})", flush=True)
