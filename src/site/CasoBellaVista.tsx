@@ -97,7 +97,7 @@ export function CasoBellaVista() {
           {d.series.slice(-6).map((r: D) => <div className="nn-tr" role="row" key={r.date}><span role="cell">{r.date.slice(8, 10)}/{r.date.slice(5, 7)}/{r.date.slice(2, 4)}</span><span role="cell">{nf(r.ndvi, 2)}</span><span role="cell">{nf(r.normal, 2)}</span><span role="cell">{sg(r.diff, 2)}</span><span role="cell">{r.vci ?? "—"}</span></div>)}</div>
         <p>{d.reading}</p>
       </>}</Block>
-      <Block tag="CONSUMO DE AGUA" title="Evapotranspiración real" s={etr} src="NASA MODIS MOD16A2GF (500 m, 8 días) vía Earth Engine · misma época desde 2001">{d => <>
+      <Block tag="CONSUMO DE AGUA" title="Evapotranspiración real" s={etr} src="NASA MODIS MOD16A2 (500 m, 8 días) vía Earth Engine · misma época desde 2001">{d => <>
         <div className="bv-tiles"><div><b>{nf(d.latest.mm_day, 1)} mm/día</b><span>últimos 8 días</span><small>{d.latest.diff_pct != null ? `${sg(d.latest.diff_pct)} % vs normal` : "sin normal"}</small></div>
           <div><b>{d.latest.percentile ?? "—"}</b><span>percentil</span><small>contra la misma época</small></div></div>
         <p>{d.reading}</p>

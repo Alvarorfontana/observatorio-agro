@@ -281,7 +281,7 @@ def analyze_et(pts, window=8):
     last = out[-1]
     p = 50 if last['percentile'] is None else last['percentile']
     word = 'muy por debajo' if p < 10 else 'por debajo' if p < 25 else 'muy por encima' if p > 90 else 'por encima' if p > 75 else 'dentro'
-    reading = (f"En los 8 días al {date.fromisoformat(last['date']).strftime('%d/%m')} el lote evapotranspiró {last['mm']} mm "
+    reading = (f"En los 8 días desde el {date.fromisoformat(last['date']).strftime('%d/%m/%Y')} el lote evapotranspiró {last['mm']} mm "
                f"({last['mm_day']} mm por día), {word} de lo normal para la época"
                + (f" ({'+' if last['diff_pct'] > 0 else ''}{last['diff_pct']} %)." if last['diff_pct'] is not None else '.')
                + ' Menos consumo de agua que lo normal suele indicar cultivo o pastura con falta de agua o menos vegetación.')
@@ -289,17 +289,17 @@ def analyze_et(pts, window=8):
 
 
 def et_real(polygon):
-    """Evapotranspiración real del lote (MODIS MOD16A2GF, 500 m, cada 8 días) contra su historia desde 2001."""
+    """Evapotranspiración real del lote (MODIS MOD16A2, 500 m, cada 8 días) contra su historia desde 2001."""
     end = c._now().date()
-    rows, ha = _modis(polygon, 'MODIS/061/MOD16A2GF', 'ET', '2001-01-01', end.isoformat(), 500)
+    rows, ha = _modis(polygon, 'MODIS/061/MOD16A2', 'ET', '2001-01-01', end.isoformat(), 500)   # la versión GF sale una vez por año
     pts = [(d, v * 0.1) for d, v in rows]          # kg/m² en 8 días = mm
     data = analyze_et(pts)
-    data.update(area_ha=ha, sensor='MODIS Terra MOD16A2GF (500 m, 8 días)',
+    data.update(area_ha=ha, sensor='MODIS Terra MOD16A2 (500 m, 8 días)',
                 method=('Evapotranspiración real (agua que el suelo y las plantas devuelven a la atmósfera) estimada por la NASA con '
-                        'MODIS (algoritmo MOD16, versión con huecos completados). Se compara cada compuesto de 8 días con los de la '
+                        'MODIS (algoritmo MOD16). Se compara cada compuesto de 8 días con los de la '
                         'misma época (±8 días) desde 2001. Es el mismo tipo de producto que la "ETR cada 10 días" de SEPA (INTA), '
                         'calculado para el lote. Lotes de menos de 25 ha tienen muy pocos píxeles de 500 m.'))
-    return c.envelope(data, 'https://developers.google.com/earth-engine/datasets/catalog/MODIS_061_MOD16A2GF',
+    return c.envelope(data, 'https://developers.google.com/earth-engine/datasets/catalog/MODIS_061_MOD16A2',
                       'evapotranspiración real del lote', 'NASA MODIS MOD16 vía Google Earth Engine')
 
 

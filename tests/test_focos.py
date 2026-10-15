@@ -19,7 +19,7 @@ def test_parse_and_locate():
 
 def test_enrich_expression():
     body = json.dumps(fz.enrich_expression([(0, {'lat': -27.5, 'lon': -58.8}), (5, {'lat': -30, 'lon': -60})]))
-    assert 'ESA/WorldCover/v200' in body and 'WCMC/WDPA/current/polygons' in body and 'sampleRegions' in body
+    assert 'ESA/WorldCover/v200' in body and 'WCMC/WDPA/current/polygons' in body and 'Image.paint' in body and 'sampleRegions' in body
 
 
 def test_route_without_key(monkeypatch):

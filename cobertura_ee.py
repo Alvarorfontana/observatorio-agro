@@ -45,7 +45,7 @@ def _filtered(cid, start, end):
               filter=_f('Filter.dateRangeContains', leftValue=_f('DateRange', start=_k(start), end=_k(end)),
                         rightField=_k('system:time_start')))
     return _f('Collection.filter', collection=coll,
-              filter=_f('Filter.intersects', leftField=_k('.all'), rightValue={'valueReference': 'g'}))
+              filter=_f('Filter.intersects', leftField=_k('.geo'), rightValue={'valueReference': 'g'}))
 
 
 def dw_expression(pts, start, end):

@@ -123,8 +123,9 @@ def enrich_expression(points):
     fc = _f('Collection', features={'arrayValue': {'values': feats}})
     wc = _f('Image.rename', input=_f('Image.select', input=_f('ImageCollection.mosaic', collection=_f('ImageCollection.load', id=_k('ESA/WorldCover/v200'))),
                                        bandSelectors=_k(['Map'])), names=_k(['cover']))
-    wdpa = _f('Image.rename', input=_f('FeatureCollection.reduceToImage', collection=_f('FeatureCollection.load', id=_k('WCMC/WDPA/current/polygons')),
-                                      properties=_k(['WDPAID']), reducer=_f('Reducer.first')), names=_k(['wdpa']))
+    wdpa = _f('Image.rename', input=_f('Image.paint', image=_f('Image.constant', value=_k(0)),
+                                      featureCollection=_f('Collection.loadTable', tableId=_k('WCMC/WDPA/current/polygons')), color=_k(1)),
+              names=_k(['wdpa']))
     img = _f('Image.addBands', dstImg=wc, srcImg=wdpa)
     out = _f('Image.sampleRegions', image=img, collection=fc, properties=_k(['i']), scale=_k(30), geometries=_k(False))
     return {'expression': {'result': 'out', 'values': {'out': out}}}
@@ -153,7 +154,7 @@ def enrich(rows):
             continue
         cv = p.get('cover')
         rows[int(i)]['cover'] = WORLDCOVER.get(int(cv)) if cv is not None else None
-        rows[int(i)]['protected'] = p.get('wdpa') is not None
+        rows[int(i)]['protected'] = p.get('wdpa') == 1
     return None
 
 
