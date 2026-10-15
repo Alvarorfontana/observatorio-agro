@@ -2,9 +2,12 @@
 
 Datos: ERA5 (Copernicus) vía Open-Meteo Archive, diario: precipitación y evapotranspiración de referencia
 FAO-56 Penman-Monteith (ET0). Balance mensual = lluvia − ET0 (lo que el ambiente "pide" vs lo que llueve).
-Índice de sequía: balance acumulado de 1, 3, 6 y 12 meses estandarizado contra el mismo período de 1991-2020
-(percentil empírico llevado a una normal estándar, como el SPEI). Mismo concepto que el déficit de TerraClimate.
+Índice de sequía SPEI (Vicente-Serrano y otros, 2010): balance acumulado de 1, 3, 6 y 12 meses ajustado a una
+distribución log-logística de tres parámetros con los momentos ponderados por probabilidad de 1991-2020 (el mismo
+método del paquete SPEI de R), llevado a una normal estándar. Si el ajuste no es válido se usa el percentil empírico.
+El cálculo se contrasta en cada revisión automática con la librería climate_indices (scripts/validar_indices.py).
 """
+import math
 from datetime import date, timedelta
 from statistics import NormalDist, median
 
@@ -37,7 +40,47 @@ def monthly(daily):
     return out
 
 
+def loglogistic_fit(ref):
+    """Parámetros (alfa, beta, gamma) por momentos ponderados por probabilidad insesgados (Hosking; paquete SPEI)."""
+    x = sorted(r for r in ref if r is not None)
+    n = len(x)
+    if n < 15:
+        return None
+    w0 = sum(x) / n
+    w1 = sum(x[i] * (n - 1 - i) / (n - 1) for i in range(n)) / n
+    w2 = sum(x[i] * (n - 1 - i) * (n - 2 - i) / ((n - 1) * (n - 2)) for i in range(n)) / n
+    den = 6 * w1 - w0 - 6 * w2
+    if den == 0:
+        return None
+    beta = (2 * w1 - w0) / den
+    if not beta > 1:
+        return None
+    g = math.gamma(1 + 1 / beta) * math.gamma(1 - 1 / beta)
+    alpha = (w0 - 2 * w1) * beta / g
+    if not alpha > 0:
+        return None
+    return alpha, beta, w0 - alpha * g
+
+
+def spei_value(value, ref):
+    """SPEI con distribución log-logística; None si el ajuste no es válido."""
+    fit = loglogistic_fit(ref) if value is not None else None
+    if not fit:
+        return None
+    a, b, g = fit
+    f = 1e-6 if value <= g else 1 / (1 + (a / (value - g)) ** b)
+    f = min(max(f, 1e-6), 1 - 1e-6)
+    return round(max(-3.09, min(3.09, NormalDist().inv_cdf(f))), 2)
+
+
 def standardize(value, ref):
+    z = spei_value(value, ref)
+    if z is not None:
+        return z
+    return empirical(value, ref)
+
+
+def empirical(value, ref):
     ref = [r for r in ref if r is not None]
     if value is None or len(ref) < 15:
         return None

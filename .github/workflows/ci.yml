@@ -38,3 +38,15 @@ jobs:
       - name: Auditoría de dependencias npm
         run: npm audit --audit-level=high --omit=dev
         continue-on-error: true
+
+  validacion:
+    name: Validación científica (xclim y climate_indices)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt xclim climate-indices
+      - run: python scripts/validar_indices.py
