@@ -19,6 +19,13 @@ RULES = [
     ('/api/fuentes/costos', 20, 300),
     ('/api/fuentes/monitor', 6, 300),       # consulta 11 servicios por vez       # usa Nominatim, que pide pocas consultas
     ('/api/fuentes/agentic', 12, 300),
+    ('/api/fuentes/enso-informe', 6, 300),      # PDF de El Niño
+    ('/api/fuentes/localidad-informe', 6, 300),  # PDF de localidad
+    ('/api/fuentes/cuenca-informe', 6, 300),     # PDF de la cuenca
+    ('/api/fuentes/caminos', 10, 300),           # Overpass (OSM) pide pocas consultas
+    ('/api/fuentes/ganado', 20, 300),
+    ('/api/poblacion/informe', 6, 300),          # PDF de población
+    ('/api/poblacion/crecida', 10, 300),         # Earth Engine
     ('/api/fuentes/tile', 600, 60),          # teselas del mapa base
     ('/api/fuentes/ndvi-imagen', 60, 60),
     ('/api/poblacion/', 40, 300),            # WorldPop: cálculo y consultas de resultado

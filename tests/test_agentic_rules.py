@@ -39,6 +39,8 @@ def test_eudr_verification_and_negative_margin():
 def test_engine_merges_rules(monkeypatch):
     import agentic_engine as ae, research_connectors as c
     monkeypatch.setattr(c, 'research_bundle', lambda lat, lon, ina=None: {'sources': {}})
+    import enso_chain   # sin red: en GitHub Actions NOAA responde y sumaba el módulo El Niño
+    monkeypatch.setattr(enso_chain, 'chain', lambda: (_ for _ in ()).throw(RuntimeError('sin red')))
     r = ae.analyze(-28.5, -59.0, 'clima', known={'lluvia': {'spi': {'3': {'spi': -1.2, 'mm': 1, 'normal': 2, 'class': 'sequía moderada'}}}})
     assert r['modules'] == ['lluvia'] and r['recommendations'][0].startswith('Prioridad media')
     assert 'módulos del lote' in r['summary']

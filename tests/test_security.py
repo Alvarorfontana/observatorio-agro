@@ -56,3 +56,10 @@ def test_raster_item_ids_are_validated():
     for name, item in (('ndvi-imagen', '../../x'), ('cobertura-imagen', 'a/b?c')):
         r = cl.get(f'/api/fuentes/{name}', query_string={'lat': -28.5, 'lon': -59, 'item': item, 'polygon': poly})
         assert r.status_code == 400
+
+
+def test_pdf_routes_have_tight_limits():
+    import security
+    for path in ('/api/poblacion/informe', '/api/fuentes/enso-informe', '/api/fuentes/cuenca-informe'):
+        rule = next(r for r in security.RULES if path.startswith(r[0]))
+        assert rule[1] <= 6, path

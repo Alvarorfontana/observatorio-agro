@@ -75,7 +75,8 @@
     "deploymentEnabled": {
       "diag-*": false,
       "capturas": false,
-      "datos": false
+      "datos": false,
+      "dependabot/**": false
     }
   }
 }

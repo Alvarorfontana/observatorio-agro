@@ -1,0 +1,72 @@
+# Revisión de seguridad: claves subidas por error (gitleaks), fallas en el código (CodeQL) y ataques básicos contra
+# la web publicada (OWASP ZAP, sólo lectura). Corre los lunes y a pedido; no publica nada ni abre issues.
+name: Seguridad
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "17 6 * * 1"
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  claves:
+    name: Claves expuestas (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: gitleaks
+        run: |
+          curl -sSL https://github.com/gitleaks/gitleaks/releases/download/v8.24.3/gitleaks_8.24.3_linux_x64.tar.gz | tar xz gitleaks
+          ./gitleaks git --redact --no-banner --exit-code 1 --report-format sarif --report-path gitleaks.sarif .
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always() && hashFiles('gitleaks.sarif') != ''
+        with:
+          sarif_file: gitleaks.sarif
+          category: gitleaks
+
+  codigo:
+    name: Código (CodeQL)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [python, javascript-typescript, actions]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-extended
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: codeql-${{ matrix.language }}
+
+  web:
+    name: Web publicada (OWASP ZAP)
+    runs-on: ubuntu-latest
+    steps:
+      - name: ZAP baseline (pasivo, sin ataques destructivos)
+        run: |
+          docker run --rm -v "$PWD:/zap/wrk:rw" -t ghcr.io/zaproxy/zaproxy:stable \
+            zap-baseline.py -t https://observatorio-agro.vercel.app -m 3 -r zap.html -J zap.json -I || true
+      - name: Resumen
+        run: |
+          python3 - <<'PY'
+          import json
+          d = json.load(open('zap.json'))
+          for site in d.get('site', []):
+              for a in site.get('alerts', []):
+                  lvl = {'3': 'error', '2': 'warning'}.get(a.get('riskcode'), 'notice')
+                  print(f"::{lvl} title=ZAP {a.get('riskdesc')}::{a.get('name')} ({a.get('count')} casos)")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: zap-informe
+          path: zap.html
+          retention-days: 14
