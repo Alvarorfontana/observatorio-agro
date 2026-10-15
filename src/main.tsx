@@ -2509,19 +2509,18 @@ function SiteLink({to,children,className=""}:{to:string;children:React.ReactNode
 function Brand(){return <SiteLink to="/" className="site-brand"><img className="brand-logo" src="/dots-logo.svg" alt="DOTS Campo"/><span><b>DOTS <em>CAMPO</em></b><small>DATOS · OBSERVACIÓN · TERRITORIO · SATÉLITE</small></span></SiteLink>}
 function PublicHeader({onDemo}:{onDemo:()=>void}){return <header className="site-header"><Brand/><nav>
   <SiteLink to="/que-es-dots">Qué es DOTS</SiteLink>
-  <SiteLink to="/libre-deforestacion" className="nav-highlight">Vender a Europa</SiteLink>
-  <SiteLink to="/el-nino" className="nav-highlight">El Niño</SiteLink>
-  <a href="/poblacion">Población y riesgo</a>
-  <SiteLink to="/panel">Panel regional</SiteLink>
-  <SiteLink to="/modulos">Módulos</SiteLink>
+  <SiteLink to="/el-nino" className="nav-highlight">Mi región</SiteLink>
+  <SiteLink to="/focos">Fuego y heladas</SiteLink>
+  <SiteLink to="/libre-deforestacion">Vender a Europa</SiteLink>
+  <SiteLink to="/caso-bella-vista">Ejemplo</SiteLink>
   <details className="nav-more"><summary>Más</summary><div>
-    <SiteLink to="/guia">Cómo funciona</SiteLink><SiteLink to="/cultivos">Cultivos</SiteLink><SiteLink to="/capas">Capas del mapa</SiteLink>
-    <SiteLink to="/tecnologia">Fuentes</SiteLink><SiteLink to="/conexiones">APIs</SiteLink><SiteLink to="/casos">Casos</SiteLink><SiteLink to="/contacto">Contacto</SiteLink>
+    <SiteLink to="/cultivos">Cultivos y rinde</SiteLink><a href="/poblacion">Población y riesgo</a><SiteLink to="/panel">Panel regional</SiteLink><SiteLink to="/modulos">Módulos</SiteLink>
+    <SiteLink to="/guia">Cómo funciona</SiteLink><SiteLink to="/capas">Capas del mapa</SiteLink><SiteLink to="/tecnologia">Fuentes</SiteLink><SiteLink to="/conexiones">APIs</SiteLink><SiteLink to="/casos">Casos</SiteLink><SiteLink to="/contacto">Contacto</SiteLink>
   </div></details>
 </nav><div className="site-head-actions"><SiteLink to="/alertas" className="alert-btn">⚠ Alertas</SiteLink><SiteLink to="/acceso" className="ghost-link">Ingresar</SiteLink><button className="demo-btn" onClick={onDemo}>Abrir Observatorio →</button>
   <details className="nav-mobile"><summary aria-label="Menú">☰</summary><div>
     <button className="nav-mobile-demo" onClick={onDemo}>Abrir Observatorio →</button>
-    {([["/que-es-dots","Qué es DOTS"],["/libre-deforestacion","Vender a Europa"],["/el-nino","El Niño"],["/poblacion","Población y riesgo"],["/panel","Panel regional"],["/alertas","Alertas de crecidas"],["/modulos","Módulos"],["/guia","Cómo funciona"],["/cultivos","Cultivos"],["/capas","Capas del mapa"],["/tecnologia","Fuentes"],["/conexiones","APIs"],["/casos","Casos"],["/contacto","Contacto"],["/acceso","Ingresar"]] as [string,string][]).map(([to,l])=>to==="/poblacion"?<a key={to} href={to}>{l}</a>:<SiteLink key={to} to={to}>{l}</SiteLink>)}
+    {([["/que-es-dots","Qué es DOTS"],["/caso-bella-vista","Ejemplo: caso Bella Vista"],["/el-nino","Mi región: El Niño"],["/alertas","Alertas de crecidas"],["/focos","Fuego, rayos y heladas"],["/cultivos","Cultivos y rinde"],["/libre-deforestacion","Vender a Europa"],["/poblacion","Población y riesgo"],["/panel","Panel regional"],["/modulos","Módulos"],["/guia","Cómo funciona"],["/capas","Capas del mapa"],["/tecnologia","Fuentes"],["/conexiones","APIs"],["/casos","Casos"],["/contacto","Contacto"],["/acceso","Ingresar"]] as [string,string][]).map(([to,l])=>to==="/poblacion"?<a key={to} href={to}>{l}</a>:<SiteLink key={to} to={to}>{l}</SiteLink>)}
   </div></details></div></header>}
 const sourceGroups=[
  ["ARGENTINA",["CONAE · SAOCOM","SMN","INA"]],
@@ -2545,34 +2544,38 @@ function HomeLead({onDemo}:{onDemo:()=>void}){
   const riosSub=rios?`${rios.stations?.length||0} puertos medidos · ${rios.rising??0} subiendo`:riosErr?"Se reintenta al volver a entrar":"";
   const ninoTxt=ref?(ref.phase==="Neutro"?"Neutro":`${ref.phase} ${ref.strength||""}`.trim()):ninoErr?"Sin respuesta de NOAA":"Consultando…";
   const ninoSub=ref?`RONI ${ref.anom>0?"+":""}${fmt(ref.anom,2)} °C · ${ref.season_es} ${ref.year}`:"";
-  const doors:[string,string,string][]=[
-    ["Productor","Dibujá tu lote y mirá el pasto, el agua, la lluvia frente a lo normal y el riesgo de crecida.","demo"],
-    ["Exportador o frigorífico","Evidencia libre de deforestación por proveedor, en el formato que pide Europa.","/libre-deforestacion"],
-    ["Municipio o vecino ribereño","Alerta de crecidas por localidad, con informe formal para compartir.","/alertas"],
-    ["Estudiante o periodista","Datos abiertos con su fuente, El Niño explicado y guías para leer cada número.","/panel"],
-    ["Defensa Civil o planificación","Cuántas personas viven dentro de un área inundada, en sequía o con fuego, con informe en PDF.","/poblacion"],
+  type Door={n:string;t:string;d:string;cta:[string,string];links:[string,string][]};
+  const doors:Door[]=[
+    {n:"01",t:"Mi campo",d:"Dibujá el lote y mirá vegetación, agua en el suelo hasta 2 m, lluvia frente a lo normal, El Niño, heladas, historia del suelo desde 1985 y deforestación para exportar. Con informe en PDF.",cta:["Analizar mi campo","demo"],
+      links:[["Ver el caso Bella Vista","/caso-bella-vista"],["Vender a Europa (EUDR)","/libre-deforestacion"],["Cómo funciona","/guia"]]},
+    {n:"02",t:"Mi región",d:"Cómo viene la campaña en Sudamérica: El Niño en 80 localidades, sequía, rinde por agua de maíz y soja, dengue y calor, y cuánta gente vive en zonas de riesgo.",cta:["Ver El Niño en Sudamérica","/el-nino"],
+      links:[["Cultivos y rinde por agua","/cultivos"],["Población y riesgo climático","/poblacion"],["Panel regional","/panel"]]},
+    {n:"03",t:"Alertas",d:"Lo que puede pasar esta semana: crecidas en 34 puertos de la Cuenca del Plata, focos de calor, rayos, heladas, nevadas y lluvia fuerte. Con avisos por correo y al celular.",cta:["Ver las alertas de crecidas","/alertas"],
+      links:[["Focos, rayos y heladas","/focos"],["Recibir avisos","/alertas#avisos"]]},
   ];
+
   return <>
     <section className="hl-hero">
       <div className="hl-copy">
-        <span className="hl-kicker">Observatorio territorial abierto · Litoral, NEA y Cuenca del Plata</span>
+        <span className="hl-kicker">Observatorio agroclimático abierto · Argentina y Sudamérica</span>
         <h1>El campo, leído desde el satélite y contado para todos.</h1>
-        <p>Pasto, agua, clima, suelo y crecidas, ordenados alrededor de cada potrero. Cada número dice de dónde viene, cuándo se midió y a qué escala. Gratis y con fuentes oficiales.</p>
-        <div className="hl-actions"><button onClick={onDemo}>Abrir el Observatorio</button><SiteLink to="/que-es-dots">Qué es DOTS</SiteLink></div>
+        <p>DOTS junta satélites y fuentes oficiales para responder tres preguntas: cómo está mi campo, qué pasa en mi región y de qué tengo que cuidarme esta semana. Cada número dice de dónde viene, cuándo se midió y a qué escala. Gratis.</p>
+        <div className="hl-actions"><button onClick={onDemo}>Analizar mi campo</button><SiteLink to="/caso-bella-vista">Ver un ejemplo real</SiteLink></div>
       </div>
       <aside className="hl-now" aria-label="Ahora en la región">
         <h2>Ahora en la región</h2>
         <SiteLink to="/alertas" className="hl-stat"><span>Ríos de la Cuenca del Plata</span><b>{riosTxt}</b><small>{riosSub}</small><em>Fuente: INA y Prefectura Naval</em></SiteLink>
         <SiteLink to="/panel" className="hl-stat"><span>El Niño</span><b>{ninoTxt}</b><small>{ninoSub}</small><em>Fuente: NOAA CPC{nino?.status?` · ${nino.status.es}`:""}</em></SiteLink>
         <a href="/poblacion" className="hl-stat"><span>Población y riesgo climático</span><b>¿Cuánta gente vive en la zona afectada?</b><small>Dibujá el área de inundación, sequía o fuego y obtené el informe</small><em>Fuente: WorldPop · Universidad de Southampton</em></a>
+        <SiteLink to="/focos" className="hl-stat"><span>Fuego, rayos y heladas</span><b>Focos de calor de hoy</b><small>Cuatro satélites de la NASA, rayos de las últimas 3 horas y heladas de anoche</small><em>Fuente: NASA FIRMS · NOAA GOES-19</em></SiteLink>
         <SiteLink to="/libre-deforestacion" className="hl-stat"><span>Exportar a la Unión Europea</span><b>EUDR desde el 30/12/2026</b><small>Corte de deforestación: 31/12/2020</small><em>Fuente: Reglamento (UE) 2023/1115</em></SiteLink>
       </aside>
     </section>
-    <section className="hl-doors"><h2>¿Por dónde empezar?</h2><div>
-      {doors.map(([t,d,to],i)=>to==="demo"
-        ?<button key={t} onClick={onDemo}><span>{String(i+1).padStart(2,"0")}</span><b>{t}</b><p>{d}</p></button>
-        :to==="/poblacion"?<a key={t} href={to}><span>{String(i+1).padStart(2,"0")}</span><b>{t}</b><p>{d}</p></a>
-        :<SiteLink key={t} to={to}><span>{String(i+1).padStart(2,"0")}</span><b>{t}</b><p>{d}</p></SiteLink>)}
+    <section className="hl-doors hl-three"><h2>¿Qué querés saber?</h2><div>
+      {doors.map(x=><article key={x.n}><span>{x.n}</span><b>{x.t}</b><p>{x.d}</p>
+        {x.cta[1]==="demo"?<button className="hl-cta" onClick={onDemo}>{x.cta[0]} →</button>:<SiteLink to={x.cta[1]} className="hl-cta">{x.cta[0]} →</SiteLink>}
+        <ul>{x.links.map(([l,to])=><li key={to}>{to.startsWith("/poblacion")?<a href={to}>{l}</a>:<SiteLink to={to}>{l}</SiteLink>}</li>)}</ul>
+      </article>)}
     </div></section>
   </>;
 }
@@ -2580,7 +2583,7 @@ function HomeLead({onDemo}:{onDemo:()=>void}){
 function Home({onDemo}:{onDemo:()=>void}){return <div className="public-site"><PublicHeader onDemo={onDemo}/><main>
  <HomeLead onDemo={onDemo}/>
  <SourceStrip/>
- <section className="home-intro editorial"><div><span className="section-tag">UN CAMPO · UNA LECTURA</span><h2>Del límite del potrero a la decisión.</h2></div><p>DOTS no reemplaza la recorrida ni el análisis profesional. Ordena información dispersa alrededor de una unidad territorial concreta y muestra qué fue observado, modelado, calculado o pronosticado.</p></section>
+ <section className="hl-case"><div><span className="section-tag">EJEMPLO REAL</span><h2>Un campo de Bella Vista, Corrientes, leído de punta a punta.</h2><p>Sequía y agua en el suelo, El Niño, el río Paraná, el verdor contra 25 años, la historia del suelo desde 1985, heladas por satélite y cambios recientes, sobre el mismo perímetro y con datos de hoy. Así se ve un informe de DOTS antes de dibujar tu propio campo.</p></div><SiteLink to="/caso-bella-vista" className="hl-cta">Ver el caso Bella Vista →</SiteLink></section>
  <section className="journey"><article><b>01</b><h3>Delimitá</h3><p>Triángulo, rectángulo o polígono libre. Superficie, perímetro y centroide.</p></article><article><b>02</b><h3>Observá</h3><p>Escenas, clima, agua, suelo, vegetación y riesgos sobre el mismo territorio.</p></article><article><b>03</b><h3>Compará</h3><p>Fechas, modelos y fuentes sin perder procedencia ni calidad.</p></article><article><b>04</b><h3>Decidí</h3><p>Hallazgos, alertas, tareas e Informe Territorial DOTS unificado.</p></article></section>
  <section className="layers-teaser"><div><span className="section-tag">CAPAS DEL MAPA</span><h2>{OPEN_LAYERS.length + DOTS_LAYERS.length} capas abiertas sobre tu lote.</h2><p>Bosque, agua, anegamiento, imagen satelital diaria, rutas y vías, más lo que DOTS calcula para cada lote. Superponelas para ver lo que ninguna muestra sola.</p></div><SiteLink to="/capas" className="layers-btn big">Ver qué es una capa y para qué sirve →</SiteLink></section><section className="eudr-feature"><div><span className="section-tag">NUEVO · UNIÓN EUROPEA</span><h2>Libre de deforestación, verificado por satélite.</h2><p>Desde el 30/12/2026 la carne, la soja y la madera que se exporten a Europa deben probar que no vienen de tierras deforestadas después de 2020. DOTS lo verifica lote por lote y entrega el informe y la geolocalización listos para la debida diligencia, con el carbono del suelo y las emisiones del rodeo.</p><div className="cover-actions"><SiteLink to="/libre-deforestacion">Cómo funciona →</SiteLink><button onClick={onDemo}>Verificar un lote</button></div></div><ul><li><b>2017–2023</b>cobertura anual a 10 m</li><li><b>2 fuentes</b>Impact Observatory y ESA</li><li><b>6 decimales</b>polígono GeoJSON</li><li><b>t C/ha</b>carbono del suelo</li></ul></section>
  <section className="field-story"><div className="field-visual"><img src="/dots-hero.jpg" alt="Lotes de un establecimiento con índice de vegetación por sector"/></div><div><span className="section-tag">GEMELO DIGITAL GANADERO</span><h2>Cada potrero tiene contexto.</h2><p>Límites, pasturas, agua, infraestructura, ganado, clima, suelo, satélite, riesgos e historial se leen juntos. El mapa permanece como centro operativo mientras cambian las capas de análisis.</p><button onClick={onDemo}>Explorar el Observatorio</button></div></section>
@@ -3260,7 +3263,7 @@ function Contact({onDemo}:{onDemo:()=>void}){
       {ch?.email_enabled===false && <p className="form-status">El envío se habilita cuando el correo de destino esté configurado. No simulamos envíos.</p>}
     </form></section></main><SiteFooter/></div>}
 function Access({onDemo}:{onDemo:()=>void}){return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner access-page"><PageHero eyebrow="ACCESO" title="Observatorio DOTS" lead="La autenticación real se incorporará con permisos por establecimiento. La demostración no simula una cuenta de usuario."/><button className="big-demo" onClick={onDemo}>Entrar a la demostración →</button></main><SiteFooter/></div>}
-function SiteFooter(){return <footer className="site-footer"><Brand/><p>Inteligencia territorial para la gestión ganadera.</p><div><SiteLink to="/guia">Guía: cómo funciona</SiteLink><SiteLink to="/producto">Cómo funciona</SiteLink><SiteLink to="/tecnologia">Fuentes</SiteLink><SiteLink to="/capas">Capas</SiteLink><SiteLink to="/conexiones">APIs</SiteLink><SiteLink to="/demo">Demo</SiteLink><SiteLink to="/cultivos">Informe de cultivo</SiteLink><SiteLink to="/caso-bella-vista">Caso Bella Vista</SiteLink><SiteLink to="/focos">Focos de calor</SiteLink><SiteLink to="/licencias">Fuentes y licencias</SiteLink><SiteLink to="/contacto">Contacto</SiteLink></div></footer>}
+function SiteFooter(){return <footer className="site-footer"><Brand/><p>Observatorio agroclimático abierto: tu campo, tu región y las alertas, con fuentes oficiales.</p><div><SiteLink to="/guia">Guía: cómo funciona</SiteLink><SiteLink to="/producto">Cómo funciona</SiteLink><SiteLink to="/tecnologia">Fuentes</SiteLink><SiteLink to="/capas">Capas</SiteLink><SiteLink to="/conexiones">APIs</SiteLink><SiteLink to="/demo">Demo</SiteLink><SiteLink to="/cultivos">Informe de cultivo</SiteLink><SiteLink to="/caso-bella-vista">Caso Bella Vista</SiteLink><SiteLink to="/focos">Focos de calor</SiteLink><SiteLink to="/licencias">Fuentes y licencias</SiteLink><SiteLink to="/contacto">Contacto</SiteLink></div></footer>}
 
 function App(){
   const [path,setPath]=useState(window.location.pathname);
