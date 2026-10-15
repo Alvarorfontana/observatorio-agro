@@ -1,6 +1,6 @@
 # Revisión de seguridad: claves subidas por error (gitleaks), fallas en el código (CodeQL) y ataques básicos contra
 # la web publicada (OWASP ZAP, sólo lectura). Corre los lunes y a pedido; no publica nada ni abre issues.
-name: Seguridad
+name: Seguridad y accesibilidad
 
 on:
   workflow_dispatch: {}
@@ -70,3 +70,16 @@ jobs:
           name: zap-informe
           path: zap.html
           retention-days: 14
+
+  accesibilidad:
+    name: Accesibilidad (axe-core, WCAG AA)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: |
+          npm i --no-save axe-core playwright
+          npx playwright install --with-deps chromium
+          node scripts/accesibilidad.mjs https://observatorio-agro.vercel.app

@@ -23,7 +23,7 @@ body { font-family: var(--sans); }
   --ta-border-strong: #4d4d4d;
   --ta-text: #f4f4f4;
   --ta-text-2: #c6c6c6;
-  --ta-text-3: #8d8d8d;
+  --ta-text-3: #a6a6a6;
   --ta-brand: #3ddbd9;        /* teal 30 de Carbon: el turquesa DOTS ajustado a la paleta */
   --ta-brand-soft: rgba(61, 219, 217, 0.12);
   --ta-ok: #42be65;

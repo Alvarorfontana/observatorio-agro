@@ -33,6 +33,12 @@ PLACES = ['reconquista', 'resistencia', 'santa-fe', 'parana', 'gualeguaychu', 'r
 CROPS = {'maiz': ('Maize', '10/01', 'Maíz de primera, siembra 1 de octubre'),
          'soja': ('Soybean', '11/15', 'Soja de primera, siembra 15 de noviembre')}
 SOIL = 'SiltLoam'
+METHOD = ('Para cada campaña (julio a junio) se simula el cultivo con AquaCrop en secano y con riego completo; el índice es '
+          'el cociente entre ambos: qué parte del rinde posible permitió el agua. Es relativo, no una estimación de cosecha: '
+          'los parámetros del cultivo son los de referencia de la FAO, sin calibrar por lote. La campaña en curso combina lo '
+          'observado (ERA5) y el pronóstico de 16 días con el clima de cada campaña 1991-2020 para el resto: 30 escenarios, '
+          'resumidos en los percentiles 10, 50 y 90 y en la probabilidad de terminar debajo, cerca o encima de lo normal '
+          '(terciles 1991-2020).')
 NORMAL = (1991, 2020)
 
 
@@ -227,7 +233,7 @@ def main(out_path):
             print(f"{name}: maíz p50 {mz.get('p50')} (abajo {mz.get('below')})", flush=True)
         res = {'updated': today.isoformat(), 'season': f'{cur}/{str(cur + 1)[-2:]}', 'soil': 'Franco limoso',
                'crops': {k: v[2] for k, v in CROPS.items()}, 'normal_period': f'{NORMAL[0]}-{NORMAL[1]}',
-               'method': __doc__.split('\n\n', 1)[1].split('Uso:')[0].strip(),
+               'method': METHOD,
                'source': 'AquaCrop-OSPy (FAO) · Copernicus ERA5 y pronóstico vía Open-Meteo', 'places': places}
         json.dump(res, open(out_path, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
         if net:
