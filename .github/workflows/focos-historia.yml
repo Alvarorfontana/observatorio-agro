@@ -1,0 +1,37 @@
+# Historia mensual de focos de calor (NASA FIRMS MODIS desde 2001) por provincia y por departamento de Argentina.
+# El día 3 de cada mes y a pedido. Guarda en la rama datos: no publica la web. Requiere el secreto FIRMS_MAP_KEY.
+name: Historia de focos
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "37 7 3 * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: focos-historia
+  cancel-in-progress: false
+
+jobs:
+  historia:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Traer datos de la rama datos
+        run: bash scripts/datos_rama.sh traer
+      - name: Contar focos
+        env:
+          FIRMS_MAP_KEY: ${{ secrets.FIRMS_MAP_KEY }}
+        run: |
+          pip install -r requirements.txt
+          python scripts/focos_historia.py data/focos_historia.json
+      - name: Guardar en la rama datos (no publica la web)
+        if: always()
+        run: |
+          cp scripts/datos_rama.sh /tmp/datos_rama.sh && bash /tmp/datos_rama.sh guardar "Historia de focos $(date -u +%Y-%m-%d\ %H:%M)" data/focos_historia.json scripts/cache/focos_bloques.json

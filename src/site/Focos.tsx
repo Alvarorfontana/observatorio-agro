@@ -9,11 +9,15 @@ import L from "leaflet";
 type Pt = { lat: number; lon: number; date: string; time: string; sat: string; conf: string; frp: number | null; dn: string; country: string; province: string; cover?: string | null; protected?: boolean };
 type Prov = { country: string; province: string; count: number; frp: number; protected: number; top_cover: string | null };
 type Place = { id: string; name: string; country: string; lat: number; lon: number; events: Record<string, string[]>; tmin: number | null; tmax: number | null; snow_cm: number; rain_mm: number };
-type Data = { days: number; count: number; points: Pt[]; by_province: Prov[]; danger: Place[] | null; reading: string; sources: string[]; errors: Record<string, string>; enrichment_note: string | null; enriched: number; method: string };
+type HRow = { a: string; b: string; count: number; normal: number; ratio: number | null };
+type Hist = { previous_month: string; current_month: string; years: number; provinces_prev: HRow[]; provinces_cur: HRow[]; departments_prev: HRow[]; updated: string };
+type Data = { history: Hist | null; days: number; count: number; points: Pt[]; by_province: Prov[]; danger: Place[] | null; reading: string; sources: string[]; errors: Record<string, string>; enrichment_note: string | null; enriched: number; method: string };
 
 const SAT_COLOR: Record<string, string> = { "MODIS (Terra/Aqua)": "#d94841", "VIIRS Suomi NPP": "#1a9850", "VIIRS NOAA-20": "#e6a100", "VIIRS NOAA-21": "#7b3fa0" };
 const frpColor = (f: number | null) => f == null ? "#98a2b3" : f >= 100 ? "#7f0000" : f >= 30 ? "#d7301f" : f >= 10 ? "#fc8d59" : "#fdcc8a";
 const EVENTS: [string, string, string][] = [["incendio", "Peligro de incendio", "#d7301f"], ["helada", "Helada", "#2166ac"], ["nevada", "Nevada", "#6a51a3"], ["calor", "Calor extremo", "#b2182b"], ["lluvia", "Lluvia fuerte", "#1b7837"]];
+const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+const MES = (ym: string) => `${MESES[+ym.slice(5, 7) - 1]} ${ym.slice(0, 4)}`;
 const dm = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
 const nf = (v: number | null | undefined, d = 0) => v == null ? "—" : v.toLocaleString("es-AR", { maximumFractionDigits: d, minimumFractionDigits: d });
 
@@ -112,6 +116,16 @@ export function Focos() {
             <ul className="fz-ev-list">{evPlaces.slice(0, 14).map(x => <li key={x.id}><b>{x.name}</b> <small>{x.country}</small><br />{EVENTS.filter(([k]) => x.events[k]?.length).map(([k, l, c]) => <span key={k} className="fz-tag" style={{ borderColor: c, color: c }}>{l} {x.events[k].map(dm).join(", ")}</span>)}</li>)}</ul>}
         </div>
       </div>
+      <h3 className="fz-title">Comparado con otros años</h3>
+      {!d.history ? <p className="small">La historia mensual de focos desde 2001 se está calculando (tarea automática mensual). Cuando esté lista, acá aparece cada provincia y cada departamento contra su promedio.</p> : <div className="fz-hist">
+        {([["provinces_prev", `Provincias · ${MES(d.history.previous_month)}`], ["provinces_cur", `Provincias · ${MES(d.history.current_month)} hasta hoy`], ["departments_prev", `Departamentos de Argentina · ${MES(d.history.previous_month)}`]] as const).map(([k, title]) =>
+          <div key={k}><b>{title}</b>
+            <div className="nn-table fz-htab" role="table" tabIndex={0} aria-label={title}><div className="nn-tr nn-th" role="row">{["Lugar", "Focos", "Promedio", "Relación"].map(h => <span role="columnheader" key={h}>{h}</span>)}</div>
+              {(d.history![k] as HRow[]).slice(0, 12).map(r => <div className="nn-tr" role="row" key={r.a + r.b}><span role="cell"><b>{r.b}</b><small>{r.a}</small></span><span role="cell">{nf(r.count)}</span><span role="cell">{nf(r.normal, 0)}</span>
+                <span role="cell" className={r.ratio != null && r.ratio >= 2 ? "fz-hi" : r.ratio != null && r.ratio <= 0.5 ? "fz-lo" : ""}>{r.ratio == null ? "—" : `${nf(r.ratio, 1)} veces`}</span></div>)}
+              {(d.history![k] as HRow[]).length === 0 && <div className="nn-tr" role="row"><span role="cell">Sin datos suficientes.</span></div>}</div></div>)}
+        <p className="small">Promedio del mismo mes desde 2001 (NASA FIRMS MODIS, 1 km; {d.history.years} años). En el mes en curso, el promedio se ajusta a los días transcurridos. Departamentos: geoBoundaries.</p>
+      </div>}
       <h3 className="fz-title">Tabla de focos</h3>
       <div className="fz-filters">
         <label>Buscar<input value={q} onChange={e => setQ(e.target.value)} placeholder="fecha, satélite, provincia, cobertura…" /></label>

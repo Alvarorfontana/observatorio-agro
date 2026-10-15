@@ -1152,3 +1152,9 @@ html, body { overflow-x: hidden; }
   .fz-table .nn-tr{grid-template-columns:1fr 1.3fr 1fr}.fz-table .nn-tr>span{display:none}.fz-table .nn-tr>span:nth-child(1),.fz-table .nn-tr>span:nth-child(2),.fz-table .nn-tr>span:nth-child(4){display:block}
   .fz-table .nn-tr>span:nth-child(6){grid-column:auto}}
 .fz .nn-table{background:#fff}
+.fz-hist{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.fz-hist>div>b{display:block;font-size:14px;margin-bottom:6px}
+.fz-hist>p{grid-column:1/-1;margin:0}
+.fz-htab .nn-tr{grid-template-columns:1.5fr .6fr .7fr .8fr;cursor:default}
+.fz-hi{color:#b2182b;font-weight:700}.fz-lo{color:#2166ac}
+@media (max-width:860px){.fz-hist{grid-template-columns:1fr}.fz-htab .nn-tr>span{display:block!important;grid-column:auto!important}}

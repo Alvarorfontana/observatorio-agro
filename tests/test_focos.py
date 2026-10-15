@@ -30,3 +30,14 @@ def test_route_without_key(monkeypatch):
     app = Flask(__name__); app.register_blueprint(research_api)
     r = app.test_client().get('/api/fuentes/focos?dias=2')
     assert r.status_code == 409 and 'FIRMS_MAP_KEY' in r.get_json()['error']
+
+
+def test_history_compare():
+    from datetime import date
+    months = {f'{y}-09': {'prov': {'Argentina|Corrientes': 100}, 'dep': {'Corrientes|Ituzaingó': 40}} for y in range(2001, 2026)}
+    months['2026-09'] = {'prov': {'Argentina|Corrientes': 300}, 'dep': {'Corrientes|Ituzaingó': 200}}
+    months['2026-10'] = {'prov': {'Argentina|Corrientes': 10}, 'dep': {}}
+    h = fz.history_compare({'months': months}, today=date(2026, 10, 15))
+    p = h['provinces_prev'][0]
+    assert h['previous_month'] == '2026-09' and p['b'] == 'Corrientes' and p['ratio'] == 3.0
+    assert h['departments_prev'][0]['ratio'] == 5.0 and h['provinces_cur'] == []

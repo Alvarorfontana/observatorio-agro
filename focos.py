@@ -18,6 +18,7 @@ import json
 import os
 import time
 from concurrent.futures import ThreadPoolExecutor
+from datetime import timedelta
 
 import research_connectors as c
 
@@ -237,7 +238,12 @@ def analyze(days=2):
             dz = None; errors['peligro'] = type(e).__name__
     rows.sort(key=lambda r: (r['date'] or '', r['time']), reverse=True)
     prov = summarize(rows)
-    data = {'days': days, 'count': len(rows), 'points': rows, 'by_province': prov, 'danger': dz, 'reading': reading(rows, prov, days),
+    try:
+        import datastore
+        hist = history_compare(datastore.load('focos_historia.json'))
+    except Exception:
+        hist = None
+    data = {'history': hist, 'days': days, 'count': len(rows), 'points': rows, 'by_province': prov, 'danger': dz, 'reading': reading(rows, prov, days),
             'sources': [l for _, l in SOURCES], 'errors': errors, 'enrichment_note': ee_note,
             'enriched': sum(1 for r in rows if 'cover' in r), 'method': __doc__.split('\n\n', 1)[1].strip()}
     env = c.envelope(data, 'https://firms.modaps.eosdis.nasa.gov/api/area/', 'focos de calor en el sur de Sudamérica',
@@ -245,6 +251,35 @@ def analyze(days=2):
                      None if rows or not errors else 'FIRMS no respondió: ' + ', '.join(errors))
     _CACHE[days] = (time.monotonic(), env)
     return env
+
+
+def history_compare(hist, today=None):
+    """Mes anterior completo y mes en curso contra el promedio del mismo mes en años previos (desde 2001)."""
+    months = (hist or {}).get('months') or {}
+    if not months:
+        return None
+    today = today or c._now().date()
+    first = today.replace(day=1)
+    prev = (first - timedelta(days=1)).strftime('%Y-%m')
+    cur = today.strftime('%Y-%m')
+    frac = today.day / 30.4
+
+    def table(kind, month, scale):
+        mm = month[5:]
+        past = [k for k in months if k[5:] == mm and k < month]
+        if len(past) < 5:
+            return []
+        keys = set(k for p in past for k in months[p].get(kind, {})) | set(months.get(month, {}).get(kind, {}))
+        rows = []
+        for k in keys:
+            avg = sum(months[p].get(kind, {}).get(k, 0) for p in past) / len(past) * scale
+            n = months.get(month, {}).get(kind, {}).get(k, 0)
+            a, b = k.split('|', 1)
+            rows.append({'a': a, 'b': b, 'count': n, 'normal': round(avg, 1), 'ratio': round(n / avg, 2) if avg >= 1 else None})
+        return sorted(rows, key=lambda r: -r['count'])
+    return {'previous_month': prev, 'current_month': cur, 'years': len({k[:4] for k in months}),
+            'provinces_prev': table('prov', prev, 1)[:40], 'provinces_cur': table('prov', cur, frac)[:40],
+            'departments_prev': table('dep', prev, 1)[:60], 'updated': hist.get('updated')}
 
 
 def to_csv(rows):
