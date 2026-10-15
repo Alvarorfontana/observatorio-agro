@@ -1075,3 +1075,38 @@ html, body { overflow-x: hidden; }
 .emb-bar span{display:block;width:100%;background:#35978f;border-radius:3px 3px 0 0}
 .emb-bar.hit span{background:#bf812d}
 .emb-bar small{font-size:10px;color:inherit;opacity:.8;margin-top:2px}
+
+/* Caso de estudio Bella Vista */
+.bv{max-width:1200px;margin:0 auto;padding:28px 24px 50px;box-sizing:border-box}
+.bv-intro p{font-size:17px;line-height:1.6;color:#34474f;max-width:880px;margin:0}
+.bv-actions{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0 4px}
+.bv-actions .nn-btn{margin-top:0}
+.nn-btn.ghost{background:#fff;color:#0b2b33;border:1px solid #0b2b33}
+.nn-btn.ghost:hover{background:#eef5f3}
+.bv-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:22px}
+.bv-block{background:#fff;border:1px solid #e4e7ec;border-radius:12px;padding:18px 20px;display:flex;flex-direction:column;min-width:0}
+.bv-block .section-tag{color:#0f7358}
+.bv-block h3{margin:6px 0 10px;font-size:19px;color:#10222b}
+.bv-block p{color:#34474f;line-height:1.5;font-size:14px;margin:8px 0 0}
+.bv-block .small{font-size:12.5px;color:#5f6e73}
+.bv-src{margin-top:auto!important;padding-top:10px;font-size:11.5px!important;color:#5f6e73!important;border-top:1px solid #f2f4f7}
+.bv-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}
+.bv-tiles div{background:#f6f7f9;border-radius:10px;padding:10px 12px;display:flex;flex-direction:column}
+.bv-tiles b{font-size:22px;color:#10222b;line-height:1.1}
+.bv-tiles span{font-size:12px;color:#34474f}
+.bv-tiles small{font-size:11.5px;color:#5f6e73}
+.bv-list{margin:8px 0 0;padding-left:18px;font-size:13.5px;color:#34474f;line-height:1.45}
+.bv-spark{width:100%;height:auto;display:block;background:#f6f7f9;border-radius:8px}
+.bv-table .nn-tr{grid-template-columns:.7fr repeat(5,1fr);cursor:default}
+.bv-bars>div{display:grid;grid-template-columns:130px 1fr 52px;align-items:center;gap:8px;font-size:13px;color:#34474f;margin:4px 0}
+.bv-bars i{display:block;height:10px;border-radius:5px;min-width:2px}
+.bv-bars b{text-align:right;color:#10222b}
+.bv-bars small{grid-column:2/4;font-size:11px;color:#5f6e73;margin-top:-3px}
+.bv-emb{height:90px}
+.bv-emb .emb-bar small{color:#5f6e73}
+.bv-close{margin-top:24px;background:#0b2b33;color:#fff;border-radius:12px;padding:22px 24px}
+.bv-close h3{margin:0 0 8px;font-size:22px}
+.bv-close p{color:#c9d6db;margin:0;max-width:800px;line-height:1.55}
+.bv-close .nn-btn.ghost{background:transparent;color:#fff;border-color:#c9d6db}
+@media (max-width:860px){.bv-grid{grid-template-columns:1fr}.bv{padding:20px 16px 40px}.bv-table .nn-tr{grid-template-columns:.7fr repeat(5,1fr);font-size:11.5px}.bv-table .nn-tr>span{display:block!important;grid-column:auto!important}.bv-bars>div{grid-template-columns:100px 1fr 44px}}
+.bv-emb .emb-bar small{opacity:1}

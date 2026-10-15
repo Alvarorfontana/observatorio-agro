@@ -60,6 +60,7 @@ import { GuideContent } from "./site/GuideContent";
 import { CuencaPanel, AlertasTeaser, AlertasPortada } from "./site/CuencaPanel";
 import { CultivosPanel } from "./site/Cultivos";
 import { RindeAgua } from "./site/RindeAgua";
+import { CasoBellaVista } from "./site/CasoBellaVista";
 import { NdviExtra } from "./site/NdviExtra";
 import { readLotFile, lotsToGeoJSON, lotsToKML } from "./dashboard/lotFiles";
 echarts.use([
@@ -2640,6 +2641,13 @@ function CultivosPage({onDemo}:{onDemo:()=>void}){
     <RindeAgua/>
   </main><div className="no-print"><SiteFooter/></div></div>;
 }
+function CasoPage({onDemo}:{onDemo:()=>void}){
+  useEffect(()=>{document.title="Caso de estudio: Bella Vista, Corrientes · DOTS";},[]);
+  return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner">
+    <PageHero eyebrow="CASO DE ESTUDIO" title="Bella Vista, Corrientes: un campo leído por satélite." lead="Agua, El Niño, el río, la vegetación, la historia del suelo desde 1985 y los cambios recientes, sobre el mismo perímetro y con datos en vivo."/>
+    <CasoBellaVista/>
+  </main><SiteFooter/></div>;
+}
 function AlertsPage({onDemo}:{onDemo:()=>void}){
   useEffect(()=>{document.title="Sistema de Alerta de Crecidas · DOTS";},[]);
   return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner regional-panel alerts-page">
@@ -3236,7 +3244,7 @@ function Contact({onDemo}:{onDemo:()=>void}){
       {ch?.email_enabled===false && <p className="form-status">El envío se habilita cuando el correo de destino esté configurado. No simulamos envíos.</p>}
     </form></section></main><SiteFooter/></div>}
 function Access({onDemo}:{onDemo:()=>void}){return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner access-page"><PageHero eyebrow="ACCESO" title="Observatorio DOTS" lead="La autenticación real se incorporará con permisos por establecimiento. La demostración no simula una cuenta de usuario."/><button className="big-demo" onClick={onDemo}>Entrar a la demostración →</button></main><SiteFooter/></div>}
-function SiteFooter(){return <footer className="site-footer"><Brand/><p>Inteligencia territorial para la gestión ganadera.</p><div><SiteLink to="/guia">Guía: cómo funciona</SiteLink><SiteLink to="/producto">Cómo funciona</SiteLink><SiteLink to="/tecnologia">Fuentes</SiteLink><SiteLink to="/capas">Capas</SiteLink><SiteLink to="/conexiones">APIs</SiteLink><SiteLink to="/demo">Demo</SiteLink><SiteLink to="/cultivos">Informe de cultivo</SiteLink><SiteLink to="/licencias">Fuentes y licencias</SiteLink><SiteLink to="/contacto">Contacto</SiteLink></div></footer>}
+function SiteFooter(){return <footer className="site-footer"><Brand/><p>Inteligencia territorial para la gestión ganadera.</p><div><SiteLink to="/guia">Guía: cómo funciona</SiteLink><SiteLink to="/producto">Cómo funciona</SiteLink><SiteLink to="/tecnologia">Fuentes</SiteLink><SiteLink to="/capas">Capas</SiteLink><SiteLink to="/conexiones">APIs</SiteLink><SiteLink to="/demo">Demo</SiteLink><SiteLink to="/cultivos">Informe de cultivo</SiteLink><SiteLink to="/caso-bella-vista">Caso Bella Vista</SiteLink><SiteLink to="/licencias">Fuentes y licencias</SiteLink><SiteLink to="/contacto">Contacto</SiteLink></div></footer>}
 
 function App(){
   const [path,setPath]=useState(window.location.pathname);
@@ -3255,6 +3263,7 @@ function App(){
   if(path==="/panel")return <RegionalPanel onDemo={openDemo}/>;
   if(path==="/alertas")return <AlertsPage onDemo={openDemo}/>;
   if(path==="/cultivos")return <CultivosPage onDemo={openDemo}/>;
+  if(path==="/caso-bella-vista")return <CasoPage onDemo={openDemo}/>;
   if(path==="/tecnologia")return <Technology onDemo={openDemo}/>;
   if(path==="/licencias")return <Licenses onDemo={openDemo}/>;
   if(path==="/capas")return <LayersPage onDemo={openDemo}/>;

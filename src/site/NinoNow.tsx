@@ -111,14 +111,14 @@ export function NinoNowSA({ data, onPick }: { data: NinoNowData | null | { error
       <label>Ordenar <select value={sort} onChange={e => setSort(e.target.value as any)}><option value="metric">por {mLabel.toLowerCase()}</option><option value="name">por país</option></select></label>
     </div>
     <div className="nn-table" role="table">
-      <div className="nn-tr nn-th" role="row"><span>Localidad</span><span>Últimos 90 días</span><span>Último mes</span><span>Niño fuerte (histórico)</span><span>Próximos 16 días</span><span>Lectura</span></div>
+      <div className="nn-tr nn-th" role="row"><span role="columnheader">Localidad</span><span role="columnheader">Últimos 90 días</span><span role="columnheader">Último mes</span><span role="columnheader">Niño fuerte (histórico)</span><span role="columnheader">Próximos 16 días</span><span role="columnheader">Lectura</span></div>
       {rows.map(p => <div className="nn-tr" role="row" key={p.id} onClick={() => onPick?.(p.id)}>
-        <span><b>{p.name}</b><small>{p.country}</small></span>
-        <span><i style={{ background: color(p.now90_pct) }} />{sgn(p.now90_pct)}<small>{p.obs90_mm ?? "—"} mm de {p.normal90_mm ?? "—"}</small></span>
-        <span>{sgn(p.now30_pct)}<small>{p.obs30_mm ?? "—"} mm</small></span>
-        <span><i style={{ background: color(p.expected_pct) }} />{sgn(p.expected_pct)}<small>{p.expected_n ? `${p.expected_wetter} de ${p.expected_n} más lluviosas` : ""}</small></span>
-        <span>{p.next16_mm ?? "—"} mm<small>{sgn(p.next16_pct)}</small></span>
-        <span className={"nn-sig " + (SIGNAL_CLS[p.signal] || "none")}>{p.signal}</span>
+        <span role="cell"><b>{p.name}</b><small>{p.country}</small></span>
+        <span role="cell"><i style={{ background: color(p.now90_pct) }} />{sgn(p.now90_pct)}<small>{p.obs90_mm ?? "—"} mm de {p.normal90_mm ?? "—"}</small></span>
+        <span role="cell">{sgn(p.now30_pct)}<small>{p.obs30_mm ?? "—"} mm</small></span>
+        <span role="cell"><i style={{ background: color(p.expected_pct) }} />{sgn(p.expected_pct)}<small>{p.expected_n ? `${p.expected_wetter} de ${p.expected_n} más lluviosas` : ""}</small></span>
+        <span role="cell">{p.next16_mm ?? "—"} mm<small>{sgn(p.next16_pct)}</small></span>
+        <span role="cell" className={"nn-sig " + (SIGNAL_CLS[p.signal] || "none")}>{p.signal}</span>
       </div>)}
     </div>
     <p className="footnote">Lluvia observada: Copernicus ERA5 (grilla de ~25 km, ~6 días de demora). Normal: promedio 1991-2020. Pronóstico: modelos globales vía Open-Meteo. Referencia El Niño: temporadas desde 1991 según el ONI de NOAA{d.reference.built ? `, calculada el ${d.reference.built}` : ""}. Es diagnóstico, no pronóstico estacional.</p>
