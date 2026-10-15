@@ -36,6 +36,7 @@ def sampler(nc):
     lon0 = float(proj.longitude_of_projection_origin)
     x = nc.variables['x'][:]; y = nc.variables['y'][:]
     lst = nc.variables['LST'][:]
+    dqf = nc.variables['DQF'][:] if 'DQF' in nc.variables else None
     x0, dx, y0, dy = float(x[0]), float(x[1] - x[0]), float(y[0]), float(y[1] - y[0])
 
     def at(lat, lon):
@@ -45,6 +46,8 @@ def sampler(nc):
         i, j = goes.index_of(xy[1], y0, dy, len(y)), goes.index_of(xy[0], x0, dx, len(x))
         if i is None or j is None:
             return None
+        if dqf is not None and (np.ma.is_masked(dqf[i, j]) or int(dqf[i, j]) != 0):
+            return None                     # sólo píxeles de buena calidad (sin nubes ni bordes de nube)
         v = lst[i, j]
         return None if np.ma.is_masked(v) or not np.isfinite(v) else float(v) - 273.15
     return at

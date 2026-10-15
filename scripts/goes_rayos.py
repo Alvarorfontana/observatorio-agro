@@ -22,6 +22,7 @@ import goes  # noqa: E402
 
 WINDOW_MIN = 35
 KEEP_H = 3
+CELL = 0.1                                   # se agrupan en celdas de 0,1° (~11 km) y bloques de 10 minutos
 
 
 def keys(t):
@@ -36,18 +37,28 @@ def start_of(key):
     return datetime(y, 1, 1, hh, mm, ss, tzinfo=timezone.utc) + timedelta(days=doy - 1)
 
 
-def flashes(key):
-    from netCDF4 import Dataset
+def download(key):
     try:
         r = requests.get(f'{goes.BUCKET}/{key}', timeout=60)
-        nc = Dataset('glm.nc', memory=r.content)
+        return key, r.content if r.ok else None
+    except requests.RequestException:
+        return key, None
+
+
+def flashes(key, content):
+    """La librería netCDF/HDF5 no admite varios hilos: se descarga en paralelo y se lee de a uno."""
+    from netCDF4 import Dataset
+    try:
+        nc = Dataset('glm.nc', memory=content)
         lat = nc.variables['flash_lat'][:]; lon = nc.variables['flash_lon'][:]
         nc.close()
     except Exception:
         return []
     w, s, e, n = focos.BBOX
     t = start_of(key).strftime('%Y-%m-%dT%H:%M')
-    return [[round(float(a), 3), round(float(o), 3), t] for a, o in zip(lat, lon) if s <= a <= n and w <= o <= e]
+    t = t[:-1] + '0'                       # bloques de 10 minutos
+    return [(round(round(float(a) / CELL) * CELL, 2), round(round(float(o) / CELL) * CELL, 2), t)
+            for a, o in zip(lat, lon) if s <= a <= n and w <= o <= e]
 
 
 def main(out):
@@ -63,9 +74,16 @@ def main(out):
     since = now - timedelta(minutes=WINDOW_MIN)
     ks = [k for k in ks if start_of(k) >= since and (not last or start_of(k).isoformat() > last)]
     with ThreadPoolExecutor(max_workers=8) as pool:
-        new = [f for fs in pool.map(flashes, ks) for f in fs]
+        files = list(pool.map(download, ks))
+    new = [f for k, content in files if content for f in flashes(k, content)]
     cut = (now - timedelta(hours=KEEP_H)).strftime('%Y-%m-%dT%H:%M')
-    pts = [p for p in (prev.get('flashes') or []) if p[2] >= cut] + new
+    agg = {}
+    for la, lo, t, cnt in (prev.get('cells') or []):
+        if t >= cut:
+            agg[(la, lo, t)] = agg.get((la, lo, t), 0) + cnt
+    for la, lo, t in new:
+        agg[(la, lo, t)] = agg.get((la, lo, t), 0) + 1
+    pts = [[la, lo, t, cnt] for (la, lo, t), cnt in sorted(agg.items(), key=lambda x: x[0][2])]
     one_h = (now - timedelta(hours=1)).strftime('%Y-%m-%dT%H:%M')
     places = []
     for p in enso_sa.PLACES:
@@ -73,15 +91,15 @@ def main(out):
             continue
         near = [f for f in pts if abs(f[0] - p[3]) < 0.5 and abs(f[1] - p[4]) < 0.6 and goes.km((p[3], p[4]), (f[0], f[1])) <= 30]
         if near:
-            places.append({'id': p[0], 'name': p[1], 'country': p[2], 'lat': p[3], 'lon': p[4], 'flashes_3h': len(near),
-                           'flashes_1h': sum(1 for f in near if f[2] >= one_h), 'last': max(f[2] for f in near)})
-    res = {'updated': now.strftime('%Y-%m-%dT%H:%M'), 'hours': KEEP_H, 'flashes': pts, 'count_3h': len(pts),
-           'count_1h': sum(1 for f in pts if f[2] >= one_h), 'places': sorted(places, key=lambda x: -x['flashes_1h']),
+            places.append({'id': p[0], 'name': p[1], 'country': p[2], 'lat': p[3], 'lon': p[4], 'flashes_3h': sum(f[3] for f in near),
+                           'flashes_1h': sum(f[3] for f in near if f[2] >= one_h), 'last': max(f[2] for f in near)})
+    res = {'updated': now.strftime('%Y-%m-%dT%H:%M'), 'hours': KEEP_H, 'cell_deg': CELL, 'cells': pts, 'count_3h': sum(f[3] for f in pts),
+           'count_1h': sum(f[3] for f in pts if f[2] >= one_h), 'places': sorted(places, key=lambda x: -x['flashes_1h']),
            'last_file_start': max((start_of(k).isoformat() for k in ks), default=last),
            'source': 'NOAA GOES-19 GLM (Geostationary Lightning Mapper), datos abiertos en AWS',
            'method': __doc__.split('\n\n')[1].split('Uso:')[0].strip()}
     json.dump(res, open(out, 'w', encoding='utf-8'), separators=(',', ':'))
-    print(f"{len(ks)} archivos nuevos, {len(new)} destellos nuevos, {len(pts)} en 3 horas, {len(places)} localidades con rayos a menos de 30 km")
+    print(f"{len(ks)} archivos nuevos, {len(new)} destellos nuevos, {res['count_3h']} en 3 horas ({len(pts)} celdas), {len(places)} localidades con rayos a menos de 30 km")
 
 
 if __name__ == '__main__':

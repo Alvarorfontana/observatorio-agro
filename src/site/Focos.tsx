@@ -41,6 +41,16 @@ export function Focos() {
   const [onlyProt, setOnlyProt] = useState(false), [q, setQ] = useState("");
   const [near, setNear] = useState<{ lat: string; lon: string; km: string }>({ lat: "", lon: "", km: "50" });
   const [page, setPage] = useState(0);
+  const [rayos, setRayos] = useState<any>(null), [hel, setHel] = useState<any>(null);
+  const [showR, setShowR] = useState(true), [showH, setShowH] = useState(false);
+  const rLayer = useRef<L.LayerGroup | null>(null);
+  useEffect(() => {
+    let live = true;
+    const get = (u: string, set: (x: any) => void) => fetch(u).then(r => r.json()).then(j => live && set(j.status === "recibido" ? j.data : { error: j.error })).catch(() => live && set({ error: "No respondió." }));
+    get("/api/fuentes/rayos", setRayos); get("/api/fuentes/goes-heladas", setHel);
+    const t = setInterval(() => get("/api/fuentes/rayos", setRayos), 5 * 60 * 1000);
+    return () => { live = false; clearInterval(t); };
+  }, []);
   const mapEl = useRef<HTMLDivElement | null>(null), map = useRef<L.Map | null>(null), layer = useRef<L.LayerGroup | null>(null);
 
   useEffect(() => {
@@ -67,7 +77,7 @@ export function Focos() {
     if (!mapEl.current || map.current) return;
     const m = L.map(mapEl.current, { center: [-30, -60], zoom: 4, preferCanvas: true, scrollWheelZoom: false });
     L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}", { maxZoom: 16, attribution: "Esri, HERE, Garmin, © OpenStreetMap" }).addTo(m);
-    layer.current = L.layerGroup().addTo(m); map.current = m;
+    layer.current = L.layerGroup().addTo(m); rLayer.current = L.layerGroup().addTo(m); map.current = m;
     return () => { m.remove(); map.current = null; };
   }, [res?.d ? 1 : 0]);
   useEffect(() => {
@@ -80,6 +90,18 @@ export function Focos() {
         .bindPopup(`<b>${x.name}</b> · próximos 5 días<br>${ev.map(([k, l]) => `${l}: ${x.events[k].map(dm).join(", ")}`).join("<br>")}`).addTo(g);
     });
   }, [rows, color, d]);
+  useEffect(() => {
+    const g = rLayer.current; if (!g) return; g.clearLayers();
+    if (showH && hel?.grid) hel.grid.forEach(([la, lo, v]: number[]) => {
+      const h = (hel.grid_step || 0.5) / 2, col = v <= -3 ? "#08306b" : v <= 0 ? "#2171b5" : v <= 3 ? "#9ecae1" : null;
+      if (col) L.rectangle([[la - h, lo - h], [la + h, lo + h]], { weight: 0, fillColor: col, fillOpacity: .45, interactive: true }).bindTooltip(`${nf(v, 1)} °C en la superficie`).addTo(g);
+    });
+    if (showR && rayos?.cells) {
+      const one = new Date(Date.now() - 3600e3).toISOString().slice(0, 16);
+      rayos.cells.forEach((f: [number, number, string, number]) =>
+        L.circleMarker([f[0], f[1]], { radius: Math.min(8, 2 + Math.sqrt(f[3])), weight: 0, fillColor: f[2] >= one ? "#f2c200" : "#c9a7eb", fillOpacity: .85, interactive: false }).addTo(g));
+    }
+  }, [rayos, hel, showR, showH, res?.d ? 1 : 0]);
 
   const countries = d ? ["Todos", ...Array.from(new Set(d.points.map(p => p.country))).sort()] : ["Todos"];
   const provs = d ? ["Todas", ...Array.from(new Set(d.points.filter(p => country === "Todos" || p.country === country).map(p => p.province))).sort()] : ["Todas"];
@@ -101,7 +123,7 @@ export function Focos() {
       {d.enrichment_note && <p className="small">Cobertura y áreas protegidas: {d.enrichment_note}.</p>}
       <div className="fz-grid">
         <div>
-          <div className="fz-tools"><span>Color:</span><button className={color === "sat" ? "on" : ""} onClick={() => setColor("sat")}>por satélite</button><button className={color === "frp" ? "on" : ""} onClick={() => setColor("frp")}>por intensidad</button></div>
+          <div className="fz-tools"><label className="fz-check"><input type="checkbox" checked={showR} onChange={e => setShowR(e.target.checked)} />Rayos (3 h: amarillo la última hora)</label><label className="fz-check"><input type="checkbox" checked={showH} onChange={e => setShowH(e.target.checked)} />Heladas última noche</label><span>Color:</span><button className={color === "sat" ? "on" : ""} onClick={() => setColor("sat")}>por satélite</button><button className={color === "frp" ? "on" : ""} onClick={() => setColor("frp")}>por intensidad</button></div>
           <div ref={mapEl} className="fz-map" role="region" aria-label="Mapa de focos de calor" />
           <div className="nn-legend fz-legend">{color === "sat" ? Object.entries(SAT_COLOR).map(([k, c]) => <span key={k}><i style={{ background: c }} />{k}</span>)
             : [["menos de 10 MW", "#fdcc8a"], ["10 a 30", "#fc8d59"], ["30 a 100", "#d7301f"], ["más de 100", "#7f0000"]].map(([l, c]) => <span key={l}><i style={{ background: c }} />{l}</span>)}
@@ -111,6 +133,13 @@ export function Focos() {
           <h3>Dónde se concentran</h3>
           <div className="nn-table fz-prov" role="table" tabIndex={0} aria-label="Focos por provincia"><div className="nn-tr nn-th" role="row"><span role="columnheader">Provincia o estado</span><span role="columnheader">Focos</span><span role="columnheader">Más quemado</span></div>
             {d.by_province.slice(0, 15).map(b => <div className="nn-tr" role="row" key={b.country + b.province} onClick={() => { setCountry(b.country); setProv(b.province); }}><span role="cell"><b>{b.province}</b><small>{b.country}{b.protected ? ` · ${b.protected} en áreas protegidas` : ""}</small></span><span role="cell">{nf(b.count)}</span><span role="cell">{b.top_cover || "—"}</span></div>)}</div>
+          <h3>Rayos · últimas 3 horas</h3>
+          {!rayos ? <p className="small">Consultando GOES-19…</p> : rayos.error ? <p className="small">{rayos.error}</p> : <>
+            <p className="small">{nf(rayos.count_1h)} destellos en la última hora y {nf(rayos.count_3h)} en 3 horas (actualizado {rayos.updated?.slice(11, 16)} UTC).</p>
+            {rayos.places?.length > 0 && <ul className="fz-ev-list">{rayos.places.slice(0, 8).map((x: any) => <li key={x.id}><b>{x.name}</b> <small>{x.country}</small> · {nf(x.flashes_1h)} en la última hora, {nf(x.flashes_3h)} en 3 h (a menos de 30 km)</li>)}</ul>}</>}
+          <h3>Heladas · última noche</h3>
+          {!hel ? <p className="small">Consultando GOES-19…</p> : hel.error ? <p className="small">{hel.error}</p> :
+            <p className="small">Noche del {dm(hel.night)}: {hel.frost_cells} de {hel.cells} zonas despejadas con helada en la superficie{hel.frost_places?.length ? `; localidades: ${hel.frost_places.join(", ")}` : ""}. Activá "Heladas última noche" para verlas en el mapa.</p>}
           <h3>Próximos 5 días</h3>
           {d.danger == null ? <p className="small">Pronóstico no disponible.</p> : evPlaces.length === 0 ? <p className="small">Sin eventos extremos pronosticados en las localidades del monitor.</p> :
             <ul className="fz-ev-list">{evPlaces.slice(0, 14).map(x => <li key={x.id}><b>{x.name}</b> <small>{x.country}</small><br />{EVENTS.filter(([k]) => x.events[k]?.length).map(([k, l, c]) => <span key={k} className="fz-tag" style={{ borderColor: c, color: c }}>{l} {x.events[k].map(dm).join(", ")}</span>)}</li>)}</ul>}
@@ -151,7 +180,7 @@ export function Focos() {
         </div>)}
       </div>
       {rows.length > PER && <div className="fz-pages"><button disabled={page === 0} onClick={() => setPage(page - 1)}>← Anteriores</button><span>{page * PER + 1}-{Math.min(rows.length, page * PER + PER)} de {nf(rows.length)}</span><button disabled={(page + 1) * PER >= rows.length} onClick={() => setPage(page + 1)}>Siguientes →</button></div>}
-      <p className="footnote">{d.method} Cobertura y área protegida calculadas para {nf(d.enriched)} focos (los más intensos). Fuentes: NASA FIRMS / LANCE (datos casi en tiempo real, preliminares), ESA WorldCover 2021, WDPA (UNEP-WCMC), Natural Earth, Open-Meteo.</p>
+      <p className="footnote">{d.method} Cobertura y área protegida calculadas para {nf(d.enriched)} focos (los más intensos). Rayos: GOES-19 GLM (NOAA), destellos detectados desde el espacio, actualizado cada 30 minutos. Heladas: GOES-19 ABI, temperatura mínima de la superficie entre la 1 y las 7 de la mañana, sólo con cielo despejado; la superficie se enfría 2 a 4 °C más que el aire. Fuentes: NASA FIRMS / LANCE (datos casi en tiempo real, preliminares), NOAA GOES-19 (datos abiertos), ESA WorldCover 2021, WDPA (UNEP-WCMC), Natural Earth, Open-Meteo.</p>
     </>}
   </section>;
 }
