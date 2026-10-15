@@ -37,3 +37,19 @@ def test_ndvi_anomaly():
 
 def test_pclass():
     assert [ps.pclass(p) for p in (5, 20, 50, 80, 95, None)] == ['muy seco', 'seco', 'normal', 'húmedo', 'muy húmedo', 'sin dato']
+
+
+def test_et_and_frost():
+    import json
+    pts = []
+    d = date(2001, 1, 1)
+    while d < date(2026, 10, 1):
+        v = 30 if not (d.year == 2026 and d.month >= 8) else 12
+        pts.append((d, v)); d += timedelta(days=8)
+    et = ps.analyze_et(pts)
+    assert et['latest']['diff_pct'] == -60 and 'por debajo' in et['reading']
+    night = [(date(2026, 9, 1) + timedelta(days=i), t) for i, t in enumerate([3, -1, -4, 2, 5, 0.5, -0.2])]
+    fr = ps.analyze_frost(night)
+    assert fr['frost_nights_30d'] == 3 and fr['strong_frost_nights_30d'] == 1 and fr['coldest']['lst_c'] == -4
+    body = json.dumps(ps.modis_expression([[-28.5, -59.0], [-28.5, -58.9], [-28.6, -58.9]], 'MODIS/061/MYD11A1', 'LST_Night_1km', '2026-08-01', '2026-10-01', 1000))
+    assert 'MYD11A1' in body and 'LST_Night_1km' in body

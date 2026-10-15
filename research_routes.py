@@ -66,6 +66,8 @@ VEGETATION={
   'cobertura-reciente':lambda p,a:cee.dynamic_world(p),
   'cambios-lote':lambda p,a:cee.changes(p),
   'ndvi-anomalia':lambda p,a:__import__('perfil_suelo').ndvi_anomaly(p),
+  'etr-lote':lambda p,a:__import__('perfil_suelo').et_real(p),
+  'heladas-satelite':lambda p,a:__import__('perfil_suelo').frost_satellite(p),
   'pasto-historia':lambda p,a:gpw.history(p),
 }
 

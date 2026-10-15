@@ -49,6 +49,8 @@ export function CasoBellaVista() {
   const nino = useApi(`/api/fuentes/enso-tablero?lat=${LAT}&lon=${LON}`);
   const ndvi = useApi(`/api/fuentes/ndvi-modis?polygon=${P}&days=760`);
   const anom = useApi(`/api/fuentes/ndvi-anomalia?polygon=${P}`);
+  const etr = useApi(`/api/fuentes/etr-lote?polygon=${P}`);
+  const frost = useApi(`/api/fuentes/heladas-satelite?polygon=${P}`);
   const mb = useApi(`/api/fuentes/mapbiomas?polygon=${P}`);
   const dw = useApi(`/api/fuentes/cobertura-reciente?polygon=${P}`);
   const emb = useApi(`/api/fuentes/cambios-lote?polygon=${P}`);
@@ -93,6 +95,16 @@ export function CasoBellaVista() {
       <Block tag="VEGETACIÓN" title="¿Está más verde o más seco que otros años?" s={anom} src="NASA MODIS MOD13Q1 desde 2001 vía Earth Engine · misma época de cada año">{d => <>
         <div className="nn-table bv-table bv-anom" role="table"><div className="nn-tr nn-th" role="row">{["Fecha", "NDVI", "Normal", "Diferencia", "VCI"].map(h => <span role="columnheader" key={h}>{h}</span>)}</div>
           {d.series.slice(-6).map((r: D) => <div className="nn-tr" role="row" key={r.date}><span role="cell">{r.date.slice(8, 10)}/{r.date.slice(5, 7)}/{r.date.slice(2, 4)}</span><span role="cell">{nf(r.ndvi, 2)}</span><span role="cell">{nf(r.normal, 2)}</span><span role="cell">{sg(r.diff, 2)}</span><span role="cell">{r.vci ?? "—"}</span></div>)}</div>
+        <p>{d.reading}</p>
+      </>}</Block>
+      <Block tag="CONSUMO DE AGUA" title="Evapotranspiración real" s={etr} src="NASA MODIS MOD16A2GF (500 m, 8 días) vía Earth Engine · misma época desde 2001">{d => <>
+        <div className="bv-tiles"><div><b>{nf(d.latest.mm_day, 1)} mm/día</b><span>últimos 8 días</span><small>{d.latest.diff_pct != null ? `${sg(d.latest.diff_pct)} % vs normal` : "sin normal"}</small></div>
+          <div><b>{d.latest.percentile ?? "—"}</b><span>percentil</span><small>contra la misma época</small></div></div>
+        <p>{d.reading}</p>
+      </>}</Block>
+      <Block tag="HELADAS" title="Heladas en la superficie, por satélite" s={frost} src="NASA MODIS Aqua MYD11A1 (1 km, noches despejadas) vía Earth Engine">{d => <>
+        <div className="bv-tiles"><div><b>{d.frost_nights_30d}</b><span>noches con helada</span><small>últimos 30 días</small></div>
+          <div><b>{nf(d.coldest.lst_c, 1)} °C</b><span>noche más fría</span><small>{d.coldest.date.slice(8, 10)}/{d.coldest.date.slice(5, 7)}</small></div></div>
         <p>{d.reading}</p>
       </>}</Block>
       <Block tag="HISTORIA" title={`El área desde ${mb?.d?.first_year ?? 1985}`} s={mb} src="MapBiomas Argentina (Landsat 30 m, CC BY 4.0) vía Earth Engine">{d => { const by: Record<number, D> = {}; (d.years || []).forEach((r: D) => { by[r.year] = r }); const ys = [d.first_year, 2000, 2010, 2020, d.last_year].filter((y, i, a) => by[y] && a.indexOf(y) === i); return <>

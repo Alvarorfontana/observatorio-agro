@@ -221,3 +221,114 @@ def ndvi_anomaly(polygon):
     data = analyze_ndvi(d.get('series') or [])
     data.update(sensor=d.get('sensor'), area_ha=d.get('area_ha'), method=__doc__.split('\n\n')[2].strip())
     return c.envelope(data, env.get('source_url'), 'NDVI del lote contra su propia historia', 'NASA MODIS vía Google Earth Engine')
+
+
+# ───────────────────── evapotranspiración real y heladas por satélite (MODIS vía Earth Engine) ─────────────────────
+def _ee(name, **args):
+    return {'functionInvocationValue': {'functionName': name, 'arguments': args}}
+
+
+def _kk(v):
+    return {'constantValue': v}
+
+
+def modis_expression(pts, asset, band, start, end, scale_m):
+    """Serie de un producto MODIS promediado sobre el lote: [{t, v}] en valores crudos (sin factor de escala)."""
+    import vegetation as veg
+    geom = _ee('GeometryConstructors.Polygon', coordinates=_kk(veg.geojson_polygon(pts)['coordinates']), geodesic=_kk(False))
+    coll = _ee('Collection.filter', collection=_ee('ImageCollection.load', id=_kk(asset)),
+               filter=_ee('Filter.dateRangeContains', leftValue=_ee('DateRange', start=_kk(start), end=_kk(end)),
+                          rightField=_kk('system:time_start')))
+    img = {'argumentReference': '_MAPPING_VAR_0_0'}
+    stats = _ee('Image.reduceRegion', image=_ee('Image.select', input=img, bandSelectors=_kk([band])), reducer=_ee('Reducer.mean'),
+                geometry={'valueReference': 'g'}, scale=_kk(scale_m), maxPixels=_kk(1e8))
+    body = _ee('Feature', geometry=_kk(None), metadata={'dictionaryValue': {'values': {
+        't': _ee('Element.get', object=img, property=_kk('system:time_start')), 'v': _ee('Dictionary.get', dictionary=stats, key=_kk(band))}}})
+    out = _ee('Collection.map', collection=coll, baseAlgorithm={'functionDefinitionValue': {'argumentNames': ['_MAPPING_VAR_0_0'], 'body': 'body'}})
+    return {'expression': {'result': 'out', 'values': {'g': geom, 'body': body, 'out': out}}}
+
+
+def _modis(polygon, asset, band, start, end, scale_m):
+    import vegetation as veg
+    from datetime import datetime, timezone
+    pts = veg.require_polygon(polygon)
+    proj, tok = veg.gee_token()
+    r = c.SESSION.post(f'{veg.GEE}/projects/{proj}/value:compute', json=modis_expression(pts, asset, band, start, end, scale_m),
+                       headers={'Authorization': f'Bearer {tok}'}, timeout=55)
+    if r.status_code >= 400:
+        try:
+            msg = (r.json().get('error') or {}).get('message', '')
+        except ValueError:
+            msg = r.text[:200]
+        raise RuntimeError(f'Earth Engine HTTP {r.status_code}: {msg[:160]}')
+    rows = []
+    for f in (r.json().get('result') or {}).get('features') or []:
+        p = f.get('properties') or {}
+        if p.get('t') is not None and p.get('v') is not None:
+            rows.append((datetime.fromtimestamp(p['t'] / 1000, timezone.utc).date(), p['v']))
+    return sorted(rows), veg.area_ha(pts)
+
+
+def analyze_et(pts, window=8):
+    """pts: [(fecha, mm en 8 días)] → últimos 12 compuestos contra la misma época de los años anteriores."""
+    if len(pts) < 46 * 3:
+        raise ValueError('Serie de evapotranspiración demasiado corta')
+    out = []
+    for d, v in pts[-12:]:
+        ref = [x for dd, x in pts if dd.year < d.year and _doy_close(dd, d, window)]
+        out.append({'date': d.isoformat(), 'mm': round(v, 1), 'mm_day': round(v / 8, 2), 'normal': round(median(ref), 1) if ref else None,
+                    'diff_pct': round(100 * (v / median(ref) - 1)) if ref and median(ref) else None, 'percentile': percentile(v, ref, 5)})
+    last = out[-1]
+    p = 50 if last['percentile'] is None else last['percentile']
+    word = 'muy por debajo' if p < 10 else 'por debajo' if p < 25 else 'muy por encima' if p > 90 else 'por encima' if p > 75 else 'dentro'
+    reading = (f"En los 8 días al {date.fromisoformat(last['date']).strftime('%d/%m')} el lote evapotranspiró {last['mm']} mm "
+               f"({last['mm_day']} mm por día), {word} de lo normal para la época"
+               + (f" ({'+' if last['diff_pct'] > 0 else ''}{last['diff_pct']} %)." if last['diff_pct'] is not None else '.')
+               + ' Menos consumo de agua que lo normal suele indicar cultivo o pastura con falta de agua o menos vegetación.')
+    return {'series': out, 'latest': last, 'reading': reading}
+
+
+def et_real(polygon):
+    """Evapotranspiración real del lote (MODIS MOD16A2GF, 500 m, cada 8 días) contra su historia desde 2001."""
+    end = c._now().date()
+    rows, ha = _modis(polygon, 'MODIS/061/MOD16A2GF', 'ET', '2001-01-01', end.isoformat(), 500)
+    pts = [(d, v * 0.1) for d, v in rows]          # kg/m² en 8 días = mm
+    data = analyze_et(pts)
+    data.update(area_ha=ha, sensor='MODIS Terra MOD16A2GF (500 m, 8 días)',
+                method=('Evapotranspiración real (agua que el suelo y las plantas devuelven a la atmósfera) estimada por la NASA con '
+                        'MODIS (algoritmo MOD16, versión con huecos completados). Se compara cada compuesto de 8 días con los de la '
+                        'misma época (±8 días) desde 2001. Es el mismo tipo de producto que la "ETR cada 10 días" de SEPA (INTA), '
+                        'calculado para el lote. Lotes de menos de 25 ha tienen muy pocos píxeles de 500 m.'))
+    return c.envelope(data, 'https://developers.google.com/earth-engine/datasets/catalog/MODIS_061_MOD16A2GF',
+                      'evapotranspiración real del lote', 'NASA MODIS MOD16 vía Google Earth Engine')
+
+
+def analyze_frost(pts):
+    """pts: [(fecha, °C de superficie nocturna)] de los últimos 60 días."""
+    if not pts:
+        raise ValueError('Sin noches despejadas con dato de temperatura de superficie')
+    last30 = [(d, v) for d, v in pts if d >= pts[-1][0] - timedelta(days=30)]
+    frost = [(d, v) for d, v in last30 if v <= 0]
+    strong = [(d, v) for d, v in last30 if v <= -3]
+    coldest = min(pts, key=lambda x: x[1])
+    reading = (f"En los últimos 30 días hubo {len(frost)} noches con helada en la superficie del lote"
+               + (f" ({len(strong)} de −3 °C o menos)" if strong else '')
+               + f". La noche más fría fue el {coldest[0].strftime('%d/%m')}, con {coldest[1]:.1f} °C."
+               if frost else f"Sin heladas en la superficie del lote en los últimos 30 días (noches despejadas). La más fría: {coldest[1]:.1f} °C el {coldest[0].strftime('%d/%m')}.")
+    return {'nights': [{'date': d.isoformat(), 'lst_c': round(v, 1)} for d, v in pts], 'frost_nights_30d': len(frost),
+            'strong_frost_nights_30d': len(strong), 'coldest': {'date': coldest[0].isoformat(), 'lst_c': round(coldest[1], 1)}, 'reading': reading}
+
+
+def frost_satellite(polygon):
+    """Temperatura de superficie nocturna del lote (MODIS Aqua MYD11A1, 1 km, ~01:30 hora local) de los últimos 60 días."""
+    end = c._now().date()
+    rows, ha = _modis(polygon, 'MODIS/061/MYD11A1', 'LST_Night_1km', (end - timedelta(days=60)).isoformat(), end.isoformat(), 1000)
+    pts = [(d, v * 0.02 - 273.15) for d, v in rows if v]
+    data = analyze_frost(pts)
+    data.update(area_ha=ha, sensor='MODIS Aqua MYD11A1 (1 km, noche)',
+                method=('Temperatura de la superficie (suelo y vegetación) medida por el satélite Aqua cerca de la 1:30 de la '
+                        'madrugada, sólo en noches despejadas. La superficie suele estar 2 a 4 °C más fría que el aire a 1,5 m, '
+                        'por eso detecta heladas que el abrigo meteorológico no registra. Es el mismo tipo de producto que la '
+                        '"temperatura de superficie nocturna (heladas)" de SEPA (INTA), que usa GOES; acá se calcula para el lote.'))
+    return c.envelope(data, 'https://developers.google.com/earth-engine/datasets/catalog/MODIS_061_MYD11A1',
+                      'heladas por satélite en el lote', 'NASA MODIS vía Google Earth Engine')
