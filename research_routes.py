@@ -244,6 +244,14 @@ def research_data(name):
             r.headers['Cache-Control']='public, s-maxage=3600'
             return r
         except Exception as e: return _upstream_error(e)
+    if name=='rinde-agua':
+        import datastore
+        d=datastore.load('rinde_agua.json')
+        if not d or not d.get('places'):
+            return jsonify({'status':'sin dato','error':'La simulación de rinde por agua todavía no corrió. Se actualiza los lunes, de septiembre a abril.'}),404
+        r=jsonify(c.envelope(d,'https://github.com/aquacropos/aquacrop','rinde por agua de maíz y soja (AquaCrop)','AquaCrop-OSPy (FAO) · ERA5 / Open-Meteo'))
+        r.headers['Cache-Control']='public, s-maxage=3600'
+        return r
     if name=='enso-sudamerica':
         try:
             out=enso_sa.live()

@@ -59,6 +59,7 @@ import { HerdPanel, HERD_CATS, type HerdRow, type Movement } from "./dashboard/H
 import { GuideContent } from "./site/GuideContent";
 import { CuencaPanel, AlertasTeaser, AlertasPortada } from "./site/CuencaPanel";
 import { CultivosPanel } from "./site/Cultivos";
+import { RindeAgua } from "./site/RindeAgua";
 import { NdviExtra } from "./site/NdviExtra";
 import { readLotFile, lotsToGeoJSON, lotsToKML } from "./dashboard/lotFiles";
 echarts.use([
@@ -2623,6 +2624,7 @@ function CultivosPage({onDemo}:{onDemo:()=>void}){
   return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner regional-panel alerts-page">
     <div className="no-print"><PageHero eyebrow="AGRICULTURA" title="Informe de cultivo por localidad." lead="Lluvia y evapotranspiración de los últimos 30 días y la semana que viene, temperaturas contra el umbral de helada de cada cultivo, grados día desde la siembra, alertas y recomendaciones. Maíz, soja, trigo, girasol, sorgo y arroz."/></div>
     <CultivosPanel/>
+    <RindeAgua/>
   </main><div className="no-print"><SiteFooter/></div></div>;
 }
 function AlertsPage({onDemo}:{onDemo:()=>void}){

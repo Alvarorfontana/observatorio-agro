@@ -1,0 +1,35 @@
+# Rinde por agua de maíz y soja (AquaCrop, FAO) en 19 localidades agrícolas. Los lunes de septiembre a abril y a pedido.
+# Guarda en la rama datos: no publica la web. Ver scripts/rinde_agua.py.
+name: Rinde por agua
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "29 8 * 1-4,9-12 1"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: rinde-agua
+  cancel-in-progress: false
+
+jobs:
+  aquacrop:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Traer datos de la rama datos
+        run: bash scripts/datos_rama.sh traer
+      - name: Simular
+        run: |
+          pip install aquacrop requests pandas
+          python scripts/rinde_agua.py data/rinde_agua.json
+      - name: Guardar en la rama datos (no publica la web)
+        if: always()
+        run: |
+          cp scripts/datos_rama.sh /tmp/datos_rama.sh && bash /tmp/datos_rama.sh guardar "Rinde por agua $(date -u +%Y-%m-%d\ %H:%M)" data/rinde_agua.json scripts/cache/rinde

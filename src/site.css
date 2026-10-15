@@ -1039,3 +1039,14 @@ html, body { overflow-x: hidden; }
 .lvl{font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px;margin-right:6px}
 .lvl-normal{background:#e7f6ee;color:#05603a}.lvl-atencion{background:#fff3d6;color:#93370d}.lvl-alerta{background:#ffe2cc;color:#b42318}.lvl-evacuacion{background:#b42318;color:#fff}
 @media(max-width:860px){.avisos-grid{grid-template-columns:1fr}.avisos-box{padding:16px}}
+
+/* Rinde por agua (AquaCrop) */
+.ra-box{margin-top:24px}
+.ra-range{position:relative;height:12px;background:#f2f4f7;border-radius:6px;margin:3px 0 2px;min-width:90px}
+.ra-normal{position:absolute;top:0;bottom:0;background:#d0d5dd;border-radius:6px}
+.ra-band{position:absolute;top:3px;bottom:3px;background:#35978f;border-radius:4px;opacity:.85}
+.ra-mid{position:absolute;top:-2px;bottom:-2px;width:3px;margin-left:-1.5px;background:#0b2b33;border-radius:2px}
+.ra-legend{margin:6px 0 10px}
+.ra-legend i{border-radius:3px}
+.ra-legend .ra-k-normal{background:#d0d5dd}.ra-legend .ra-k-band{background:#35978f}.ra-legend .ra-k-mid{background:#0b2b33;width:4px}
+.ra-table .nn-tr{cursor:default}
