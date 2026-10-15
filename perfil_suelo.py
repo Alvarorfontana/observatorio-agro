@@ -9,7 +9,10 @@ Referencia oficial argentina: balance hídrico del INTA (Clima y Agua) y reserva
 
 Estado de la vegetación: NDVI MODIS (250 m, cada 16 días) del lote desde 2001, vía Earth Engine. Cada compuesto se
 compara con los compuestos de la misma época (±8 días) de los años anteriores: percentil y diferencia con la mediana.
-Es el mismo criterio de "indicador temporal" que usan los sistemas de seguimiento de cultivos.
+También se calcula el índice de condición de la vegetación (VCI, Kogan): dónde cae el NDVI actual entre el mínimo y
+el máximo de esa época en la serie (0 a 100; menos de 40 indica sequía), y cuántos días seguidos lleva el lote debajo
+de lo normal (persistencia, hasta 112 días). Son los mismos indicadores que publica SEPA (INTA) en mapas nacionales,
+calculados acá para el perímetro del lote.
 """
 from datetime import date, timedelta
 from statistics import median
@@ -98,6 +101,16 @@ def soil_profile(lat, lon):
     return c.envelope(data, ARCHIVE, 'agua en el perfil del suelo hasta 2,55 m', 'Copernicus ERA5-Land vía Open-Meteo')
 
 
+def vci_class(v):
+    """Índice de condición de la vegetación (Kogan): 0 = el peor de la serie para la época, 100 = el mejor."""
+    if v is None: return 'sin dato'
+    if v < 10: return 'sequía extrema'
+    if v < 20: return 'sequía severa'
+    if v < 30: return 'sequía moderada'
+    if v < 40: return 'sequía leve'
+    return 'sin sequía'
+
+
 def analyze_ndvi(rows):
     pts = [(date.fromisoformat(r['datetime'][:10]), r['ndvi_mean']) for r in rows if r.get('ndvi_mean') is not None]
     pts.sort()
@@ -107,8 +120,12 @@ def analyze_ndvi(rows):
     for d, v in pts[-12:]:
         ref = [x for dd, x in pts if dd.year < d.year and _doy_close(dd, d, 8)]
         p = percentile(v, ref, min_n=5)
+        vci = round(100 * (v - min(ref)) / (max(ref) - min(ref))) if len(ref) >= 5 and max(ref) > min(ref) else None
+        if vci is not None:
+            vci = max(0, min(100, vci))
         out.append({'date': d.isoformat(), 'ndvi': round(v, 3), 'normal': round(median(ref), 3) if ref else None,
-                    'diff': round(v - median(ref), 3) if ref else None, 'percentile': p, 'years': len(ref)})
+                    'diff': round(v - median(ref), 3) if ref else None, 'percentile': p, 'years': len(ref),
+                    'vci': vci, 'vci_class': vci_class(vci)})
     last = out[-1]
     # persistencia (como el indicador temporal de SEPA-INTA): compuestos seguidos, hasta el último, debajo de la mediana
     run = 0
@@ -124,6 +141,8 @@ def analyze_ndvi(rows):
         raise ValueError('No hay años anteriores con la misma época para comparar')
     reading = (f"El último compuesto ({date.fromisoformat(last['date']).strftime('%d/%m/%Y')}) tiene NDVI {last['ndvi']:.2f}, "
                f"{word} de lo normal para la época (mediana {last['normal']:.2f} en {last['years']} años; percentil {last['percentile']}).")
+    if last.get('vci') is not None:
+        reading += f" Índice de condición de la vegetación (VCI): {last['vci']} ({last['vci_class']})."
     if run >= 2:
         reading += f" Lleva {min(run * 16, 112) if run * 16 <= 112 else 'más de 112'} días seguidos por debajo de lo normal."
     return {'series': out, 'latest': last, 'reading': reading, 'persistence': persistence}

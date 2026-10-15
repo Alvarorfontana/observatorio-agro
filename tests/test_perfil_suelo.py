@@ -31,6 +31,7 @@ def test_ndvi_anomaly():
             rows.append({'datetime': f'{y}-{m:02d}-01T00:00:00Z', 'ndvi_mean': v + 0.01 * (y % 3)})
     out = ps.analyze_ndvi([r for r in rows if r['datetime'] < '2026-10-02'])
     assert out['latest']['percentile'] == 0 and out['latest']['diff'] < -0.2 and 'por debajo' in out['reading']
+    assert out['latest']['vci'] == 0 and out['latest']['vci_class'] == 'sequía extrema'
     assert out['persistence']['composites'] == 2 and 'días seguidos' in out['reading']
 
 

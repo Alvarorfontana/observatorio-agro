@@ -90,8 +90,8 @@ export function CasoBellaVista() {
         <p className="small">Último compuesto: NDVI {nf(d.latest?.ndvi_mean, 2)} ({d.latest?.datetime?.slice(0, 10)}). {d.interpretation_scope}</p>
       </>; }}</Block>
       <Block tag="VEGETACIÓN" title="¿Está más verde o más seco que otros años?" s={anom} src="NASA MODIS MOD13Q1 desde 2001 vía Earth Engine · misma época de cada año">{d => <>
-        <div className="nn-table bv-table bv-anom" role="table"><div className="nn-tr nn-th" role="row">{["Fecha", "NDVI", "Normal", "Diferencia", "Percentil"].map(h => <span role="columnheader" key={h}>{h}</span>)}</div>
-          {d.series.slice(-6).map((r: D) => <div className="nn-tr" role="row" key={r.date}><span role="cell">{r.date.slice(8, 10)}/{r.date.slice(5, 7)}/{r.date.slice(2, 4)}</span><span role="cell">{nf(r.ndvi, 2)}</span><span role="cell">{nf(r.normal, 2)}</span><span role="cell">{sg(r.diff, 2)}</span><span role="cell">{r.percentile ?? "—"}</span></div>)}</div>
+        <div className="nn-table bv-table bv-anom" role="table"><div className="nn-tr nn-th" role="row">{["Fecha", "NDVI", "Normal", "Diferencia", "VCI"].map(h => <span role="columnheader" key={h}>{h}</span>)}</div>
+          {d.series.slice(-6).map((r: D) => <div className="nn-tr" role="row" key={r.date}><span role="cell">{r.date.slice(8, 10)}/{r.date.slice(5, 7)}/{r.date.slice(2, 4)}</span><span role="cell">{nf(r.ndvi, 2)}</span><span role="cell">{nf(r.normal, 2)}</span><span role="cell">{sg(r.diff, 2)}</span><span role="cell">{r.vci ?? "—"}</span></div>)}</div>
         <p>{d.reading}</p>
       </>}</Block>
       <Block tag="HISTORIA" title={`El área desde ${mb?.d?.first_year ?? 1985}`} s={mb} src="MapBiomas Argentina (Landsat 30 m, CC BY 4.0) vía Earth Engine">{d => { const by: Record<number, D> = {}; (d.years || []).forEach((r: D) => { by[r.year] = r }); const ys = [d.first_year, 2000, 2010, 2020, d.last_year].filter((y, i, a) => by[y] && a.indexOf(y) === i); return <>
