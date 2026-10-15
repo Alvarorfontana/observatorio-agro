@@ -48,6 +48,7 @@ export function CasoBellaVista() {
   const agua = useApi(`/api/fuentes/balance-agua?lat=${LAT}&lon=${LON}`);
   const nino = useApi(`/api/fuentes/enso-tablero?lat=${LAT}&lon=${LON}`);
   const ndvi = useApi(`/api/fuentes/ndvi-modis?polygon=${P}&days=760`);
+  const anom = useApi(`/api/fuentes/ndvi-anomalia?polygon=${P}`);
   const mb = useApi(`/api/fuentes/mapbiomas?polygon=${P}`);
   const dw = useApi(`/api/fuentes/cobertura-reciente?polygon=${P}`);
   const emb = useApi(`/api/fuentes/cambios-lote?polygon=${P}`);
@@ -65,6 +66,8 @@ export function CasoBellaVista() {
       <Block tag="AGUA" title="Sequía o exceso: índice SPEI" s={agua} src="Copernicus ERA5 vía Open-Meteo · SPEI log-logístico, referencia 1991-2020">{d => <>
         <div className="bv-tiles">{["1", "3", "6", "12"].map(k => { const v = d.spei?.[k]; return <div key={k}><b>{sg(v?.index, 1)}</b><span>{k} {k === "1" ? "mes" : "meses"}</span><small>{v?.class || "sin dato"}</small></div>; })}</div>
         <p>{d.reading}</p><p className="small">Último mes completo: {d.last_month}.</p>
+        {d.profile?.to_2_5m && <><div className="bv-tiles" style={{ marginTop: 10 }}>{[d.profile.to_1m, d.profile.to_2_5m].map((l: D) => <div key={l.label}><b>{sg(l.diff_mm)} mm</b><span>agua {l.label}</span><small>{l.class} · percentil {l.percentile ?? "—"}</small></div>)}</div>
+          <p className="small">{d.profile.reading} Modelo ERA5-Land, no medición en el lote; referencia oficial: INTA y Oficina de Riesgo Agropecuario.</p></>}
       </>}</Block>
       <Block tag="EL NIÑO" title="Qué trae El Niño a este lugar" s={nino} src="NOAA CPC y PSL · historia desde 1991 con ERA5">{d => <>
         <div className="bv-tiles">
@@ -86,6 +89,11 @@ export function CasoBellaVista() {
         <Spark xs={rows.map((r: D) => r.datetime)} ys={rows.map((r: D) => r.ndvi_mean)} />
         <p className="small">Último compuesto: NDVI {nf(d.latest?.ndvi_mean, 2)} ({d.latest?.datetime?.slice(0, 10)}). {d.interpretation_scope}</p>
       </>; }}</Block>
+      <Block tag="VEGETACIÓN" title="¿Está más verde o más seco que otros años?" s={anom} src="NASA MODIS MOD13Q1 desde 2001 vía Earth Engine · misma época de cada año">{d => <>
+        <div className="nn-table bv-table bv-anom" role="table"><div className="nn-tr nn-th" role="row">{["Fecha", "NDVI", "Normal", "Diferencia", "Percentil"].map(h => <span role="columnheader" key={h}>{h}</span>)}</div>
+          {d.series.slice(-6).map((r: D) => <div className="nn-tr" role="row" key={r.date}><span role="cell">{r.date.slice(8, 10)}/{r.date.slice(5, 7)}/{r.date.slice(2, 4)}</span><span role="cell">{nf(r.ndvi, 2)}</span><span role="cell">{nf(r.normal, 2)}</span><span role="cell">{sg(r.diff, 2)}</span><span role="cell">{r.percentile ?? "—"}</span></div>)}</div>
+        <p>{d.reading}</p>
+      </>}</Block>
       <Block tag="HISTORIA" title={`El área desde ${mb?.d?.first_year ?? 1985}`} s={mb} src="MapBiomas Argentina (Landsat 30 m, CC BY 4.0) vía Earth Engine">{d => { const by: Record<number, D> = {}; (d.years || []).forEach((r: D) => { by[r.year] = r }); const ys = [d.first_year, 2000, 2010, 2020, d.last_year].filter((y, i, a) => by[y] && a.indexOf(y) === i); return <>
         <div className="nn-table bv-table" role="table"><div className="nn-tr nn-th" role="row">{["Año","Bosque","Otra natural","Plantación","Agro","Agua"].map(h=><span role="columnheader" key={h}>{h}</span>)}</div>
           {ys.map(y => <div className="nn-tr" role="row" key={y}><span role="cell"><b>{y}</b></span>{(["bosque","natural","plantacion","uso","agua"] as const).map(k=><span role="cell" key={k}>{nf(by[y].groups_ha[k])} ha</span>)}</div>)}</div>

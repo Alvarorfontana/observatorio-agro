@@ -1602,7 +1602,14 @@ function Observatory({onHome}:{onHome:()=>void}) {
               {view==="balance-agua" && payload?.spei && <>
                 <div className={"verdict "+(String(payload.spei["3"]?.class).includes("sequía")?"warn":"ok")}><span>Últimos 3 meses · hasta {payload.last_month}</span><b>{payload.spei["3"]?.class}</b><small>Índice {payload.spei["3"]?.index} · balance {payload.spei["3"]?.balance_mm} mm (normal {payload.spei["3"]?.normal_mm} mm)</small></div>
                 <div className="wx-grid">{["1","3","6","12"].map(k=><div key={k}><span>{k} {k==="1"?"mes":"meses"}</span><b>{payload.spei[k]?.index??"—"}<small> {payload.spei[k]?.class}</small></b></div>)}</div>
-                <p className="footnote">{payload.reading} Índice tipo SPEI: menor a −1 es sequía; mayor a 1, exceso de agua.</p>
+                <p className="footnote">{payload.reading} SPEI: menor a −1 es sequía; mayor a 1, exceso de agua.</p>
+                {payload.profile?.layers && <>
+                  <div className="lot-vars-title" style={{marginTop:10}}>Agua en el perfil · {payload.profile.date?.slice(8,10)}/{payload.profile.date?.slice(5,7)}</div>
+                  <div className="cover-table"><div className="cover-head"><span>Capa</span><span>mm</span><span>Normal</span><span>Percentil</span><span>Estado</span><span></span></div>
+                    {[...payload.profile.layers,payload.profile.to_1m,payload.profile.to_2_5m].map((l:Data,i:number)=><div className={"cover-row"+(i>=4?" cut":"")} key={i}><span>{l.layer||l.label}</span><b>{l.mm}</b><span>{l.normal_mm??"—"}</span><span>{l.percentile??"—"}</span><span>{l.class}</span><span></span></div>)}
+                  </div>
+                  <p className="footnote">{payload.profile.reading} Modelo ERA5-Land (~9 km), no medición en el lote. Referencia oficial: balance hídrico del INTA y reservas de la Oficina de Riesgo Agropecuario.</p>
+                </>}
               </>}
               {view==="costos" && <>
                 <label className="small" style={{display:"block",marginBottom:8}}>Destino de la hacienda<input value={costDest} placeholder="ej. Mercado Agroganadero Cañuelas, Corrientes, frigorífico…" onChange={e=>{setCostDest(e.target.value);try{localStorage.setItem("dots-cost-dest",e.target.value)}catch{}}}/></label>

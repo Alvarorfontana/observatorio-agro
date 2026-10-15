@@ -65,6 +65,7 @@ VEGETATION={
   'mapbiomas':lambda p,a:mbx.history(p),
   'cobertura-reciente':lambda p,a:cee.dynamic_world(p),
   'cambios-lote':lambda p,a:cee.changes(p),
+  'ndvi-anomalia':lambda p,a:__import__('perfil_suelo').ndvi_anomaly(p),
   'pasto-historia':lambda p,a:gpw.history(p),
 }
 

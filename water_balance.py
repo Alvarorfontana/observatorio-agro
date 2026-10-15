@@ -136,10 +136,19 @@ def analyze_series(daily, today=None):
 
 
 def water_balance(lat, lon):
+    from concurrent.futures import ThreadPoolExecutor
+    import perfil_suelo
+    pool = ThreadPoolExecutor(max_workers=1)
+    prof = pool.submit(perfil_suelo.soil_profile, lat, lon)   # en paralelo con el balance
     end = c._now().date() - timedelta(days=6)        # ERA5 se publica con ~5 días de demora
     env = c.external(ARCHIVE, {'latitude': lat, 'longitude': lon, 'start_date': '1991-01-01', 'end_date': end.isoformat(),
                                'daily': 'precipitation_sum,et0_fao_evapotranspiration', 'models': 'era5', 'timezone': 'UTC'},
                      scope='balance de agua y sequía (ERA5)', organism='Copernicus ERA5 vía Open-Meteo')
     data = analyze_series((env['data'] or {}).get('daily') or {})
     data.update(capability='ANALYSIS', method=__doc__.split('\n\n', 1)[1].strip())
+    try:   # agua en el perfil (ERA5-Land): complemento, si falla el balance sale igual
+        data['profile'] = prof.result(timeout=45)['data']
+    except Exception as e:
+        data['profile'] = None; data['profile_error'] = type(e).__name__
+    pool.shutdown(wait=False)
     return c.envelope(data, ARCHIVE, 'balance de agua y sequía desde 1991', 'Copernicus ERA5 vía Open-Meteo')
