@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 type D = Record<string, any>;
 const POLY: [number, number][] = [[-28.47, -58.95], [-28.47, -58.90], [-28.50, -58.90], [-28.50, -58.95]];
 const LAT = -28.485, LON = -58.925;
-const P = encodeURIComponent(JSON.stringify(POLY));
+const P = encodeURIComponent(JSON.stringify(POLY)) + `&lat=${-28.485}&lon=${-58.925}`;   // las rutas de lote piden también lat y lon
 const nf = (v: unknown, d = 0) => v == null || !Number.isFinite(Number(v)) ? "—" : Number(v).toLocaleString("es-AR", { minimumFractionDigits: d, maximumFractionDigits: d });
 const sg = (v: unknown, d = 0) => v == null ? "—" : `${Number(v) > 0 ? "+" : ""}${nf(v, d)}`;
 

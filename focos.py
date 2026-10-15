@@ -141,7 +141,11 @@ def enrich(rows):
     body = enrich_expression([(i, rows[i]) for i in order])
     r = c.SESSION.post(f'{veg.GEE}/projects/{proj}/value:compute', json=body, headers={'Authorization': f'Bearer {tok}'}, timeout=45)
     if r.status_code >= 400:
-        return f'Earth Engine HTTP {r.status_code}'
+        try:
+            msg = (r.json().get('error') or {}).get('message', '')
+        except ValueError:
+            msg = r.text[:200]
+        return f'Earth Engine HTTP {r.status_code}: {msg[:200]}'
     for f in (r.json().get('result') or {}).get('features') or []:
         p = f.get('properties') or {}
         i = p.get('i')

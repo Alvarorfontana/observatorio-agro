@@ -52,7 +52,7 @@ def dw_expression(pts, start, end):
     img = {'argumentReference': '_MAPPING_VAR_0_0'}
     labels = _f('Collection.map', collection=_filtered(DW, start, end),
                 baseAlgorithm={'functionDefinitionValue': {'argumentNames': ['_MAPPING_VAR_0_0'], 'body': 'sel'}})
-    mode = _f('ImageCollection.mode', collection=labels)
+    mode = _f('ImageCollection.reduce', collection=labels, reducer=_f('Reducer.mode'))   # banda 'label_mode'
     out = _f('Image.reduceRegion', image=mode, reducer=_f('Reducer.frequencyHistogram'), geometry={'valueReference': 'g'},
              scale=_k(10), maxPixels=_k(1e9))
     return {'expression': {'result': 'out', 'values': {'g': _geom(pts), 'sel': _f('Image.select', input=img, bandSelectors=_k(['label'])),
@@ -66,7 +66,7 @@ def emb_expression(pts, year):
              names=_k(['sim']))
     low = _f('Image.rename', input=_f('Image.lt', image1=dot, image2=_f('Image.constant', value=_k(LOW))), names=_k(['low']))
     out = _f('Image.reduceRegion', image=_f('Image.addBands', dstImg=dot, srcImg=low), reducer=_f('Reducer.mean'),
-             geometry={'valueReference': 'g'}, scale=_k(10), maxPixels=_k(1e9))
+             geometry={'valueReference': 'g'}, scale=_k(30), maxPixels=_k(1e9), tileScale=_k(4))   # 64 bandas: 30 m y tileScale evitan el límite de memoria
     return {'expression': {'result': 'out', 'values': {'g': _geom(pts), 'out': out}}}
 
 
@@ -105,7 +105,11 @@ def dynamic_world(polygon, days=90):
     with ThreadPoolExecutor(max_workers=2) as pool:
         now = pool.submit(_compute, proj, tok, dw_expression(pts, start.isoformat(), end.isoformat()))
         before = pool.submit(_compute, proj, tok, dw_expression(pts, prev_start.isoformat(), prev_end.isoformat()))
-        cur, prev = dw_shares(now.result()), dw_shares(before.result())
+        try:
+            cur, prev = dw_shares(now.result()), dw_shares(before.result())
+        except RuntimeError as e:
+            return c.envelope(None, GEE, 'cobertura reciente del lote · Dynamic World', 'Dynamic World vía Google Earth Engine',
+                              'sin dato', str(e)[:300])
     if not cur:
         return c.envelope(None, GEE, 'cobertura reciente del lote · Dynamic World', 'Dynamic World vía Google Earth Engine',
                           'sin dato', f'No hubo escenas Sentinel-2 despejadas sobre el lote en los últimos {days} días.')

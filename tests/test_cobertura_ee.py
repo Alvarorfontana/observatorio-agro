@@ -23,5 +23,5 @@ def test_change_reading():
 def test_expressions_are_json_and_use_assets():
     dw = json.dumps(ce.dw_expression(POLY, '2026-07-01', '2026-10-01'))
     emb = json.dumps(ce.emb_expression(POLY, 2021))
-    assert ce.DW in dw and 'ImageCollection.mode' in dw and 'frequencyHistogram' in dw
+    assert ce.DW in dw and 'Reducer.mode' in dw and 'frequencyHistogram' in dw
     assert ce.EMB in emb and '2020-01-01' in emb and '2022-01-01' in emb and 'Image.lt' in emb
