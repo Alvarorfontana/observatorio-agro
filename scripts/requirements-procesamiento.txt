@@ -4,9 +4,9 @@ omniwatermask
 smoothify
 rasterio
 pystac-client
-shapely>=2
+shapely>=2.2.0
 pyproj
 geopandas
 numpy
-duckdb>=1.1
+duckdb>=1.5.6
 requests
