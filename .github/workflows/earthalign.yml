@@ -1,0 +1,36 @@
+# Banco de descripciones del estado atmosférico (dataset EarthAlign · MBZUAI/ADIA Lab/UC San Diego).
+# Baja los registros liberados del dataset y guarda data/earthalign.json en la rama `datos`.
+# La web sólo lee ese archivo (ver earthalign.py). No usa placa ni PyTorch: eso es la fase 2 (MeteoLIP).
+name: EarthAlign · descripciones del tiempo
+
+on:
+  workflow_dispatch: {}
+  # schedule:
+  #   - cron: "23 7 1 * *"   # mensual, cuando el banco esté validado
+
+permissions:
+  contents: write
+
+concurrency:
+  group: earthalign
+  cancel-in-progress: false
+
+jobs:
+  banco:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Traer datos de la rama datos
+        run: bash scripts/datos_rama.sh traer
+      - name: Armar el banco
+        run: |
+          pip install -r requirements.txt
+          python scripts/earthalign_build.py data/earthalign.json
+      - name: Guardar en la rama datos (no publica la web)
+        if: always()
+        run: |
+          cp scripts/datos_rama.sh /tmp/datos_rama.sh && bash /tmp/datos_rama.sh guardar "EarthAlign: banco de descripciones $(date -u +%Y-%m-%d\ %H:%M)" data/earthalign.json

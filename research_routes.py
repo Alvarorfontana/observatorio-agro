@@ -33,6 +33,7 @@ import monitor as mon
 import soil_wetness as sw
 import cuenca as cca
 import cuenca_report as ccr
+import earthalign as eal
 
 research_api=Blueprint('research_api',__name__,url_prefix='/api/fuentes')
 
@@ -89,6 +90,20 @@ def sources_monitor():
 @research_api.get('/contacto/canal')
 def contact_channel():
     return jsonify(contact.channel())
+
+@research_api.get('/earthalign')
+def clima_descripcion():
+    """Descripción en lenguaje natural del estado atmosférico (EarthAlign / MeteoLIP) del punto más cercano."""
+    try:
+        lat,lon=c.coordinates({'lat':[request.args.get('lat')],'lon':[request.args.get('lon')]})
+        return jsonify(eal.describe(lat,lon,request.args.get('fecha')))
+    except ValueError as e: return jsonify({'status':'sin dato','error':str(e)}),400
+    except Exception as e: return jsonify({'status':'sin dato','error':'No se pudo leer la descripción del estado atmosférico','type':type(e).__name__}),502
+
+@research_api.get('/earthalign/estado')
+def clima_descripcion_estado():
+    """Diagnóstico del conector: cuántos recortes hay y qué falta para activarlo."""
+    return jsonify(eal.status())
 
 @research_api.post('/forraje')
 def lot_forage():

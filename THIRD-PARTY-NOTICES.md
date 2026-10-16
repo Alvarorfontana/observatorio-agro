@@ -27,6 +27,7 @@ OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 - Carbon Design System (IBM) · Apache-2.0 · reglas visuales del tema oscuro, sin copiar componentes.
 - xyzservices (GeoPandas) · BSD-3-Clause · catálogo base de capas del mapa.
 - xclim (Ouranos) · Apache-2.0 · definiciones de índices agroclimáticos; cálculo propio.
+- EarthAlign / MeteoLIP (MBZUAI · ADIA Lab · UC San Diego) - sin licencia declarada en su repositorio; el dataset mezcla fuentes (EM-DAT CC-BY-NC-ND, NOAA dominio público, ERA5 CC-BY). DOTS sólo guarda descripciones y metadatos del dataset liberado y cita la fuente. Ver DOTS-v2.7-EARTHALIGN.md.
 - chirps (rOpenSci) · forma de consultar la API pública ClimateSERV; código propio.
 
 ## Librerías
@@ -41,3 +42,4 @@ IBM Plex · SIL Open Font License 1.1 (ver `report/fonts/OFL.txt`).
 Copernicus: «Contiene datos modificados de Copernicus Sentinel y del Servicio de Gestión de Emergencias de Copernicus».
 Open-Meteo: datos CC-BY 4.0; la API gratuita es sólo para uso no comercial. ONS Brasil: CC-BY 4.0.
 NOAA y USGS: dominio público. NASA: uso libre con cita. INA: datos públicos del Estado argentino.
+EarthAlign (MBZUAI · ADIA Lab · UC San Diego): descripciones y metadatos del dataset liberado; ERA5 de Copernicus (CC-BY). Revisar las licencias por fuente antes de un uso comercial.
