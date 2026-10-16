@@ -5,3 +5,4 @@ google-auth>=2.30
 typst>=0.13
 pyclipper>=1.3,<2
 segno>=1.6,<2
+certifi>=2025.1.31

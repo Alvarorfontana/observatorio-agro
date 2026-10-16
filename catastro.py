@@ -76,9 +76,22 @@ def parcel_at(lat, lon):
     return env
 
 
+def _verify(prov):
+    """car.gov.br usa un certificado intermedio de Sectigo que algunos entornos no traen: se agrega al paquete de certifi."""
+    if prov['id'] != 'sicar':
+        return True
+    import certifi, os, tempfile
+    path = os.path.join(tempfile.gettempdir(), 'dots_ca_car.pem')
+    if not os.path.exists(path):
+        extra = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'certs', 'car_gov_br_intermedio.pem')
+        with open(path, 'w') as f:
+            f.write(open(certifi.where()).read() + '\n' + open(extra).read())
+    return path
+
+
 def _query(prov, lat, lon):
     d = 0.0008
-    r = c.SESSION.get(prov['url'], timeout=25, params={
+    r = c.SESSION.get(prov['url'], timeout=25, verify=_verify(prov), params={
         'service': 'WFS', 'version': '2.0.0', 'request': 'GetFeature', 'typeNames': prov['layer'], 'outputFormat': 'application/json',
         'srsName': 'EPSG:4326', 'count': 20, 'bbox': f'{lat - d},{lon - d},{lat + d},{lon + d},urn:ogc:def:crs:EPSG::4326'})
     r.raise_for_status()

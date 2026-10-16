@@ -5,7 +5,7 @@
   "functions": {
     "api/index.py": {
       "maxDuration": 60,
-      "includeFiles": "{report/**,data/**,spectral_indices.json}",
+      "includeFiles": "{report/**,certs/**,data/**,spectral_indices.json}",
       "excludeFiles": "{node_modules/**,dist/**,src/**,public/**,evidencia/**,tests/**,*.md}"
     }
   },
