@@ -1,8 +1,8 @@
-flask>=3.0,<4
-requests>=2.32
-reportlab>=4.2
-google-auth>=2.30
-typst>=0.13
-pyclipper>=1.3,<2
-segno>=1.6,<2
-certifi>=2025.1.31
+flask>=3.1.3,<4
+requests>=2.34.2
+reportlab>=5.0.1
+google-auth>=2.62.0
+typst>=0.15.0
+pyclipper>=1.4.0,<2
+segno>=1.6.6,<2
+certifi>=2026.7.22
