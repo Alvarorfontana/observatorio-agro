@@ -1,6 +1,21 @@
 {
  "items": [
   {
+   "id": "uruguay-colon",
+   "place": "Colón",
+   "river": "Uruguay",
+   "from": "Alerta",
+   "to": "Atención",
+   "up": false,
+   "height": 6.99,
+   "alert": 7.1,
+   "evac": 7.9,
+   "date": "2026-10-16",
+   "trend_m_day": -0.029,
+   "text": "Colón (río Uruguay): el nivel baja de Alerta a Atención. Altura 6,99 m el 2026-10-16; alerta 7,10 m, evacuación 7,90 m. Tendencia -0,03 m por día.",
+   "at": "2026-10-16T18:07+00:00"
+  },
+  {
    "id": "uruguay-concordia",
    "place": "Concordia · Salto",
    "river": "Uruguay",
@@ -31,5 +46,5 @@
    "at": "2026-10-15T18:22+00:00"
   }
  ],
- "updated": "2026-10-15T18:22+00:00"
+ "updated": "2026-10-16T18:07+00:00"
 }
