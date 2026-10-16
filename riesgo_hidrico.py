@@ -89,7 +89,8 @@ def classify(samples):
         else:
             k = 'anegable' if occ >= 5 else 'plano'
         out.append((la, lo, k))
-    return out, {'bajo_m': round(lo_cut, 1), 'loma_m': round(hi_cut, 1), 'min_m': round(min(dems), 1), 'max_m': round(max(dems), 1)}
+    # desnivel entre los percentiles 2 y 98: árboles, galpones y ruido del modelo no inflan el rango
+    return out, {'bajo_m': round(lo_cut, 1), 'loma_m': round(hi_cut, 1), 'min_m': round(pct(dems, 0.02), 1), 'max_m': round(pct(dems, 0.98), 1)}
 
 
 def summarize(cells, area_ha, cuts, hands, occs):
