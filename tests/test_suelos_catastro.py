@@ -23,3 +23,12 @@ def test_catastro_outside_and_parse(monkeypatch):
     monkeypatch.setattr(catastro.c.SESSION, 'get', lambda *a, **k: R())
     d = catastro.parcel_at(-36.30, -58.40)['data']
     assert d['partida'] == '083002273' and d['area_ha'] == 690.38 and len(d['polygon']) == 4 and d['polygon'][0] == [-36.32, -58.42]
+
+
+def test_catastro_route(monkeypatch):
+    from flask import Flask
+    from research_routes import research_api
+    monkeypatch.setattr(catastro, 'parcel_at', lambda la, lo: {'status': 'recibido', 'data': {'lat': la, 'lon': lo}})
+    app = Flask(__name__); app.register_blueprint(research_api)
+    j = app.test_client().get('/api/fuentes/catastro-parcela?lat=-36.3&lon=-58.4').get_json()
+    assert j['data'] == {'lat': -36.3, 'lon': -58.4}

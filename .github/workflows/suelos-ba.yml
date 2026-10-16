@@ -19,7 +19,7 @@ jobs:
           python-version: "3.11"
       - name: Bajar la cartografía (Zenodo)
         run: |
-          curl -sL -o /tmp/s.rar "https://zenodo.org/records/7837681/files/1_Mapa_de_Suelos_BA_50000_V2.rar?download=1"
+          curl -sL --retry 6 --retry-all-errors --retry-delay 20 -o /tmp/s.rar "https://zenodo.org/records/7837681/files/1_Mapa_de_Suelos_BA_50000_V2.rar?download=1"
           sudo apt-get install -y -qq unrar
           mkdir -p /tmp/x && unrar x -inul /tmp/s.rar /tmp/x/
       - name: Recuadros

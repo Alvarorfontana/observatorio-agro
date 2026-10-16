@@ -254,7 +254,9 @@ def research_data(name):
         except Exception as e: return _upstream_error(e)
     if name=='catastro-parcela':
         import catastro
-        try: return jsonify(catastro.parcel_at(lat,lon))
+        try: plat=float(request.args.get('lat','')); plon=float(request.args.get('lon',''))
+        except ValueError: return jsonify({'status':'sin dato','error':'Coordenadas inválidas'}),400
+        try: return jsonify(catastro.parcel_at(plat,plon))
         except Exception as e: return _upstream_error(e)
     if name in ('rayos','goes-heladas'):
         import datastore

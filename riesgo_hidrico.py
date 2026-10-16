@@ -54,7 +54,7 @@ def expression(points):
     dem = _f('Image.rename', input=_f('Image.select', input=_f('ImageCollection.mosaic', collection=_f('ImageCollection.load', id=_k('COPERNICUS/DEM/GLO30'))),
                                        bandSelectors=_k(['DEM'])), names=_k(['dem']))
     occ = _f('Image.rename', input=_f('Image.unmask', input=_f('Image.select', input=_f('Image.load', id=_k('JRC/GSW1_4/GlobalSurfaceWater')),
-                                                                bandSelectors=_k(['occurrence'])), value=_k(0)), names=_k(['occ']))
+                                                                bandSelectors=_k(['occurrence'])), value=_f('Image.constant', value=_k(0))), names=_k(['occ']))
     hand = _f('Image.rename', input=_f('Image.select', input=_f('Image.load', id=_k('MERIT/Hydro/v1_0_1')), bandSelectors=_k(['hnd'])), names=_k(['hand']))
     img = _f('Image.addBands', dstImg=_f('Image.addBands', dstImg=dem, srcImg=occ), srcImg=hand)
     out = _f('Image.sampleRegions', image=img, collection=fc, properties=_k(['i']), scale=_k(30), geometries=_k(False))
