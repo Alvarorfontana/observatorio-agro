@@ -70,7 +70,12 @@ def parcel_at(lat, lon):
                           'Por ahora el catastro está disponible para Buenos Aires (ARBA) y Córdoba (IDECOR) en Argentina, para Paraguay (SNC) y para Brasil (CAR).')
     env = None
     for prov in provs:
-        env = _query(prov, lat, lon)
+        try:
+            env = _query(prov, lat, lon)
+        except Exception as e:   # un servicio caído o con TLS mal configurado no frena a los demás
+            env = c.envelope(None, prov['url'], 'parcela del catastro', prov['name'], 'sin dato',
+                             f"{prov['name']} no respondió ({type(e).__name__}: {str(e)[:160]}).")
+            continue
         if env.get('status') == 'recibido':
             return env
     return env
