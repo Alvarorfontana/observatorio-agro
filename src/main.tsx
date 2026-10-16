@@ -2061,7 +2061,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
           </section>
           <section className="panel block operations" hidden={sideTab!=="lote"}>
             <div className="tag">OPERACIONES DEL LOTE</div>
-            <div className="draw-chooser"><button onClick={()=>startDraw("triangle")}><Triangle className="icon"/>Triángulo</button><button onClick={()=>startDraw("rectangle")}><Square className="icon"/>Rectángulo</button><button onClick={()=>startDraw("free")}><Layers className="icon"/>Polígono libre</button><button className="ftw-btn" onClick={startFtw} title="Lote automático desde el mapa global Fields of the World (gratis)"><Sprout className="icon"/>Automático · FTW</button><button onClick={startCatastro} title="Tocá la parcela del catastro: Buenos Aires, Córdoba, Paraguay y Brasil (CAR)"><MapPinned className="icon"/>Parcela del catastro</button></div>
+            <div className="draw-chooser"><button onClick={()=>startDraw("triangle")}><Triangle className="icon"/>Triángulo</button><button onClick={()=>startDraw("rectangle")}><Square className="icon"/>Rectángulo</button><button onClick={()=>startDraw("free")}><Layers className="icon"/>Polígono libre</button><button className="ftw-btn" onClick={startFtw} title="Lote automático desde el mapa global Fields of the World (gratis)"><Sprout className="icon"/>Automático · FTW</button><button onClick={startCatastro} title="Tocá la parcela del catastro: Buenos Aires, Córdoba, Salta, Neuquén, Gualeguaychú, Paraguay y Brasil (CAR)"><MapPinned className="icon"/>Parcela del catastro</button></div>
             <p className="footnote">Cada informe queda vinculado al polígono cerrado: superficie, perímetro, centroide y límites.</p>
             <div className="marker-chooser"><select value={markerType} onChange={e=>setMarkerType(e.target.value)}>{["General","Rodeo","Agua","Vegetación","Infraestructura","Riesgo"].map(g=><optgroup key={g} label={g}>{MARKER_KINDS.filter(k=>k.group===g).map(k=><option key={k.key} value={k.key}>{k.label}</option>)}</optgroup>)}</select><button type="button" onClick={()=>addFieldMarker()}>{placingMarker?"Clic en el mapa…":"+ Marcar en mapa"}</button></div>
             <div className="actions">
@@ -2170,7 +2170,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
         {ftwMode && (
           <div className="panel message show ftw-message">
             {catMode ? <><p><b>Parcela del catastro</b><br/>{ftwBusy?"Buscando la parcela…":"Tocá dentro de tu campo: se toma la parcela del catastro en ese punto."}</p>
-            <p className="small">Disponible en Buenos Aires (ARBA) y Córdoba (IDECOR), Paraguay (Catastro Nacional) y Brasil (CAR, registro ambiental declarado). Datos públicos; el límite puede no coincidir con el alambrado.</p></> : <>
+            <p className="small">Disponible en Buenos Aires, Córdoba, Salta, Neuquén y Gualeguaychú (Argentina), Paraguay y Brasil (CAR, registro ambiental declarado). Datos públicos; el límite puede no coincidir con el alambrado.</p></> : <>
             <p><b>Lote automático</b><br/>{ftwBusy?"Reconstruyendo el lote…":"Tocá dentro de un contorno. Verde: confianza alta. Ámbar: revisar borde."}</p>
             <p className="small">Fields of the World mapea cultivos anuales; en pasturas puede no haber contorno. {FTW_ATTRIBUTION}.</p></>}
             <div className="row"><button onClick={stopFtw}>Cancelar</button></div>

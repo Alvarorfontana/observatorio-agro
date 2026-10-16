@@ -2,7 +2,8 @@
 
 Provincia de Buenos Aires: ARBA, servicio WFS de la IDE provincial (geo.arba.gov.ar, capa idera:Parcela), con la
 nomenclatura catastral, la partida y la superficie. Córdoba: IDECOR (capa idecor:parcelas), con la nomenclatura y la
-superficie. Santa Fe publica sus parcelas sólo como imagen (WMS), sin el límite descargable. Paraguay: Servicio Nacional de
+superficie. Salta (IDESA) y Neuquén (Catastro provincial) también publican sus parcelas. Municipios: Gualeguaychú (Entre Ríos);
+en Buenos Aires, ARBA ya cubre todos los partidos. Santa Fe publica sus parcelas sólo como imagen (WMS). Paraguay: Servicio Nacional de
 Catastro (snc:parcelas_activas). Brasil: Cadastro Ambiental Rural (SICAR, capa sicar_imoveis_<estado>), que es un
 registro ambiental declarado por cada productor, no un catastro legal. Otras provincias se suman cuando publican un
 servicio WFS abierto. Sólo se devuelven el límite, la nomenclatura y la superficie.
@@ -26,6 +27,16 @@ PROVIDERS = [
      'layer': 'idecor:parcelas', 'bbox': (-65.8, -35.1, -61.7, -29.4),
      'fields': lambda p: (p.get('Nomenclatura'), p.get('Nomenclatura'), (p.get('Tipo_Parcela') or '').capitalize() or None,
                           ((p.get('Superficie_Tierra_Rural') or 0) + (p.get('Superficie_Tierra_Urbana') or 0)) / 1e4)},
+    {'id': 'salta', 'name': 'IDESA · Provincia de Salta', 'url': 'https://geoportal.salta.gob.ar/geoserver/wfs',
+     'layer': 'geonode:fc_parcelas_v20', 'bbox': (-68.6, -26.4, -62.3, -22.0),
+     'fields': lambda p: (f"Dpto {p.get('departa')} · catastro {p.get('catastro')}" if p.get('catastro') else None, p.get('catastro'), None, None)},
+    {'id': 'neuquen', 'name': 'Catastro · Provincia del Neuquén', 'url': 'https://catastro.neuquen.gov.ar/nqn_ide/services/IDE/Catastro/MapServer/WFSServer',
+     'layer': 'Catastro:Parcelas', 'bbox': (-71.95, -41.1, -68.0, -36.1), 'format': 'GEOJSON',
+     'fields': lambda p: (p.get('NOMENCLATURA') or p.get('NOMENCLA') or p.get('GmlID'), p.get('NOMENCLATURA') or p.get('OBJECTID'),
+                          ', '.join(x for x in (p.get('LOCALIDAD'), p.get('DEPARTAMENTO')) if x) or None, None)},
+    {'id': 'gualeguaychu', 'name': 'Municipio de Gualeguaychú (Entre Ríos)', 'url': 'https://geo.gualeguaychu.gov.ar/geoserver/ows',
+     'layer': 'gis:parcelario', 'bbox': (-58.75, -33.12, -58.40, -32.90), 'municipal': True,
+     'fields': lambda p: (f"Manzana {p.get('manz_1')} · parcela {p.get('parc_1')}" if p.get('manz_1') else None, None, 'Parcela urbana (catastro municipal)', None)},
     {'id': 'snc', 'name': 'Servicio Nacional de Catastro · Paraguay', 'url': 'https://www.catastro.gov.py/geoserver/snc/wfs',
      'layer': 'snc:parcelas_activas', 'bbox': (-62.7, -27.7, -54.2, -19.2),
      'fields': lambda p: (p.get('ccatastral'), p.get('padron'), 'Finca ' + str(p['finca']) if p.get('finca') else None, p.get('hectareas'))},
@@ -61,13 +72,13 @@ def parcel_at(lat, lon):
             p = {**p, 'layer': p['layer'].format(uf=BR_UF[state]), 'name': f"{p['name']} · {state}"}
         elif p['id'] == 'snc' and country != 'Paraguay':
             continue
-        elif p['id'] in ('arba', 'idecor') and country not in (None, 'Argentina'):
+        elif p['id'] in ('arba', 'idecor', 'salta', 'neuquen', 'gualeguaychu') and country not in (None, 'Argentina'):
             continue
         resolved.append(p)
     provs = resolved
     if not provs:
         return c.envelope(None, '', 'parcela del catastro', 'catastro provincial', 'sin dato',
-                          'Por ahora el catastro está disponible para Buenos Aires (ARBA) y Córdoba (IDECOR) en Argentina, para Paraguay (SNC) y para Brasil (CAR).')
+                          'Por ahora el catastro está disponible en Buenos Aires, Córdoba, Salta, Neuquén y Gualeguaychú (Argentina), Paraguay y Brasil (CAR).')
     env = None
     for prov in provs:
         try:
@@ -121,7 +132,7 @@ def _session(prov):
 def _query(prov, lat, lon):
     d = 0.0008
     r = _session(prov).get(prov['url'], timeout=25, verify=_verify(prov), params={
-        'service': 'WFS', 'version': '2.0.0', 'request': 'GetFeature', 'typeNames': prov['layer'], 'outputFormat': 'application/json',
+        'service': 'WFS', 'version': '2.0.0', 'request': 'GetFeature', 'typeNames': prov['layer'], 'outputFormat': prov.get('format', 'application/json'),
         'srsName': 'EPSG:4326', 'count': 20, 'bbox': f'{lat - d},{lon - d},{lat + d},{lon + d},urn:ogc:def:crs:EPSG::4326'})
     r.raise_for_status()
     feats = r.json().get('features') or []
