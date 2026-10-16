@@ -45,6 +45,37 @@ PROVIDERS = [
      'fields': lambda p: (p.get('cod_imovel'), p.get('cod_imovel'), 'Imóvel rural (CAR, declarado)', p.get('num_area'))},
 ]
 
+# Jurisdicciones relevadas cuya parcela NO se puede leer como WFS abierto. No se consultan: quedan documentadas
+# con su portal y contacto para pedir el acceso. Detalle completo y nota modelo en CATASTRO-FALTANTE.md.
+PENDING = [
+    {'jurisdiction': 'Santa Fe', 'org': 'IDESF', 'portal': 'https://www.santafe.gob.ar/idesf/', 'contact': 'idesf@santafe.gov.ar',
+     'status': 'Las parcelas se publican sólo como imagen (WMS), no como vector.'},
+    {'jurisdiction': 'Entre Ríos', 'org': 'IDEER · Catastro (ATER)', 'portal': 'https://geoservicios.entrerios.gov.ar/', 'contact': 'entrerios@ign.gob.ar',
+     'status': 'Sin capa de parcelas abierta. Gualeguaychú (municipal) es la única excepción.'},
+    {'jurisdiction': 'Corrientes', 'org': 'IDECorr', 'portal': 'https://ide.corrientes.gob.ar/', 'contact': 'idecorrientes@gmail.com',
+     'status': 'Sin capa de parcelas abierta.'},
+    {'jurisdiction': 'Misiones', 'org': 'IDE Misiones · DGC', 'portal': 'https://catastro.misiones.gov.ar/', 'contact': '',
+     'status': 'Sin servicio abierto de parcelas.'},
+    {'jurisdiction': 'Formosa', 'org': 'IDEF', 'portal': 'https://idef.formosa.gob.ar/', 'contact': 'idef@formosa.gov.ar',
+     'status': 'Sin servicio abierto de parcelas.'},
+    {'jurisdiction': 'Santiago del Estero', 'org': 'IDE Santiago · DGC', 'portal': 'https://www.idesantiago.gob.ar/', 'contact': 'direcciongeneraldecatastro@dgcsantiago.gob.ar',
+     'status': 'Sin capa de parcelas abierta.'},
+    {'jurisdiction': 'Chaco', 'org': 'IDE Chaco', 'portal': 'http://idechaco.gob.ar/', 'contact': 'chaco@ign.gob.ar',
+     'status': 'La capa de parcelas existe, pero el servidor no responde.'},
+    {'jurisdiction': 'La Pampa', 'org': 'IDELP · Catastro', 'portal': 'https://idelp.lapampa.gob.ar/', 'contact': 'catastro@lapampa.gob.ar',
+     'status': 'La capa de parcelas existe, pero el servidor no responde.'},
+    {'jurisdiction': 'Chubut', 'org': 'Sistema de Información Territorial (SIT)', 'portal': 'https://catastro.chubut.gov.ar/', 'contact': 'chubut@ign.gob.ar',
+     'status': 'El servidor rechaza las conexiones.'},
+    {'jurisdiction': 'Río Negro', 'org': 'IDE Río Negro · Catastro', 'portal': 'https://ide.rionegro.gov.ar/', 'contact': 'info.catastro@agencia.rionegro.gov.ar',
+     'status': 'El servidor devuelve error.'},
+    {'jurisdiction': 'Tucumán', 'org': 'IDET · DGC', 'portal': 'https://www.tucuman.gob.ar/organismos/direccion-general-de-catastro', 'contact': 'sistemas@dgc-tuc.gov.ar',
+     'status': 'El servidor devuelve error.'},
+    {'jurisdiction': 'Tierra del Fuego', 'org': 'IDETDF · Catastro (AREF)', 'portal': 'https://ide.tierradelfuego.gob.ar/', 'contact': 'catastrotdf@aref.gob.ar',
+     'status': 'El servidor devuelve error.'},
+    {'jurisdiction': 'Uruguay', 'org': 'IDEuy · Dirección Nacional de Catastro', 'portal': 'https://www.gub.uy/infraestructura-datos-espaciales/', 'contact': '',
+     'status': 'Sin servicio abierto de padrones (la DNC publica sólo metadatos).'},
+]
+
 
 def _ha(ring):
     """Superficie aproximada de un anillo [[lat, lon]] en hectáreas."""
@@ -78,7 +109,7 @@ def parcel_at(lat, lon):
     provs = resolved
     if not provs:
         return c.envelope(None, '', 'parcela del catastro', 'catastro provincial', 'sin dato',
-                          'Por ahora el catastro está disponible en Buenos Aires, Córdoba, Salta, Neuquén y Gualeguaychú (Argentina), Paraguay y Brasil (CAR).')
+                          'Por ahora el catastro está disponible en Buenos Aires, Córdoba, Salta, Neuquén y Gualeguaychú (Argentina), Paraguay y Brasil (CAR). Faltantes, contactos y pedido de acceso: ver CATASTRO-FALTANTE.md.')
     env = None
     for prov in provs:
         try:
