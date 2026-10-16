@@ -909,6 +909,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
     // Reusing an old payload after changing polygon was a functional bug in earlier versions.
     setView(key);
     setSideTab("datos");
+    if (key === "riesgo-hidrico") { void load("suelos-50mil"); }
     if (key === "alertas") { void loadAlerts(); } else if (key === "forraje") { void loadForage(); } else if (key === "relieve") { void loadTerrain(); } else if (key === "costos") { void loadCosts(); } else if (key === "ganado") { if ((herdAll[herdKey] || []).some(r => Number(r.heads) > 0)) void loadHerd(); } else void load(key);
     requestAnimationFrame(() => { const el = document.getElementById("dots-detail"); const side = el?.closest(".sidebar") as HTMLElement | null; if (el && side) side.scrollTo({ top: Math.max(0, el.offsetTop - side.offsetTop - 16), behavior: "smooth" }); });
   };
@@ -1647,6 +1648,20 @@ function Observatory({onHome}:{onHome:()=>void}) {
                   {payload.profile.available && <div className={"verdict "+(payload.profile.available.pct<40?"warn":"ok")} style={{marginTop:8}}><span>Agua útil hasta 2 m</span><b>{payload.profile.available.pct} % · {payload.profile.available.class}</b><small>{payload.profile.available.mm!=null?`${payload.profile.available.mm} mm de ${payload.profile.available.capacity_mm} mm · en 10 días ${payload.profile.available.change_10d_mm>0?"+":""}${payload.profile.available.change_10d_mm} mm`:"sin capacidad del suelo (SoilGrids)"}</small></div>}
                   <p className="footnote">{payload.profile.reading} Modelo ERA5-Land (~9 km), no medición en el lote. Referencia oficial: balance hídrico del INTA y reservas de la Oficina de Riesgo Agropecuario.</p>
                 </>}
+              </>}
+              {view==="riesgo-hidrico" && payload?.zones && <>
+                <div className={"verdict "+(payload.water_seen_ha>0?"warn":"ok")}><span>Lomas, planos y bajos · relieve 30 m</span><b>{payload.relief_m} m de desnivel</b><small>Agua vista por satélite desde 1984 en {fmt(payload.water_seen_ha,0)} ha</small></div>
+                <div className="cover-table"><div className="cover-head"><span>Zona</span><span>%</span><span>ha</span><span></span><span></span><span></span></div>
+                  {payload.zones.filter((z:Data)=>z.pct>=0.5).map((z:Data)=><div className="cover-row" key={z.key}><span><i className="dw-dot" style={{background:z.color}}/>{z.name}</span><b>{fmt(z.pct,0)}</b><span>{fmt(z.ha,0)}</span><span></span><span></span><span></span></div>)}
+                </div>
+                <p className="footnote">{payload.reading} Lectura del terreno, no un modelo hidrológico. Referencia oficial en la Cuenca del Salado: GeoCuenca (INTA).</p>
+                <button className="primary" style={{width:"100%",marginTop:8}} onClick={()=>void campoPdf()} disabled={pdfBusy}>{pdfBusy?"Generando…":"Informe de campo + mapa para el celular"}</button>
+                {(()=>{const su=(sources["suelos-50mil"]?.payload as any)?.data;const st=sources["suelos-50mil"]?.status;if(st==="consultando")return <p className="small">Buscando suelos 1:50.000…</p>;if(!su?.units)return <p className="footnote">Suelos 1:50.000: {String((sources["suelos-50mil"]?.payload as any)?.error||(sources["suelos-50mil"] as any)?.error||"sin dato").slice(0,200)}</p>;return <>
+                  <div className="lot-vars-title" style={{marginTop:12}}>Suelos · INTA 1:50.000</div>
+                  <div className="cover-table"><div className="cover-head"><span>Unidad</span><span>%</span><span>Cap.</span><span></span><span></span><span></span></div>
+                    {su.units.map((u:Data)=><div className="cover-row" key={u.symbol+u.pct} title={`${u.composition} · ${u.taxonomy}`}><span>{u.symbol}</span><b>{fmt(u.pct,0)}</b><span>{u.capability}</span><span></span><span></span><span></span></div>)}
+                  </div>
+                  <p className="footnote">{su.reading} Pasá el cursor por cada unidad para ver series y taxonomía. INTA, CC BY 4.0.</p></>})()}
               </>}
               {view==="costos" && <>
                 <label className="small" style={{display:"block",marginBottom:8}}>Destino de la hacienda<input value={costDest} placeholder="ej. Mercado Agroganadero Cañuelas, Corrientes, frigorífico…" onChange={e=>{setCostDest(e.target.value);try{localStorage.setItem("dots-cost-dest",e.target.value)}catch{}}}/></label>
