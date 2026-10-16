@@ -21,6 +21,7 @@ import focos  # noqa: E402
 PAUSE = float(os.environ.get('FOCOS_PAUSE', '1.5'))
 GB_API = 'https://www.geoboundaries.org/api/current/gbOpen/ARG/ADM2/'
 START = date(2001, 1, 1)
+BLOCK = 5                                    # FIRMS acepta de 1 a 5 días por consulta
 
 
 def departments():
@@ -54,7 +55,7 @@ def dept_of(lat, lon, deps):
 
 def fetch(key, source, day):
     bbox = ','.join(str(v) for v in focos.BBOX)
-    url = f'https://firms.modaps.eosdis.nasa.gov/api/area/csv/{key}/{source}/{bbox}/10/{day.isoformat()}'
+    url = f'https://firms.modaps.eosdis.nasa.gov/api/area/csv/{key}/{source}/{bbox}/{BLOCK}/{day.isoformat()}'
     for i in range(5):
         try:
             r = requests.get(url, timeout=120)
@@ -63,7 +64,11 @@ def fetch(key, source, day):
         if r.status_code == 429 or r.status_code >= 500 or 'Exceeding allowed transaction limit' in r.text[:200]:
             time.sleep(120 * (i + 1)); continue
         if r.ok and r.text.startswith('latitude'):
-            return focos.parse_csv(r.text, source)
+            import csv, io
+            keep = [row for row in csv.DictReader(io.StringIO(r.text)) if (row.get('type') or '0') == '0']
+            buf = io.StringIO(); w = csv.DictWriter(buf, fieldnames=list(keep[0].keys()) if keep else ['latitude', 'longitude'])
+            w.writeheader(); w.writerows(keep)
+            return focos.parse_csv(buf.getvalue(), source)
         return None
     return None
 
@@ -87,7 +92,7 @@ def main(out):
         tag = day.isoformat()
         sp = day < recent
         if sp and tag in done:
-            day += timedelta(days=10); continue
+            day += timedelta(days=BLOCK); continue
         rows = fetch(key, 'MODIS_SP' if sp else 'MODIS_NRT', day)
         if rows is None and sp:
             rows = fetch(key, 'MODIS_NRT', day)
@@ -98,7 +103,7 @@ def main(out):
             counts = {}
             for r in rows:
                 d = date.fromisoformat(r['date'])
-                if not (day <= d < day + timedelta(days=10)):
+                if not (day <= d < day + timedelta(days=BLOCK)):
                     continue
                 cty, prov = focos.locate(r['lat'], r['lon'])
                 if not cty:
@@ -115,7 +120,7 @@ def main(out):
             blk[tag] = counts
             if sp:
                 done.add(tag)
-        if calls % 20 == 0 or day + timedelta(days=10) > today:
+        if calls % 20 == 0 or day + timedelta(days=BLOCK) > today:
             # reconstruye los totales mensuales desde los bloques
             months = {}
             for counts in (res.get('blocks') or {}).values():
@@ -132,7 +137,7 @@ def main(out):
                        'method': __doc__.split('\n\n')[1].strip()},
                       open(out, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
             print(f'{tag}: {len(months)} meses', flush=True)
-        day += timedelta(days=10)
+        day += timedelta(days=BLOCK)
         time.sleep(PAUSE)
 
 
