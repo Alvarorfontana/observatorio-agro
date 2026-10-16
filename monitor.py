@@ -73,7 +73,7 @@ def soil_trace(lat, lon):
 LOT = [[-28.56, -58.71], [-28.56, -58.69], [-28.54, -58.69], [-28.54, -58.71]]   # lote de control en tierra (Corrientes)
 GROUPS = {
     '1': ['variables', 'modelos', 'historico', 'escenas', 'rios', 'aire', 'elevacion'],
-    '2': ['ndvi', 'indices', 'teleconexiones', 'estadistica', 'enso'],
+    '2': ['ndvi', 'indices', 'teleconexiones', 'estadistica', 'enso', 'humedad-sar'],
     '3': ['suelo', 'serie', 'proyeccion', 'sustentabilidad', 'plataformas'],
     '4': ['smn', 'inmet', 'nasa-power-30', 'landsat', 'radar', 'copernicus-stac', 'firms'],
 }

@@ -641,6 +641,7 @@ def platform_registry():
         ('earth-search', 'Element84 Earth Search', 'STAC', 'catalog', 'OPEN'),
         ('soilgrids', 'ISRIC SoilGrids', 'REST', 'analysis', 'OPEN'),
         ('pc-ndvi', 'Planetary Computer Data API · NDVI por lote', 'STAC + TiTiler (statistics/feature)', 'raster-analysis', 'OPEN'),
+        ('pc-sar', 'Planetary Computer Data API · Sentinel-1 RTC (radar)', 'STAC + TiTiler (statistics)', 'raster-analysis', 'OPEN'),
         ('sentinel-hub', 'Sentinel Hub', 'OAuth2 + Process API', 'raster-analysis', 'REQUIRES_CREDENTIAL'),
         ('openeo-cdse', 'openEO Copernicus Data Space', 'OAuth2 + openEO /result', 'raster-analysis', 'REQUIRES_CREDENTIAL'),
         ('gee', 'Google Earth Engine', 'OAuth2 service account + REST value:compute', 'raster-analysis', 'REQUIRES_CREDENTIAL'),

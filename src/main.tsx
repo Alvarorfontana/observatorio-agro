@@ -160,6 +160,7 @@ const SOURCES = [
   ["forraje", "Pasto y carga", "Sentinel-2 + radiación · modelo de Monteith"],
   ["indices-espectrales", "Índices satelitales", "228 índices · Sentinel-2 · awesome-spectral-indices"],
   ["radar-agua", "Agua por radar", "Sentinel-1 · ve con nubes"],
+  ["humedad-sar", "Humedad del suelo (radar)", "Sentinel-1 · índice relativo vs el propio lote"],
   ["balance-agua", "Balance de agua y sequía", "ERA5 desde 1991 · lluvia − evapotranspiración"],
   ["costos", "Costos y logística", "OSRM · OpenStreetMap · DolarAPI · valores del productor"],
   ["sustentabilidad", "Deforestación y carbono", "Impact Observatory · ESA WorldCover · SoilGrids · IPCC"],
