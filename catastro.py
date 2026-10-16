@@ -74,7 +74,7 @@ def parcel_at(lat, lon):
             env = _query(prov, lat, lon)
         except Exception as e:   # un servicio caído o con TLS mal configurado no frena a los demás
             env = c.envelope(None, prov['url'], 'parcela del catastro', prov['name'], 'sin dato',
-                             f"{prov['name']} no respondió ({type(e).__name__}: {str(e)[:160]}).")
+                             f"{prov['name']} no respondió ({type(e).__name__}: {str(e)[-220:]}).")
             continue
         if env.get('status') == 'recibido':
             return env
