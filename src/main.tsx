@@ -972,6 +972,11 @@ function Observatory({onHome}:{onHome:()=>void}) {
     };
     addEventListener("keydown", k); return () => removeEventListener("keydown", k);
   }, [drawing]);
+  // En pantallas angostas el mapa queda debajo del pliegue: lo traemos a la vista al empezar a delimitar.
+  const revealMap = () => {
+    if (typeof window !== "undefined" && window.innerWidth <= 960)
+      setTimeout(() => mapEl.current?.scrollIntoView({ block: "center", behavior: "smooth" }), 80);
+  };
   const startDraw = (mode:"free"|"triangle"|"rectangle"="free") => {
     setMainView("mapa");
     setDrawMode(mode); drawModeRef.current = mode;
@@ -985,6 +990,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
     setDrawing(true);
     drawingRef.current = true;
     mapRef.current!.getContainer().style.cursor = "crosshair";
+    revealMap();
   };
   const stopDraw = () => {
     setDrawing(false);
@@ -1169,6 +1175,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
     const onMove = () => { const c = map.getCenter(); void showFtwAround(c.lat, c.lng); };
     ftwMoveRef.current = onMove; map.on("moveend", onMove);
     onMove();
+    revealMap();
   };
   const startCatastro = () => {
     if (!mapRef.current) return;
@@ -1189,6 +1196,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
       } catch { notify("El catastro no respondió. Intentá de nuevo o dibujá el campo a mano."); }
       finally { setFtwBusy(false); }
     };
+    revealMap();
   };
   async function searchPlace() {
     if (!placeQuery.trim()) return;
@@ -1409,8 +1417,9 @@ function Observatory({onHome}:{onHome:()=>void}) {
               <div className="view-switch" role="tablist" aria-label="Vista">
                 {([["tablero","Tablero"],["mapa","Mapa"]] as const).map(([k,t])=><button key={k} role="tab" aria-selected={mainView===k} className={mainView===k?"active":""} onClick={()=>setMainView(k)}>{t}</button>)}
               </div>
-              {!l && <button onClick={() => { setSideTab("lote"); startDraw("free"); }}>Dibujar lote</button>}
-              {!l && <button onClick={() => { setSideTab("lote"); startFtw(); }}>Automático</button>}
+              <button onClick={() => { setSideTab("lote"); startDraw("free"); }}>Dibujar lote</button>
+              <button onClick={() => { setSideTab("lote"); startFtw(); }}>Automático</button>
+              <button onClick={() => { setSideTab("lote"); startCatastro(); }} title="Tocá la parcela del catastro: Buenos Aires, Córdoba, Salta, Neuquén, Gualeguaychú, Paraguay y Brasil">Parcela del catastro</button>
               <button className="primary" onClick={() => void pdf()} disabled={pdfBusy}><FileText className="icon" />{pdfBusy ? "Generando…" : "Informe PDF"}</button>
               {l && <button onClick={() => void campoPdf()} disabled={pdfBusy} title="Lomas, planos y bajos del campo, con un código QR para llevar el mapa al celular (funciona sin señal)">Informe de campo + mapa para el celular</button>}
             </div>
