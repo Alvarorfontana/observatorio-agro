@@ -35,6 +35,7 @@ import cuenca as cca
 import cuenca_report as ccr
 import earthalign as eal
 import soil_moisture_sar as sms
+import ina_a5
 
 research_api=Blueprint('research_api',__name__,url_prefix='/api/fuentes')
 
@@ -65,6 +66,7 @@ VEGETATION={
   'indices-espectrales':lambda p,a:spectral.compute(p,[x.strip() for x in a.get('indices','').split(',') if x.strip()] or None,_int(a,'days',120,15,365)),
   'radar-agua':lambda p,a:rdr.flooding(p,_int(a,'days',60,12,365)),
   'humedad-sar':lambda p,a:sms.analyze(p,_int(a,'days',60,12,365),_int(a,'scenes',8,2,12)),
+  'nivel-rio':lambda p,a:ina_a5.analyze(p,_int(a,'days',30,3,365)),
   'mapbiomas':lambda p,a:mbx.history(p),
   'cobertura-reciente':lambda p,a:cee.dynamic_world(p),
   'cambios-lote':lambda p,a:cee.changes(p),

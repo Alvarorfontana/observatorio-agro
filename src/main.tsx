@@ -161,6 +161,7 @@ const SOURCES = [
   ["indices-espectrales", "Índices satelitales", "228 índices · Sentinel-2 · awesome-spectral-indices"],
   ["radar-agua", "Agua por radar", "Sentinel-1 · ve con nubes"],
   ["humedad-sar", "Humedad del suelo (radar)", "Sentinel-1 · índice relativo vs el propio lote"],
+  ["nivel-rio", "Nivel y caudal del río", "INA · alturas y caudales observados de la estación más cercana"],
   ["balance-agua", "Balance de agua y sequía", "ERA5 desde 1991 · lluvia − evapotranspiración"],
   ["costos", "Costos y logística", "OSRM · OpenStreetMap · DolarAPI · valores del productor"],
   ["sustentabilidad", "Deforestación y carbono", "Impact Observatory · ESA WorldCover · SoilGrids · IPCC"],
@@ -2367,6 +2368,9 @@ function Observatory({onHome}:{onHome:()=>void}) {
             <section className="panel chart"><h2>Balance anual desde 1991</h2><p className="small">mm por año · negativo = el ambiente pidió más agua de la que llovió</p><Chart dates={payload.annual.map((r:Data)=>String(r.year))} unit="mm" series={[{name:"Balance anual",values:payload.annual.map((r:Data)=>r.balance_mm),type:"bar",color:"#f79009"}]}/></section>
           </> : view==="radar-agua" && payload?.series?.length ? <>
             <section className="panel chart"><h2>Agua en el lote por radar</h2><p className="small">Sentinel-1 · % del lote con agua libre en cada pasada</p><Chart dates={payload.series.filter((r:Data)=>r.status==="válida").map((r:Data)=>String(r.datetime).slice(0,10))} unit="%" series={[{name:"Agua",values:payload.series.filter((r:Data)=>r.status==="válida").map((r:Data)=>Math.round(r.water_fraction*1000)/10),type:"bar",color:"#3a8ee6"}]}/></section>
+          </> : view==="nivel-rio" && payload?.series?.length ? <>
+            <section className="panel chart"><h2>Nivel del río observado · {payload?.reference?.river || payload?.reference?.station || "rio"}</h2><p className="small">INA · {payload?.reference?.station||""}{payload?.reference?.locality?` (${payload.reference.locality})`:""} · {payload?.reference?.variable||"altura"} en {payload?.reference?.unit||"m"} · últimos {payload?.period_days||30} días · a {payload?.reference?.distance_km} km del lote</p><Chart dates={payload.series.map((p:Data)=>String(p.datetime||"").slice(0,16))} unit={payload?.reference?.unit||"m"} series={[{name:payload?.reference?.variable||"Nivel",values:payload.series.map((p:Data)=>p.valor),color:"#06b6d4"}]}/></section>
+            {payload?.reference?.level_state && <section className="panel"><h2>Umbral</h2><p className="small">Nivel de alerta {payload.reference.alert_level ?? "—"} m · evacuación {payload.reference.evacuation_level ?? "—"} m · última lectura {payload.reference.last_value} {payload.reference.unit||"m"} ({payload.reference.trend||"sin tendencia"}) → <strong>{payload.reference.level_state}</strong></p></section>}
           </> : view==="indices-espectrales" && payload?.indices?.length ? <>
             <section className="panel chart"><h2>Índices del lote</h2><p className="small">Media dentro del polígono · última escena despejada · índices de escala −1 a 1 (el resto, en la lista)</p><Chart dates={payload.indices.filter((x:Data)=>x.mean!=null&&Math.abs(x.mean)<=1.2).map((x:Data)=>x.name)} unit="" series={[{name:"Media",values:payload.indices.filter((x:Data)=>x.mean!=null&&Math.abs(x.mean)<=1.2).map((x:Data)=>x.mean),type:"bar",color:"#19b98a"}]}/></section>
           </> : view==="costos" && payload?.sensitivity ? <>
