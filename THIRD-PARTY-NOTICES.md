@@ -29,6 +29,7 @@ OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 - xclim (Ouranos) · Apache-2.0 · definiciones de índices agroclimáticos; cálculo propio.
 - EarthAlign / MeteoLIP (MBZUAI · ADIA Lab · UC San Diego) - sin licencia declarada en su repositorio; el dataset mezcla fuentes (EM-DAT CC-BY-NC-ND, NOAA dominio público, ERA5 CC-BY). DOTS sólo guarda descripciones y metadatos del dataset liberado y cita la fuente. Ver DOTS-v2.7-EARTHALIGN.md.
 - chirps (rOpenSci) · forma de consultar la API pública ClimateSERV; código propio.
+- Argos Translate (Argos Open Tech) · MIT · traducción en→es offline de las descripciones de EarthAlign; los modelos (OPUS) se usan sin versionar.
 
 ## Librerías
 Se instalan desde npm y PyPI con sus propias licencias (React y React DOM MIT, Leaflet BSD-2-Clause, ECharts Apache-2.0,

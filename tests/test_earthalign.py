@@ -1,5 +1,5 @@
 """Pruebas de earthalign: contrato del envelope, elección del recorte más cercano y ruta (sin torch ni red)."""
-import os, sys
+import json, os, sys
 ROOT = os.path.dirname(os.path.dirname(__file__))
 sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, 'scripts'))
@@ -93,6 +93,28 @@ def test_captions_normaliza_varios_formatos():
     assert build._captions(['a', 'b']) == {eal.CAPTION_STYLES[0]: 'a', eal.CAPTION_STYLES[1]: 'b'}
     assert build._captions([{'style': 'impact_focused', 'caption': 'c'}]) == {'impact_focused': 'c'}
     assert build._captions(None) == {}
+
+
+def test_trae_las_descripciones_en_espanol(monkeypatch):
+    doc = _doc()
+    doc['samples'][0]['captions_es'] = {'natural_event_focused': 'Una ola de frío en español.'}
+    monkeypatch.setattr(eal.datastore, 'load', lambda *a, **k: doc)
+    env = eal.describe(-33.0, -60.0)
+    assert env['data']['captions_es']['natural_event_focused'].startswith('Una ola')
+    assert env['data']['reading'].startswith('Una ola')      # resumen en español listo para mostrar
+
+
+def test_traduccion_offline_es_opcional(monkeypatch):
+    monkeypatch.setattr(build, '_argos', lambda: (_ for _ in ()).throw(RuntimeError('sin argos')))
+    assert build.translate_es(['Hello']) is None             # sin Argos, no rompe: devuelve None
+    assert build.translate_es([]) == []
+
+
+def test_memoria_de_traduccion(tmp_path):
+    p = tmp_path / 'earthalign.json'
+    p.write_text(json.dumps({'samples': [{'captions': {'a': 'Hi'}, 'captions_es': {'a': 'Hola'}}]}), encoding='utf-8')
+    assert build._load_cache(str(p)) == {'Hi': 'Hola'}
+    assert build._load_cache(str(tmp_path / 'no-existe.json')) == {}
 
 
 def test_extract_filtra_por_region():

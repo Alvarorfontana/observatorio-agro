@@ -24,6 +24,11 @@ región de trabajo (sur de Sudamérica) y guarda por cada una: posición, fecha,
 descripciones. Nada de texto propio: son las descripciones ya alineadas del dataset. `earthalign.describe(lat,lon)`
 devuelve la muestra más cercana (la fecha desempata) y `earthalign.status()` informa qué hay y qué falta.
 
+Además, la tarea traduce cada descripción al **español** de forma **offline** con Argos Translate (sin clave ni límite
+de uso; los modelos se descargan solos) y guarda `captions_es`. `describe()` devuelve el texto original y su versión
+en español, más un `reading` en español listo para mostrar. Sólo traduce lo nuevo: recuerda las traducciones hechas
+entre corridas, así que cada re-ejecución es incremental.
+
 **Fase 2 (pendiente, necesita PyTorch).** Correr **MeteoLIP** sobre el recorte ERA5 de cada lote para describir
 **cualquier** punto y fecha (no sólo los puntos del dataset): armar el tensor `(1, 63, H, W)` con el orden de variables
 y la normalización de `era5_crop_stats.npz`, codificar meteo y texto y hacer recuperación/clasificación. Requiere
@@ -37,7 +42,8 @@ descargar los pesos (abajo), el reanálisis ERA5 del punto y una tarea específi
 
 ## Puesta en marcha
 1. Correr a mano la tarea **EarthAlign · descripciones del tiempo** (`.github/workflows/earthalign.yml`,
-   `workflow_dispatch`). Baja `requirements.txt` sólo (`requests`); no necesita torch.
+   `workflow_dispatch`). Baja `requirements.txt` (`requests`) e instala `argostranslate` (traducción en→es offline,
+   modelos ~100 MB que se descargan solos); no necesita torch.
 2. Verifica que quedó `data/earthalign.json` en la rama `datos` y que
    `/api/fuentes/earthalign/estado` responde `ready: true`.
 3. Para la fase 2: descargar los pesos

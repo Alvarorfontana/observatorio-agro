@@ -1,5 +1,6 @@
 # Banco de descripciones del estado atmosférico (dataset EarthAlign · MBZUAI/ADIA Lab/UC San Diego).
 # Baja los registros liberados del dataset y guarda data/earthalign.json en la rama `datos`.
+# Traduce las descripciones al español offline con Argos Translate (sin clave, sin límite de uso).
 # La web sólo lee ese archivo (ver earthalign.py). No usa placa ni PyTorch: eso es la fase 2 (MeteoLIP).
 name: EarthAlign · descripciones del tiempo
 
@@ -28,7 +29,7 @@ jobs:
         run: bash scripts/datos_rama.sh traer
       - name: Armar el banco
         run: |
-          pip install -r requirements.txt
+          pip install -r requirements.txt argostranslate
           python scripts/earthalign_build.py data/earthalign.json
       - name: Guardar en la rama datos (no publica la web)
         if: always()

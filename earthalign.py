@@ -11,8 +11,10 @@ GitHub Actions (CPU) y guarda el resultado en la rama `datos` (data/earthalign.j
 datastore.load: una descripción nueva no obliga a publicar la web otra vez.
 
 describe(lat, lon[, fecha]) devuelve el envelope DOTS con la descripción ya calculada del recorte ERA5 más cercano al
-punto (y a la fecha, si se indica). Mientras la tarea no se haya ejecutado responde 'sin dato' con el motivo: no se
-inventan textos. Qué falta para activarlo: ver PENDING, DOTS-v2.7-EARTHALIGN.md y THIRD-PARTY-NOTICES.md.
+punto (y a la fecha, si se indica). Las descripciones vienen en inglés (original del dataset) y en español (traducidas
+en la misma tarea, offline: ver translate_es en scripts/earthalign_build.py). Mientras la tarea no se haya ejecutado
+responde 'sin dato' con el motivo: no se inventan textos. Qué falta para activarlo: ver PENDING,
+DOTS-v2.7-EARTHALIGN.md y THIRD-PARTY-NOTICES.md.
 """
 import math
 
@@ -106,9 +108,12 @@ def describe(lat, lon, dt=None):
     if sample is None:
         return _envelope(status='sin dato',
                          error=f'Sin un recorte ERA5 relevado a menos de {int(MAX_KM)} km de este punto.')
+    es = sample.get('captions_es') or {}
     data = {'lat': sample.get('lat'), 'lon': sample.get('lon'), 'time': sample.get('time'),
             'distance_km': km, 'event': sample.get('event'), 'classification': sample.get('classification'),
-            'captions': sample.get('captions') or {}, 'source_url': doc.get('source') or CODE}
+            'captions': sample.get('captions') or {}, 'captions_es': es,
+            'reading': next((es.get(k) for k in CAPTION_STYLES if es.get(k)), ''),
+            'source_url': doc.get('source') or CODE}
     return _envelope(data)
 
 

@@ -112,6 +112,56 @@ def fetch(name, session):
     return r.json()
 
 
+def _load_cache(path):
+    """Traducciones ya hechas (caption en inglés → español) del JSON anterior, para no repetirlas."""
+    try:
+        with open(path, encoding='utf-8') as f:
+            doc = json.load(f)
+    except (OSError, ValueError):
+        return {}
+    cache = {}
+    for s in doc.get('samples', []):
+        en, es = s.get('captions') or {}, s.get('captions_es') or {}
+        for k, v in en.items():
+            if v and es.get(k):
+                cache[v] = es[k]
+    return cache
+
+
+def _argos():
+    """Instala y devuelve el traductor en→es de Argos Translate (offline, sin clave ni límite de uso)."""
+    import argostranslate.package as pkg
+    import argostranslate.translate as tr
+    if ('en', 'es') not in {(p.from_code, p.to_code) for p in pkg.get_installed_packages()}:
+        pkg.update_package_index()
+        cand = next((p for p in pkg.get_available_packages() if p.from_code == 'en' and p.to_code == 'es'), None)
+        if not cand:
+            raise RuntimeError('no hay paquete en→es publicado')
+        pkg.install_from_path(cand.download())
+    return tr
+
+
+def translate_es(texts):
+    """Traduce una lista de textos al español. Devuelve la lista, o None si Argos no está disponible."""
+    texts = list(texts)
+    if not texts:
+        return []
+    try:
+        tr = _argos()
+    except Exception as e:
+        print(f'traducción: Argos no disponible ({e})', flush=True)
+        return None
+    out = []
+    for i, t in enumerate(texts, 1):
+        try:
+            out.append(tr.translate(t, 'en', 'es'))
+        except Exception:
+            out.append('')
+        if i % 1000 == 0:
+            print(f'traducidas {i}/{len(texts)}', flush=True)
+    return out
+
+
 def main(out, sources=SOURCES):
     session = requests.Session()
     session.headers.update({'User-Agent': UA})
@@ -127,11 +177,24 @@ def main(out, sources=SOURCES):
         samples.extend(got)
         if len(samples) >= LIMIT:
             break
+    # Traducción al español (offline, con memoria para no repetir lo ya traducido).
+    cache = _load_cache(out)
+    pending = sorted({c for s in samples for c in (s.get('captions') or {}).values() if c and c not in cache})
+    if os.environ.get('EARTHALIGN_TRANSLATE', '1') != '0' and pending:
+        got = translate_es(pending)
+        if got is not None:
+            for en, es in zip(pending, got):
+                if es:
+                    cache[en] = es
+        print(f'traducciones nuevas: {len(pending)} (en memoria: {len(cache)})', flush=True)
+    for s in samples:
+        s['captions_es'] = {k: cache.get(v, '') for k, v in (s.get('captions') or {}).items()}
     res = {'generated_at': _now(), 'source': earthalign.CODE, 'dataset': earthalign.DATASET,
-           'region': list(REGION), 'caption_styles': earthalign.CAPTION_STYLES, 'samples': samples}
+           'region': list(REGION), 'caption_styles': earthalign.CAPTION_STYLES, 'translated_to': 'es',
+           'samples': samples}
     with open(out, 'w', encoding='utf-8') as f:
         json.dump(res, f, ensure_ascii=False, separators=(',', ':'))
-    print(f'{len(samples)} muestras guardadas en {out}')
+    print(f'{len(samples)} muestras guardadas en {out}', flush=True)
 
 
 def _now():
