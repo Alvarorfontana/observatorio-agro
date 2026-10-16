@@ -75,10 +75,17 @@ def test_rutas_earthalign(monkeypatch):
     assert client.get('/api/fuentes/earthalign?lat=x&lon=y').status_code == 400
 
 
-def test_bbox_center():
-    assert build.bbox_center([-60.0, -35.0, -58.0, -33.0]) == (-34.0, -59.0)
-    assert build.bbox_center(None) is None
-    assert build.bbox_center([1, 2]) is None
+def test_date_admite_dict_o_texto():
+    assert build._date({'year': 2007, 'month': 3, 'day': 4, 'time': '09:00'}) == '2007-03-04'
+    assert build._date('2015-07-01 12:00') == '2015-07-01'
+    assert build._date(None) == ''
+
+
+def test_latlon_desde_metadata_o_bbox():
+    assert build._latlon({'METADATA': {'lat': -20.31, 'lon': 118.57}}) == (-20.31, 118.57)
+    assert build._latlon({'METADATA': {'bbox_lat_lon': '[-24.2, -20, 116, 120]'}}) == (-22.1, 118.0)
+    assert build._latlon({'METADATA': {}}) is None
+    assert build._latlon({}) is None
 
 
 def test_captions_normaliza_varios_formatos():
@@ -90,15 +97,16 @@ def test_captions_normaliza_varios_formatos():
 
 def test_extract_filtra_por_region():
     records = [
-        {'ERA5_SNAPSHOT_BBOX': [-60.0, -35.0, -58.0, -33.0], 'ERA5_SNAPSHOT_TIME': '2015-07-01 12:00',
-         'EVENT_CATEGORIES': ['cold wave'], 'CAPTIONS': {'physical_framing': 'frío'}},      # en la región
-        {'ERA5_SNAPSHOT_BBOX': [10.0, 40.0, 12.0, 42.0], 'ERA5_SNAPSHOT_TIME': '2015-07-01',
-         'CAPTIONS': {'physical_framing': 'lejos'}},                                        # Europa: se descarta
-        {'ERA5_SNAPSHOT_TIME': '2015-07-01', 'CAPTIONS': {'physical_framing': 'sin bbox'}}, # sin bbox: se descarta
-        {'ERA5_SNAPSHOT_BBOX': [-60.0, -35.0, -58.0, -33.0], 'CAPTIONS': {}},               # sin caption: se descarta
+        {'METADATA': {'lat': -34.0, 'lon': -59.0}, 'ERA5_SNAPSHOT_TIME': {'year': 2015, 'month': 7, 'day': 1},
+         'EVENT_CATEGORIES': 'Cold wave', 'CAPTIONS': {'physical_framing': 'frío'}},           # en la región
+        {'METADATA': {'lat': 41.0, 'lon': 11.0}, 'ERA5_SNAPSHOT_TIME': '2015-07-01',
+         'CAPTIONS': {'physical_framing': 'lejos'}},                                           # Europa: se descarta
+        {'ERA5_SNAPSHOT_TIME': '2015-07-01', 'CAPTIONS': {'physical_framing': 'sin posición'}},  # sin posición: se descarta
+        {'METADATA': {'lat': -34.0, 'lon': -59.0}, 'CAPTIONS': {}},                             # sin caption: se descarta
     ]
     got = build.extract(records)
     assert len(got) == 1
     assert got[0]['lat'] == -34.0 and got[0]['time'] == '2015-07-01'
+    assert got[0]['event'] == 'Cold wave'
     assert got[0]['captions'] == {'physical_framing': 'frío'}
 

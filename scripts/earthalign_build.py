@@ -47,26 +47,46 @@ def _captions(v):
     return out
 
 
-def bbox_center(bb):
-    """Centro (lat, lon) de un bbox del dataset: [W, S, E, N] o [min_lon, min_lat, max_lon, max_lat]."""
+def _date(v):
+    """Fecha del registro: ERA5_SNAPSHOT_TIME puede ser texto o {year, month, day[, time]}."""
+    if isinstance(v, dict):
+        try:
+            return f"{int(v['year']):04d}-{int(v['month']):02d}-{int(v['day']):02d}"
+        except (KeyError, TypeError, ValueError):
+            return ''
+    return str(v or '')[:10]
+
+
+def _latlon(rec):
+    """Posición (lat, lon) del registro: METADATA.lat/lon, o el centro del bbox «[min_lat, max_lat, min_lon, max_lon]»."""
+    md = rec.get('METADATA') if isinstance(rec.get('METADATA'), dict) else {}
     try:
-        w, s, e, n = (float(x) for x in bb[:4])
-    except (TypeError, ValueError, IndexError):
-        return None
-    return (round((s + n) / 2, 2), round((w + e) / 2, 2))
+        return round(float(md['lat']), 2), round(float(md['lon']), 2)
+    except (KeyError, TypeError, ValueError):
+        pass
+    bb = md.get('bbox_lat_lon')
+    if bb is None:
+        bb = md.get('bbox')                     # EM-DAT: lista [min_lat, max_lat, min_lon, max_lon]
+    try:
+        vals = [float(x) for x in (bb if isinstance(bb, list) else str(bb or '').strip('[]').split(','))]
+        if len(vals) >= 4:
+            return round((vals[0] + vals[1]) / 2, 2), round((vals[2] + vals[3]) / 2, 2)
+    except (TypeError, ValueError):
+        pass
+    return None
 
 
 def extract(records, region=REGION, limit=LIMIT):
-    """De los registros crudos a las muestras del banco (dentro de region, con posición y fecha)."""
+    """De los registros crudos a las muestras del banco (dentro de region, con posición, fecha y captions)."""
     min_lon, min_lat, max_lon, max_lat = region
     out = []
     for r in records or []:
         if not isinstance(r, dict):
             continue
-        c = bbox_center(r.get('ERA5_SNAPSHOT_BBOX'))
-        if not c:
+        ll = _latlon(r)
+        if not ll:
             continue
-        lat, lon = c
+        lat, lon = ll
         if not (min_lat <= lat <= max_lat and min_lon <= lon <= max_lon):
             continue
         caps = _captions(r.get('CAPTIONS'))
@@ -74,9 +94,12 @@ def extract(records, region=REGION, limit=LIMIT):
             continue
         cats = r.get('EVENT_CATEGORIES')
         if isinstance(cats, str):
-            cats = [cats]
-        out.append({'lat': lat, 'lon': lon, 'time': str(r.get('ERA5_SNAPSHOT_TIME') or '')[:10],
-                    'event': ', '.join(str(x) for x in (cats or [])) or None,
+            cats = [cats] if cats else []
+        if not cats:
+            md = r.get('METADATA') if isinstance(r.get('METADATA'), dict) else {}
+            cats = [md['derivedEventName']] if md.get('derivedEventName') else []
+        out.append({'lat': lat, 'lon': lon, 'time': _date(r.get('ERA5_SNAPSHOT_TIME')),
+                    'event': ', '.join(str(x) for x in cats) or None,
                     'classification': cats or None, 'captions': caps})
         if len(out) >= limit:
             break
