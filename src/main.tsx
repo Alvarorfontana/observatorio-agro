@@ -826,6 +826,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
   const [navCollapsed, setNavCollapsed] = useState(() => typeof window !== "undefined" && window.innerWidth < 1800);
   const [navOpen, setNavOpen] = useState(false);
   const [ftwMode, setFtwMode] = useState(false);
+  const [catMode, setCatMode] = useState(false);
   const [herdHeads, setHerdHeads] = useState<number>(() => { try { return Number(localStorage.getItem("dots-heads") || 0); } catch { return 0; } });
   const [ftwBusy, setFtwBusy] = useState(false);
   const [sideTab, setSideTab] = useState<"lote" | "datos" | "asistente">("lote");
@@ -1140,7 +1141,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
     } catch { notify("No se pudo leer el mapa de lotes de Fields of the World. Revisá la conexión e intentá de nuevo."); }
   };
   const stopFtw = () => {
-    ftwPickRef.current = null; setFtwMode(false); clearFtw();
+    ftwPickRef.current = null; setFtwMode(false); setCatMode(false); clearFtw();
     if (ftwMoveRef.current) mapRef.current?.off("moveend", ftwMoveRef.current);
     ftwMoveRef.current = null;
     if (mapRef.current) mapRef.current.getContainer().style.cursor = "";
@@ -1166,6 +1167,26 @@ function Observatory({onHome}:{onHome:()=>void}) {
     const onMove = () => { const c = map.getCenter(); void showFtwAround(c.lat, c.lng); };
     ftwMoveRef.current = onMove; map.on("moveend", onMove);
     onMove();
+  };
+  const startCatastro = () => {
+    if (!mapRef.current) return;
+    setMainView("mapa");
+    stopDraw(); setFtwMode(true); setCatMode(true);
+    const map = mapRef.current;
+    if (map.getZoom() < 14) map.setZoom(15);
+    map.getContainer().style.cursor = "crosshair";
+    ftwPickRef.current = async (lat, lon) => {
+      setFtwBusy(true);
+      try {
+        const r = await fetch(`/api/fuentes/catastro-parcela?lat=${lat}&lon=${lon}`, { signal: AbortSignal.timeout(30000) });
+        const j = await r.json();
+        if (j.status !== "recibido") { notify(j.error || "No hay una parcela del catastro en ese punto."); return; }
+        const d = j.data; stopFtw();
+        finish(d.polygon as Point[], "catastro", undefined, `Parcela ${d.partida || ""}`.trim());
+        notify(`Parcela del catastro (${d.provider}) · partida ${d.partida || "sin dato"}${d.area_ha ? ` · ${d.area_ha.toLocaleString("es-AR")} ha` : ""}. Es el límite legal: revisá que coincida con el campo.`);
+      } catch { notify("El catastro no respondió. Intentá de nuevo o dibujá el campo a mano."); }
+      finally { setFtwBusy(false); }
+    };
   };
   async function searchPlace() {
     if (!placeQuery.trim()) return;
@@ -1225,6 +1246,19 @@ function Observatory({onHome}:{onHome:()=>void}) {
       if ((await blob.slice(0,5).text()) !== "%PDF-") throw Error("Respuesta PDF inválida");
       download(blob,"DOTS-informe-territorial.pdf");
     } catch(e) { notify((e as Error).message); } finally { setPdfBusy(false); }
+  }
+  async function campoPdf() {
+    if (!poly.current) { notify("Dibujá el límite del campo para armar el informe de campo con el mapa para el celular."); return; }
+    setPdfBusy(true);
+    try {
+      const r = await fetch("/api/fuentes/campo-pdf", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lat: point[0], lon: point[1], polygon: vertices, nombre: lots.find(x=>x.id===selectedLotId)?.name || "Mi campo" }), signal: AbortSignal.timeout(60000) });
+      if (!r.ok) { const j = await r.json().catch(() => ({})); throw Error(j.error || "No se pudo generar el informe de campo"); }
+      const blob = await r.blob();
+      if ((await blob.slice(0, 5).text()) !== "%PDF-") throw Error("Respuesta PDF inválida");
+      download(blob, "DOTS-informe-de-campo.pdf");
+      notify("Informe de campo descargado. Escaneá el código QR con el celular para llevar el mapa al campo, también sin señal.");
+    } catch (e) { notify((e as Error).message); } finally { setPdfBusy(false); }
   }
   async function pdf() {
     setPdfBusy(true);
@@ -1346,6 +1380,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
               {!l && <button onClick={() => { setSideTab("lote"); startDraw("free"); }}>Dibujar lote</button>}
               {!l && <button onClick={() => { setSideTab("lote"); startFtw(); }}>Automático</button>}
               <button className="primary" onClick={() => void pdf()} disabled={pdfBusy}><FileText className="icon" />{pdfBusy ? "Generando…" : "Informe PDF"}</button>
+              {l && <button onClick={() => void campoPdf()} disabled={pdfBusy} title="Lomas, planos y bajos del campo, con un código QR para llevar el mapa al celular (funciona sin señal)">Informe de campo + mapa para el celular</button>}
             </div>
           </section>;
         })()}
@@ -2011,7 +2046,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
           </section>
           <section className="panel block operations" hidden={sideTab!=="lote"}>
             <div className="tag">OPERACIONES DEL LOTE</div>
-            <div className="draw-chooser"><button onClick={()=>startDraw("triangle")}><Triangle className="icon"/>Triángulo</button><button onClick={()=>startDraw("rectangle")}><Square className="icon"/>Rectángulo</button><button onClick={()=>startDraw("free")}><Layers className="icon"/>Polígono libre</button><button className="ftw-btn" onClick={startFtw} title="Lote automático desde el mapa global Fields of the World (gratis)"><Sprout className="icon"/>Automático · FTW</button></div>
+            <div className="draw-chooser"><button onClick={()=>startDraw("triangle")}><Triangle className="icon"/>Triángulo</button><button onClick={()=>startDraw("rectangle")}><Square className="icon"/>Rectángulo</button><button onClick={()=>startDraw("free")}><Layers className="icon"/>Polígono libre</button><button className="ftw-btn" onClick={startFtw} title="Lote automático desde el mapa global Fields of the World (gratis)"><Sprout className="icon"/>Automático · FTW</button><button onClick={startCatastro} title="Tocá la parcela del catastro (provincia de Buenos Aires, ARBA)"><MapPinned className="icon"/>Parcela del catastro</button></div>
             <p className="footnote">Cada informe queda vinculado al polígono cerrado: superficie, perímetro, centroide y límites.</p>
             <div className="marker-chooser"><select value={markerType} onChange={e=>setMarkerType(e.target.value)}>{["General","Rodeo","Agua","Vegetación","Infraestructura","Riesgo"].map(g=><optgroup key={g} label={g}>{MARKER_KINDS.filter(k=>k.group===g).map(k=><option key={k.key} value={k.key}>{k.label}</option>)}</optgroup>)}</select><button type="button" onClick={()=>addFieldMarker()}>{placingMarker?"Clic en el mapa…":"+ Marcar en mapa"}</button></div>
             <div className="actions">
@@ -2119,8 +2154,10 @@ function Observatory({onHome}:{onHome:()=>void}) {
         </div>
         {ftwMode && (
           <div className="panel message show ftw-message">
+            {catMode ? <><p><b>Parcela del catastro</b><br/>{ftwBusy?"Buscando la parcela…":"Tocá dentro de tu campo: se toma la parcela del catastro en ese punto."}</p>
+            <p className="small">Por ahora, provincia de Buenos Aires (ARBA, datos públicos). Es el límite legal: puede no coincidir con el alambrado.</p></> : <>
             <p><b>Lote automático</b><br/>{ftwBusy?"Reconstruyendo el lote…":"Tocá dentro de un contorno. Verde: confianza alta. Ámbar: revisar borde."}</p>
-            <p className="small">Fields of the World mapea cultivos anuales; en pasturas puede no haber contorno. {FTW_ATTRIBUTION}.</p>
+            <p className="small">Fields of the World mapea cultivos anuales; en pasturas puede no haber contorno. {FTW_ATTRIBUTION}.</p></>}
             <div className="row"><button onClick={stopFtw}>Cancelar</button></div>
           </div>
         )}

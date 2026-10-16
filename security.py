@@ -20,6 +20,7 @@ RULES = [
     ('/api/fuentes/monitor', 6, 300),       # consulta 11 servicios por vez       # usa Nominatim, que pide pocas consultas
     ('/api/fuentes/agentic', 12, 300),
     ('/api/fuentes/enso-informe', 6, 300),      # PDF de El Niño
+    ('/api/fuentes/campo-pdf', 6, 300),          # informe de campo (Earth Engine + PDF)
     ('/api/fuentes/localidad-informe', 6, 300),  # PDF de localidad
     ('/api/fuentes/cuenca-informe', 6, 300),     # PDF de la cuenca
     ('/api/fuentes/caminos', 10, 300),           # Overpass (OSM) pide pocas consultas

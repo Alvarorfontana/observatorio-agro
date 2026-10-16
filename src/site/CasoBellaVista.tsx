@@ -49,6 +49,7 @@ export function CasoBellaVista() {
   const nino = useApi(`/api/fuentes/enso-tablero?lat=${LAT}&lon=${LON}`);
   const ndvi = useApi(`/api/fuentes/ndvi-modis?polygon=${P}&days=760`);
   const anom = useApi(`/api/fuentes/ndvi-anomalia?polygon=${P}`);
+  const rh = useApi(`/api/fuentes/riesgo-hidrico?polygon=${P}`);
   const etr = useApi(`/api/fuentes/etr-lote?polygon=${P}`);
   const frost = useApi(`/api/fuentes/heladas-satelite?polygon=${P}`);
   const mb = useApi(`/api/fuentes/mapbiomas?polygon=${P}`);
@@ -106,6 +107,10 @@ export function CasoBellaVista() {
         <div className="bv-tiles"><div><b>{d.frost_nights_30d}</b><span>noches con helada</span><small>últimos 30 días</small></div>
           <div><b>{nf(d.coldest.lst_c, 1)} °C</b><span>noche más fría</span><small>{d.coldest.date.slice(8, 10)}/{d.coldest.date.slice(5, 7)}</small></div></div>
         <p>{d.reading}</p>
+      </>}</Block>
+      <Block tag="RIESGO HÍDRICO" title="Lomas, planos y bajos del campo" s={rh} src="Copernicus GLO-30 (relieve) · JRC Global Surface Water 1984-2021 · MERIT Hydro, vía Earth Engine">{d => <>
+        <div className="bv-bars">{d.zones.filter((z: D) => z.pct >= 0.5).map((z: D) => <div key={z.key}><span>{z.name}</span><i style={{ width: `${z.pct}%`, background: z.color }} /><b>{nf(z.pct)} %</b><small>{nf(z.ha)} ha</small></div>)}</div>
+        <p>{d.reading}</p><p className="small">Desde el Observatorio, el "Informe de campo" trae este mapa con un código QR para llevarlo al celular y usarlo sin señal.</p>
       </>}</Block>
       <Block tag="HISTORIA" title={`El área desde ${mb?.d?.first_year ?? 1985}`} s={mb} src="MapBiomas Argentina (Landsat 30 m, CC BY 4.0) vía Earth Engine">{d => { const by: Record<number, D> = {}; (d.years || []).forEach((r: D) => { by[r.year] = r }); const ys = [d.first_year, 2000, 2010, 2020, d.last_year].filter((y, i, a) => by[y] && a.indexOf(y) === i); return <>
         <div className="nn-table bv-table" role="table"><div className="nn-tr nn-th" role="row">{["Año","Bosque","Otra natural","Plantación","Agro","Agua"].map(h=><span role="columnheader" key={h}>{h}</span>)}</div>

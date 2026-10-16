@@ -1,0 +1,37 @@
+# Prepara las Cartas de Suelos 1:50.000 de Buenos Aires (INTA, CC BY 4.0) en recuadros para consultarlas por campo.
+# Se corre a mano (la cartografía casi no cambia). Guarda en la rama `suelos`, sin publicar la web.
+name: Suelos de Buenos Aires 1:50.000
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  suelos:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Bajar la cartografía (Zenodo)
+        run: |
+          curl -sL -o /tmp/s.rar "https://zenodo.org/records/7837681/files/1_Mapa_de_Suelos_BA_50000_V2.rar?download=1"
+          sudo apt-get install -y -qq unrar
+          mkdir -p /tmp/x && unrar x -inul /tmp/s.rar /tmp/x/
+      - name: Recuadros
+        run: |
+          pip install geopandas shapely pyogrio
+          python scripts/suelos_ba_tiles.py "$(find /tmp/x -name '*.shp' | head -1)" /tmp/out/data/suelos_ba
+      - name: Guardar en la rama suelos (no publica la web)
+        run: |
+          git config user.name "DOTS datos"; git config user.email "actions@users.noreply.github.com"
+          git checkout -q --orphan suelos-nuevo && git rm -rqf --cached . >/dev/null
+          rm -rf data && mkdir -p data && cp -r /tmp/out/data/suelos_ba data/
+          echo '{"git":{"deploymentEnabled":false}}' > vercel.json
+          printf 'Cartas de Suelos 1:50.000, provincia de Buenos Aires. INTA, Instituto de Suelos (CIRN). CC BY 4.0. doi:10.5281/zenodo.7837681\n' > data/suelos_ba/FUENTE.txt
+          git add data vercel.json && git commit -q -m "Suelos BA 1:50.000 en recuadros $(date -u +%Y-%m-%d)"
+          git push -q -f origin suelos-nuevo:suelos

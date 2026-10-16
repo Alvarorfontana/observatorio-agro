@@ -1,0 +1,21 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Mapa del campo · DOTS</title><meta name="theme-color" content="#0b2b33"><link rel="icon" href="/dots-logo.svg">
+<link rel="manifest" href="/campo/manifest.webmanifest">
+<link rel="stylesheet" href="/campo/vendor/leaflet.css"><link rel="stylesheet" href="/campo/campo.css">
+<script defer src="/campo/vendor/leaflet.js"></script><script defer src="/campo/app.js"></script></head>
+<body>
+<header><a class="brand" href="/">DOTS <span>CAMPO</span></a><span id="net" class="net">…</span></header>
+<main>
+  <section id="here" class="here" aria-live="polite"><b>Buscando tu ubicación…</b><small>Permití el acceso a la ubicación para ver en qué zona del campo estás.</small></section>
+  <div id="map" role="region" aria-label="Mapa del campo"></div>
+  <section class="panel">
+    <h1 id="name">Mapa del campo</h1>
+    <p id="meta" class="muted"></p>
+    <div id="legend" class="legend"></div>
+    <div id="summary" class="summary"></div>
+    <div class="offline"><button id="save">Guardar para usar sin señal</button><p id="saveinfo" class="muted">Con señal, guardá el mapa y las imágenes del campo en este teléfono. Después funciona sin conexión.</p></div>
+    <p class="muted small">El campo viaja dentro del enlace y se guarda sólo en este teléfono: no queda registrado en ningún servidor. Zonas calculadas con el relieve (Copernicus GLO-30) y la historia de agua de los satélites (JRC, 1984-2021). No reemplaza la recorrida. Fondo: Esri World Imagery.</p>
+    <p class="muted small" id="err"></p>
+  </section>
+</main>
+</body></html>

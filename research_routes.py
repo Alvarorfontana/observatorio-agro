@@ -65,6 +65,8 @@ VEGETATION={
   'mapbiomas':lambda p,a:mbx.history(p),
   'cobertura-reciente':lambda p,a:cee.dynamic_world(p),
   'cambios-lote':lambda p,a:cee.changes(p),
+  'riesgo-hidrico':lambda p,a:__import__('riesgo_hidrico').analyze(p),
+  'suelos-50mil':lambda p,a:__import__('suelos_ba').analyze(p),
   'ndvi-anomalia':lambda p,a:__import__('perfil_suelo').ndvi_anomaly(p),
   'etr-lote':lambda p,a:__import__('perfil_suelo').et_real(p),
   'heladas-satelite':lambda p,a:__import__('perfil_suelo').frost_satellite(p),
@@ -250,6 +252,10 @@ def research_data(name):
             r.headers['Cache-Control']='public, s-maxage=3600'
             return r
         except Exception as e: return _upstream_error(e)
+    if name=='catastro-parcela':
+        import catastro
+        try: return jsonify(catastro.parcel_at(lat,lon))
+        except Exception as e: return _upstream_error(e)
     if name in ('rayos','goes-heladas'):
         import datastore
         d=datastore.load('rayos.json',branch='rayos',ttl=300) if name=='rayos' else datastore.load('goes_heladas.json')
@@ -423,6 +429,23 @@ def research_data(name):
     except PermissionError as e:return jsonify({'status':'requiere credencial','error':str(e)}),409
     except ValueError as e:return jsonify({'status':'sin dato','error':str(e)}),400
     except Exception as e:return _upstream_error(e)
+
+@research_api.post('/campo-pdf')
+def campo_pdf():
+    """Informe de campo: lomas, planos y bajos, suelos y código QR del mapa para el celular (funciona sin señal)."""
+    try:
+        d=request.get_json(silent=True) or {}
+        polygon=d.get('polygon')
+        if not isinstance(polygon,list) or len(polygon)<3: return jsonify({'error':'Dibujá el límite del campo'}),400
+        import campo_offline
+        name=str(d.get('nombre') or 'Mi campo')[:60]
+        out,url=campo_offline.pdf(name,polygon,d.get('lat'),d.get('lon'))
+        safe=''.join(ch if ch.isalnum() else '-' for ch in name.encode('ascii','ignore').decode()).strip('-') or 'campo'
+        return Response(out,mimetype='application/pdf',headers={'Content-Disposition':f'attachment; filename="DOTS-informe-de-campo-{safe}.pdf"','Cache-Control':'no-store'})
+    except PermissionError: return jsonify({'error':'Earth Engine no está configurado'}),409
+    except ValueError as e: return jsonify({'error':str(e)}),400
+    except Exception as e: return jsonify({'status':'sin dato','error':f'No se pudo generar el informe de campo ({type(e).__name__}): {str(e)[:160]}'}),502
+
 
 @research_api.post('/analizar')
 def report():
