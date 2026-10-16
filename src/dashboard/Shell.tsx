@@ -30,6 +30,7 @@ export function buildNav(go: (k: string) => void, draw: () => void, pdf: () => v
       { key: "radar-agua", label: "Agua por radar", icon: <Waves />, onClick: () => go("radar-agua") },
       { key: "balance-agua", label: "Balance de agua", icon: <CloudRain />, onClick: () => go("balance-agua") },
       { key: "riesgo-hidrico", label: "Lomas, bajos y suelos", icon: <Waves />, onClick: () => go("riesgo-hidrico") },
+      { key: "satelite-lote", label: "Anomalía, consumo y heladas", icon: <Satellite />, onClick: () => go("satelite-lote") },
       { key: "rios", label: "Agua y ríos", icon: <Waves />, onClick: () => go("rios") },
       { key: "lluvia", label: "Lluvia y sequía", icon: <CloudRain />, onClick: () => go("lluvia") },
       { key: "suelo", label: "Suelo y nitrógeno", icon: <CircleDot />, onClick: () => go("suelo") },

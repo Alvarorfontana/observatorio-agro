@@ -135,6 +135,53 @@ def _metric(result, name):
     return next((m for m in result.get('metrics', []) if m.get('variable') == name), None)
 
 
+
+def _dm(d):
+    d = str(d or '')
+    return f'{d[8:10]}/{d[5:7]}' if len(d) >= 10 else '—'
+
+
+def more_cards(extras):
+    """Lecturas del lote calculadas en el panel con Earth Engine y el perfil de suelo: cada una entra solo si vino con dato."""
+    out = []
+    rh = extras.get('riesgo') or {}
+    if rh.get('zones'):
+        out.append({'title': 'Lomas, planos y bajos', 'facts': [[z['name'], f"{num(z.get('pct'), 0)} % · {num(z.get('ha'), 0)} ha"] for z in rh['zones'] if (_f(z.get('pct')) or 0) >= 0.5]
+                    + [['Desnivel', f"{num(rh.get('relief_m'))} m"], ['Agua vista desde 1984', f"{num(rh.get('water_seen_ha'), 0)} ha"]],
+                    'note': str(rh.get('reading') or '') + ' Copernicus GLO-30, JRC Global Surface Water y MERIT Hydro vía Earth Engine.',
+                    'credit': 'lomas y bajos: Copernicus GLO-30, JRC Global Surface Water (EC JRC/Google), MERIT Hydro'})
+    sb = extras.get('suelos50') or {}
+    if sb.get('units'):
+        out.append({'title': 'Suelos · INTA 1:50.000', 'facts': [[f"{u.get('symbol')} · cap. {u.get('capability') or '—'}", f"{num(u.get('pct'), 0)} %"] for u in sb['units'][:6]],
+                    'note': str(sb.get('reading') or '') + ' ' + str(sb.get('source') or 'INTA, CC BY 4.0'),
+                    'credit': 'suelos: Carta de suelos 1:50.000 de Buenos Aires (INTA, CC BY 4.0)'})
+    pf = (extras.get('perfil') or {}).get('profile') or {}
+    av = pf.get('available') or {}
+    if pf.get('layers'):
+        facts = [[str(l.get('layer') or l.get('label')), f"{num(l.get('mm'), 0)} mm · {l.get('class') or '—'}"] for l in pf['layers'][:4]]
+        if av.get('pct') is not None:
+            facts.append(['Agua útil hasta 2 m', f"{num(av.get('pct'), 0)} % · {av.get('class') or ''}".strip()])
+        out.append({'title': 'Agua en el perfil del suelo', 'facts': facts, 'note': str(pf.get('reading') or '') + ' ERA5-Land (~9 km) y SoilGrids; modelo, no medición en el lote.',
+                    'credit': 'perfil de suelo: ERA5-Land (Copernicus) vía Open-Meteo e ISRIC SoilGrids'})
+    an = extras.get('anomalia') or {}
+    if an.get('series'):
+        r = an['series'][-1]
+        out.append({'title': 'Vegetación contra otros años', 'facts': [['Último compuesto', _dm(r.get('date'))], ['NDVI', num(r.get('ndvi'), 2)], ['Normal de la época', num(r.get('normal'), 2)],
+                    ['Diferencia', (('+' if (_f(r.get('diff')) or 0) > 0 else '') + num(r.get('diff'), 2)) if r.get('diff') is not None else '—'], ['VCI', num(r.get('vci'), 0)]],
+                    'note': str(an.get('reading') or '') + ' NASA MODIS MOD13Q1 (250 m) desde 2001.', 'credit': 'anomalía de NDVI: NASA MODIS MOD13Q1'})
+    et = extras.get('etr') or {}
+    if (et.get('latest') or {}).get('mm_day') is not None:
+        lt = et['latest']
+        out.append({'title': 'Consumo de agua del cultivo', 'facts': [['Últimos 8 días', f"{num(lt.get('mm_day'))} mm/día"],
+                    ['Contra lo normal', (('+' if (_f(lt.get('diff_pct')) or 0) > 0 else '') + num(lt.get('diff_pct'), 0) + ' %') if lt.get('diff_pct') is not None else '—'], ['Percentil', num(lt.get('percentile'), 0)]],
+                    'note': str(et.get('reading') or '') + ' NASA MODIS MOD16A2 (500 m, 8 días).', 'credit': 'evapotranspiración: NASA MODIS MOD16A2'})
+    fr = extras.get('heladas_sat') or {}
+    if fr.get('frost_nights_30d') is not None:
+        cd = fr.get('coldest') or {}
+        out.append({'title': 'Heladas por satélite', 'facts': [['Noches con helada (30 días)', num(fr.get('frost_nights_30d'), 0)], ['Noche más fría', f"{num(cd.get('lst_c'))} °C · {_dm(cd.get('date'))}"]],
+                    'note': str(fr.get('reading') or '') + ' NASA MODIS Aqua MYD11A1 (1 km): temperatura de la superficie en noches despejadas.', 'credit': 'heladas: NASA MODIS Aqua MYD11A1'})
+    return out
+
 def build_data(result, name='Lote DOTS', extras=None):
     extras = extras or {}
     lot = extras.get('lot') or {}
@@ -368,6 +415,7 @@ def build_data(result, name='Lote DOTS', extras=None):
                                   ['Caminos dentro del lote', f"{num((ck.get('caminos_lote') or 0) + (ck.get('rutas_lote') or 0))} km"],
                                   ['Construcciones en el lote', num(en.get('construcciones_lote'), 0)], ['Construcciones a 2 km', num(en.get('construcciones_2km'), 0)]],
                         'note': f"Overture Maps (OpenStreetMap, Microsoft, Google y otros), versión {en.get('release', '—')}. Pueden faltar caminos internos o galpones nuevos."}
+    lot_more = more_cards(extras)
     nl_series = [r for r in (ndvi.get('series') or []) if r.get('status') == 'válida' and r.get('ndvi_mean') is not None]
     week = week_outlook(nmean, nl_series, bal, _f(rain and rain.get('value')), _f(et and et.get('value')), thiv, fo)
     thumb = extras.get('_thumb') if '_thumb' in extras else satellite_thumb(poly)
@@ -375,7 +423,7 @@ def build_data(result, name='Lote DOTS', extras=None):
     ev = result.get('evidence') or []
     ok = sum(1 for e in ev if e.get('status') == 'recibido')
     return {
-        'week': week, 'relief': relief, 'water': water, 'soil_nasa': soil_nasa, 'surroundings': surroundings,
+        'week': week, 'lot_more': lot_more, 'relief': relief, 'water': water, 'soil_nasa': soil_nasa, 'surroundings': surroundings,
         'confidence_line': f"Confianza de la lectura {conf.get('score', '—')}/100 ({conf.get('label', 's/d')}) · {ok} de {len(ev)} fuentes con respuesta válida",
         'title': f'DOTS · Informe territorial · {lot.get("name") or name}',
         'generated': generated,
@@ -419,6 +467,7 @@ def build_data(result, name='Lote DOTS', extras=None):
                          + ('; agua: Sentinel-2 (ESA/Copernicus) procesado con geoai (opengeos, MIT) y OmniWaterMask' if water else '')
                          + ('; humedad: NASA POWER (MERRA-2)' if soil_nasa else '')
                          + ('; entorno: Overture Maps Foundation (ODbL y CDLA)' if surroundings else '')
+                         + ('; ' + '; '.join(c['credit'] for c in lot_more) if lot_more else '')
                          + ('; límites de lote: Fields of the World / PRUE (Robinson et al. 2026), CC-BY-4.0' if ftw else '')
                          + '. Tipografía IBM Plex (SIL OFL). Documento compuesto con Typst.'),
     }

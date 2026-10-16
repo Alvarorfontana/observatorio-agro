@@ -114,3 +114,29 @@ def test_informe_incluye_humedad_nasa_y_entorno():
     assert d['surroundings']['facts'][0][1] == 'Mercedes, Corrientes' and d['surroundings']['facts'][2][1] == '3,4 km'
     pdf, motor = rt.pdf({'summary': 's', 'evidence': []}, 'Lote', extras)
     assert pdf[:5] == b'%PDF-' and motor == 'typst'
+
+
+MORE = {'_thumb': None, 'lot': {'name': 'Potrero Norte', 'areaHa': 400},
+        'riesgo': {'zones': [{'key': 'loma', 'name': 'Loma', 'pct': 30, 'ha': 120}, {'key': 'bajo', 'name': 'Bajo', 'pct': 20, 'ha': 80},
+                             {'key': 'laguna', 'name': 'Laguna o bañado', 'pct': 0.2, 'ha': 1}], 'relief_m': 2.4, 'water_seen_ha': 35, 'reading': 'El campo tiene 2,4 m.'},
+        'suelos50': {'units': [{'symbol': 'Ra4', 'pct': 70, 'capability': 'IIIw'}], 'reading': 'Domina Ra4.', 'source': 'INTA'},
+        'perfil': {'profile': {'layers': [{'layer': '0-7 cm', 'mm': 20, 'class': 'normal'}], 'available': {'pct': 55, 'class': 'adecuada'}, 'reading': 'r'}},
+        'anomalia': {'series': [{'date': '2026-09-29', 'ndvi': 0.61, 'normal': 0.55, 'diff': 0.06, 'vci': 70}], 'reading': 'Más verde.'},
+        'etr': {'latest': {'mm_day': 2.3, 'diff_pct': -12, 'percentile': 30}, 'reading': 'r'},
+        'heladas_sat': {'frost_nights_30d': 3, 'coldest': {'lst_c': -4.2, 'date': '2026-09-20'}, 'reading': 'r'}}
+
+
+def test_lot_more_cards_only_with_data():
+    d = rt.build_data(RESULT, 'Potrero', MORE)
+    titles = [c['title'] for c in d['lot_more']]
+    assert titles == ['Lomas, planos y bajos', 'Suelos · INTA 1:50.000', 'Agua en el perfil del suelo', 'Vegetación contra otros años',
+                      'Consumo de agua del cultivo', 'Heladas por satélite']
+    assert not any(f[0] == 'Laguna o bañado' for f in d['lot_more'][0]['facts'])
+    assert 'MODIS MOD16A2' in d['attributions']
+    assert rt.build_data(RESULT, 'Potrero', {'_thumb': None})['lot_more'] == []
+
+
+def test_pdf_with_lot_more_compiles():
+    pytest.importorskip('typst')
+    pdf, engine = rt.pdf(RESULT, 'Potrero', MORE)
+    assert engine == 'typst' and pdf[:5] == b'%PDF-'

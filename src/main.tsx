@@ -910,6 +910,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
     setView(key);
     setSideTab("datos");
     if (key === "riesgo-hidrico") { void load("suelos-50mil"); }
+    if (key === "satelite-lote") { if (vertices.length >= 3) ["ndvi-anomalia", "etr-lote", "heladas-satelite"].forEach(k => void load(k)); else notify("Dibujá o elegí el lote: la anomalía, el consumo de agua y las heladas se calculan sobre el polígono."); return; }
     if (key === "alertas") { void loadAlerts(); } else if (key === "forraje") { void loadForage(); } else if (key === "relieve") { void loadTerrain(); } else if (key === "costos") { void loadCosts(); } else if (key === "ganado") { if ((herdAll[herdKey] || []).some(r => Number(r.heads) > 0)) void loadHerd(); } else void load(key);
     requestAnimationFrame(() => { const el = document.getElementById("dots-detail"); const side = el?.closest(".sidebar") as HTMLElement | null; if (el && side) side.scrollTo({ top: Math.max(0, el.offsetTop - side.offsetTop - 16), behavior: "smooth" }); });
   };
@@ -1231,6 +1232,12 @@ function Observatory({onHome}:{onHome:()=>void}) {
       humedad: data("humedad-nasa")?.root_pct != null ? data("humedad-nasa") : null,
       entorno: selectedLotId ? water[selectedLotId]?.entorno || null : null,
       costos: data("costos")?.margin ? data("costos") : null,
+      riesgo: data("riesgo-hidrico")?.zones ? { ...data("riesgo-hidrico"), grid: undefined, method: undefined } : null,
+      suelos50: data("suelos-50mil")?.units?.length ? data("suelos-50mil") : null,
+      perfil: data("balance-agua")?.profile ? { profile: data("balance-agua").profile } : null,
+      anomalia: data("ndvi-anomalia")?.series?.length ? data("ndvi-anomalia") : null,
+      etr: data("etr-lote")?.latest ? data("etr-lote") : null,
+      heladas_sat: data("heladas-satelite")?.frost_nights_30d != null ? data("heladas-satelite") : null,
       place: placeLabel,
     };
   };
@@ -1261,9 +1268,33 @@ function Observatory({onHome}:{onHome:()=>void}) {
       notify("Informe de campo descargado. Escaneá el código QR con el celular para llevar el mapa al campo, también sin señal.");
     } catch (e) { notify((e as Error).message); } finally { setPdfBusy(false); }
   }
+  // Lecturas del lote con Earth Engine que el panel no había pedido todavía: se piden en paralelo para sumarlas al PDF
+  const lotReadings = async () => {
+    if (vertices.length < 3) return {};
+    const want: [string, string, (d: any) => any][] = [
+      ["riesgo-hidrico", "riesgo", d => d?.zones ? { ...d, grid: undefined, method: undefined } : null],
+      ["suelos-50mil", "suelos50", d => d?.units?.length ? d : null],
+      ["ndvi-anomalia", "anomalia", d => d?.series?.length ? d : null],
+      ["etr-lote", "etr", d => d?.latest ? d : null],
+      ["heladas-satelite", "heladas_sat", d => d?.frost_nights_30d != null ? d : null],
+    ];
+    const missing = want.filter(([k]) => sources[k]?.status !== "recibido");
+    if (!missing.length) return {};
+    notify("Sumando al informe el terreno, los suelos y las lecturas satelitales del lote…");
+    const qs = new URLSearchParams({ lat: String(point[0]), lon: String(point[1]), polygon: JSON.stringify(vertices) });
+    const got = await Promise.all(missing.map(async ([k, name, pick]) => {
+      try {
+        const j = await (await fetch(`/api/fuentes/${k}?${qs}`, { signal: AbortSignal.timeout(28000) })).json();
+        if (j?.status === "recibido") setSources(prev => ({ ...prev, [k]: { status: "recibido", payload: j } }));
+        return [name, pick(j?.data)] as const;
+      } catch { return [name, null] as const; }
+    }));
+    return Object.fromEntries(got.filter(([, v]) => v));
+  };
   async function pdf() {
     setPdfBusy(true);
     try {
+      const more = await lotReadings();
       const r = await fetch("/api/fuentes/analizar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1276,7 +1307,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
           area_ha: lotAreaHa,
           perimeter_km: lotPerimeterKm,
           fieldMarkers,
-          extras: reportExtras(),
+          extras: { ...reportExtras(), ...more },
         }),
         signal: AbortSignal.timeout(45000),
       });
@@ -1663,6 +1694,23 @@ function Observatory({onHome}:{onHome:()=>void}) {
                   </div>
                   <p className="footnote">{su.reading} Pasá el cursor por cada unidad para ver series y taxonomía. INTA, CC BY 4.0.</p></>})()}
               </>}
+              {view==="satelite-lote" && (()=>{
+                const part=(k:string,title:string,body:(d:any)=>any)=>{const s=sources[k];const d=(s?.payload as any)?.data;return <div key={k} style={{marginBottom:14}}>
+                  <div className="lot-vars-title">{title}</div>
+                  {s?.status==="consultando"?<p className="small">Consultando Earth Engine…</p>:d?body(d):<p className="footnote">{String((s?.payload as any)?.error||(s as any)?.error||(vertices.length<3?"Hace falta un lote dibujado":"sin dato")).slice(0,200)}</p>}
+                </div>};
+                return <>
+                  {part("ndvi-anomalia","¿Más verde o más seco que otros años?",d=><>
+                    <div className="cover-table"><div className="cover-head"><span>Fecha</span><span>NDVI</span><span>Normal</span><span>Dif.</span><span>VCI</span><span></span></div>
+                      {(d.series||[]).slice(-6).map((r:Data)=><div className="cover-row" key={r.date}><span>{String(r.date).slice(8,10)}/{String(r.date).slice(5,7)}</span><b>{fmt(r.ndvi,2)}</b><span>{fmt(r.normal,2)}</span><span>{r.diff!=null?(r.diff>0?"+":"")+fmt(r.diff,2):"—"}</span><span>{r.vci??"—"}</span><span></span></div>)}
+                    </div><p className="footnote">{d.reading} NASA MODIS MOD13Q1 (250 m) desde 2001, misma época de cada año.</p></>)}
+                  {part("etr-lote","Consumo de agua · evapotranspiración real",d=><>
+                    <div className="wx-grid"><div><span>Últimos 8 días</span><b>{fmt(d.latest?.mm_day,1)}<small> mm/día</small></b></div><div><span>Vs normal</span><b>{d.latest?.diff_pct!=null?`${d.latest.diff_pct>0?"+":""}${fmt(d.latest.diff_pct,0)} %`:"—"}</b></div><div><span>Percentil</span><b>{d.latest?.percentile??"—"}</b></div></div>
+                    <p className="footnote">{d.reading} NASA MODIS MOD16A2 (500 m, 8 días).</p></>)}
+                  {part("heladas-satelite","Heladas en la superficie",d=><>
+                    <div className="wx-grid"><div><span>Noches con helada</span><b>{d.frost_nights_30d??"—"}<small> en 30 días</small></b></div><div><span>Noche más fría</span><b>{fmt(d.coldest?.lst_c,1)}<small> °C</small></b></div></div>
+                    <p className="footnote">{d.reading} NASA MODIS Aqua MYD11A1 (1 km, noches despejadas). Temperatura de la superficie, no del abrigo meteorológico.</p></>)}
+                </>})()}
               {view==="costos" && <>
                 <label className="small" style={{display:"block",marginBottom:8}}>Destino de la hacienda<input value={costDest} placeholder="ej. Mercado Agroganadero Cañuelas, Corrientes, frigorífico…" onChange={e=>{setCostDest(e.target.value);try{localStorage.setItem("dots-cost-dest",e.target.value)}catch{}}}/></label>
                 <div className="cost-form">{COST_FIELDS.map(([k,l,u])=><label key={k}>{l}{u&&<small> · {u}</small>}<input type="number" min={0} value={costParams[k]??""} placeholder={k==="heads"&&herdHeads?String(herdHeads):""} onChange={e=>setCost(k,e.target.value)}/></label>)}</div>
@@ -2598,8 +2646,8 @@ function HomeLead({onDemo}:{onDemo:()=>void}){
   const ninoSub=ref?`RONI ${ref.anom>0?"+":""}${fmt(ref.anom,2)} °C · ${ref.season_es} ${ref.year}`:"";
   type Door={n:string;t:string;d:string;cta:[string,string];links:[string,string][]};
   const doors:Door[]=[
-    {n:"01",t:"Mi campo",d:"Dibujá el lote y mirá vegetación, agua en el suelo hasta 2 m, lluvia frente a lo normal, El Niño, heladas, historia del suelo desde 1985 y deforestación para exportar. Con informe en PDF.",cta:["Analizar mi campo","demo"],
-      links:[["Ver el caso Bella Vista","/caso-bella-vista"],["Vender a Europa (EUDR)","/libre-deforestacion"],["Cómo funciona","/guia"]]},
+    {n:"01",t:"Mi campo",d:"Dibujá el lote o tocá la parcela del catastro y mirá vegetación, agua en el suelo hasta 2 m, lomas y bajos, suelos 1:50.000, heladas, historia del suelo desde 1985 y deforestación para exportar. Con informe en PDF y mapa para el celular que funciona sin señal.",cta:["Analizar mi campo","demo"],
+      links:[["Ver el caso Bella Vista","/caso-bella-vista"],["Dónde está cada dato","/guia#donde"],["Vender a Europa (EUDR)","/libre-deforestacion"]]},
     {n:"02",t:"Mi región",d:"Cómo viene la campaña en Sudamérica: El Niño en 80 localidades, sequía, rinde por agua de maíz y soja, dengue y calor, y cuánta gente vive en zonas de riesgo.",cta:["Ver El Niño en Sudamérica","/el-nino"],
       links:[["Cultivos y rinde por agua","/cultivos"],["Población y riesgo climático","/poblacion"],["Panel regional","/panel"]]},
     {n:"03",t:"Alertas",d:"Lo que puede pasar esta semana: crecidas en 34 puertos de la Cuenca del Plata, focos de calor, rayos, heladas, nevadas y lluvia fuerte. Con avisos por correo y al celular.",cta:["Ver las alertas de crecidas","/alertas"],
@@ -2945,7 +2993,23 @@ function Deforestation({onDemo}:{onDemo:()=>void}){
     <section className="demo-call"><div><span className="section-tag">PARA QUIÉN</span><h2>Productores, frigoríficos, consignatarias y exportadores.</h2><p>Verificación por lote en el Observatorio, o por lotes completos de proveedores para empresas. Consultanos por volumen.</p></div><button onClick={onDemo}>Abrir Observatorio →</button></section>
   </main><SiteFooter/></div>;
 }
-function Guide({onDemo}:{onDemo:()=>void}){return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner guide"><PageHero eyebrow="CÓMO FUNCIONA DOTS" title="Lo que el satélite ve de un campo, contado para todos." lead="Para productores, estudiantes, profesionales, periodistas y curiosos: qué es DOTS, de qué satélite sale cada dato, cómo se procesa la información de un lote y cómo usarlo en cinco minutos."/><GuideContent onDemo={onDemo}/></main><SiteFooter/></div>}
+const WHERE: [string, string, string][] = [
+  ["Elegir el campo tocando la parcela del catastro", "Observatorio › botón «Parcela del catastro»", "Buenos Aires (ARBA), Córdoba (IDECOR), Salta, Neuquén, Gualeguaychú, Paraguay (SNC) y Brasil (CAR)"],
+  ["Lomas, planos, bajos y dónde se vio agua", "Observatorio › menú «Lomas, bajos y suelos»", "Copernicus GLO-30, JRC Global Surface Water, MERIT Hydro"],
+  ["Suelos 1:50.000", "Observatorio › «Lomas, bajos y suelos», debajo de las zonas", "Carta de suelos del INTA; por ahora provincia de Buenos Aires"],
+  ["Mapa del campo en el celular, sin señal y con GPS", "Observatorio › «Lomas, bajos y suelos» › «Informe de campo + mapa para el celular»: el PDF trae un código QR", "Se abre una vez con señal y después funciona sin conexión"],
+  ["Más verde o más seco que otros años, consumo de agua y heladas del lote", "Observatorio › menú «Anomalía, consumo y heladas»", "NASA MODIS MOD13Q1, MOD16A2 y MYD11A1"],
+  ["Agua en el perfil del suelo hasta 2 m y agua útil", "Observatorio › menú «Balance de agua»", "ERA5-Land y SoilGrids"],
+  ["Cobertura reciente y cambios en el lote", "Observatorio › menú «Bosque y deforestación»", "Dynamic World y AlphaEarth (Google)"],
+  ["Todo junto en un PDF", "Observatorio › «Informe PDF»: suma terreno, suelos, perfil, anomalía, consumo y heladas del lote", "Cada bloque entra solo si la fuente respondió"],
+  ["Focos de calor, rayos y heladas de la región", "Página «Fuego, rayos y heladas» (/focos)", "NASA FIRMS y NOAA GOES-19"],
+  ["Rinde por agua de maíz y soja", "Página «Cultivos y rinde» (/cultivos)", "AquaCrop con clima ERA5"],
+  ["Un ejemplo con todo calculado", "Página «Caso Bella Vista» (/caso-bella-vista)", "Un campo real de Corrientes"],
+];
+function WhereToSee(){return <section className="where-see" id="donde"><span className="section-tag">DÓNDE VER CADA COSA</span><h2>Cada dato, en qué lugar del sitio está.</h2>
+  <div className="where-table" role="table"><div className="where-row where-head" role="row"><span role="columnheader">Qué</span><span role="columnheader">Dónde</span><span role="columnheader">Fuente o alcance</span></div>
+  {WHERE.map(([a,b,c])=><div className="where-row" role="row" key={a}><b role="cell">{a}</b><span role="cell">{b}</span><small role="cell">{c}</small></div>)}</div></section>}
+function Guide({onDemo}:{onDemo:()=>void}){return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner guide"><PageHero eyebrow="CÓMO FUNCIONA DOTS" title="Lo que el satélite ve de un campo, contado para todos." lead="Para productores, estudiantes, profesionales, periodistas y curiosos: qué es DOTS, de qué satélite sale cada dato, cómo se procesa la información de un lote y cómo usarlo en cinco minutos."/><GuideContent onDemo={onDemo}/><WhereToSee/></main><SiteFooter/></div>}
 const LAYER_THEMES: [string,string,string][] = [
   ["Campo y ambiente","Bosque, agua y anegamiento","Pérdida de bosque año por año desde 2001 y dónde hubo agua en superficie desde 1984: bajos que se anegan, lagunas que aparecen o se secan, desmontes. Sirve para elegir potreros, ubicar aguadas y respaldar la verificación libre de deforestación."],
   ["Satélite NASA","Imagen satelital diaria","Color real de MODIS y VIIRS de cada día, combinaciones de bandas que resaltan agua, quemas y anegamiento, temperatura de la superficie y humo. Sirve para seguir inundaciones, incendios y sequías a escala regional."],

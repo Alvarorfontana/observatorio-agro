@@ -471,6 +471,19 @@
     if en != none { facts-card("Entorno del lote · Overture Maps", en.facts, en.note) } else { [] })
 ]
 
+#if d.at("lot_more", default: ()).len() > 0 [
+  #section("Terreno, suelos y satélite sobre el lote")
+  #let mc(c) = card[
+    #text(weight: "semibold")[#c.title]
+    #v(2pt)
+    #table(columns: (1fr, auto), stroke: (x, y) => (bottom: 0.4pt + line-c), inset: (x: 3pt, y: 4.5pt), align: (left, right),
+      ..c.facts.map(f => (text(size: 8pt, fill: muted)[#f.at(0)], text(size: 8.5pt, weight: "semibold")[#f.at(1)])).flatten())
+    #v(3pt)
+    #text(size: 6.8pt, fill: muted)[#c.note]
+  ]
+  #grid(columns: (1fr, 1fr), column-gutter: 10pt, row-gutter: 10pt, ..d.lot_more.map(mc))
+]
+
 // ─────────────────────────── ÍNDICES, PROBABILIDADES, SUSTENTABILIDAD ───────────────────────────
 #if d.indices.len() > 0 [
   #section("Índices agroclimáticos")

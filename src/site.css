@@ -1190,3 +1190,12 @@ html, body { overflow-x: hidden; }
   .hl-hero { padding-bottom: 28px; }
 }
 .hl-three > div > article { border-bottom: 0; padding: 24px 0 8px; cursor: default; }
+
+/* Dónde ver cada cosa (guía) */
+.where-see{margin:48px 0 24px}
+.where-see h2{margin:6px 0 16px}
+.where-table{border-top:1px solid var(--line,#e4e7ec)}
+.where-row{display:grid;grid-template-columns:1.1fr 1.4fr 1fr;gap:14px;padding:12px 4px;border-bottom:1px solid var(--line,#e4e7ec);align-items:start}
+.where-head{font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;opacity:.7}
+.where-row small{opacity:.75}
+@media (max-width:720px){.where-row{grid-template-columns:1fr;gap:4px}.where-head{display:none}}
