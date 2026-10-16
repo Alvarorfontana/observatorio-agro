@@ -94,9 +94,33 @@ def _verify(prov):
     return path
 
 
+_CAR_SESSION = None
+
+
+def _session(prov):
+    """car.gov.br sólo acepta cifrados TLS que OpenSSL 3 deja fuera por defecto: se habilitan para ese servidor
+    (nivel de seguridad 1), sin dejar de verificar el certificado."""
+    global _CAR_SESSION
+    if prov['id'] != 'sicar':
+        return c.SESSION
+    if _CAR_SESSION is None:
+        import ssl, requests
+        from requests.adapters import HTTPAdapter
+
+        class Legacy(HTTPAdapter):
+            def init_poolmanager(self, *a, **k):
+                ctx = ssl.create_default_context(cafile=_verify(prov))
+                ctx.set_ciphers('DEFAULT:@SECLEVEL=1')
+                k['ssl_context'] = ctx
+                return super().init_poolmanager(*a, **k)
+        _CAR_SESSION = requests.Session()
+        _CAR_SESSION.mount('https://geoserver.car.gov.br', Legacy())
+    return _CAR_SESSION
+
+
 def _query(prov, lat, lon):
     d = 0.0008
-    r = c.SESSION.get(prov['url'], timeout=25, verify=_verify(prov), params={
+    r = _session(prov).get(prov['url'], timeout=25, verify=_verify(prov), params={
         'service': 'WFS', 'version': '2.0.0', 'request': 'GetFeature', 'typeNames': prov['layer'], 'outputFormat': 'application/json',
         'srsName': 'EPSG:4326', 'count': 20, 'bbox': f'{lat - d},{lon - d},{lat + d},{lon + d},urn:ogc:def:crs:EPSG::4326'})
     r.raise_for_status()
