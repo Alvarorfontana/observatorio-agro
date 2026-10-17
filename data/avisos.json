@@ -1,6 +1,36 @@
 {
  "items": [
   {
+   "id": "parana-corrientes",
+   "place": "Corrientes",
+   "river": "Paraná",
+   "from": "Atención",
+   "to": "Alerta",
+   "up": true,
+   "height": 6.66,
+   "alert": 6.5,
+   "evac": 7,
+   "date": "2026-10-17",
+   "trend_m_day": 0.245,
+   "text": "Corrientes (río Paraná): el nivel sube de Atención a Alerta. Altura 6,66 m el 2026-10-17; alerta 6,50 m, evacuación 7,00 m. Tendencia +0,24 m por día.",
+   "at": "2026-10-17T18:33+00:00"
+  },
+  {
+   "id": "parana-eldorado",
+   "place": "Eldorado",
+   "river": "Paraná",
+   "from": "Evacuación",
+   "to": "Alerta",
+   "up": false,
+   "height": 24.4,
+   "alert": 23,
+   "evac": 25,
+   "date": "2026-10-17",
+   "trend_m_day": 1.602,
+   "text": "Eldorado (río Paraná): el nivel baja de Evacuación a Alerta. Altura 24,40 m el 2026-10-17; alerta 23,00 m, evacuación 25,00 m. Tendencia +1,60 m por día.",
+   "at": "2026-10-17T18:33+00:00"
+  },
+  {
    "id": "uruguay-colon",
    "place": "Colón",
    "river": "Uruguay",
@@ -46,5 +76,5 @@
    "at": "2026-10-15T18:22+00:00"
   }
  ],
- "updated": "2026-10-16T18:07+00:00"
+ "updated": "2026-10-17T18:33+00:00"
 }

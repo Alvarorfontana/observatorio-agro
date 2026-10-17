@@ -9,21 +9,21 @@
   "level": "Evacuación"
  },
  "parana-eldorado": {
-  "level": "Evacuación"
+  "level": "Alerta"
  },
  "uruguay-cdeluruguay": {
+  "level": "Alerta"
+ },
+ "parana-corrientes": {
   "level": "Alerta"
  },
  "uruguay-concordia": {
   "level": "Atención"
  },
- "uruguay-colon": {
-  "level": "Atención"
- },
  "parana-goya": {
   "level": "Atención"
  },
- "uruguay-santotome": {
+ "uruguay-colon": {
   "level": "Atención"
  },
  "uruguay-montecaseros": {
@@ -32,10 +32,10 @@
  "parana-posadas": {
   "level": "Atención"
  },
- "parana-corrientes": {
+ "parana-bellavista": {
   "level": "Atención"
  },
- "parana-bellavista": {
+ "uruguay-santotome": {
   "level": "Atención"
  },
  "parana-reconquista": {
