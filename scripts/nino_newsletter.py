@@ -45,7 +45,7 @@ def decision(state, now, force):
     if (state.get('enviado_el') or '')[:10] == now.date().isoformat():
         return False, 'ya se envió hoy'
     if now.hour < HOUR:
-        return False, f'fuera de la hora de envío (UTC ≥ {HOUR})'
+        return False, f'fuera de la hora de envío (UTC >= {HOUR})'
     return True, 'ventana diaria'
 
 

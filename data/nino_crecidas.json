@@ -1,0 +1,66 @@
+{
+ "updated": "2026-10-18T04:34+00:00",
+ "version": 1,
+ "fuente": "https://observatorio-agro.vercel.app",
+ "niveles": {
+  "Normal": 9,
+  "Atención": 11,
+  "Alerta": 3,
+  "Evacuación": 3
+ },
+ "peor": {
+  "id": "parana-ituzaingo",
+  "place": "Ituzaingó",
+  "river": "Paraná",
+  "level": "Evacuación",
+  "height": 4.85
+ },
+ "alertas": [
+  {
+   "id": "parana-ituzaingo",
+   "place": "Ituzaingó",
+   "river": "Paraná",
+   "level": "Evacuación"
+  },
+  {
+   "id": "iguazu-cataratas",
+   "place": "Puerto Iguazú · Cataratas",
+   "river": "Iguazú",
+   "level": "Evacuación"
+  },
+  {
+   "id": "uruguay-libres",
+   "place": "Paso de los Libres",
+   "river": "Uruguay",
+   "level": "Evacuación"
+  },
+  {
+   "id": "parana-eldorado",
+   "place": "Eldorado",
+   "river": "Paraná",
+   "level": "Alerta"
+  },
+  {
+   "id": "uruguay-cdeluruguay",
+   "place": "Concepción del Uruguay",
+   "river": "Uruguay",
+   "level": "Alerta"
+  },
+  {
+   "id": "parana-corrientes",
+   "place": "Corrientes",
+   "river": "Paraná",
+   "level": "Alerta"
+  }
+ ],
+ "enso": {
+  "estado": null,
+  "oni": null
+ },
+ "enviado_el": null,
+ "pdf_el": null,
+ "newsletter": {
+  "subject": "DOTS · El Niño y crecidas · 18/10/2026 04:34 UTC",
+  "bytes": 5302
+ }
+}
