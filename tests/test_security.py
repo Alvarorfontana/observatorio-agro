@@ -63,3 +63,12 @@ def test_pdf_routes_have_tight_limits():
     for path in ('/api/poblacion/informe', '/api/fuentes/enso-informe', '/api/fuentes/cuenca-informe'):
         rule = next(r for r in security.RULES if path.startswith(r[0]))
         assert rule[1] <= 6, path
+
+
+def test_client_ip_is_not_spoofable():
+    from flask import Flask
+    app = Flask(__name__)
+    with app.test_request_context(headers={'X-Forwarded-For': '1.1.1.1, 9.9.9.9'}):
+        assert security.client_ip() == '9.9.9.9'
+    with app.test_request_context(headers={'X-Real-IP': '5.5.5.5', 'X-Forwarded-For': '1.1.1.1'}):
+        assert security.client_ip() == '5.5.5.5'

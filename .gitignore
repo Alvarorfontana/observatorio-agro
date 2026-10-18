@@ -2,3 +2,14 @@ node_modules/
 .pytest_cache/
 __pycache__/
 *.pyc
+
+# Secretos y credenciales (nunca subir)
+.env
+.env.*
+!.env.example
+*.key
+*.p12
+*.pfx
+.vercel
+.DS_Store
+Thumbs.db

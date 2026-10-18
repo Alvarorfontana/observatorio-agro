@@ -39,8 +39,15 @@ _lock = Lock()
 
 
 def client_ip():
+    # Vercel expone la IP real en X-Real-IP. X-Forwarded-For puede traer
+    # valores inyectados por el cliente, por eso se usa el ultimo salto.
+    real = request.headers.get('X-Real-IP')
+    if real:
+        return real.strip()[:64]
     fwd = request.headers.get('X-Forwarded-For', '')
-    return (fwd.split(',')[0].strip() if fwd else request.headers.get('X-Real-IP') or request.remote_addr or 'anon')[:64]
+    if fwd:
+        return fwd.split(',')[-1].strip()[:64]
+    return (request.headers.get('X-Vercel-Forwarded-For') or request.remote_addr or 'anon')[:64]
 
 
 def check():
