@@ -1,18 +1,8 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { EudrReadiness } from "./dashboard/EudrReadiness";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import * as echarts from "echarts/core";
-import { LineChart, BarChart } from "echarts/charts";
-import {
-  GridComponent,
-  TooltipComponent,
-  LegendComponent,
-  MarkLineComponent,
-  MarkAreaComponent,
-} from "echarts/components";
-import { CanvasRenderer } from "echarts/renderers";
 import {
   Satellite,
   MapPinned,
@@ -50,30 +40,21 @@ import { fieldAt, fieldsAround, compactness, FTW_ATTRIBUTION, FTW_RELIABLE } fro
 import { terrainForLot, terrainImage, DEM_ATTRIBUTION, DEM_SOURCE_URL, type TerrainAnalysis, type TerrainMode } from "./dashboard/terrain";
 import { RISK_COLORS, DRAIN_COLOR } from "./dashboard/terrainCore";
 import { VariablesPanel } from "./dashboard/VariablesPanel";
-import { LotDashboard } from "./dashboard/LotDashboard";
+const LotDashboard = lazy(() => import("./dashboard/LotDashboard").then(m => ({ default: m.LotDashboard })));
 import { OPEN_LAYERS, LAYER_GROUPS } from "./dashboard/openLayers";
 import { PacificSection, SAImpactMap } from "./site/NinoIllustrations";
 import { NinoNowSA } from "./site/NinoNow";
 import { AvisosBox } from "./site/AvisosBox";
 import { HerdPanel, HERD_CATS, type HerdRow, type Movement } from "./dashboard/Herd";
 import { GuideContent } from "./site/GuideContent";
-import { CuencaPanel, AlertasTeaser, AlertasPortada } from "./site/CuencaPanel";
-import { CultivosPanel } from "./site/Cultivos";
+const CuencaPanel = lazy(() => import("./site/CuencaPanel").then(m => ({ default: m.CuencaPanel })));
+const AlertasTeaser = lazy(() => import("./site/CuencaPanel").then(m => ({ default: m.AlertasTeaser })));
+const CultivosPanel = lazy(() => import("./site/Cultivos").then(m => ({ default: m.CultivosPanel })));
 import { RindeAgua } from "./site/RindeAgua";
 import { CasoBellaVista } from "./site/CasoBellaVista";
 import { Focos } from "./site/Focos";
-import { NdviExtra } from "./site/NdviExtra";
+const NdviExtra = lazy(() => import("./site/NdviExtra").then(m => ({ default: m.NdviExtra })));
 import { readLotFile, lotsToGeoJSON, lotsToKML } from "./dashboard/lotFiles";
-echarts.use([
-  MarkLineComponent,
-  MarkAreaComponent,
-  LineChart,
-  BarChart,
-  GridComponent,
-  TooltipComponent,
-  LegendComponent,
-  CanvasRenderer,
-]);
 type Data = Record<string, any>;
 type Point = [number, number];
 type Source = {
@@ -263,9 +244,30 @@ function Chart({
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!ref.current) return;
-    const chart = echarts.init(ref.current, undefined, { renderer: "canvas" });
+    const el = ref.current;
+    let disposed = false;
+    let cleanup: (() => void) | undefined;
+    void (async () => {
+    const [core, charts, components, renderers] = await Promise.all([
+      import("echarts/core"),
+      import("echarts/charts"),
+      import("echarts/components"),
+      import("echarts/renderers"),
+    ]);
+    if (disposed) return;
+    core.use([
+      components.MarkLineComponent,
+      components.MarkAreaComponent,
+      charts.LineChart,
+      charts.BarChart,
+      components.GridComponent,
+      components.TooltipComponent,
+      components.LegendComponent,
+      renderers.CanvasRenderer,
+    ]);
+    const chart = core.init(el, undefined, { renderer: "canvas" });
     // Colores desde el tema (claro u oscuro) y paleta DOTS unificada para todos los gráficos
-    const css = getComputedStyle(ref.current);
+    const css = getComputedStyle(el);
     const v = (n: string, d: string) => css.getPropertyValue(n).trim() || d;
     const txt = v("--ta-text-2", "#c6c6c6"), txt3 = v("--ta-text-3", "#8d8d8d"), grid = v("--ta-border", "#333333"),
       tipBg = v("--ta-layer-2", "#393939"), tipTx = v("--ta-text", "#f4f4f4");
@@ -323,10 +325,15 @@ function Chart({
       })),
     });
     const observer = new ResizeObserver(() => chart.resize());
-    observer.observe(ref.current);
-    return () => {
+    observer.observe(el);
+    cleanup = () => {
       observer.disconnect();
       chart.dispose();
+    };
+    })();
+    return () => {
+      disposed = true;
+      cleanup?.();
     };
   }, [dates, series, unit]);
   return (
@@ -1441,13 +1448,13 @@ function Observatory({onHome}:{onHome:()=>void}) {
           ]}/>;
         })()}
         {mainView === "tablero" && <section className="db-wrap" aria-label="Tablero del lote">
-          <LotDashboard weather={weather} sources={sources as any} thi={thi} hasLot={vertices.length >= 3}
+          <Suspense fallback={null}><LotDashboard weather={weather} sources={sources as any} thi={thi} hasLot={vertices.length >= 3}
             lot={lots.find(x => x.id === selectedLotId) || null}
             terrain={(sources.relieve?.payload as any)?.data?.lot === lotKey ? (sources.relieve?.payload as any)?.data : null}
             labels={Object.fromEntries(SOURCES.map(([k, l]) => [k, l]))}
             water={selectedLotId ? water[selectedLotId] ?? null : null} cloudOn={!!cloudOn} hasKey={!!cloudKey} onCloud={() => { setMainView("mapa"); setSideTab("lote"); }}
             onLoad={(k) => void load(k)} onTerrain={() => void loadTerrain()}
-            onOpen={(k) => { setMainView("mapa"); changeView(k); }} />
+            onOpen={(k) => { setMainView("mapa"); changeView(k); }} /></Suspense>
         </section>}
         <aside className="sidebar">
           <nav className="side-tabs" role="tablist" aria-label="Secciones del tablero">
@@ -1857,7 +1864,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
                 {view==="ndvi" && ndviValid.length>1 && <div className="ndvi-timeline"><button onClick={()=>setNdviPlay(p=>!p)} aria-label={ndviPlay?"Pausar":"Reproducir"}>{ndviPlay?"❚❚":"▶"}</button><input type="range" min={0} max={ndviValid.length-1} step={1} value={ndviIdx} onChange={e=>{setNdviPlay(false);setNdviPick(Number(e.target.value))}} aria-label="Fecha de la escena"/><small>Escena {ndviIdx+1} de {ndviValid.length} · {String(ndviValid[ndviIdx]?.datetime||"").slice(0,10)} · NDVI medio {fmt(ndviValid[ndviIdx]?.ndvi_mean,2)}</small></div>}
                 {view==="ndvi" && payload?.latest && <div className="overlay-switch"><span>Sobre el lote · {String((ndviValid[ndviIdx]||payload.latest).datetime||"").slice(0,10)}</span>{[["ndvi","NDVI"],["rgb","Color real"],["off","Ninguna"]].map(([k,l])=><button key={k} className={(k==="off"?!showNdvi:showNdvi&&overlayMode===k)?"active":""} onClick={()=>{if(k==="off"){setShowNdvi(false)}else{setShowNdvi(true);setOverlayMode(k as any)}}}>{l}</button>)}</div>}
                 <p className="footnote">Escala: menos de 0,2 suelo desnudo o agua · 0,2–0,5 vegetación rala o pastura seca · más de 0,5 vegetación activa. No reemplaza la recorrida a campo.</p>
-                {view==="ndvi" && vertices.length>=3 && <NdviExtra point={point} vertices={vertices} map={mapRef.current}/>}
+                {view==="ndvi" && vertices.length>=3 && <Suspense fallback={null}><NdviExtra point={point} vertices={vertices} map={mapRef.current}/></Suspense>}
               </>}
               {view === "metnorway" && <><p className="footnote">MET Norway · conexión directa · pronóstico modelado. Actualizado: {payload?.properties?.meta?.updated_at || "Sin fecha"}</p>{Object.entries(payload?.properties?.timeseries?.[0]?.data?.instant?.details || {}).map(([key,value])=><div className="soil" key={key}><span style={{fontSize:10,maxWidth:"65%"}}>{key.replaceAll("_"," ")}</span><strong style={{fontSize:12}}>{fmt(value)} <small>{payload?.properties?.meta?.units?.[key]}</small></strong></div>)}<p className="footnote">Hora válida: {payload?.properties?.timeseries?.[0]?.time || "Sin fecha"}. Datos MET Norway, CC BY 4.0.</p></>}
               {view === "variables" && <VariablesPanel weather={weather} />}
@@ -2763,7 +2770,7 @@ function CultivosPage({onDemo}:{onDemo:()=>void}){
   useEffect(()=>{document.title="Informe de cultivo · DOTS";},[]);
   return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner regional-panel alerts-page">
     <div className="no-print"><PageHero eyebrow="AGRICULTURA" title="Informe de cultivo por localidad." lead="Lluvia y evapotranspiración de los últimos 30 días y la semana que viene, temperaturas contra el umbral de helada de cada cultivo, grados día desde la siembra, alertas y recomendaciones. Maíz, soja, trigo, girasol, sorgo y arroz."/></div>
-    <CultivosPanel/>
+    <Suspense fallback={null}><CultivosPanel/></Suspense>
     <RindeAgua/>
   </main><div className="no-print"><SiteFooter/></div></div>;
 }
@@ -2784,7 +2791,7 @@ function CasoPage({onDemo}:{onDemo:()=>void}){
 function AlertsPage({onDemo}:{onDemo:()=>void}){
   useEffect(()=>{document.title="Sistema de Alerta de Crecidas · DOTS";},[]);
   return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner regional-panel alerts-page">
-    <CuencaPanel/>
+    <Suspense fallback={null}><CuencaPanel/></Suspense>
     <AvisosBox/>
     <section className="demo-call"><div><span className="section-tag">TU CAMPO</span><h2>Bajá de la cuenca a tu potrero.</h2><p>En el Observatorio ves el relieve, los bajos que se anegan y el agua detectada por satélite en tu lote.</p></div><button onClick={onDemo}>Abrir Observatorio →</button></section>
   </main><SiteFooter/></div>;
@@ -2868,7 +2875,7 @@ function RegionalPanel({onDemo}:{onDemo:()=>void}){
       <div><span className="section-tag">OTRAS SEÑALES · NOAA PSL</span><h2>Teleconexiones</h2><p>{tele?.enso_agreement?`${tele.enso_agreement} índices del Pacífico (Niño 3.4, ONI, MEI v2) dan fase ${tele.enso_consensus}. Último dato mensual: ${tele?.indices?.nino34?.data?.period||""}.`:"Niño 3.4, ONI y MEI v2."} SOI negativo acompaña a El Niño; AAO y Atlántico Sur (TSA) modulan la lluvia del Litoral.</p></div>
       <div className="rp-telegrid">{Object.entries(tele?.indices||{}).filter(([,e]:any)=>e?.status==="recibido").slice(0,6).map(([k,e]:any)=><article key={k}><span>{e.data.name}</span><b>{fmt(e.data.value,2)}</b><em>{e.data.phase}</em></article>)}</div>
     </section>
-    <AlertasTeaser/>
+    <Suspense fallback={null}><AlertasTeaser/></Suspense>
     <section className="rp-cards">{card("Lluvia "+(last?.year||""),"prcptot","mm")}{card("Días con helada","frost_days","días")}{card("Días con máxima ≥ 35 °C","tx35","días")}{card("Racha seca más larga","cdd","días")}</section>
     {idx?.years && <section className="rp-charts">
       <div className="rp-chart"><h3>Lluvia anual · {idx.period?.[0]}–{idx.period?.[1]}</h3><Chart dates={idx.years.map((r:Data)=>String(r.year))} unit="mm" series={[{name:"Lluvia",values:idx.years.map((r:Data)=>r.prcptot),type:"bar",color:"#19b98a"}]}/></div>
