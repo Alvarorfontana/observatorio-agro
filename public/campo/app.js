@@ -44,8 +44,20 @@ async function main() {
   try { d = await decode(tok); } catch (e) { $('here').innerHTML = '<b>El enlace está incompleto</b><small>Volvé a escanear el código QR del informe.</small>'; return; }
   $('name').textContent = d.n || 'Mapa del campo'; document.title = `${d.n || 'Campo'} · DOTS`;
   $('meta').textContent = `Informe del ${d.f.split('-').reverse().join('/')}`;
-  $('legend').innerHTML = Object.entries(CLASS).filter(([k]) => d.z && d.z.g.includes(k)).map(([, [n, c]]) => `<span><i style="background:${c}"></i>${n}</span>`).join('');
-  $('summary').innerHTML = (d.s || []).map(([a, b]) => `<span>${a}</span><span>${b}</span>`).join('');
+  const legend = $('legend'); legend.replaceChildren();
+  for (const [k, [n, c]] of Object.entries(CLASS)) {
+    if (!(d.z && d.z.g.includes(k))) continue;
+    const span = document.createElement('span'), icon = document.createElement('i');
+    icon.style.background = c;
+    span.append(icon, document.createTextNode(n));
+    legend.append(span);
+  }
+  const summary = $('summary'); summary.replaceChildren();
+  for (const [a, b] of (d.s || [])) {
+    const s1 = document.createElement('span'), s2 = document.createElement('span');
+    s1.textContent = a; s2.textContent = b;
+    summary.append(s1, s2);
+  }
 
   const map = L.map('map', { zoomControl: true, attributionControl: true });
   L.tileLayer(TILE, { maxZoom: 18, maxNativeZoom: 17, attribution: 'Esri World Imagery' }).addTo(map);
