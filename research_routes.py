@@ -274,6 +274,12 @@ def scales_view():
     """Catálogo de escalas (mínimo, máximo y bandas) de cada indicador, más las enfermedades modeladas."""
     return jsonify({'scales':scl.all_scales(),'enfermedades':dis.catalog()})
 
+@research_api.get('/nino-crecidas')
+def nino_crecidas_view():
+    """Último digest guardado por la tarea automática: niveles de la cuenca, alertas y estado del Pacífico."""
+    import datastore
+    return jsonify({'status':'recibido','data':datastore.load('nino_crecidas.json', {})})
+
 @research_api.post('/contacto')
 def contact_send():
     try:
@@ -652,7 +658,8 @@ def newsletter_temas():
     import temas, informe_temas
     ids=_tema_ids(request.args.get('temas'),temas)
     q={key:[value] for key,value in request.args.items()}
-    lat,lon=c.coordinates(q)
+    try: lat,lon=c.coordinates(q)
+    except ValueError: lat,lon=(None,None)
     params={key:value for key,value in request.args.items()}
     if params.get('poligono'):
         try: params['poligono']=json.loads(params['poligono'])

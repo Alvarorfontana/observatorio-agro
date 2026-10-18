@@ -194,7 +194,31 @@ def test_newsletter_endpoint(client):
     assert 'Evacuados' in r.get_data(as_text=True)
 
 
+def test_newsletter_endpoint_sin_coordenadas(client):
+    r = client.get('/api/fuentes/newsletter-temas?temas=evacuados')
+    assert r.status_code == 200 and 'text/html' in r.headers['Content-Type']
+
+
 def test_informe_temas_endpoint(client):
     r = client.post('/api/fuentes/informe-temas', json={'temas': ['evacuados'], 'lat': -31, 'lon': -60})
     assert r.status_code == 200 and r.headers['Content-Type'] == 'application/pdf'
     assert r.get_data()[:5] == b'%PDF-'
+
+
+# ── digest El Niño y crecidas (lo escribe la tarea cada 2 h) ──
+def test_nino_crecidas_endpoint(client, monkeypatch):
+    import datastore
+    monkeypatch.setattr(datastore, 'load',
+                        lambda *a, **k: {'updated': '2026-10-18T08:23', 'niveles': {'Alerta': 1}, 'enso': {'estado': 'El Niño'}})
+    r = client.get('/api/fuentes/nino-crecidas')
+    assert r.status_code == 200
+    j = r.get_json()
+    assert j['status'] == 'recibido'
+    assert j['data']['niveles']['Alerta'] == 1 and j['data']['enso']['estado'] == 'El Niño'
+
+
+def test_nino_crecidas_endpoint_sin_datos(client, monkeypatch):
+    import datastore
+    monkeypatch.setattr(datastore, 'load', lambda *a, **k: {})
+    r = client.get('/api/fuentes/nino-crecidas')
+    assert r.status_code == 200 and r.get_json()['data'] == {}

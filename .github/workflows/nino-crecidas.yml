@@ -1,0 +1,41 @@
+# El Niño y crecidas: cada 2 horas arma el digest (niveles de la cuenca + El Niño + newsletter del motor de
+# temas) y, una vez por día, envía el newsletter por correo a la lista de suscriptores (Resend).
+# Los archivos quedan en la rama `datos` (no se publica la web). Ver scripts/nino_crecidas.py y scripts/nino_newsletter.py.
+name: El Niño y crecidas (digest y newsletter)
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "23 */2 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nino-crecidas
+  cancel-in-progress: false
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Traer datos de la rama datos
+        run: bash scripts/datos_rama.sh traer
+      - name: Armar el digest y enviar el newsletter
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RESEND_AUDIENCE_ID: ${{ secrets.RESEND_AUDIENCE_ID }}
+          AVISOS_FROM: ${{ secrets.AVISOS_FROM }}
+        run: |
+          pip install requests
+          python scripts/nino_crecidas.py
+          python scripts/nino_newsletter.py
+      - name: Guardar en la rama datos (no publica la web)
+        if: always()
+        run: |
+          cp scripts/datos_rama.sh /tmp/datos_rama.sh && bash /tmp/datos_rama.sh guardar "El Niño y crecidas $(date -u +%Y-%m-%d\ %H:%M)" data/nino_crecidas.json data/nino_newsletter.html data/nino_crecidas.pdf
