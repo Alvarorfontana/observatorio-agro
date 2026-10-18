@@ -634,6 +634,18 @@ def amenaza_view():
     except Exception as e:
         return _upstream_error(e)
 
+@research_api.get('/smap')
+def smap_view():
+    """Humedad del suelo por satélite (SMAP L4): superficie y zona de raíces en un punto, con percentil."""
+    import smap
+    try:
+        lat,lon=c.coordinates({key:[value] for key,value in request.args.items()})
+        return jsonify(smap.analyze(lat,lon))
+    except ValueError as e:
+        return jsonify({'error':str(e)}),400
+    except Exception as e:
+        return _upstream_error(e)
+
 def _tema_ids(raw, temas_mod):
     """Normaliza la lista de temas pedida: ignora desconocidos y, si queda vacía, usa todos."""
     if isinstance(raw, str):

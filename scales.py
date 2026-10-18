@@ -79,6 +79,17 @@ SCALES = {
                       'bands': [(0.05, 'sin anegamiento', 'ok'), (0.5, 'anegamiento somero', 'warn'),
                                 (1.5, 'agua a la altura de una persona', 'risk'), (10.1, 'inundación severa', 'risk')],
                       'bands_labels': ['0', '< 0,50', '0,50–1,50', '> 1,50']},
+    'soil_moisture_vwc': {'name': 'Humedad volumétrica del suelo (SMAP)', 'unit': 'm³/m³', 'min': 0.0, 'max': 0.9,
+                          'direction': 'band',
+                          'bands': [(0.10, 'seco', 'risk'), (0.20, 'bajo', 'warn'), (0.35, 'normal', 'ok'),
+                                    (0.50, 'húmedo', 'ok'), (0.91, 'saturado', 'warn')],
+                          'bands_labels': ['< 0,10', '0,10–0,20', '0,20–0,35', '0,35–0,50', '> 0,50']},
+    'soil_moisture_pctl': {'name': 'Percentil de humedad del suelo (zona de raíces)', 'unit': '%', 'min': 0.0,
+                           'max': 100.0, 'direction': 'band',
+                           'bands': [(10.0, 'muy seco respecto de lo normal', 'risk'), (30.0, 'más seco que lo normal', 'warn'),
+                                     (70.0, 'normal', 'ok'), (90.0, 'más húmedo que lo normal', 'warn'),
+                                     (100.1, 'muy húmedo respecto de lo normal', 'risk')],
+                           'bands_labels': ['< 10', '10–30', '30–70', '70–90', '> 90']},
 }
 
 

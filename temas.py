@@ -124,6 +124,15 @@ def _suelo(lat, lon, p):
     return c.soil_full(lat, lon)
 
 
+def _humedad_smap(lat, lon, p):
+    import smap
+    lat, lon = _coords(lat, lon, p)
+    if lat is None or lon is None:
+        return _env(None, smap.SMAP, 'Humedad del suelo satelital (SMAP)', 'NASA · NSIDC (Earth Engine)', 'sin dato',
+                    'Indicá un punto o una zona para leer la humedad del suelo por satélite.')
+    return smap.analyze(lat, lon)
+
+
 # ───────────────────────────── catálogo ─────────────────────────────
 # resolver / organism / how / source_url: la procedencia viaja con el dato.
 TEMAS = {
@@ -201,6 +210,16 @@ TEMAS = {
                'en el punto consultado o el centroide de la zona.',
         'source_url': 'https://rest.isric.org/soilgrids/v2.0/properties/query',
         'scale': None, 'resolver': _suelo,
+    },
+    'humedad_smap': {
+        'title': 'Humedad del suelo satelital (SMAP)', 'group': 'Suelo', 'scope': 'punto',
+        'organism': 'NASA · NSIDC (SMAP L4, Earth Engine)',
+        'how': 'SMAP L4 SPL4SMGP v008 (radiómetro en banda L, 9 km, cada 3 h) promediado en 12,5 km: humedad de '
+               'la superficie (0-5 cm) y de la zona de raíces (0-100 cm) en m³/m³ y % del volumen, con el '
+               'percentil de la zona de raíces contra la serie desde 2015. Es la única lectura directa del '
+               'satélite; la ventana usada es la última publicada (SMAP tarda unos días).',
+        'source_url': 'https://developers.google.com/earth-engine/datasets/catalog/NASA_SMAP_SPL4SMGP_008',
+        'scale': 'soil_moisture_vwc', 'resolver': _humedad_smap,
     },
 }
 
