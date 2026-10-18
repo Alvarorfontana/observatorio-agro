@@ -8,19 +8,22 @@
  "uruguay-libres": {
   "level": "Evacuación"
  },
+ "parana-corrientes": {
+  "level": "Alerta"
+ },
  "parana-eldorado": {
   "level": "Alerta"
  },
  "uruguay-cdeluruguay": {
   "level": "Alerta"
  },
- "parana-corrientes": {
+ "parana-goya": {
   "level": "Alerta"
  },
  "uruguay-concordia": {
   "level": "Atención"
  },
- "parana-goya": {
+ "parana-bellavista": {
   "level": "Atención"
  },
  "uruguay-colon": {
@@ -32,12 +35,6 @@
  "parana-posadas": {
   "level": "Atención"
  },
- "parana-bellavista": {
-  "level": "Atención"
- },
- "uruguay-santotome": {
-  "level": "Atención"
- },
  "parana-reconquista": {
   "level": "Atención"
  },
@@ -47,16 +44,19 @@
  "parana-lapaz": {
   "level": "Atención"
  },
+ "uruguay-santotome": {
+  "level": "Atención"
+ },
  "parana-zarate": {
   "level": "Atención"
  },
  "parana-santafe": {
   "level": "Normal"
  },
- "parana-diamante": {
+ "paraguay-humaita": {
   "level": "Normal"
  },
- "paraguay-humaita": {
+ "parana-diamante": {
   "level": "Normal"
  },
  "parana-rosario": {
