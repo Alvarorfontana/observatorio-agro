@@ -4,6 +4,10 @@
 // gráficos con escala legible y el contenido corrido (sin hojas casi vacías).
 #let d = json(bytes(sys.inputs.data))
 
+// Selección de temas: si el pedido trae "secciones", sólo se arma esa lista; sin lista entran todos.
+#let selected = d.at("selected", default: none)
+#let want(id) = selected == none or id in selected
+
 #let ink = rgb("#101828")
 #let ink2 = rgb("#344054")
 #let muted = rgb("#667085")
@@ -291,6 +295,15 @@
 #v(4pt)
 #text(size: 7pt, fill: muted)[#d.confidence_line]
 
+#if want("resumen") and d.at("exec_summary", default: "") != "" [
+  #v(8pt)
+  #card(fill: brand-soft, stroke: none, inset: (x: 12pt, y: 10pt))[
+    #kicker[Resumen ejecutivo]
+    #v(3pt)
+    #text(size: 9pt)[#d.exec_summary]
+  ]
+]
+
 #v(8pt)
 #grid(columns: (64mm, 1fr), column-gutter: 12pt,
   [
@@ -321,7 +334,7 @@
   ],
 )
 
-#if d.at("alerts", default: ()).len() > 0 [
+#if want("alertas") and d.at("alerts", default: ()).len() > 0 [
   #section("Alertas activas")
   #text(size: 7.5pt, fill: muted)[#d.alerts_note]
   #v(3pt)
@@ -335,7 +348,7 @@
 ]
 
 // ─────────────────────────── HALLAZGOS Y VARIABLES ───────────────────────────
-#if d.findings.len() > 0 [
+#if want("hallazgos") and d.findings.len() > 0 [
   #section("Hallazgos por dimensión")
   #grid(columns: (1fr, 1fr), gutter: 8pt,
     ..d.findings.map(f => block(width: 100%, breakable: false, radius: 8pt, stroke: 0.6pt + line-c, inset: (left: 11pt, rest: 10pt),
@@ -347,7 +360,7 @@
   )
 ]
 
-#if d.metrics.len() > 0 [
+#if want("variables") and d.metrics.len() > 0 [
   #section("Variables del lote")
   #grid(columns: (1fr, 1fr), column-gutter: 8pt, row-gutter: 6pt,
     ..d.metrics.map(m => block(width: 100%, breakable: false, radius: 8pt, fill: soft, inset: (x: 10pt, y: 8pt))[
@@ -365,12 +378,12 @@
 ]
 
 // ─────────────────────────── CLIMA, VEGETACIÓN, LLUVIA ───────────────────────────
-#if charts-of("clima").len() > 0 [
+#if want("clima") and charts-of("clima").len() > 0 [
   #section("Clima de la semana")
   #chart-grid(charts-of("clima"))
 ]
 
-#if charts-of("veg").len() > 0 or d.at("forage", default: ()).len() > 0 [
+#if want("vegetacion") and (charts-of("veg").len() > 0 or d.at("forage", default: ()).len() > 0) [
   #section("Vegetación y pasto")
   #if d.at("forage", default: ()).len() > 0 [
     #grid(columns: (1fr, 1fr, 1fr, 1fr), gutter: 6pt, ..d.forage.map(k => card(fill: soft, stroke: none, inset: 9pt)[
@@ -383,7 +396,7 @@
   #if d.at("forage_note", default: "") != "" [#v(3pt) #text(size: 7pt, fill: muted)[#d.forage_note]]
 ]
 
-#if d.at("spi", default: ()).len() > 0 or charts-of("lluvia").len() > 0 [
+#if want("lluvia") and (d.at("spi", default: ()).len() > 0 or charts-of("lluvia").len() > 0) [
   #section("Lluvia observada y sequía")
   #text(size: 8pt, fill: muted)[#d.spi_note]
   #v(4pt)
@@ -409,7 +422,7 @@
 ]
 
 // ─────────────────────────── RELIEVE ───────────────────────────
-#if d.at("relief", default: none) != none [
+#if want("relieve") and d.at("relief", default: none) != none [
   #let r = d.relief
   #section("Relieve y anegamiento")
   #grid(columns: (60mm, 1fr), column-gutter: 10pt,
@@ -435,7 +448,7 @@
   )
 ]
 
-#if d.at("water", default: none) != none [
+#if want("agua") and d.at("water", default: none) != none [
   #let w = d.water
   #section("Agua detectada por satélite")
   #grid(columns: (1fr, 1fr), column-gutter: 10pt,
@@ -454,7 +467,7 @@
   )
 ]
 
-#if d.at("soil_nasa", default: none) != none or d.at("surroundings", default: none) != none [
+#if want("suelo") and (d.at("soil_nasa", default: none) != none or d.at("surroundings", default: none) != none) [
   #section("Humedad del suelo y entorno del lote")
   #let sn = d.at("soil_nasa", default: none)
   #let en = d.at("surroundings", default: none)
@@ -471,7 +484,26 @@
     if en != none { facts-card("Entorno del lote · Overture Maps", en.facts, en.note) } else { [] })
 ]
 
-#if d.at("lot_more", default: ()).len() > 0 [
+#if want("asesor") and d.at("advisor", default: none) != none [
+  #section("Asesor agronómico integrado")
+  #text(size: 7.5pt, fill: muted)[#d.advisor.lectura]
+  #v(4pt)
+  #grid(columns: (1fr, 1fr), column-gutter: 10pt, row-gutter: 10pt, ..d.advisor.cards.map(c => card[
+    #text(weight: "semibold")[#c.title]
+    #v(2pt)
+    #text(size: 7pt, fill: muted)[#c.label]
+    #linebreak()#text(size: 15pt, weight: "bold")[#c.value #text(size: 8pt, fill: muted)[#c.unit]]
+    #v(3pt)
+    #table(columns: (1fr, auto), stroke: (x, y) => (bottom: 0.4pt + line-c), inset: (x: 3pt, y: 4pt), align: (left, right),
+      ..c.facts.map(f => (text(size: 8pt, fill: muted)[#f.at(0)], text(size: 8.5pt, weight: "semibold")[#f.at(1)])).flatten())
+    #v(3pt)
+    #if c.at("scale", default: "") != "" [#text(size: 6.8pt, fill: brand)[#c.scale] #linebreak()]
+    #text(size: 6.8pt, fill: muted)[#c.note]
+  ]))
+  #if charts-of("asesor").len() > 0 [#v(8pt) #chart-grid(charts-of("asesor"))]
+]
+
+#if want("terreno") and d.at("lot_more", default: ()).len() > 0 [
   #section("Terreno, suelos y satélite sobre el lote")
   #let mc(c) = card[
     #text(weight: "semibold")[#c.title]
@@ -485,7 +517,7 @@
 ]
 
 // ─────────────────────────── ÍNDICES, PROBABILIDADES, SUSTENTABILIDAD ───────────────────────────
-#if d.indices.len() > 0 [
+#if want("indices") and d.indices.len() > 0 [
   #section("Índices agroclimáticos")
   #text(size: 8pt, fill: muted)[#d.indices_note]
   #v(4pt)
@@ -506,7 +538,7 @@
   #if charts-of("indices").len() > 0 [#v(6pt) #chart-grid(charts-of("indices"))]
 ]
 
-#if d.at("prob", default: ()).len() > 0 or d.at("seasonal", default: ()).len() > 0 [
+#if want("probabilidades") and (d.at("prob", default: ()).len() > 0 or d.at("seasonal", default: ()).len() > 0) [
   #section("Probabilidades y tendencias")
   #if d.stat_note != "" [#text(size: 8.5pt)[#d.stat_note] #v(4pt)]
   #if d.prob.len() > 0 [
@@ -534,7 +566,7 @@
   ]
 ]
 
-#if d.at("costs", default: ()).len() > 0 [
+#if want("costos") and d.at("costs", default: ()).len() > 0 [
   #section("Costos y logística")
   #grid(columns: (1fr, 1fr, 1fr), gutter: 6pt, ..d.costs.map(k => card(fill: soft, stroke: none, inset: 9pt)[
     #text(size: 7pt, fill: muted)[#k.label]
@@ -549,7 +581,7 @@
   #text(size: 7pt, fill: muted)[#d.costs_note]
 ]
 
-#if d.at("sust", default: ()).len() > 0 [
+#if want("sustentabilidad") and d.at("sust", default: ()).len() > 0 [
   #section("Sustentabilidad")
   #for s in d.sust [
     #block(width: 100%, breakable: false, inset: (left: 9pt, rest: 7pt), radius: (right: 6pt), fill: tone(s.tone).transparentize(93%), stroke: (left: 3pt + tone(s.tone)))[
@@ -562,7 +594,7 @@
   #text(size: 7pt, fill: muted)[La verificación de cobertura por satélite no es una certificación legal; la debida diligencia de la Unión Europea exige además documentación y trazabilidad.]
 ]
 
-#if d.telecon.len() > 0 [
+#if want("enso") and d.telecon.len() > 0 [
   #section("El Niño y teleconexiones")
   #if d.enso_text != "" [#card(fill: brand-soft, stroke: none)[#d.enso_text] #v(4pt)]
   #grid(columns: (1fr, 1fr, 1fr, 1fr), gutter: 6pt,
@@ -575,11 +607,12 @@
 ]
 
 // ─────────────────────────── LÍMITES Y TRAZABILIDAD ───────────────────────────
-#if d.warnings.len() > 0 [
+#if want("limites") and d.warnings.len() > 0 [
   #section("Límites de la lectura")
   #for w in d.warnings [- #text(fill: ink2)[#w]]
 ]
 
+#if want("trazabilidad") [
 #section("Trazabilidad de fuentes")
 #text(size: 8pt, fill: muted)[#d.evidence_note]
 #v(4pt)
@@ -599,3 +632,4 @@
 )
 #v(8pt)
 #text(size: 7pt, fill: muted)[#d.attributions]
+]

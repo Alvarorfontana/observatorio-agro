@@ -54,6 +54,7 @@ import { RindeAgua } from "./site/RindeAgua";
 import { CasoBellaVista } from "./site/CasoBellaVista";
 import { Focos } from "./site/Focos";
 const NdviExtra = lazy(() => import("./site/NdviExtra").then(m => ({ default: m.NdviExtra })));
+const NinoCrecidas = lazy(() => import("./site/NinoCrecidas").then(m => ({ default: m.NinoCrecidas })));
 import { readLotFile, lotsToGeoJSON, lotsToKML } from "./dashboard/lotFiles";
 type Data = Record<string, any>;
 type Point = [number, number];
@@ -465,7 +466,9 @@ function Observatory({onHome}:{onHome:()=>void}) {
     [markerType,setMarkerType] = useState("observación"),
     [placingMarker,setPlacingMarker] = useState(false),
     [lots,setLots] = useState<Array<{id:string;name:string;vertices:Point[];center:Point;areaHa:number;perimeterKm:number;compactness?:number|null;ftw?:any}>>([]),
-    [selectedLotId,setSelectedLotId] = useState<string | null>(null);
+    [selectedLotId,setSelectedLotId] = useState<string | null>(null),
+    [reportSections,setReportSections] = useState<string[]>(() => { try { const v = JSON.parse(localStorage.getItem("dots-report-secciones") || "[]"); return Array.isArray(v) ? v : []; } catch { return []; } }),
+    [reportCatalog,setReportCatalog] = useState<Array<{id:string;title:string;group:string;desc?:string}>>([]);
   const mapEl = useRef<HTMLDivElement>(null),
     mapRef = useRef<L.Map | null>(null),
     marker = useRef<L.CircleMarker | null>(null),
@@ -489,6 +492,8 @@ function Observatory({onHome}:{onHome:()=>void}) {
     waterLayers = useRef<L.Marker[]>([]),
     markerTypeRef = useRef("observación");
   useEffect(()=>{markerTypeRef.current=markerType},[markerType]);
+  useEffect(()=>{ try { localStorage.setItem("dots-report-secciones", JSON.stringify(reportSections)); } catch {} },[reportSections]);
+  useEffect(()=>{ if(!agentOpen||reportCatalog.length) return; fetch("/api/fuentes/informe/secciones").then(r=>r.json()).then(j=>setReportCatalog(j.sections||[])).catch(()=>{}); },[agentOpen,reportCatalog.length]);
   useEffect(()=>{
     try { const saved=localStorage.getItem("dots-field-state"); if(saved){const x=JSON.parse(saved); if(Array.isArray(x.fieldMarkers))setFieldMarkers(x.fieldMarkers); if(Array.isArray(x.waterAssets))setWaterAssets(x.waterAssets);} } catch {}
   },[]);
@@ -1263,7 +1268,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
     try {
       const r = await fetch("/api/fuentes/agentic/pdf", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lat: point[0], lon: point[1], prompt: agentPrompt, polygon: poly.current ? vertices : null, inaSeries, waterAssets, fieldMarkers, nombre: lots.find(x=>x.id===selectedLotId)?.name || "Lote DOTS", analysis: agentResult, extras: reportExtras() }),
+        body: JSON.stringify({ lat: point[0], lon: point[1], prompt: agentPrompt, polygon: poly.current ? vertices : null, inaSeries, waterAssets, fieldMarkers, nombre: lots.find(x=>x.id===selectedLotId)?.name || "Lote DOTS", analysis: agentResult, secciones: reportSections.length ? reportSections : undefined, extras: reportExtras() }),
         signal: AbortSignal.timeout(60000),
       });
       if (!r.ok) throw Error("No se pudo generar el informe Agentic");
@@ -1324,6 +1329,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
           area_ha: lotAreaHa,
           perimeter_km: lotPerimeterKm,
           fieldMarkers,
+          secciones: reportSections.length ? reportSections : undefined,
           extras: { ...reportExtras(), ...more },
         }),
         signal: AbortSignal.timeout(45000),
@@ -2613,6 +2619,19 @@ function Observatory({onHome}:{onHome:()=>void}) {
           <h3>Recomendaciones operativas</h3>{(agentResult.recommendations||[]).map((x:string,i:number)=><p key={i}>• {x}</p>)}
           {!!agentResult.warnings?.length && <><h3>Límites y advertencias</h3>{agentResult.warnings.map((x:string,i:number)=><p className="warning" key={i}>• {x}</p>)}</>}
           <h3>Evidencia y APIs</h3><div className="modal-evidence">{(agentResult.evidence||[]).map((e:Data,i:number)=><div key={i}><b>{e.source}</b><span className={e.status==='recibido'?'ok':'miss'}>{e.status}</span><small>{e.consulted_at?.slice(0,19)||'sin fecha'}</small></div>)}</div>
+          <details className="report-topics"><summary>Elegir los temas del informe <small>{reportSections.length ? `${reportSections.length} elegidos` : "todos"}</small></summary>
+            <div className="report-topics-grid">
+              {Array.from(new Set(reportCatalog.map(s=>s.group))).map(g=><div key={g}><b>{g}</b>
+                {reportCatalog.filter(s=>s.group===g).map(s=><label key={s.id}><input type="checkbox" checked={reportSections.includes(s.id)} onChange={e=>setReportSections(prev=>e.target.checked?[...prev,s.id]:prev.filter(x=>x!==s.id))}/> <span>{s.title}</span></label>)}
+              </div>)}
+              {!reportCatalog.length && <p className="footnote">Cargando temas…</p>}
+            </div>
+            <div className="report-topics-actions">
+              <button type="button" onClick={()=>setReportSections(reportCatalog.map(s=>s.id))}>Todos</button>
+              <button type="button" onClick={()=>setReportSections([])}>Ninguno</button>
+              <span>Sin elegir ninguno entran todos los temas con dato disponible.</span>
+            </div>
+          </details>
           <div className="modal-actions"><button className="primary" onClick={()=>void agentPdf()} disabled={pdfBusy}><FileText className="icon" />{pdfBusy?'Generando PDF…':'Descargar informe técnico PDF'}</button><button onClick={()=>setAgentOpen(false)}>Volver al mapa</button></div>
         </section>
       </div>}
@@ -2635,13 +2654,13 @@ function PublicHeader({onDemo}:{onDemo:()=>void}){return <header className="site
   <SiteLink to="/libre-deforestacion">Vender a Europa</SiteLink>
   <SiteLink to="/caso-bella-vista">Ejemplo</SiteLink>
   <details className="nav-more"><summary>Más</summary><div>
-    <SiteLink to="/cultivos">Cultivos y rinde</SiteLink><a href="/poblacion">Población y riesgo</a><SiteLink to="/panel">Panel regional</SiteLink><SiteLink to="/modulos">Módulos</SiteLink>
+    <SiteLink to="/cultivos">Cultivos y rinde</SiteLink><SiteLink to="/nino-crecidas">El Niño y crecidas</SiteLink><a href="/poblacion">Población y riesgo</a><SiteLink to="/panel">Panel regional</SiteLink><SiteLink to="/modulos">Módulos</SiteLink>
     <SiteLink to="/guia">Cómo funciona</SiteLink><SiteLink to="/capas">Capas del mapa</SiteLink><SiteLink to="/tecnologia">Fuentes</SiteLink><SiteLink to="/conexiones">APIs</SiteLink><SiteLink to="/casos">Casos</SiteLink><SiteLink to="/contacto">Contacto</SiteLink>
   </div></details>
 </nav><div className="site-head-actions"><SiteLink to="/alertas" className="alert-btn">⚠ Alertas</SiteLink><SiteLink to="/acceso" className="ghost-link">Ingresar</SiteLink><button className="demo-btn" onClick={onDemo}>Abrir Observatorio →</button>
   <details className="nav-mobile"><summary aria-label="Menú">☰</summary><div>
     <button className="nav-mobile-demo" onClick={onDemo}>Abrir Observatorio →</button>
-    {([["/que-es-dots","Qué es DOTS"],["/caso-bella-vista","Ejemplo: caso Bella Vista"],["/el-nino","Mi región: El Niño"],["/alertas","Alertas de crecidas"],["/focos","Fuego, rayos y heladas"],["/cultivos","Cultivos y rinde"],["/libre-deforestacion","Vender a Europa"],["/poblacion","Población y riesgo"],["/panel","Panel regional"],["/modulos","Módulos"],["/guia","Cómo funciona"],["/capas","Capas del mapa"],["/tecnologia","Fuentes"],["/conexiones","APIs"],["/casos","Casos"],["/contacto","Contacto"],["/acceso","Ingresar"]] as [string,string][]).map(([to,l])=>to==="/poblacion"?<a key={to} href={to}>{l}</a>:<SiteLink key={to} to={to}>{l}</SiteLink>)}
+    {([["/que-es-dots","Qué es DOTS"],["/caso-bella-vista","Ejemplo: caso Bella Vista"],["/el-nino","Mi región: El Niño"],["/alertas","Alertas de crecidas"],["/nino-crecidas","El Niño y crecidas"],["/focos","Fuego, rayos y heladas"],["/cultivos","Cultivos y rinde"],["/libre-deforestacion","Vender a Europa"],["/poblacion","Población y riesgo"],["/panel","Panel regional"],["/modulos","Módulos"],["/guia","Cómo funciona"],["/capas","Capas del mapa"],["/tecnologia","Fuentes"],["/conexiones","APIs"],["/casos","Casos"],["/contacto","Contacto"],["/acceso","Ingresar"]] as [string,string][]).map(([to,l])=>to==="/poblacion"?<a key={to} href={to}>{l}</a>:<SiteLink key={to} to={to}>{l}</SiteLink>)}
   </div></details></div></header>}
 const sourceGroups=[
  ["ARGENTINA",["CONAE · SAOCOM","SMN","INA"]],
@@ -2792,6 +2811,18 @@ function AlertsPage({onDemo}:{onDemo:()=>void}){
   useEffect(()=>{document.title="Sistema de Alerta de Crecidas · DOTS";},[]);
   return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner regional-panel alerts-page">
     <Suspense fallback={null}><CuencaPanel/></Suspense>
+    <AvisosBox/>
+    <section className="demo-call"><div><span className="section-tag">TU CAMPO</span><h2>Bajá de la cuenca a tu potrero.</h2><p>En el Observatorio ves el relieve, los bajos que se anegan y el agua detectada por satélite en tu lote.</p></div><button onClick={onDemo}>Abrir Observatorio →</button></section>
+  </main><SiteFooter/></div>;
+}
+
+// "El Niño y crecidas": cadena El Niño → lluvia → río → amenaza de crecida por período de retorno.
+function NinoCrecidasPage({onDemo}:{onDemo:()=>void}){
+  useEffect(()=>{document.title="El Niño y crecidas · DOTS";},[]);
+  return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner regional-panel alerts-page">
+    <PageHero eyebrow="EL NIÑO Y LAS CRECIDAS" title="De un viento en el Pacífico al agua que entra en el pueblo." lead="El Niño ordena la lluvia; la lluvia mueve el río; el río define hasta dónde llega el agua en cada crecida. Acá está la cadena completa: estado oficial del Pacífico, caudales y alturas de la Cuenca del Plata, la amenaza de crecida por período de retorno del JRC y quién vive en zona inundable."/>
+    <Suspense fallback={null}><CuencaPanel/></Suspense>
+    <Suspense fallback={null}><NinoCrecidas/></Suspense>
     <AvisosBox/>
     <section className="demo-call"><div><span className="section-tag">TU CAMPO</span><h2>Bajá de la cuenca a tu potrero.</h2><p>En el Observatorio ves el relieve, los bajos que se anegan y el agua detectada por satélite en tu lote.</p></div><button onClick={onDemo}>Abrir Observatorio →</button></section>
   </main><SiteFooter/></div>;
@@ -3418,6 +3449,7 @@ function App(){
   if(path==="/modulos")return <Modules onDemo={openDemo}/>;
   if(path==="/panel")return <RegionalPanel onDemo={openDemo}/>;
   if(path==="/alertas")return <AlertsPage onDemo={openDemo}/>;
+  if(path==="/nino-crecidas")return <NinoCrecidasPage onDemo={openDemo}/>;
   if(path==="/cultivos")return <CultivosPage onDemo={openDemo}/>;
   if(path==="/caso-bella-vista")return <CasoPage onDemo={openDemo}/>;
   if(path==="/focos")return <FocosPage onDemo={openDemo}/>;

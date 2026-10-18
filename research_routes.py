@@ -36,6 +36,12 @@ import cuenca_report as ccr
 import earthalign as eal
 import soil_moisture_sar as sms
 import ina_a5
+import asesor as asr
+import cap as capfmt
+import notify as ntf
+import spray_window as spw
+import disease as dis
+import scales as scl
 
 research_api=Blueprint('research_api',__name__,url_prefix='/api/fuentes')
 
@@ -206,6 +212,67 @@ def lot_alerts():
         return jsonify(alr.evaluate(lat,lon,d.get('polygon'),d.get('known') if isinstance(d.get('known'),dict) else None))
     except ValueError as e: return jsonify({'status':'sin dato','error':str(e)}),400
     except Exception as e: return jsonify({'status':'sin dato','error':'No se pudieron evaluar las alertas','type':type(e).__name__}),502
+
+@research_api.post('/asesor')
+def lot_advisor():
+    try:
+        d=request.get_json(silent=True) or {}
+        lat,lon=c.coordinates({'lat':[d.get('lat')],'lon':[d.get('lon')]})
+        return jsonify(asr.advise(lat,lon,str(d.get('crop') or 'maiz')[:20],d.get('sowing'),
+                                  d.get('yield_t_ha'),d.get('prev_crop')))
+    except ValueError as e: return jsonify({'status':'sin dato','error':str(e)}),400
+    except Exception as e: return jsonify({'status':'sin dato','error':'No se pudo armar el asesor','type':type(e).__name__}),502
+
+@research_api.post('/alertas/cap')
+def lot_alerts_cap():
+    """Las alertas del lote como mensaje CAP 1.2 (para agregadores CAP o envío por push)."""
+    try:
+        d=request.get_json(silent=True) or {}
+        lat,lon=c.coordinates({'lat':[d.get('lat')],'lon':[d.get('lon')]})
+        alerts=d.get('alerts')
+        if not isinstance(alerts,list):
+            env=alr.evaluate(lat,lon,d.get('polygon'),d.get('known') if isinstance(d.get('known'),dict) else None)
+            alerts=(env.get('data') or {}).get('alerts') or []
+        xml=capfmt.to_xml(alerts,lat,lon)
+        return Response(xml,mimetype='application/cap+xml',headers={'Cache-Control':'no-store'})
+    except ValueError as e: return jsonify({'status':'sin dato','error':str(e)}),400
+    except Exception as e: return jsonify({'status':'sin dato','error':'No se pudo generar el mensaje CAP','type':type(e).__name__}),502
+
+@research_api.post('/notificar')
+def notify_push():
+    try:
+        d=request.get_json(silent=True) or {}
+        return jsonify(ntf.ntfy(str(d.get('title') or 'DOTS')[:120],str(d.get('message') or '')[:600],
+                                int(d.get('priority') or 3),d.get('tags') if isinstance(d.get('tags'),list) else None,d.get('click')))
+    except ValueError as e: return jsonify({'status':'sin canal','error':str(e)}),409
+    except Exception as e: return jsonify({'status':'error','error':'No se pudo enviar el aviso','type':type(e).__name__}),502
+
+@research_api.post('/ventana-pulverizacion')
+def spray_window_view():
+    """Ventana de pulverización por hora con sus umbrales y su escala (viento, Delta T, lluvia)."""
+    try:
+        d=request.get_json(silent=True) or {}
+        lat,lon=c.coordinates({'lat':[d.get('lat')],'lon':[d.get('lon')]})
+        return jsonify(spw.advise(lat,lon,_int({'days':d.get('days',3)},'days',3,1,7)))
+    except ValueError as e: return jsonify({'status':'sin dato','error':str(e)}),400
+    except Exception as e: return jsonify({'status':'sin dato','error':'No se pudo armar la ventana de pulverización','type':type(e).__name__}),502
+
+@research_api.post('/enfermedades')
+def disease_view():
+    """Riesgo de enfermedad por clima con su escala; enfermedad por nombre o por cultivo."""
+    try:
+        d=request.get_json(silent=True) or {}
+        lat,lon=c.coordinates({'lat':[d.get('lat')],'lon':[d.get('lon')]})
+        crop=str(d.get('crop') or '')[:20]
+        key=str(d.get('disease') or (dis.BY_CROP.get(crop) or ['trigo_septoria'])[0])[:30]
+        return jsonify(dis.advise(lat,lon,key,_int({'days':d.get('days',7)},'days',7,1,10)))
+    except ValueError as e: return jsonify({'status':'sin dato','error':str(e)}),400
+    except Exception as e: return jsonify({'status':'sin dato','error':'No se pudo estimar el riesgo de enfermedad','type':type(e).__name__}),502
+
+@research_api.get('/escalas')
+def scales_view():
+    """Catálogo de escalas (mínimo, máximo y bandas) de cada indicador, más las enfermedades modeladas."""
+    return jsonify({'scales':scl.all_scales(),'enfermedades':dis.catalog()})
 
 @research_api.post('/contacto')
 def contact_send():
@@ -477,7 +544,7 @@ def report():
         d=request.get_json(silent=True) or {}
         lat,lon=c.coordinates({'lat':[d.get('lat')],'lon':[d.get('lon')]})
         result=agentic.analyze(lat,lon,str(d.get('prompt','Informe integral del lote')),d.get('polygon'),d.get('inaSeries'),d.get('waterAssets'),d.get('fieldMarkers'),_known(d))
-        pdf,engine=rt.pdf(result,str(d.get('nombre','Lote DOTS')),d.get('extras') if isinstance(d.get('extras'),dict) else None)
+        pdf,engine=rt.pdf(result,str(d.get('nombre','Lote DOTS')),_extras(d))
         return Response(pdf,mimetype='application/pdf',headers={'Content-Disposition':'attachment; filename=DOTS-informe-territorial.pdf','X-DOTS-Report-Engine':engine})
     except ValueError as e:return jsonify({'error':str(e)}),400
     except Exception as e:return jsonify({'status':'sin dato','error':'No se pudo generar el informe DOTS','type':type(e).__name__}),502
@@ -514,6 +581,85 @@ def _known(d):
     k=d.get('known') if isinstance(d.get('known'),dict) else d.get('extras') if isinstance(d.get('extras'),dict) else {}
     return {key:k[key] for key in ('ndvi','forraje','lluvia','estadistica','alertas','sustentabilidad','costos','lot') if isinstance(k.get(key),dict)}
 
+def _extras(d):
+    """Extras del panel más la selección de temas: 'secciones' (o 'temas') elige qué secciones entran al informe."""
+    e=dict(d.get('extras')) if isinstance(d.get('extras'),dict) else {}
+    sel=d.get('secciones') if isinstance(d.get('secciones'),list) else d.get('temas')
+    if isinstance(sel,list): e['secciones']=sel
+    return e
+
+@research_api.get('/informe/secciones')
+def informe_secciones():
+    """Catálogo de temas del informe. Sin 'secciones' se incluyen todos los temas con dato disponible."""
+    return jsonify({'sections':rt.SECTIONS,'ids':rt.section_ids(),
+                    'note':'Enviá "secciones": ["resumen","clima","asesor"] en /analizar o /agentic/pdf. Sin lista entran todos los temas.'})
+
+@research_api.get('/temas')
+def temas_index():
+    """Catálogo de temas/variables: cada uno con de dónde viene (organismo, URL) y cómo se obtiene."""
+    import temas
+    return jsonify({'temas':temas.catalog(),'ids':temas.ids(),
+                    'note':'Un tema alimenta página, informe PDF y newsletter con la misma fuente y procedencia.'})
+
+@research_api.get('/tema/<tid>')
+def tema_view(tid):
+    """Datos de un tema con su procedencia. Sin fuente disponible queda en 'sin dato', no se inventa."""
+    import temas
+    try:
+        q={key:[value] for key,value in request.args.items()}
+        lat,lon=c.coordinates(q)
+        return jsonify(temas.resolve(tid,lat,lon,request.args))
+    except KeyError:
+        return jsonify({'error':f'Tema desconocido: {tid}','ids':temas.ids()}),404
+    except ValueError as e:
+        return jsonify({'error':str(e)}),400
+    except Exception as e:
+        return _upstream_error(e)
+
+@research_api.get('/amenaza')
+def amenaza_view():
+    """Amenaza de crecida por período de retorno (JRC) y población expuesta (WorldPop) en un punto."""
+    import hazard
+    try:
+        lat,lon=c.coordinates({key:[value] for key,value in request.args.items()})
+        return jsonify(hazard.analyze(lat,lon))
+    except ValueError as e:
+        return jsonify({'error':str(e)}),400
+    except Exception as e:
+        return _upstream_error(e)
+
+def _tema_ids(raw, temas_mod):
+    """Normaliza la lista de temas pedida: ignora desconocidos y, si queda vacía, usa todos."""
+    if isinstance(raw, str):
+        raw=[t.strip() for t in raw.split(',') if t.strip()]
+    ids=[t for t in raw if t in temas_mod.TEMAS] if isinstance(raw,list) else []
+    return ids or temas_mod.ids()
+
+@research_api.post('/informe-temas')
+def informe_temas_pdf():
+    """Informe PDF de los temas pedidos (cada uno con su procedencia). Genérico: crecidas, nino, cultivos, suelo…"""
+    import temas, informe_temas
+    d=request.get_json(silent=True) or {}
+    ids=_tema_ids(d.get('temas') if 'temas' in d else d.get('secciones'),temas)
+    lat,lon=(d.get('lat'),d.get('lon'))
+    doc=informe_temas.build(ids,lat,lon,d.get('params') or d,str(d.get('nombre','DOTS')))
+    out=informe_temas.pdf(doc)
+    return Response(out,mimetype='application/pdf',headers={'Content-Disposition':'attachment; filename=DOTS-informe-temas.pdf'})
+
+@research_api.get('/newsletter-temas')
+def newsletter_temas():
+    """Newsletter HTML de los temas pedidos, con la misma procedencia. Para correo o previsualización."""
+    import temas, informe_temas
+    ids=_tema_ids(request.args.get('temas'),temas)
+    q={key:[value] for key,value in request.args.items()}
+    lat,lon=c.coordinates(q)
+    params={key:value for key,value in request.args.items()}
+    if params.get('poligono'):
+        try: params['poligono']=json.loads(params['poligono'])
+        except Exception: params.pop('poligono',None)
+    doc=informe_temas.build(ids,lat,lon,params,request.args.get('nombre','DOTS'))
+    return Response(informe_temas.html(doc),mimetype='text/html; charset=utf-8')
+
 @research_api.post('/agentic')
 def agentic_analyze():
     try:
@@ -537,7 +683,7 @@ def agentic_pdf():
             result=supplied
         else:
             result=agentic.analyze(lat,lon,str(d.get('prompt','')),d.get('polygon'),d.get('inaSeries'),d.get('waterAssets'),d.get('fieldMarkers'),_known(d))
-        pdf,engine=rt.pdf(result,str(d.get('nombre','Lote DOTS')),d.get('extras') if isinstance(d.get('extras'),dict) else None)
+        pdf,engine=rt.pdf(result,str(d.get('nombre','Lote DOTS')),_extras(d))
         return Response(pdf,mimetype='application/pdf',headers={'Content-Disposition':'attachment; filename=DOTS-informe-agentic.pdf','X-DOTS-Report-Engine':engine})
     except ValueError as e:return jsonify({'error':str(e)}),400
     except Exception as e:return jsonify({'status':'sin dato','error':'No se pudo generar el informe Agentic','type':type(e).__name__}),502

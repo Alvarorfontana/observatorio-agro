@@ -17,6 +17,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 
 import research_connectors as c
+import scales
 
 PC_STAC = 'https://planetarycomputer.microsoft.com/api/stac/v1'
 PC_DATA = 'https://planetarycomputer.microsoft.com/api/data/v1'
@@ -122,6 +123,26 @@ def scene_ndvi(item, feature):
 
 def _r(v):
     return None if v is None else round(float(v), 4)
+
+
+# ───────────────────────────── escala y resumen (siempre con mínimo y máximo declarados) ─────────────────────────────
+def classify(ndvi):
+    """El NDVI con su escala (rango -1 a 1), su banda de vigor y su tono."""
+    return scales.band('ndvi', ndvi)
+
+
+def window_stats(series):
+    """Resumen de la ventana de escenas válidas: último, mínimo, máximo, media, tendencia y banda."""
+    valid = [r for r in (series or []) if r.get('status') == 'válida' and r.get('ndvi_mean') is not None]
+    if not valid:
+        return None
+    vals = [r['ndvi_mean'] for r in valid]
+    lo = min((r['ndvi_p2'] if r.get('ndvi_p2') is not None else r['ndvi_mean']) for r in valid)
+    hi = max((r['ndvi_p98'] if r.get('ndvi_p98') is not None else r['ndvi_mean']) for r in valid)
+    last = valid[-1]
+    return {'scenes': len(valid), 'latest_date': str(last.get('datetime'))[:10], 'latest_ndvi': last['ndvi_mean'],
+            'min_ndvi': round(lo, 3), 'max_ndvi': round(hi, 3), 'mean_ndvi': round(sum(vals) / len(vals), 3),
+            'trend_ndvi': round(vals[-1] - vals[0], 3), 'class': classify(last['ndvi_mean'])}
 
 
 def _refl(band, offset):
@@ -236,6 +257,7 @@ def ndvi_open(polygon, days=120, scenes=6):
         'capability': 'ANALYSIS', 'index': 'NDVI', 'sensor': 'Sentinel-2 L2A (10 m)',
         'area_ha': area_ha(pts), 'min_clear_fraction': MIN_CLEAR,
         'latest': latest, 'series': rows, 'valid_scenes': len(valid),
+        'scale': scales.describe('ndvi'), 'summary': window_stats(rows),
         'interpretation_scope': 'Estadística zonal dentro del polígono. Nubes/sombras excluidas por SCL.'},
         PC_DATA + '/item/statistics', 'NDVI zonal Sentinel-2 por lote',
         'Microsoft Planetary Computer · ESA Copernicus',
@@ -287,6 +309,7 @@ def ndvi_modis(polygon, days=120):
     return c.envelope({
         'capability': 'ANALYSIS', 'index': 'NDVI', 'sensor': 'MODIS Terra MOD13Q1 (250 m, 16 días)',
         'area_ha': area_ha(pts), 'latest': valid[-1] if valid else None, 'series': rows, 'valid_scenes': len(valid),
+        'scale': scales.describe('ndvi'), 'summary': window_stats(rows),
         'fallback': True, 'window_km': 2 * k + 1 if k else 0.25,
         'interpretation_scope': ('Respaldo: ' + (f'promedio de píxeles MODIS de 250 m en una ventana de {2 * k + 1} km centrada en el lote.' if k
                                  else 'píxel MODIS de 250 m del centro del lote.'))},
@@ -590,7 +613,7 @@ def ndvi_zones(polygon, days=60):
                           'color': '#%02x%02x%02x' % tuple(ZONE_COLORS[z][:3])})
         return c.envelope({'item': it['id'], 'datetime': row['datetime'], 'clear_fraction_lot': row['clear_fraction_lot'],
                            'ndvi_mean': row.get('ndvi_mean'), 'cuts': [round(x, 4) for x in cortes], 'zones': zonas, 'area_ha': ha,
-                           'processing_baseline': row.get('processing_baseline'),
+                           'scale': scales.describe('ndvi'), 'processing_baseline': row.get('processing_baseline'),
                            'method': 'Sentinel-2 L2A (10 m) · NDVI · k-medias (3 grupos) sobre el histograma del lote'},
                           PC_STAC, 'zonas de vigor del lote', 'Copernicus Sentinel-2 · Microsoft Planetary Computer')
     return c.envelope(None, PC_STAC, 'zonas de vigor del lote', 'Copernicus Sentinel-2', 'sin dato',

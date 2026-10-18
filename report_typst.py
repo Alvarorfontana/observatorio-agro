@@ -87,6 +87,28 @@ def satellite_thumb(polygon, size=560, timeout=6):
     return None
 
 
+GIBS = 'https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi'
+
+
+def thematic_thumb(polygon, layer='MODIS_Terra_NDVI_8Day', size=560, timeout=6):
+    """PNG temático (NDVI) del lote desde NASA GIBS (WMS, sin clave). None si no responde: el informe sigue igual."""
+    if os.environ.get('DOTS_REPORT_IMAGERY', '1') == '0':
+        return None
+    box = frame_bbox(polygon)
+    if not box:
+        return None
+    try:
+        import requests
+        r = requests.get(GIBS, timeout=timeout, params={
+            'service': 'WMS', 'version': '1.1.1', 'request': 'GetMap', 'layers': layer, 'styles': '',
+            'srs': 'EPSG:4326', 'bbox': ','.join(f'{v:.6f}' for v in box), 'width': size, 'height': size, 'format': 'image/png'})
+        if r.ok and r.content[:4] == b'\x89PNG' and len(r.content) > 2000:
+            return r.content
+    except Exception:
+        pass
+    return None
+
+
 def metric_tone(m):
     """Tono de una variable a partir de umbrales conocidos o de su lectura declarada."""
     name = str(m.get('variable', '')).lower(); v = _f(m.get('value'))
@@ -181,6 +203,121 @@ def more_cards(extras):
         out.append({'title': 'Heladas por satélite', 'facts': [['Noches con helada (30 días)', num(fr.get('frost_nights_30d'), 0)], ['Noche más fría', f"{num(cd.get('lst_c'))} °C · {_dm(cd.get('date'))}"]],
                     'note': str(fr.get('reading') or '') + ' NASA MODIS Aqua MYD11A1 (1 km): temperatura de la superficie en noches despejadas.', 'credit': 'heladas: NASA MODIS Aqua MYD11A1'})
     return out
+
+def advisor_block(asesor):
+    """Envelope del asesor (/api/fuentes/asesor) → tarjetas y gráficos para el informe. None si no hay datos."""
+    if not isinstance(asesor, dict):
+        return None
+    data = asesor.get('data') if isinstance(asesor.get('data'), dict) else asesor
+    agua, nitro, aire = data.get('agua'), data.get('nitrogeno'), data.get('aire')
+    pulv, enfer = data.get('pulverizacion'), data.get('enfermedad')
+    if not any((agua, nitro, aire, pulv, enfer)):
+        return None
+    cards, charts = [], []
+    if agua:
+        cards.append({'title': 'Riego (FAO-56)', 'label': 'Necesidad neta de riego', 'value': num(agua.get('net_irrigation_mm'), 1), 'unit': 'mm',
+                      'scale': '', 'facts': [['ETc de la ventana', f"{num(agua.get('etc_total_mm'), 1)} mm"],
+                                ['Lluvia esperada', f"{num(agua.get('rain_total_mm'), 1)} mm"],
+                                ['Riego bruto (75 % de eficiencia)', f"{num(agua.get('gross_irrigation_mm'), 1)} mm"],
+                                ['Agua útil del perfil', f"{num(agua.get('taw_mm'), 0)} mm"],
+                                ['Riego fácil (RAW)', f"{num(agua.get('raw_mm'), 0)} mm"]],
+                      'note': str(agua.get('reading') or '')})
+        if agua.get('days'):
+            charts.append({'kind': 'balance', 'group': 'asesor', 'title': 'Agua de la ventana pronosticada',
+                           'subtitle': 'Lluvia esperada hacia arriba · ETc del cultivo hacia abajo · mm', 'unit': 'mm',
+                           'labels': [str(i + 1) for i in range(len(agua['days']))],
+                           'series': [{'name': 'Lluvia', 'values': [_f(x.get('rain_mm')) for x in agua['days']]},
+                                      {'name': 'ETc', 'values': [_f(x.get('etc_mm')) for x in agua['days']]}]})
+    if nitro:
+        cards.append({'title': 'Nitrógeno (DSSAT / RothC)', 'label': 'Dosis sugerida', 'value': num(nitro.get('dose_kg_ha'), 0), 'unit': 'kg N/ha',
+                      'scale': '', 'facts': [['Demanda del cultivo', f"{num(nitro.get('demand_kg_ha'), 0)} kg N/ha"],
+                                ['Aporte del suelo', f"{num(nitro.get('supply_from_soil_kg_ha'), 0)} kg N/ha"],
+                                ['Crédito cultivo previo', f"{num(nitro.get('prev_crop_credit_kg_ha'), 0)} kg N/ha"],
+                                ['Equivalente en urea', f"{num(nitro.get('urea_kg_ha'), 0)} kg/ha"]],
+                      'note': str(nitro.get('reading') or '') + ' Orientativo: no reemplaza un análisis de nitrato 0-60 cm.'})
+    if aire and aire.get('index') is not None:
+        sc = aire.get('scale') or {}
+        facts = [[p.get('label', k), f"{num(p.get('value'), 1)} µg/m³ · índice {num(p.get('sub_index'), 0)}"]
+                 for k, p in (aire.get('per_pollutant') or {}).items() if p.get('value') is not None]
+        cards.append({'title': 'Aire (CAMS)', 'label': 'Índice europeo de calidad', 'value': num(aire.get('index'), 0), 'unit': str(aire.get('category') or ''),
+                      'scale': 'Escala 0 a 500 · buena ≤ 20 · mala ≥ 60', 'facts': facts, 'note': str(aire.get('reading') or '')})
+    if pulv and pulv.get('rows'):
+        best = pulv.get('best')
+        val = f"{best['from']}–{best['to']}" if best else 'sin ventana'
+        cards.append({'title': 'Ventana de pulverización', 'label': 'Mejor franja diurna', 'value': val, 'unit': '',
+                      'scale': 'Aptitud 0 a 100 · apta ≥ 70 · viento 3–11 km/h · Delta T 2–8 °C',
+                      'facts': [['Horas evaluadas', num(pulv.get('hours', 0), 0)],
+                                ['Horas aptas (≥ 70)', num(len([r for r in pulv['rows'] if r['index'] >= 70]), 0)],
+                                ['Día de la mejor franja', (best or {}).get('date', '—')],
+                                ['Aptitud de la franja', num((best or {}).get('index'), 0)]],
+                      'note': str(pulv.get('reading') or '')})
+    if enfer and enfer.get('rows'):
+        sc = enfer.get('scale') or {}
+        top = max(enfer['rows'], key=lambda r: r['risk'])
+        cards.append({'title': f"Enfermedad por clima · {enfer.get('name', '')}", 'label': 'Riesgo máximo', 'value': num(enfer.get('risk_max'), 0), 'unit': '/100',
+                      'scale': 'Escala 0 a 100 · bajo < 20 · alto ≥ 40',
+                      'facts': [['Día de mayor riesgo', str(enfer.get('risk_max_date', ''))],
+                                ['Horas de mojado en franja', f"{num(top.get('wet_hours_in_range'), 0)} h (pide {num(enfer.get('wet_hours_required'), 0)})"],
+                                ['Franja de temperatura', '–'.join(str(x) for x in (enfer.get('temperature_range_c') or [])) + ' °C'],
+                                ['Banda', str((top.get('band') or {}).get('label', '—'))]],
+                      'note': str(enfer.get('reading') or '')})
+        charts.append({'kind': 'bars', 'group': 'asesor', 'title': f"Riesgo de enfermedad · {enfer.get('name', '')}",
+                       'subtitle': 'Índice 0 a 100 por día de pronóstico', 'unit': '/100',
+                       'labels': [str(r['date'])[8:10] + '/' + str(r['date'])[5:7] for r in enfer['rows']],
+                       'series': [{'name': 'Riesgo', 'values': [_f(r.get('risk')) for r in enfer['rows']]}]})
+    return {'cards': cards, 'charts': charts, 'lectura': str(data.get('lectura') or '')}
+
+
+def exec_summary(d):
+    """Resumen en prosa (reglas, sin modelo de lenguaje) del estado del lote para abrir el informe."""
+    parts = []
+    week = {w['key']: w for w in (d.get('week') or [])}
+    for key, nombre in (('Agua', 'Agua'), ('Pasto', 'Pasto'), ('Calor y rodeo', 'Calor')):
+        w = week.get(key)
+        if w and w.get('tone') != 'idle':
+            parts.append(f"{nombre}: {str(w['head']).lower()} ({w['value']}).")
+    alerts = d.get('alerts') or []
+    if alerts:
+        hi = sum(1 for a in alerts if a.get('level') == 'alta')
+        parts.append(f"{len(alerts)} alerta(s) activa(s)" + (f", {hi} de nivel alto" if hi else '') + '.')
+    if d.get('spi'):
+        s = d['spi'][0]
+        parts.append(f"Lluvia del {str(s['label']).lower()}: {s['class']} (SPI {s['spi']}).")
+    if d.get('enso_text'):
+        parts.append(d['enso_text'])
+    recs = d.get('recommendations') or []
+    if recs:
+        texts = [r['text'] if isinstance(r, dict) else str(r) for r in recs[:2]]
+        parts.append('Prioridad: ' + ' '.join(texts))
+    return ' '.join(parts)
+
+
+SECTIONS = [
+    {'id': 'resumen', 'title': 'Resumen ejecutivo', 'group': 'Síntesis', 'desc': 'Párrafo de apertura con el estado del lote en una lectura.'},
+    {'id': 'alertas', 'title': 'Alertas activas', 'group': 'Síntesis', 'desc': 'Reglas disparadas (helada, calor, lluvia, sequía, fuego, vegetación).'},
+    {'id': 'hallazgos', 'title': 'Hallazgos por dimensión', 'group': 'Síntesis', 'desc': 'Conclusiones por tema con su estado.'},
+    {'id': 'variables', 'title': 'Variables del lote', 'group': 'Síntesis', 'desc': 'Tabla de variables medidas con su tono.'},
+    {'id': 'clima', 'title': 'Clima de la semana', 'group': 'Ambiente', 'desc': 'Balance de agua y temperaturas del pronóstico.'},
+    {'id': 'vegetacion', 'title': 'Vegetación y pasto', 'group': 'Ambiente', 'desc': 'NDVI del lote y producción de forraje.'},
+    {'id': 'lluvia', 'title': 'Lluvia observada y sequía', 'group': 'Ambiente', 'desc': 'SPI y lluvia acumulada contra lo normal.'},
+    {'id': 'relieve', 'title': 'Relieve y anegamiento', 'group': 'Ambiente', 'desc': 'Posición en el paisaje y propensión a anegarse.'},
+    {'id': 'agua', 'title': 'Agua detectada por satélite', 'group': 'Ambiente', 'desc': 'Superficie con agua vista por Sentinel-2.'},
+    {'id': 'suelo', 'title': 'Humedad del suelo y entorno', 'group': 'Ambiente', 'desc': 'Humedad contra lo normal y entorno del lote.'},
+    {'id': 'asesor', 'title': 'Asesor agronómico integrado', 'group': 'Decisión', 'desc': 'Riego, nitrógeno, aire, pulverización y enfermedad, con su escala.'},
+    {'id': 'terreno', 'title': 'Terreno, suelos y satélite', 'group': 'Decisión', 'desc': 'Lomas y bajos, carta de suelos INTA, perfil y anomalía.'},
+    {'id': 'indices', 'title': 'Índices agroclimáticos', 'group': 'Clima largo', 'desc': 'Índices ETCCDI y lluvia anual.'},
+    {'id': 'probabilidades', 'title': 'Probabilidades y tendencias', 'group': 'Clima largo', 'desc': 'Conjuntos ECMWF, estacional y tendencias Mann-Kendall.'},
+    {'id': 'enso', 'title': 'El Niño y teleconexiones', 'group': 'Clima largo', 'desc': 'Fase del Pacífico y su efecto esperado.'},
+    {'id': 'costos', 'title': 'Costos y logística', 'group': 'Gestión', 'desc': 'Fletes, dólar y costos de referencia.'},
+    {'id': 'sustentabilidad', 'title': 'Sustentabilidad', 'group': 'Gestión', 'desc': 'Cobertura, deforestación y huella.'},
+    {'id': 'limites', 'title': 'Límites de la lectura', 'group': 'Transparencia', 'desc': 'Advertencias y supuestos.'},
+    {'id': 'trazabilidad', 'title': 'Trazabilidad de fuentes', 'group': 'Transparencia', 'desc': 'Fuentes consultadas, estado y atribuciones.'},
+]
+
+
+def section_ids():
+    return [s['id'] for s in SECTIONS]
+
 
 def build_data(result, name='Lote DOTS', extras=None):
     extras = extras or {}
@@ -422,6 +559,11 @@ def build_data(result, name='Lote DOTS', extras=None):
     conf = result.get('confidence', {}) or {}
     ev = result.get('evidence') or []
     ok = sum(1 for e in ev if e.get('status') == 'recibido')
+    advisor = advisor_block(extras.get('asesor'))
+    for ch in (advisor or {}).get('charts') or []:
+        charts.append(ch)
+    exec_text = exec_summary({'week': week, 'alerts': alerts_rows, 'spi': spi_rows,
+                              'enso_text': enso_text, 'recommendations': result.get('recommendations') or []})
     return {
         'week': week, 'lot_more': lot_more, 'relief': relief, 'water': water, 'soil_nasa': soil_nasa, 'surroundings': surroundings,
         'confidence_line': f"Confianza de la lectura {conf.get('score', '—')}/100 ({conf.get('label', 's/d')}) · {ok} de {len(ev)} fuentes con respuesta válida",
@@ -431,6 +573,8 @@ def build_data(result, name='Lote DOTS', extras=None):
         'lot': {'name': lot.get('name') or name, 'shape': shape(poly), 'facts': facts, 'origin': origin,
                 'image': list(thumb) if thumb else None, 'image_credit': 'Imagen: Esri World Imagery (Maxar, Earthstar Geographics). Fecha de toma no homogénea.' if thumb else ''},
         'kpis': kpis,
+        'sections': SECTIONS,
+        'selected': [s for s in (extras.get('secciones') or extras.get('temas') or []) if s in section_ids()] or None,
         'confidence': {'score': str(result.get('confidence', {}).get('score', '—')),
                        'label': str(result.get('confidence', {}).get('label', ''))},
         'summary': result.get('summary', ''),
@@ -441,6 +585,7 @@ def build_data(result, name='Lote DOTS', extras=None):
                      'reference': str(m.get('reference', '')), 'reading': str(m.get('reading', '')), 'tone': metric_tone(m)}
                     for m in result.get('metrics') or []],
         'charts': charts,
+        'advisor': advisor, 'exec_summary': exec_text,
         'indices': irows,
         'indices_head': ['Índice', str(indices.get('last_year', 'Último año')), 'Promedio', 'Diferencia'],
         'indices_note': (f"ERA5 diario en el punto del lote, {indices.get('period', ['', ''])[0]}–{indices.get('period', ['', ''])[1]}. "
