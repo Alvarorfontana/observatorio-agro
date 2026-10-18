@@ -1,5 +1,5 @@
 {
- "updated": "2026-10-18T04:34+00:00",
+ "updated": "2026-10-18T04:38+00:00",
  "version": 1,
  "fuente": "https://observatorio-agro.vercel.app",
  "niveles": {
@@ -54,13 +54,14 @@
   }
  ],
  "enso": {
-  "estado": null,
-  "oni": null
+  "estado": "El Niño",
+  "strength": "fuerte",
+  "oni": 2.16
  },
  "enviado_el": null,
  "pdf_el": null,
  "newsletter": {
-  "subject": "DOTS · El Niño y crecidas · 18/10/2026 04:34 UTC",
+  "subject": "DOTS · El Niño y crecidas · 18/10/2026 04:38 UTC",
   "bytes": 5302
  }
 }

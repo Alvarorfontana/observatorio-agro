@@ -62,15 +62,23 @@ def stations():
 
 
 def enso():
-    """Estado del Pacífico según NOAA (fase y anomalía ONI), mejor esfuerzo."""
+    """Estado del Pacífico según NOAA (fase ONI, intensidad y anomalía), mejor esfuerzo."""
     try:
-        d = unwrap(get_json('el-nino')) or {}
+        d = unwrap(get_json(f'el-nino?lat={LAT}&lon={LON}')) or {}
         ph = d.get('phase')
-        estado = (ph or {}).get('es') or (ph or {}).get('en') if isinstance(ph, dict) else None
+        estado = strength = None
+        if isinstance(ph, dict):
+            estado, strength = ph.get('phase') or ph.get('es') or ph.get('en'), ph.get('strength')
+        elif isinstance(ph, str):
+            estado = ph
         oni = d.get('oni')
-        return {'estado': estado, 'oni': oni.get('anom') if isinstance(oni, dict) else None}
+        if isinstance(oni, dict):
+            estado = estado or oni.get('phase')
+            strength = strength or oni.get('strength')
+        return {'estado': estado, 'strength': strength,
+                'oni': oni.get('anom') if isinstance(oni, dict) else None}
     except Exception:
-        return {'estado': None, 'oni': None}
+        return {'estado': None, 'strength': None, 'oni': None}
 
 
 def newsletter(nombre):
