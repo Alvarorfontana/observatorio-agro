@@ -3,6 +3,11 @@ import "./FloodRadarPanel.css";
 
 export type FloodRadarReport = {
   status?: string;
+  estimated_net_water_change_ha?: number;
+  before_water_ha?: number;
+  after_water_ha?: number;
+  total_lot_area_ha?: number;
+  method?: string;
   before_date?: string;
   after_date?: string;
   area_ha?: { new_water?: number; persistent_water?: number; receded_water?: number; persistent_land?: number };
@@ -27,6 +32,7 @@ export function FloodRadarPanel({ report, location = "Área seleccionada", onRef
   const [view, setView] = useState<"change" | "before" | "after">("change");
   const areas = report?.area_ha;
   const valid = report?.status === "ESTIMATE_NOT_VALIDATED" && !!areas;
+  const aggregate = report?.status === "AGGREGATE_CHANGE_UNVALIDATED" && report?.estimated_net_water_change_ha != null;
   const total = valid ? METRICS.reduce((sum, m) => sum + Math.max(0, areas?.[m.key] ?? 0), 0) : 0;
   const images = { change: report?.change_map_url, before: report?.image_before_url, after: report?.image_after_url };
   const image = images[view];
@@ -36,9 +42,10 @@ export function FloodRadarPanel({ report, location = "Área seleccionada", onRef
       <div><div className="frp-eyebrow"><span className="frp-pulse" /> DOTS CAMPO / OBSERVATORIO SATELITAL</div>
         <h2>Radar de inundaciones <span>SAR</span></h2>
         <p>Detección multitemporal de agua superficial · Sentinel-1 · {location}</p></div>
-      <div className="frp-header-right"><span className="frp-status">{loading ? "Procesando" : valid ? "Estimación sin validar" : "Sin análisis disponible"}</span>
+      <div className="frp-header-right"><span className="frp-status">{loading ? "Procesando" : valid || aggregate ? "Estimación sin validar" : "Sin análisis disponible"}</span>
         {onRefresh && <button type="button" className="frp-refresh" onClick={onRefresh} disabled={loading}>{loading ? "Consultando…" : "Actualizar análisis ↗"}</button>}</div>
     </header>
+    {aggregate && <div className="frp-aggregate" role="status"><strong>Cambio neto estimado: {fmt(report?.estimated_net_water_change_ha, 2)} ha</strong><span>Antes: {fmt(report?.before_water_ha, 2)} ha · Después: {fmt(report?.after_water_ha, 2)} ha. No equivale a superficie de inundación nueva: las estadísticas no permiten identificar transiciones por píxel.</span></div>}
     <div className="frp-metrics">
       {METRICS.map(m => <article key={m.key} className={`frp-metric frp-${m.tone}`}>
         <div className="frp-metric-title"><i />{m.label}</div>
@@ -57,7 +64,7 @@ export function FloodRadarPanel({ report, location = "Área seleccionada", onRef
         <div className="frp-map-frame">
           {image && !failed.includes(image) ? <img key={image} src={image} alt={view === "change" ? "Mapa georreferenciado de cambios de agua" : `Imagen satelital ${view === "before" ? "anterior" : "posterior"}`} onError={() => setFailed(v => [...v,image])} /> :
           <div className="frp-empty"><div className="frp-orbit" aria-hidden="true"><div className="frp-orbit-core">◈</div></div>
-            <b>Imagen satelital pendiente</b><span>{valid ? "Las métricas están disponibles, pero todavía no se entregó un mapa georreferenciado." : "Seleccioná un lote y ejecutá un análisis con dos pasadas Sentinel-1 comparables."}</span></div>}
+            <b>Imagen satelital pendiente</b><span>{valid || aggregate ? "Se recibieron estadísticas agregadas, pero todavía no se generó un mapa georreferenciado." : "Seleccioná un lote y ejecutá un análisis con dos pasadas Sentinel-1 comparables."}</span></div>}
           <span className="frp-map-stamp">SENTINEL-1 · SAR C-BAND</span>
         </div>
         <div className="frp-legend"><span><i className="new"/> Agua nueva</span><span><i className="permanent"/> Agua persistente</span><span><i className="receded"/> Agua retirada</span><span><i className="nodata"/> Sin dato</span></div>
@@ -70,7 +77,7 @@ export function FloodRadarPanel({ report, location = "Área seleccionada", onRef
           <div className="frp-side-empty">Sin superficies medidas. El gráfico aparecerá al recibir un análisis válido.</div>}
         <div className="frp-rule"/>
         <div className="frp-side-title">TRAZABILIDAD <span>02 / 02</span></div>
-        <dl className="frp-details"><div><dt>Fuente</dt><dd>{report?.source || "Sentinel-1 / pendiente de vincular"}</dd></div><div><dt>Píxeles válidos</dt><dd>{valid ? fmt(report?.paired_valid_pixels, 0) : "—"}</dd></div><div><dt>Estado científico</dt><dd>{valid ? "Experimental" : "No disponible"}</dd></div></dl>
+        <dl className="frp-details"><div><dt>Fuente</dt><dd>{report?.source || "Sentinel-1 / pendiente de vincular"}</dd></div><div><dt>Píxeles válidos</dt><dd>{valid ? fmt(report?.paired_valid_pixels, 0) : "—"}</dd></div><div><dt>Estado científico</dt><dd>{valid || aggregate ? "Experimental" : "No disponible"}</dd></div></dl>
         <div className="frp-notice"><b>Interpretación responsable</b><p>Una señal de agua en radar no confirma profundidad ni riesgo de evacuación. Requiere verificación con GFM, estaciones hidrométricas y observaciones locales.</p></div>
       </aside>
     </div>
