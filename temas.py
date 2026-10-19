@@ -133,6 +133,20 @@ def _humedad_smap(lat, lon, p):
     return smap.analyze(lat, lon)
 
 
+def _rendimiento(lat, lon, p):
+    import yield_forecast as yf
+    lat, lon = _coords(lat, lon, p)
+    p = p or {}
+    org = f'{yf.FAO33} · Open-Meteo ERA5 · ISRIC SoilGrids'
+    if lat is None or lon is None:
+        return _env(None, yf.SOURCE, 'rendimiento esperado por agua (FAO-33)', org, 'sin dato',
+                    'Indicá un punto para estimar el rendimiento por agua.')
+    if not p.get('sowing'):
+        return _env(None, yf.SOURCE, 'rendimiento esperado por agua (FAO-33)', org, 'sin dato',
+                    'Indicá la fecha de siembra (sowing) para estimar el rendimiento.')
+    return yf.analyze(lat, lon, str(p.get('crop') or 'maiz')[:20], p.get('sowing'), p.get('potencial_t_ha'))
+
+
 # ───────────────────────────── catálogo ─────────────────────────────
 # resolver / organism / how / source_url: la procedencia viaja con el dato.
 TEMAS = {
@@ -220,6 +234,16 @@ TEMAS = {
                'satélite; la ventana usada es la última publicada (SMAP tarda unos días).',
         'source_url': 'https://developers.google.com/earth-engine/datasets/catalog/NASA_SMAP_SPL4SMGP_008',
         'scale': 'soil_moisture_vwc', 'resolver': _humedad_smap,
+    },
+    'rendimiento': {
+        'title': 'Rendimiento esperado por agua (FAO-33)', 'group': 'Cultivo', 'scope': 'punto',
+        'organism': 'FAO-33 (Doorenbos y Kassam) · Open-Meteo ERA5 · ISRIC SoilGrids',
+        'how': 'Rendimiento relativo de la campaña por agua: Ya/Ym = 1 − Ky·(1 − ETa/ETm) con balance hídrico '
+               'FAO-56 de secano (ETm = Σ Kc·ET0, ETa = Σ Ks·Kc·ET0). ET0 y lluvia de Open-Meteo (ERA5 observado, '
+               'pronóstico a 10 días y climatología ERA5 del resto de la campaña); agua útil del suelo de SoilGrids. '
+               'Necesita cultivo y fecha de siembra. Es una estimación por agua, no un pronóstico de cosecha.',
+        'source_url': 'https://open-meteo.com',
+        'scale': 'yield_pct', 'resolver': _rendimiento,
     },
 }
 

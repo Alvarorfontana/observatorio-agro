@@ -10,10 +10,11 @@ Este archivo sirve para retomar el trabajo sin releer toda la conversación. Se 
 - Agua/crecidas: cuenca, GloFAS, INA, amenaza por período de retorno (`hazard.py`), El Niño.
 - Página `/nino-crecidas` (web) + workflow cada 2 h (digest + newsletter).
 - Humedad satelital SMAP (`smap.py`, L4 v008): superficie y raíz, percentil; escalas `soil_moisture_vwc` y `soil_moisture_pctl`.
+- Rendimiento esperado por agua (FAO-33): `yield_forecast.py`, escala `yield_pct`, tema `rendimiento`, ruta `/api/fuentes/rendimiento`.
 - `NOTA-DE-PRENSA.md` (faltan teléfono, correo de prensa y fecha de inicio).
 - Último commit en `main`: `f87f3c3`. `pytest`: 361 passed, 2 skipped.
 
-## Próximo paso elegido: rendimiento esperado por agua (FAO-33)
+## Rendimiento esperado por agua (FAO-33) — hecho (v1.0)
 
 Objetivo: un módulo que estime el **rendimiento relativo** de la campaña (Ya/Ym) con `yield_forecast.py`.
 
@@ -56,7 +57,7 @@ Pendiente, todo del lado de secretos y disparo:
   Es el entregable vendible; es más grande (backend + front).
 - Exponer SMAP en la web: panel de humedad satelital en la página de cultivo/nivel de lote (además de la API).
 - Refactor de `src/main.tsx` por etapas (monolito).
-- Escalas pendientes si se agregan esos módulos: `yield_pct` (este paso), `pest_risk`, `soc_gkg`, `soil_ph`, `cec_cmol`, `clay_pct`.
+- Escalas pendientes si se agregan esos módulos: `pest_risk`, `soc_gkg`, `soil_ph`, `cec_cmol`, `clay_pct`.
 
 ## Cómo trabajar (rápido, para la próxima sesión)
 

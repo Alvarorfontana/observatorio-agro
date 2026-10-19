@@ -90,6 +90,11 @@ SCALES = {
                                      (70.0, 'normal', 'ok'), (90.0, 'más húmedo que lo normal', 'warn'),
                                      (100.1, 'muy húmedo respecto de lo normal', 'risk')],
                            'bands_labels': ['< 10', '10–30', '30–70', '70–90', '> 90']},
+    'yield_pct': {'name': 'Rendimiento esperado sobre el potencial', 'unit': '% del potencial', 'min': 0.0,
+                  'max': 100.0, 'direction': 'high_ok',
+                  'bands': [(50.0, 'riesgo por déficit hídrico', 'risk'), (70.0, 'bajo', 'warn'),
+                            (90.0, 'bueno', 'ok'), (100.1, 'cercano al potencial', 'ok')],
+                  'bands_labels': ['< 50', '50–70', '70–90', '> 90']},
 }
 
 

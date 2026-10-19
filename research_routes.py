@@ -646,6 +646,19 @@ def smap_view():
     except Exception as e:
         return _upstream_error(e)
 
+@research_api.get('/rendimiento')
+def yield_view():
+    """Rendimiento esperado por agua de la campaña (FAO-33): cultivo sembrado en una fecha, en un punto."""
+    import yield_forecast as yf
+    try:
+        lat,lon=c.coordinates({key:[value] for key,value in request.args.items()})
+        return jsonify(yf.analyze(lat,lon,request.args.get('crop') or 'maiz',request.args.get('sowing'),
+                                  request.args.get('potencial_t_ha')))
+    except ValueError as e:
+        return jsonify({'error':str(e)}),400
+    except Exception as e:
+        return _upstream_error(e)
+
 def _tema_ids(raw, temas_mod):
     """Normaliza la lista de temas pedida: ignora desconocidos y, si queda vacía, usa todos."""
     if isinstance(raw, str):
