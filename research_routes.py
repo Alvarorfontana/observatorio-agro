@@ -17,6 +17,7 @@ import forage as fgr
 import costs as cst
 import spectral
 import radar as rdr
+import flood_radar_adapter as fra
 import water_balance as wbal
 import enso_chain as enso
 import enso_sa
@@ -71,6 +72,7 @@ VEGETATION={
   'gee-ndvi':lambda p,a:veg.gee_ndvi(p,_int(a,'ndvi_years',10,1,25)),
   'indices-espectrales':lambda p,a:spectral.compute(p,[x.strip() for x in a.get('indices','').split(',') if x.strip()] or None,_int(a,'days',120,15,365)),
   'radar-agua':lambda p,a:rdr.flooding(p,_int(a,'days',60,12,365)),
+  'radar-cambio':lambda p,a:fra.summarize(p,_int(a,'days',60,12,365)),
   'humedad-sar':lambda p,a:sms.analyze(p,_int(a,'days',60,12,365),_int(a,'scenes',8,2,12)),
   'nivel-rio':lambda p,a:ina_a5.analyze(p,_int(a,'days',30,3,365)),
   'mapbiomas':lambda p,a:mbx.history(p),
