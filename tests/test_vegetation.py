@@ -38,6 +38,8 @@ def pc_post(url, json=None, params=None, **kw):
         assert json['intersects']['type'] == 'Polygon'
         return R({'features': [item(1, 8), item(2, 3), item(3, 1, cloud=40)]})
     if url.endswith('/item/statistics'):
+        if params['expression'].startswith(f'where(SCL=={veg.SCL_SNOW}'):
+            return R(stats(0.0))
         if params['expression'].startswith('where('):
             # escena del día 1: lote cubierto
             return R(stats(0.2 if '20261001' in params['item'] else 0.95))
@@ -81,12 +83,28 @@ def test_ndvi_open_masks_cloudy_lot(pc):
     assert by['2026-10-01']['status'] == 'nublada' and 'ndvi_mean' not in by['2026-10-01']
     assert by['2026-10-08']['ndvi_mean'] == 0.71 and d['latest']['datetime'].startswith('2026-10-08')
     assert d['valid_scenes'] == 2
-    # la escena nublada no pide NDVI: 3 máscaras + 2 NDVI + 4 índices y 1 fracción de agua de la última escena
-    assert sum(1 for u, *_ in CALLS if u.endswith('/item/statistics')) == 10
+    assert all('snow_fraction_lot' in r for r in d['series']) and d['min_snow_fraction'] == veg.MIN_SNOW
+    # la escena nublada no pide NDVI: 3 máscaras despejadas + 3 de nieve + 2 NDVI + 4 índices y 1 fracción de agua
+    assert sum(1 for u, *_ in CALLS if u.endswith('/item/statistics')) == 13
     ix = d['latest']['indices']
     assert set(ix) >= {'evi', 'savi', 'ndmi', 'ndwi', 'water_fraction'} and ix['evi']['mean'] is not None
     evi = next(p['expression'] for u, p, _ in CALLS if p and p['expression'].startswith('2.5*'))
     assert '-1000)/10000' in evi   # baseline 05.10 corrige el offset
+
+
+def test_snowy_scene_not_interpreted(monkeypatch):
+    def post(url, json=None, params=None, **kw):
+        assert url.endswith('/item/statistics')
+        if params['expression'].startswith(f'where(SCL=={veg.SCL_SNOW}'):
+            return R(stats(0.35))
+        if params['expression'].startswith('where('):
+            return R(stats(0.9))
+        raise AssertionError('una escena nevada no debe pedir NDVI')
+    monkeypatch.setattr(c.SESSION, 'post', post)
+    feature = {'type': 'Feature', 'properties': {}, 'geometry': veg.geojson_polygon(LOT)}
+    row = veg.scene_ndvi(item(1, 5), feature)
+    assert row['status'] == 'nevada' and row['snow_fraction_lot'] == 0.35
+    assert 'ndvi_mean' not in row and 'nieve' in row['note']
 
 
 def test_ndvi_png_validates_item(pc):

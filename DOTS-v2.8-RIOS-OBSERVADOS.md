@@ -80,7 +80,8 @@ Veredicto de qué nos sirve y qué no, con la licencia y las estrellas al día d
 
 ## Roadmap corto
 1. **Google Flood Hub API** — inscribirse y guardar la clave; sumar como capa de pronóstico de crecida.
-2. **Snow mask** en `vegetation.py` (nieve para el sur, evita falsos positivos de NDVI en invierno).
+2. **Snow mask** en `vegetation.py` — **hecho (v2.0)**: fracción de nieve (SCL 11) por escena; con ≥10 % de
+   nieve la escena se marca `nevada` y no se interpreta, así no hay falsos positivos de NDVI invernal.
 3. **Mapa de rinde (pacu)**, **aptitud de cultivos (openfarm.earth)**, **MODIS+VIIRS VI (agwise)**,
    **agua vegetada** en `radar.py`.
 4. **EarthAlign** — verificar la corrida de traducción (`captions_es` / `translated_to: 'es'`) y seguir con

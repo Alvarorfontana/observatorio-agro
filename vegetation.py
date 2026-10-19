@@ -1,15 +1,16 @@
-"""vegetation v1.9 — NDVI real por lote.
+"""vegetation v2.0 — NDVI real por lote.
 
 Cuatro vías, todas livianas (sólo `requests`; google-auth opcional para GEE):
 
   1. ndvi_open()        Planetary Computer Data API (TiTiler/rio-tiler del lado del servidor).
-                        Abierta, sin credencial. Estadística zonal + máscara SCL dentro del lote.
+                        Abierta, sin credencial. Estadística zonal + máscara SCL (nubes y nieve).
   2. ndvi_png()         Misma API: PNG NDVI recortado al polígono para el mapa.
   3. sentinel_hub_ndvi() CDSE Sentinel Hub Statistical API (OAuth2 client credentials).
   4. openeo_ndvi()      CDSE openEO, grafo de procesos JSON síncrono.
   5. gee_ndvi()         Google Earth Engine REST value:compute, MODIS MOD13Q1.
 
 Contrato igual a research_connectors: envelope o excepción. Nunca se inventan datos.
+Las escenas con nieve (SCL 11) en más de MIN_SNOW del lote se marcan 'nevada' y no se interpretan.
 Todas exigen polígono [[lat,lon],...]; no hay promedio zonal sobre un punto.
 """
 import json, os, time
@@ -28,6 +29,8 @@ GEE = 'https://earthengine.googleapis.com/v1'
 
 MIN_CLEAR = 0.6          # fracción mínima de píxeles despejados dentro del lote
 SCL_CLEAR = (4, 5)       # 4 vegetación, 5 suelo desnudo
+SCL_SNOW = 11            # 11 nieve/hielo
+MIN_SNOW = 0.10          # fracción de nieve que descarta la escena
 NDVI_RESCALE = '-0.2,0.9'
 
 
@@ -100,16 +103,26 @@ def search_s2(polygon, days=120, limit=8, max_cloud=60):
     return c._post(PC_STAC + '/search', body, timeout=30).json().get('features', [])
 
 
+def snow_expression():
+    return f'where(SCL=={SCL_SNOW},1,0)'
+
+
 def scene_ndvi(item, feature):
-    """NDVI + fracción despejada SCL dentro del lote para UNA escena."""
+    """NDVI + fracciones despejada y nevada SCL dentro del lote para UNA escena."""
     expr = ndvi_expression(item)
     clear_expr = 'where(' + '|'.join(f'(SCL=={v})' for v in SCL_CLEAR) + ',1,0)'
     clear = _pc_stats(item['id'], feature, clear_expr)
     clear_frac = float(clear.get('mean') or 0)
+    snow = _pc_stats(item['id'], feature, snow_expression())
+    snow_frac = float(snow.get('mean') or 0)
     row = {'item': item['id'], 'datetime': item['properties'].get('datetime'),
            'scene_cloud_pct': item['properties'].get('eo:cloud_cover'),
-           'clear_fraction_lot': round(clear_frac, 3), 'expression': expr, 'tile_coverage': item.get('_coverage'),
+           'clear_fraction_lot': round(clear_frac, 3), 'snow_fraction_lot': round(snow_frac, 3),
+           'expression': expr, 'tile_coverage': item.get('_coverage'),
            'processing_baseline': item['properties'].get('s2:processing_baseline')}
+    if snow_frac >= MIN_SNOW:
+        row.update(status='nevada', note=f'{snow_frac:.0%} del lote con nieve; no se interpreta')
+        return row
     if clear_frac < MIN_CLEAR:
         row.update(status='nublada', note=f'Sólo {clear_frac:.0%} del lote despejado; no se interpreta')
         return row
@@ -255,10 +268,11 @@ def ndvi_open(polygon, days=120, scenes=6):
             latest['indices'] = None
     return c.envelope({
         'capability': 'ANALYSIS', 'index': 'NDVI', 'sensor': 'Sentinel-2 L2A (10 m)',
-        'area_ha': area_ha(pts), 'min_clear_fraction': MIN_CLEAR,
+        'area_ha': area_ha(pts), 'min_clear_fraction': MIN_CLEAR, 'min_snow_fraction': MIN_SNOW,
         'latest': latest, 'series': rows, 'valid_scenes': len(valid),
         'scale': scales.describe('ndvi'), 'summary': window_stats(rows),
-        'interpretation_scope': 'Estadística zonal dentro del polígono. Nubes/sombras excluidas por SCL.'},
+        'interpretation_scope': 'Estadística zonal dentro del polígono. La fracción despejada sale de SCL; '
+                                'escenas con nieve o nubosidad por encima del umbral no se interpretan.'},
         PC_DATA + '/item/statistics', 'NDVI zonal Sentinel-2 por lote',
         'Microsoft Planetary Computer · ESA Copernicus',
         'recibido' if valid else 'sin dato',
