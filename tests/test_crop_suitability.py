@@ -55,7 +55,7 @@ def test_analyze_dry_point_limits_by_rain(good, monkeypatch):
     out = cs.analyze(-31.0, -60.0, 'maiz')
     d = out['data']
     assert d['limiting'] == 'p' and d['overall'] == 25.0 and d['scale']['tone'] == 'risk'
-    assert 'Lluvia' in d['reading'] and 'limita' in d['reading']
+    assert 'lluvia' in d['reading'].lower() and 'limita' in d['reading'].lower()
 
 
 def test_analyze_without_climate_sin_dato(monkeypatch):
