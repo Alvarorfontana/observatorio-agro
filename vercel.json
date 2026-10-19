@@ -31,6 +31,10 @@
       "destination": "/avisos-widget/index.html"
     },
     {
+      "source": "/agricultura-precision",
+      "destination": "/agricultura-precision/index.html"
+    },
+    {
       "source": "/radar",
       "destination": "/radar/index.html"
     },
@@ -39,7 +43,7 @@
       "destination": "/campo/index.html"
     },
     {
-      "source": "/((?!api/|ftw/|dem/|assets/|poblacion|avisos-widget|campo|radar).*)",
+      "source": "/((?!api/|ftw/|dem/|assets/|poblacion|avisos-widget|campo|radar|agricultura-precision).*)",
       "destination": "/index.html"
     }
   ],
