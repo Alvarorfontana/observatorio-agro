@@ -83,7 +83,9 @@ Veredicto de qué nos sirve y qué no, con la licencia y las estrellas al día d
 2. **Snow mask** en `vegetation.py` — **hecho (v2.0)**: fracción de nieve (SCL 11) por escena; con ≥10 % de
    nieve la escena se marca `nevada` y no se interpreta, así no hay falsos positivos de NDVI invernal.
 3. **Mapa de rinde (pacu)** — **hecho**: `yield_map.py` (limpieza por σ + IDW), escala `yield_index`,
-   ruta `POST /api/fuentes/mapa-rinde`. Faltan: **aptitud de cultivos (openfarm.earth)**,
-   **MODIS+VIIRS VI (agwise)** y **agua vegetada** en `radar.py`.
+   ruta `POST /api/fuentes/mapa-rinde`. **Aptitud de cultivos (openfarm.earth)** — **hecho**:
+   `crop_suitability.py` (envolventes de T, lluvia, pH y textura; manda el factor limitante), escala
+   `crop_suitability`, tema `aptitud`, ruta `/api/fuentes/aptitud`. Faltan: **MODIS+VIIRS VI (agwise)**
+   y **agua vegetada** en `radar.py`.
 4. **EarthAlign** — verificar la corrida de traducción (`captions_es` / `translated_to: 'es'`) y seguir con
    la Fase 2 (MeteoLIP) cuando haya torch + pesos + recorte ERA5.

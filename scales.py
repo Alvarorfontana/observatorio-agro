@@ -100,6 +100,11 @@ SCALES = {
                     'bands': [(60.0, 'muy bajo', 'risk'), (80.0, 'bajo', 'warn'), (100.0, 'normal', 'ok'),
                               (120.0, 'alto', 'ok'), (200.1, 'muy alto', 'ok')],
                     'bands_labels': ['< 60', '60–80', '80–100', '100–120', '> 120']},
+    'crop_suitability': {'name': 'Aptitud del cultivo (envolventes)', 'unit': '/ 100', 'min': 0.0,
+                         'max': 100.0, 'direction': 'high_ok',
+                         'bands': [(40.0, 'no apto', 'risk'), (60.0, 'marginal', 'warn'),
+                                   (80.0, 'apto', 'ok'), (100.1, 'muy apto', 'ok')],
+                         'bands_labels': ['< 40', '40–60', '60–80', '> 80']},
 }
 
 

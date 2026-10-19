@@ -12,6 +12,7 @@ Este archivo sirve para retomar el trabajo sin releer toda la conversación. Se 
 - Humedad satelital SMAP (`smap.py`, L4 v008): superficie y raíz, percentil; escalas `soil_moisture_vwc` y `soil_moisture_pctl`.
 - Rendimiento esperado por agua (FAO-33): `yield_forecast.py`, escala `yield_pct`, tema `rendimiento`, ruta `/api/fuentes/rendimiento`.
 - Mapa de rinde del lote (`yield_map.py`): puntos del monitor de cosecha, limpieza por σ e IDW; escala `yield_index`, ruta `POST /api/fuentes/mapa-rinde`.
+- Aptitud de cultivos (`crop_suitability.py`): envolventes de temperatura, lluvia, pH y textura; escala `crop_suitability`, tema `aptitud`, ruta `/api/fuentes/aptitud`.
 - `NOTA-DE-PRENSA.md` (faltan teléfono, correo de prensa y fecha de inicio).
 - Último commit en `main`: `f87f3c3`. `pytest`: 361 passed, 2 skipped.
 
@@ -48,6 +49,19 @@ Objetivo: a partir de los puntos del monitor de cosecha, armar un mapa de rinde 
   (cada celda con `value` e `index` relativo a la media), `area_ha` y `reading`.
 - Escala nueva: `yield_index` (0–200, `high_ok`; 100 = media del lote). Ruta: `POST /api/fuentes/mapa-rinde`.
 - Tests: `tests/test_yield_map.py`. Caveat: mapa relativo, no absoluto ni oficial; sin corrección por humedad.
+
+## Aptitud de cultivos (OpenFarm) — hecho (v1.0)
+
+Objetivo: decir qué tan apto es un punto para un cultivo, con envolventes (enfoque de OpenFarm, BSD-3).
+
+- Factores: temperatura media anual, lluvia anual, pH y textura (fracción de arcilla = arcilla/(arcilla+arena)).
+  Cada uno puntúa 0–100 (100 dentro del óptimo, decae linealmente hasta 0 en los límites absolutos).
+- Envolventes por cultivo inspiradas en FAO EcoCrop: maíz, soja, trigo, girasol, sorgo, alfalfa y pastura.
+- Datos: clima normal ERA5 de los últimos 10 años (Open-Meteo Archive); suelo de SoilGrids 0-5 cm.
+- Puntaje global = **mínimo** de los factores (manda el factor limitante, como en `spray_window.py`).
+- Escala nueva: `crop_suitability` (0–100, `high_ok`). Tema nuevo: `aptitud` (grupo Cultivo, `scope: punto`).
+- Ruta: `GET /api/fuentes/aptitud?lat=&lon=&crop=`. Tests: `tests/test_crop_suitability.py`.
+- Caveat: aptitud climática-edáfica de referencia; no mira manejo, riego, plagas, salinidad ni mercado.
 
 ## Newsletter "El Niño y crecidas" (qué falta para que salga correo solo)
 Ya está el workflow `.github/workflows/nino-crecidas.yml` (cron `23 */2 * * *` + `workflow_dispatch`) con

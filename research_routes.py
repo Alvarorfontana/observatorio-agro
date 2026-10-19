@@ -670,6 +670,18 @@ def yield_map_view():
     except Exception as e:
         return jsonify({'status':'sin dato','error':'No se pudo armar el mapa de rinde','type':type(e).__name__}),502
 
+@research_api.get('/aptitud')
+def crop_suitability_view():
+    """Aptitud de un cultivo en un punto por envolventes (temperatura, lluvia, pH, textura); manda el factor limitante."""
+    import crop_suitability as cs
+    try:
+        lat,lon=c.coordinates({key:[value] for key,value in request.args.items()})
+        return jsonify(cs.analyze(lat,lon,request.args.get('crop') or 'maiz'))
+    except ValueError as e:
+        return jsonify({'error':str(e)}),400
+    except Exception as e:
+        return _upstream_error(e)
+
 def _tema_ids(raw, temas_mod):
     """Normaliza la lista de temas pedida: ignora desconocidos y, si queda vacía, usa todos."""
     if isinstance(raw, str):

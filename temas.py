@@ -147,6 +147,15 @@ def _rendimiento(lat, lon, p):
     return yf.analyze(lat, lon, str(p.get('crop') or 'maiz')[:20], p.get('sowing'), p.get('potencial_t_ha'))
 
 
+def _aptitud(lat, lon, p):
+    import crop_suitability as cs
+    lat, lon = _coords(lat, lon, p)
+    if lat is None or lon is None:
+        return _env(None, cs.SOURCE, 'aptitud de cultivos (envolventes)', cs.ORGANISM, 'sin dato',
+                    'Indicá un punto o una zona para evaluar la aptitud del cultivo.')
+    return cs.analyze(lat, lon, str((p or {}).get('crop') or 'maiz')[:20])
+
+
 # ───────────────────────────── catálogo ─────────────────────────────
 # resolver / organism / how / source_url: la procedencia viaja con el dato.
 TEMAS = {
@@ -244,6 +253,15 @@ TEMAS = {
                'Necesita cultivo y fecha de siembra. Es una estimación por agua, no un pronóstico de cosecha.',
         'source_url': 'https://open-meteo.com',
         'scale': 'yield_pct', 'resolver': _rendimiento,
+    },
+    'aptitud': {
+        'title': 'Aptitud de cultivos (envolventes)', 'group': 'Cultivo', 'scope': 'punto',
+        'organism': 'OpenFarm (BSD-3) · FAO EcoCrop · Open-Meteo ERA5 · ISRIC SoilGrids',
+        'how': 'Puntúa el cultivo elegido por envolventes de temperatura, lluvia, pH y textura contra el clima '
+               'normal (ERA5, 10 años) y el suelo (SoilGrids 0-5 cm) del punto. El puntaje global es el mínimo '
+               'de los factores: manda el factor limitante. Usa lat/lon y, opcional, crop (por defecto maíz).',
+        'source_url': 'https://github.com/superzero11/OpenFarm',
+        'scale': 'crop_suitability', 'resolver': _aptitud,
     },
 }
 
