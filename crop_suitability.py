@@ -95,7 +95,7 @@ def _soil(lat, lon):
 
 def _reading(d):
     lim = d.get('limiting')
-    base = (f"{d['crop_name']}: aptitud {d['overall']}/100 ({d['label']['label']}). "
+    base = (f"{d['crop_name']}: aptitud {d['overall']}/100 ({d['scale']['label']}). "
             f"Temperatura {d['factors']['t']['score']}, lluvia {d['factors']['p']['score']}, "
             f"pH {d['factors']['ph']['score']}, textura {d['factors']['tex']['score']}.")
     return base + (f" Limita {FACTORS[lim].lower()}." if lim else '')
