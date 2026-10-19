@@ -95,6 +95,11 @@ SCALES = {
                   'bands': [(50.0, 'riesgo por déficit hídrico', 'risk'), (70.0, 'bajo', 'warn'),
                             (90.0, 'bueno', 'ok'), (100.1, 'cercano al potencial', 'ok')],
                   'bands_labels': ['< 50', '50–70', '70–90', '> 90']},
+    'yield_index': {'name': 'Índice de rinde del lote', 'unit': '% de la media', 'min': 0.0,
+                    'max': 200.0, 'direction': 'high_ok',
+                    'bands': [(60.0, 'muy bajo', 'risk'), (80.0, 'bajo', 'warn'), (100.0, 'normal', 'ok'),
+                              (120.0, 'alto', 'ok'), (200.1, 'muy alto', 'ok')],
+                    'bands_labels': ['< 60', '60–80', '80–100', '100–120', '> 120']},
 }
 
 

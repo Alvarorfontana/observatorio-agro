@@ -11,6 +11,7 @@ Este archivo sirve para retomar el trabajo sin releer toda la conversación. Se 
 - Página `/nino-crecidas` (web) + workflow cada 2 h (digest + newsletter).
 - Humedad satelital SMAP (`smap.py`, L4 v008): superficie y raíz, percentil; escalas `soil_moisture_vwc` y `soil_moisture_pctl`.
 - Rendimiento esperado por agua (FAO-33): `yield_forecast.py`, escala `yield_pct`, tema `rendimiento`, ruta `/api/fuentes/rendimiento`.
+- Mapa de rinde del lote (`yield_map.py`): puntos del monitor de cosecha, limpieza por σ e IDW; escala `yield_index`, ruta `POST /api/fuentes/mapa-rinde`.
 - `NOTA-DE-PRENSA.md` (faltan teléfono, correo de prensa y fecha de inicio).
 - Último commit en `main`: `f87f3c3`. `pytest`: 361 passed, 2 skipped.
 
@@ -35,8 +36,20 @@ Objetivo: un módulo que estime el **rendimiento relativo** de la campaña (Ya/Y
   monótono con el agua, escalas, tema y endpoint). Correr `python -m pytest -q` (meta > 361 passed).
 - Caveats a incluir: es una estimación por agua (no pronóstico de cosecha), asume secano, el futuro usa climatología.
 
-## Newsletter "El Niño y crecidas" (qué falta para que salga correo solo)
+## Mapa de rinde del lote (pacu) — hecho (v1.0)
 
+Objetivo: a partir de los puntos del monitor de cosecha, armar un mapa de rinde relativo al lote (`yield_map.py`).
+
+- Flujo "simple" de pacu (dos Santos y Miguez): validar puntos, limpiar por desvío estándar (fuera de
+  media ± 3σ y rindes ≤ 0) e interpolar por distancia inversa (IDW, p=2) sobre una grilla regular.
+- Entradas (POST JSON): `points` ([[lat,lon],...], 5 a 5000), `values` (mismo largo), `boundary` opcional
+  ([[lat,lon],...]) y `cell_m` (2 a 100 m; por defecto 10). Tope de 2500 celdas (agranda la celda si hace falta).
+- Salidas: `mean`, `median`, `min`, `max`, `sd`, `cv_pct`, `removed` (nulos/atípicos), `n_used`, `cells`
+  (cada celda con `value` e `index` relativo a la media), `area_ha` y `reading`.
+- Escala nueva: `yield_index` (0–200, `high_ok`; 100 = media del lote). Ruta: `POST /api/fuentes/mapa-rinde`.
+- Tests: `tests/test_yield_map.py`. Caveat: mapa relativo, no absoluto ni oficial; sin corrección por humedad.
+
+## Newsletter "El Niño y crecidas" (qué falta para que salga correo solo)
 Ya está el workflow `.github/workflows/nino-crecidas.yml` (cron `23 */2 * * *` + `workflow_dispatch`) con
 `scripts/nino_crecidas.py` (digest JSON+HTML+PDF) y `scripts/nino_newsletter.py` (envío por Resend, una vez por
 día con UTC ≥ 8; `NINO_FORZAR=1` fuerza; gate `enviado_el`). Los datos van a la rama `datos` (no se publica la web).

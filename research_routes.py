@@ -659,6 +659,17 @@ def yield_view():
     except Exception as e:
         return _upstream_error(e)
 
+@research_api.post('/mapa-rinde')
+def yield_map_view():
+    """Mapa de rinde del lote (relativo a la media): limpieza por σ e interpolación IDW de los puntos del monitor."""
+    import yield_map as ym
+    try:
+        return jsonify(ym.analyze(request.get_json(silent=True) or {}))
+    except ValueError as e:
+        return jsonify({'status':'sin dato','error':str(e)}),400
+    except Exception as e:
+        return jsonify({'status':'sin dato','error':'No se pudo armar el mapa de rinde','type':type(e).__name__}),502
+
 def _tema_ids(raw, temas_mod):
     """Normaliza la lista de temas pedida: ignora desconocidos y, si queda vacía, usa todos."""
     if isinstance(raw, str):
