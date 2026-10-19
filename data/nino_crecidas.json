@@ -1,19 +1,19 @@
 {
- "updated": "2026-10-19T04:56+00:00",
+ "updated": "2026-10-19T13:40+00:00",
  "version": 1,
  "fuente": "https://observatorio-agro.vercel.app",
  "niveles": {
-  "Normal": 9,
-  "Atención": 10,
-  "Alerta": 4,
-  "Evacuación": 3
+  "Normal": 10,
+  "Atención": 9,
+  "Alerta": 3,
+  "Evacuación": 4
  },
  "peor": {
   "id": "parana-ituzaingo",
   "place": "Ituzaingó",
   "river": "Paraná",
   "level": "Evacuación",
-  "height": 4.95
+  "height": 4.75
  },
  "alertas": [
   {
@@ -23,26 +23,26 @@
    "level": "Evacuación"
   },
   {
-   "id": "iguazu-cataratas",
-   "place": "Puerto Iguazú · Cataratas",
-   "river": "Iguazú",
-   "level": "Evacuación"
-  },
-  {
    "id": "uruguay-libres",
    "place": "Paso de los Libres",
    "river": "Uruguay",
    "level": "Evacuación"
   },
   {
+   "id": "iguazu-cataratas",
+   "place": "Puerto Iguazú · Cataratas",
+   "river": "Iguazú",
+   "level": "Evacuación"
+  },
+  {
    "id": "parana-corrientes",
    "place": "Corrientes",
    "river": "Paraná",
-   "level": "Alerta"
+   "level": "Evacuación"
   },
   {
-   "id": "parana-eldorado",
-   "place": "Eldorado",
+   "id": "parana-goya",
+   "place": "Goya",
    "river": "Paraná",
    "level": "Alerta"
   },
@@ -53,8 +53,8 @@
    "level": "Alerta"
   },
   {
-   "id": "parana-goya",
-   "place": "Goya",
+   "id": "parana-bellavista",
+   "place": "Bella Vista",
    "river": "Paraná",
    "level": "Alerta"
   }
@@ -65,9 +65,9 @@
   "oni": 2.16
  },
  "enviado_el": null,
- "pdf_el": "2026-10-18T11:25+00:00",
+ "pdf_el": "2026-10-19T13:40+00:00",
  "newsletter": {
-  "subject": "DOTS · El Niño y crecidas · 19/10/2026 04:56 UTC",
-  "bytes": 5302
+  "subject": "DOTS · El Niño y crecidas · 19/10/2026 13:40 UTC",
+  "bytes": 5310
  }
 }
