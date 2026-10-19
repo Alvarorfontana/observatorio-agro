@@ -35,13 +35,20 @@ def search(polygon, days=180):
     response = requests.post(STAC, json=query, timeout=40)
     response.raise_for_status()
     scenes = sorted(response.json().get("features", []), key=lambda f: f["properties"].get("datetime", ""))
-    # Avoid combining ascending and descending passes in one change estimate.
-    for orbit in ("ascending", "descending"):
-        subset = [s for s in scenes if s.get("properties", {}).get("sat:orbit_state") == orbit
-                  and "vv" in s.get("assets", {})]
-        if len(subset) >= 2:
-            return subset[0], subset[-1], geom, orbit
-    raise ValueError("No se encontraron dos escenas VV de una misma dirección orbital")
+    # Compare the same orbit direction AND relative orbit number where available.
+    groups = {}
+    for s in scenes:
+        props = s.get("properties", {})
+        orbit = props.get("sat:orbit_state")
+        relative = props.get("sat:relative_orbit")
+        if orbit in ("ascending", "descending") and relative is not None and "vv" in s.get("assets", {}):
+            groups.setdefault((orbit, relative), []).append(s)
+    candidates = [v for v in groups.values() if len(v) >= 2]
+    if candidates:
+        subset = max(candidates, key=lambda v: (v[-1]["properties"].get("datetime", ""), len(v)))
+        props = subset[0]["properties"]
+        return subset[0], subset[-1], geom, str(props["sat:orbit_state"]) + "/" + str(props["sat:relative_orbit"])
+    raise ValueError("No se encontraron dos escenas VV de la misma órbita relativa")
 
 
 def raster_pair(before, after, geom, resolution=10):
