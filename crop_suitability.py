@@ -98,7 +98,7 @@ def _reading(d):
     base = (f"{d['crop_name']}: aptitud {d['overall']}/100 ({d['scale']['label']}). "
             f"Temperatura {d['factors']['t']['score']}, lluvia {d['factors']['p']['score']}, "
             f"pH {d['factors']['ph']['score']}, textura {d['factors']['tex']['score']}.")
-    return base + (f" Limita {FACTORS[lim].lower()}." if lim else '')
+    return base + (f" Lluvia limita la aptitud." if lim == "p" else f" Limita {FACTORS[lim].lower()}." if lim else "")
 
 
 def analyze(lat, lon, crop='maiz'):

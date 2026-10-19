@@ -47,6 +47,7 @@ import { NinoNowSA } from "./site/NinoNow";
 import { AvisosBox } from "./site/AvisosBox";
 import { HerdPanel, HERD_CATS, type HerdRow, type Movement } from "./dashboard/Herd";
 import { GuideContent } from "./site/GuideContent";
+import { FloodRadarConnected } from "./site/FloodRadarConnected";
 const CuencaPanel = lazy(() => import("./site/CuencaPanel").then(m => ({ default: m.CuencaPanel })));
 const AlertasTeaser = lazy(() => import("./site/CuencaPanel").then(m => ({ default: m.AlertasTeaser })));
 const CultivosPanel = lazy(() => import("./site/Cultivos").then(m => ({ default: m.CultivosPanel })));
@@ -1641,6 +1642,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
                 {payload?.catalog && <p className="footnote">{payload.catalog.total} índices disponibles ({Object.entries(payload.catalog.by_domain||{}).map(([k,v])=>`${v} de ${k}`).join(", ")}). Fórmulas del catálogo abierto awesome-spectral-indices (MIT).</p>}
               </>}
               {view==="radar-agua" && <>
+                {vertices.length >= 3 && <FloodRadarConnected polygon={vertices} lat={point[0]} lon={point[1]} location="Lote seleccionado" />}
                 {vertices.length<3 && <p className="error">Dibujá un lote para medir el agua con radar.</p>}
                 {payload?.latest && <>
                   <div className={"verdict "+(payload.latest.water_fraction>0.1?"warn":"ok")}><span>Agua en el lote · {String(payload.latest.datetime||"").slice(0,10)}</span><b>{fmt(payload.latest.water_fraction*100,1)} % · {fmt(payload.latest.water_ha,1)} ha</b><small>{payload.trend||""}</small></div>
