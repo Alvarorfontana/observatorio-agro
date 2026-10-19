@@ -2653,6 +2653,7 @@ function PublicHeader({onDemo}:{onDemo:()=>void}){return <header className="site
   <SiteLink to="/que-es-dots">Qué es DOTS</SiteLink>
   <SiteLink to="/el-nino" className="nav-highlight">Mi región</SiteLink>
   <SiteLink to="/focos">Fuego y heladas</SiteLink>
+  <a href="/radar" className="nav-highlight">Radar Sentinel-1</a>
   <SiteLink to="/libre-deforestacion">Vender a Europa</SiteLink>
   <SiteLink to="/caso-bella-vista">Ejemplo</SiteLink>
   <details className="nav-more"><summary>Más</summary><div>
@@ -2662,7 +2663,7 @@ function PublicHeader({onDemo}:{onDemo:()=>void}){return <header className="site
 </nav><div className="site-head-actions"><SiteLink to="/alertas" className="alert-btn">⚠ Alertas</SiteLink><SiteLink to="/acceso" className="ghost-link">Ingresar</SiteLink><button className="demo-btn" onClick={onDemo}>Abrir Observatorio →</button>
   <details className="nav-mobile"><summary aria-label="Menú">☰</summary><div>
     <button className="nav-mobile-demo" onClick={onDemo}>Abrir Observatorio →</button>
-    {([["/que-es-dots","Qué es DOTS"],["/caso-bella-vista","Ejemplo: caso Bella Vista"],["/el-nino","Mi región: El Niño"],["/alertas","Alertas de crecidas"],["/nino-crecidas","El Niño y crecidas"],["/focos","Fuego, rayos y heladas"],["/cultivos","Cultivos y rinde"],["/libre-deforestacion","Vender a Europa"],["/poblacion","Población y riesgo"],["/panel","Panel regional"],["/modulos","Módulos"],["/guia","Cómo funciona"],["/capas","Capas del mapa"],["/tecnologia","Fuentes"],["/conexiones","APIs"],["/casos","Casos"],["/contacto","Contacto"],["/acceso","Ingresar"]] as [string,string][]).map(([to,l])=>to==="/poblacion"?<a key={to} href={to}>{l}</a>:<SiteLink key={to} to={to}>{l}</SiteLink>)}
+    {([["/que-es-dots","Qué es DOTS"],["/caso-bella-vista","Ejemplo: caso Bella Vista"],["/el-nino","Mi región: El Niño"],["/alertas","Alertas de crecidas"],["/nino-crecidas","El Niño y crecidas"],["/focos","Fuego, rayos y heladas"],["/radar","Radar Sentinel-1 e informe PDF"],["/cultivos","Cultivos y rinde"],["/libre-deforestacion","Vender a Europa"],["/poblacion","Población y riesgo"],["/panel","Panel regional"],["/modulos","Módulos"],["/guia","Cómo funciona"],["/capas","Capas del mapa"],["/tecnologia","Fuentes"],["/conexiones","APIs"],["/casos","Casos"],["/contacto","Contacto"],["/acceso","Ingresar"]] as [string,string][]).map(([to,l])=>to==="/poblacion"?<a key={to} href={to}>{l}</a>:<SiteLink key={to} to={to}>{l}</SiteLink>)}
   </div></details></div></header>}
 const sourceGroups=[
  ["ARGENTINA",["CONAE · SAOCOM","SMN","INA"]],
@@ -3056,6 +3057,7 @@ const WHERE: [string, string, string][] = [
   ["Agua en el perfil del suelo hasta 2 m y agua útil", "Observatorio › menú «Balance de agua»", "ERA5-Land y SoilGrids"],
   ["Cobertura reciente y cambios en el lote", "Observatorio › menú «Bosque y deforestación»", "Dynamic World y AlphaEarth (Google)"],
   ["Todo junto en un PDF", "Observatorio › «Informe PDF»: suma terreno, suelos, perfil, anomalía, consumo y heladas del lote", "Cada bloque entra solo si la fuente respondió"],
+  ["Radar de agua con Sentinel-1 e informe PDF", "Página «Radar Sentinel-1» (/radar)", "Estimación agregada experimental; sin mapa de cambios por píxel"],
   ["Focos de calor, rayos y heladas de la región", "Página «Fuego, rayos y heladas» (/focos)", "NASA FIRMS y NOAA GOES-19"],
   ["Rinde por agua de maíz y soja", "Página «Cultivos y rinde» (/cultivos)", "AquaCrop con clima ERA5"],
   ["Un ejemplo con todo calculado", "Página «Caso Bella Vista» (/caso-bella-vista)", "Un campo real de Corrientes"],
