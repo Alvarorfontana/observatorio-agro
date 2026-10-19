@@ -86,6 +86,22 @@ VEGETATION={
   'pasto-historia':lambda p,a:gpw.history(p),
 }
 
+@research_api.get('/sentinel-escenas')
+def sentinel_scene_catalog():
+    """Consultas STAC verificables; no equivale a procesamiento raster SAR."""
+    try:
+        import flood_radar_adapter as adapter
+        polygon=json.loads(request.args.get('polygon','null'))
+        days=int(request.args.get('days','90'))
+        if not 12<=days<=365:raise ValueError('Período fuera de rango')
+        result=adapter.scene_previews(polygon,days)
+        return jsonify(result)
+    except (ValueError,TypeError,KeyError):
+        return jsonify({'status':'sin dato','error':'Polígono o período inválido'}),400
+    except Exception as e:
+        return _upstream_error(e)
+
+
 @research_api.get('/pronostico-crecidas')
 def forecast_flood_river():
     """Pronóstico hidrológico modelado, no extensión de inundación del lote.
