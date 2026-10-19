@@ -10,13 +10,18 @@ import radar
 def summarize(polygon, days=60):
     result = radar.flooding(polygon, days=days, scenes=6)
     data = result.get("data") or {}
-    valid = [x for x in data.get("series", []) if x.get("status") == "válida"
+    scenes = data.get("series", [])
+    valid = [x for x in scenes if x.get("status") == "válida"
              and x.get("water_fraction") is not None
              and math.isfinite(float(x["water_fraction"]))]
     if len(valid) < 2:
         return {"status": "sin dato", "error": "Se necesitan al menos dos pasadas válidas Sentinel-1",
                 "source": "Sentinel-1 RTC / Microsoft Planetary Computer",
-                "series": valid}
+                "series": valid,
+                "scenes_found": len(scenes), "scenes_valid": len(valid),
+                "scenes_failed": len(scenes) - len(valid),
+                "method": "Umbral VV Sentinel-1 RTC; resultados preliminares",
+                "limitations": ["No se pudo calcular cambio entre dos fechas comparables"]}
     first, last = valid[0], valid[-1]
     area = float(data.get("area_ha") or 0)
     delta = float(last["water_fraction"]) - float(first["water_fraction"])
@@ -31,6 +36,8 @@ def summarize(polygon, days=60):
         "before_water_ha": round(float(first["water_fraction"]) * area, 2),
         "after_water_ha": round(float(last["water_fraction"]) * area, 2),
         "series": valid,
+        "scenes_found": len(scenes), "scenes_valid": len(valid),
+        "scenes_failed": len(scenes) - len(valid),
         "image_before_url": None, "image_after_url": None, "change_map_url": None,
         "limitations": [
             "No distingue agua nueva y retirada en el mismo lote",

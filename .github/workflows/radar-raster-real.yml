@@ -1,0 +1,44 @@
+name: DOTS Radar raster real
+on:
+  workflow_dispatch:
+    inputs:
+      polygon:
+        description: 'JSON [[lat,lon],...] con al menos tres vértices'
+        required: true
+        default: '[[-28.509,-59.049],[-28.509,-59.044],[-28.505,-59.044],[-28.505,-59.049]]'
+      days:
+        description: 'Ventana de búsqueda Sentinel-1'
+        required: true
+        default: '180'
+permissions:
+  contents: read
+jobs:
+  raster:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install raster processing libraries
+        run: pip install "numpy>=1.26,<3" "rasterio>=1.3,<2" "planetary-computer>=1,<2" "requests>=2.32,<3"
+      - name: Validate polygon and write input
+        env:
+          POLYGON: ${{ inputs.polygon }}
+        run: |
+          python - <<'PY'
+          import json,os
+          p=json.loads(os.environ["POLYGON"])
+          assert isinstance(p,list) and 3<=len(p)<=100
+          assert all(isinstance(v,list) and len(v)==2 and all(isinstance(n,(int,float)) for n in v) for v in p)
+          open("radar_polygon.json","w").write(json.dumps(p))
+          PY
+      - name: Fetch, align and classify real Sentinel-1 raster
+        run: python scripts/radar_raster_pipeline.py --polygon radar_polygon.json --days "${{ inputs.days }}" --output radar_output/cambio
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dots-radar-raster
+          path: radar_output/
+          if-no-files-found: warn
