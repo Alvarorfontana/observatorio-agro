@@ -78,7 +78,7 @@ def test_balance_without_soil_raises():
 def test_assemble_days_sources():
     obs = {d.isoformat(): (5.0, 1.0) for d in (date(2026, 10, 1) + timedelta(days=i) for i in range(13))}
     fc = {d.isoformat(): (4.0, 2.0) for d in (date(2026, 10, 14) + timedelta(days=i) for i in range(6))}
-    days = yf.assemble_days(date(2026, 10, 1), 20, obs, fc, {}, TODAY)
+    days = yf.assemble_days(date(2026, 10, 1), 20, obs, fc, {}, TODAY.date())
     by = {d['date']: d for d in days}
     assert by['2026-10-05']['source'] == 'observado' and by['2026-10-05']['et0'] == 5.0
     assert by['2026-10-15']['source'] == 'pronostico' and by['2026-10-15']['et0'] == 4.0
@@ -142,7 +142,7 @@ def test_tema_rendimiento_resolves(monkeypatch):
     monkeypatch.setattr(yf, 'analyze', lambda lat, lon, crop, sow, pot: c.envelope({'relative_yield_pct': 80}, 'u', 's', 'o'))
     out = temas.resolve('rendimiento', -31.0, -60.0, {'crop': 'soja', 'sowing': '2026-06-01'})
     assert out['status'] == 'recibido' and out['data']['relative_yield_pct'] == 80
-    assert out['id'] == 'rendimiento' and out['scale'] == 'yield_pct'
+    assert out['id'] == 'rendimiento' and out['group'] == 'Cultivo'
 
 
 # ── endpoint ──
