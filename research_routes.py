@@ -86,6 +86,40 @@ VEGETATION={
   'pasto-historia':lambda p,a:gpw.history(p),
 }
 
+@research_api.get('/pronostico-crecidas')
+def forecast_flood_river():
+    """Pronóstico hidrológico modelado, no extensión de inundación del lote.
+    Open-Meteo Flood API: modelo GloFAS de Copernicus, interpolado a coordenadas.
+    """
+    try:
+        lat=float(request.args.get('lat',''))
+        lon=float(request.args.get('lon',''))
+        if not (-90 <= lat <= 90 and -180 <= lon <= 180):
+            raise ValueError('Coordenadas fuera de rango')
+        import requests
+        response=requests.get('https://flood-api.open-meteo.com/v1/flood',
+            params={'latitude':lat,'longitude':lon,'daily':'river_discharge,river_discharge_max,river_discharge_min','forecast_days':7,'timezone':'UTC'},
+            timeout=20)
+        response.raise_for_status()
+        d=response.json()
+        daily=d.get('daily') or {}
+        if not daily.get('time') or not daily.get('river_discharge'):
+            return jsonify({'status':'sin dato','error':'No hay pronóstico fluvial para este punto'}),404
+        return jsonify({'status':'recibido','source':'Copernicus GloFAS vía Open-Meteo Flood API',
+            'kind':'pronostico_modelado','units':(d.get('daily_units') or {}).get('river_discharge','m³/s'),
+            'location':{'lat':lat,'lon':lon},'model_grid':{'lat':d.get('latitude'),'lon':d.get('longitude')},
+            'dates':daily['time'],'river_discharge':daily['river_discharge'],
+            'river_discharge_min':daily.get('river_discharge_min'),
+            'river_discharge_max':daily.get('river_discharge_max'),
+            'limitations':['Caudal modelado, no nivel del río ni mapa de inundación',
+                'La celda hidrológica puede no representar el lote seleccionado',
+                'No es un aviso oficial de crecida ni una evaluación de riesgo parcelario']})
+    except (ValueError,TypeError):
+        return jsonify({'status':'sin dato','error':'Coordenadas inválidas'}),400
+    except Exception as e:
+        return _upstream_error(e)
+
+
 @research_api.get('/monitor')
 def sources_monitor():
     if request.args.get('rutas'):
