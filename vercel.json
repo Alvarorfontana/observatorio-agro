@@ -31,11 +31,15 @@
       "destination": "/avisos-widget/index.html"
     },
     {
+      "source": "/radar",
+      "destination": "/radar/index.html"
+    },
+    {
       "source": "/campo",
       "destination": "/campo/index.html"
     },
     {
-      "source": "/((?!api/|ftw/|dem/|assets/|poblacion|avisos-widget|campo).*)",
+      "source": "/((?!api/|ftw/|dem/|assets/|poblacion|avisos-widget|campo|radar).*)",
       "destination": "/index.html"
     }
   ],
