@@ -1,6 +1,7 @@
 import {useState} from "react";
 import {EnvironmentalLab} from "./EnvironmentalLab";
 import {EnvironmentalMap} from "./EnvironmentalMap";
+import {FloodScenarioPanel} from "./FloodScenarioPanel";
 export function EnvironmentalWorkspace(){
  const [layer,setLayer]=useState("");
  const [date,setDate]=useState("");
@@ -20,6 +21,7 @@ export function EnvironmentalWorkspace(){
    </form>
    {error&&<p role="alert">{error}</p>}
    <EnvironmentalMap lat={lat} lon={lon} layer={layer} date={date} onPoint={updatePoint}/>
+   <FloodScenarioPanel onPoint={updatePoint} onLayer={setLayer}/>
    <p>Ubicación seleccionada: {lat.toFixed(5)}, {lon.toFixed(5)} · Capa: {layer||"Mapa base"}</p>
   </div>
   <EnvironmentalLab lat={lat} lon={lon} activeMapLayer={layer} onSelectMapLayer={setLayer} mapDate={date} onMapDateChange={setDate}/>
