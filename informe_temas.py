@@ -138,12 +138,33 @@ def pdf(doc):
     st.add(ParagraphStyle(name='Section', parent=st['Heading2'], fontSize=14, leading=17, textColor=navy, spaceBefore=10, spaceAfter=6))
     st.add(ParagraphStyle(name='Small2', parent=st['BodyText'], fontSize=8, leading=10, textColor=muted, wordWrap='LTR'))
 
-    story = [Paragraph('DOTS / CAMPO', st['Kicker']), Paragraph('Informe por temas', st['Cover']),
+    story = [Paragraph('DOTS / INTELIGENCIA TERRITORIAL', st['Kicker']), Paragraph('Informe técnico territorial y ambiental', st['Cover']),
              Paragraph(f'{doc.get("name", "DOTS")} · {doc.get("received")}/{doc.get("total")} temas con dato', st['Heading2']),
              Paragraph('Generado ' + doc.get('generated_at', '')[:19] + ' UTC', st['Small2'])]
     if doc.get('zone'):
         z = doc['zone']
         story.append(Paragraph(f'Zona delimitada: {z["vertices"]} vértices · centroide {z["centroid"][0]}, {z["centroid"][1]}', st['Small2']))
+    story += [
+        Spacer(1, 7),
+        Paragraph('DOTS | Sistema de Inteligencia Territorial, Ambiental y Climática', st['Section']),
+        Paragraph('<b>Datos · Observación · Territorio · Sistemas.</b> DOTS integra observación satelital, '
+                  'telemetría hidrometeorológica de redes disponibles, información geoespacial y modelos '
+                  'ambientales para analizar el territorio, las cuencas y la exposición a amenazas. '
+                  'No se limita a recopilar mediciones: combina fuentes trazables para elaborar escenarios '
+                  'e informes de apoyo a la prevención y la toma de decisiones.', st['BodyText']),
+        Spacer(1, 5),
+        Paragraph('<b>Telemetría y fuentes.</b> Las alturas de ríos, caudales, precipitaciones y demás '
+                  'mediciones se atribuyen a los organismos y redes que las suministran. '
+                  'Su integración no implica que DOTS sea propietario u operador de esas estaciones. '
+                  'Los datos satelitales y demográficos se identifican en cada sección.', st['BodyText']),
+        Spacer(1, 5),
+        Paragraph('<b>Interpretación.</b> Los escenarios y la población potencialmente expuesta son '
+                  'estimaciones sujetas a resolución, fecha y supuestos de cada modelo; no equivalen '
+                  'a personas efectivamente inundadas o evacuadas. Las instrucciones de emergencia '
+                  'corresponden a las autoridades competentes.', st['BodyText']),
+        Spacer(1, 6),
+        Paragraph('<b>Dirección institucional:</b> Álvaro Fontana · DOTS', st['Small2']),
+    ]
     story.append(Spacer(1, 8))
 
     for b in doc.get('blocks', []):
@@ -183,7 +204,7 @@ def html(doc, site='https://observatorio-agro.vercel.app'):
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>DOTS — {doc.get('name','Newsletter')}</title></head>
 <body style="margin:0;background:#eef2f3;font-family:Segoe UI,Arial,sans-serif;color:#10232d">
 <div style="max-width:640px;margin:0 auto;background:#fff">
-<div style="background:#10232d;padding:20px 24px"><div style="color:#16b9c4;font-size:12px;letter-spacing:.14em;font-weight:700">DOTS / OBSERVATORIO</div>
+<div style="background:#10232d;padding:20px 24px"><div style="color:#16b9c4;font-size:12px;letter-spacing:.14em;font-weight:700">DOTS / INTELIGENCIA TERRITORIAL</div>
 <div style="color:#fff;font-size:22px;font-weight:800;margin-top:4px">{doc.get('name','Informe')}</div>
 <div style="color:#9fb4bb;font-size:12px;margin-top:4px">{doc.get('received')}/{doc.get('total')} temas con dato · {doc.get('generated_at','')[:16]} UTC{' · zona '+str(doc['zone']['vertices'])+' vértices' if doc.get('zone') else ''}</div></div>
 <div style="padding:20px 24px">"""]
@@ -199,7 +220,7 @@ def html(doc, site='https://observatorio-agro.vercel.app'):
 
     parts.append(f"""</div>
 <div style="background:#10232d;color:#9fb4bb;font-size:11px;padding:16px 24px;line-height:1.5">
-DOTS — Observatorio agroclimático abierto. Cada dato viaja con su organismo, método y hora de consulta.
+DOTS — Sistema de Inteligencia Territorial, Ambiental y Climática. Observación satelital, telemetría y análisis geoespacial. Dirección: Álvaro Fontana. Cada dato viaja con su organismo, método y hora de consulta.
 Un tema sin fuente se marca "sin dato"; no se estima.<br><a href="{site}" style="color:#16b9c4">{site}</a></div>
 </div></body></html>""")
     return ''.join(parts)
