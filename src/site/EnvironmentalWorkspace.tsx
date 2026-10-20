@@ -2,6 +2,7 @@ import {useState} from "react";
 import {EnvironmentalLab} from "./EnvironmentalLab";
 import {EnvironmentalMap} from "./EnvironmentalMap";
 import {FloodScenarioPanel} from "./FloodScenarioPanel";
+import {GeoRasterWorkbench} from "./GeoRasterWorkbench";
 const BASINS:Record<string,string[]>={
  "Cuenca del Plata":["Paraná","Paraguay","Uruguay","Iguazú","Pilcomayo","Bermejo","Salado del Norte","Tercero / Carcarañá","Río de la Plata"],
  "Amazonas":["Amazonas","Solimões","Negro","Madeira","Tapajós","Xingu","Purus","Juruá","Ucayali","Marañón","Napo","Putumayo / Içá","Javari","Trombetas"],
@@ -53,6 +54,7 @@ export function EnvironmentalWorkspace(){
    <section style={{background:"#142834",color:"#f1f7fb",borderRadius:12,padding:14,margin:"12px 0"}} aria-label="Simulación visual de relieve"><h2 style={{margin:"0 0 8px"}}>Simulación interactiva · zonas bajas</h2><label style={{display:"block"}}><input type="checkbox" checked={terrainEnabled} onChange={e=>setTerrainEnabled(e.target.checked)}/> Mostrar áreas por debajo de una cota topográfica</label><label style={{display:"block",marginTop:12}}>Cota absoluta del terreno: <strong>{terrainLevel} m sobre el nivel del mar</strong><input aria-label="Cota topográfica para explorar zonas bajas" type="range" min="-10" max="200" step="1" value={terrainLevel} onChange={e=>setTerrainLevel(Number(e.target.value))} style={{width:"100%",display:"block"}}/></label><p style={{fontSize:12,marginBottom:0}}>El color azul señala celdas con elevación inferior a la cota elegida. <strong>No es una mancha de inundación ni un pronóstico</strong>: incluye depresiones desconectadas del río y no incorpora diques, caudales ni hidráulica. Fuente de relieve: teselas Terrarium / AWS Terrain Tiles, según disponibilidad. Para comparar con observaciones, activá también una capa MODIS.</p></section>
    <EnvironmentalMap lat={lat} lon={lon} layer={layer} date={date} onPoint={updatePoint} tramoMode={tramoMode} onTramoPoint={selectTramoPoint} tramoStart={tramoStart} tramoEnd={tramoEnd} terrainEnabled={terrainEnabled} terrainLevel={terrainLevel}/>
    <FloodScenarioPanel onLayer={setLayer} tramoStart={tramoStart} tramoEnd={tramoEnd} riverName={guideRiver} basinName={guideBasin}/>
+   <details style={{marginTop:14}}><summary style={{padding:12,background:"#173743",color:"#fff",borderRadius:8,cursor:"pointer"}}>Laboratorio geoespacial · importar DEM / GeoTIFF</summary><GeoRasterWorkbench basin={guideBasin} river={guideRiver} tramoStart={tramoStart} tramoEnd={tramoEnd}/></details>
    <p>Ubicación seleccionada: {lat.toFixed(5)}, {lon.toFixed(5)} · Capa: {layer||"Mapa base"}</p>
   </div>
   <details style={{minWidth:0}}><summary style={{padding:12,background:"#173743",color:"#fff",borderRadius:8,cursor:"pointer"}}>Opciones avanzadas · capas y variables</summary><EnvironmentalLab lat={lat} lon={lon} activeMapLayer={layer} onSelectMapLayer={setLayer} mapDate={date} onMapDateChange={setDate}/></details>
