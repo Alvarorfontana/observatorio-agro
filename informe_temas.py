@@ -150,6 +150,7 @@ def pdf(doc):
     from reportlab.lib import colors
     from reportlab.lib.units import mm
 
+    from xml.sax.saxutils import escape
     out = io.BytesIO()
     d = SimpleDocTemplate(out, pagesize=landscape(A4), rightMargin=12 * mm, leftMargin=12 * mm,
                           topMargin=12 * mm, bottomMargin=12 * mm,
@@ -259,7 +260,26 @@ def pdf(doc):
                             ('FONTSIZE', (0, 0), (-1, -1), 7), ('GRID', (0, 0), (-1, -1), .25, colors.HexColor('#c4d1d5')),
                             ('VALIGN', (0, 0), (-1, -1), 'TOP')]))
     story.append(tt)
-    d.build(story)
+    def institutional_page(canvas, document):
+        canvas.saveState()
+        width, height = landscape(A4)
+        canvas.setFillColor(navy)
+        canvas.rect(0, height - 15 * mm, width, 15 * mm, fill=1, stroke=0)
+        canvas.setFillColor(colors.white)
+        canvas.setFont('Helvetica-Bold', 10)
+        canvas.drawString(12 * mm, height - 9.5 * mm, 'DOTS  /  INTELIGENCIA TERRITORIAL')
+        canvas.setFont('Helvetica', 8)
+        canvas.drawRightString(width - 12 * mm, height - 9.5 * mm, 'INFORME TÉCNICO')
+        canvas.setStrokeColor(colors.HexColor('#c4d1d5'))
+        canvas.line(12 * mm, 13 * mm, width - 12 * mm, 13 * mm)
+        canvas.setFillColor(muted)
+        canvas.setFont('Helvetica', 7)
+        canvas.drawString(12 * mm, 8 * mm, 'DOTS · Dirección: Álvaro Fontana · Fuentes y limitaciones en el documento')
+        canvas.drawRightString(width - 12 * mm, 8 * mm, f'Página {document.page}')
+        canvas.restoreState()
+    d.topMargin = 21 * mm
+    d.bottomMargin = 19 * mm
+    d.build(story, onFirstPage=institutional_page, onLaterPages=institutional_page)
     return out.getvalue()
 
 
