@@ -21,7 +21,8 @@ export function EnvironmentalMap({lat,lon,layer,date,onPoint,onTramoPoint,tramoM
   const resize=window.setTimeout(()=>m.invalidateSize(),100);
   return()=>{window.clearTimeout(resize);m.remove();map.current=null};
  },[]);
- useEffect(()=>{if(!tramoMode)map.current?.panTo([lat,lon])},[lat,lon,tramoMode]);
+ useEffect(()=>{if(!tramoMode&&!tramoStart&&!tramoEnd)map.current?.panTo([lat,lon])},[lat,lon,tramoMode,tramoStart?.[0],tramoStart?.[1],tramoEnd?.[0],tramoEnd?.[1]]);
+ useEffect(()=>{if(tramoStart&&tramoEnd&&map.current){const bounds=L.latLngBounds([tramoStart,tramoEnd]);map.current.fitBounds(bounds.pad(0.45),{maxZoom:12,animate:true})}},[tramoStart?.[0],tramoStart?.[1],tramoEnd?.[0],tramoEnd?.[1]]);
  useEffect(()=>{if(tramoLayer.current){tramoLayer.current.remove();tramoLayer.current=null}if(!map.current)return;const g=L.layerGroup().addTo(map.current);tramoLayer.current=g;
   if(tramoStart)L.circleMarker(tramoStart,{radius:9,color:"#24d5a7",weight:3,fillOpacity:.9}).bindTooltip("Inicio del tramo").addTo(g);
   if(tramoEnd)L.circleMarker(tramoEnd,{radius:9,color:"#ffb45d",weight:3,fillOpacity:.9}).bindTooltip("Fin del tramo").addTo(g);
