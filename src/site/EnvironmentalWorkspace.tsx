@@ -4,6 +4,10 @@ import {EnvironmentalMap} from "./EnvironmentalMap";
 import {FloodScenarioPanel} from "./FloodScenarioPanel";
 export function EnvironmentalWorkspace(){
  const [layer,setLayer]=useState("");
+ const [tramoMode,setTramoMode]=useState(false);
+ const [tramoStart,setTramoStart]=useState<[number,number]|null>(null);
+ const [tramoEnd,setTramoEnd]=useState<[number,number]|null>(null);
+ function selectTramoPoint(a:number,b:number){if(!tramoStart||tramoEnd){setTramoStart([a,b]);setTramoEnd(null)}else setTramoEnd([a,b])}
  const [date,setDate]=useState("");
  const [lat,setLat]=useState(-28.507);
  const [lon,setLon]=useState(-59.043);
@@ -20,8 +24,9 @@ export function EnvironmentalWorkspace(){
     <button type="submit" style={{padding:10}}>Consultar ubicación</button>
    </form>
    {error&&<p role="alert">{error}</p>}
-   <EnvironmentalMap lat={lat} lon={lon} layer={layer} date={date} onPoint={updatePoint}/>
-   <FloodScenarioPanel onPoint={updatePoint} onLayer={setLayer}/>
+   <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap",margin:"8px 0"}}><button type="button" aria-pressed={tramoMode} onClick={()=>setTramoMode(v=>!v)}>{tramoMode?"Finalizar selección de tramo":"Definir tramo sobre el mapa"}</button><button type="button" onClick={()=>{setTramoStart(null);setTramoEnd(null);setTramoMode(true)}}>Borrar tramo</button><span>{tramoStart?(tramoEnd?"Tramo marcado (línea de referencia)":"Marcá el punto final"):"Sin tramo delimitado"}</span></div>
+   <EnvironmentalMap lat={lat} lon={lon} layer={layer} date={date} onPoint={updatePoint} tramoMode={tramoMode} onTramoPoint={selectTramoPoint} tramoStart={tramoStart} tramoEnd={tramoEnd}/>
+   <FloodScenarioPanel onPoint={updatePoint} onLayer={setLayer} tramoStart={tramoStart} tramoEnd={tramoEnd}/>
    <p>Ubicación seleccionada: {lat.toFixed(5)}, {lon.toFixed(5)} · Capa: {layer||"Mapa base"}</p>
   </div>
   <EnvironmentalLab lat={lat} lon={lon} activeMapLayer={layer} onSelectMapLayer={setLayer} mapDate={date} onMapDateChange={setDate}/>
