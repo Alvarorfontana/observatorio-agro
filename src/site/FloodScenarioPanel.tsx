@@ -5,14 +5,14 @@ const RIVERS:River[]=[
 {id:"paraguay",name:"Paraguay · Formosa",lat:-26.18,lon:-58.17,note:"Punto de referencia cartográfico; no equivale a una estación oficial"},
 {id:"uruguay",name:"Uruguay · Concordia",lat:-31.39,lon:-58.02,note:"Punto de referencia cartográfico; no equivale a una estación oficial"}
 ];
-export function FloodScenarioPanel({onPoint,onLayer,tramoStart,tramoEnd}:{onPoint:(lat:number,lon:number)=>void;onLayer:(id:string)=>void;tramoStart:[number,number]|null;tramoEnd:[number,number]|null}){
- const [river,setRiver]=useState(RIVERS[0].id);
+export function FloodScenarioPanel({onLayer,tramoStart,tramoEnd,riverName,basinName}:{onLayer:(id:string)=>void;tramoStart:[number,number]|null;tramoEnd:[number,number]|null;riverName:string;basinName:string}){
+
  const [base,setBase]=useState("4");
  const [rise,setRise]=useState(1);
  const [threshold,setThreshold]=useState("6");
  const [source,setSource]=useState("");
  const [date,setDate]=useState(new Date().toISOString().slice(0,10));
- const selected=RIVERS.find(r=>r.id===river)!;
+ const selected={name:riverName,lat:tramoStart?.[0]??0,lon:tramoStart?.[1]??0,note:"El tramo de referencia es el que marcaste en el mapa."};
  const b=Number(base),t=Number(threshold);
  const valid=base.trim()!==""&&threshold.trim()!==""&&Number.isFinite(b)&&Number.isFinite(t)&&b>=0&&t>=0;
  const hypothetical=b+rise;
@@ -29,7 +29,8 @@ export function FloodScenarioPanel({onPoint,onLayer,tramoStart,tramoEnd}:{onPoin
   })():null;
   const row=(name:string,value:string)=>`<tr><th>${esc(name)}</th><td>${esc(value)}</td></tr>`;
   const rows=[
-   row("Río y localidad de referencia",selected.name),
+   row("Cuenca seleccionada",basinName),
+   row("Río seleccionado",selected.name),
    row("Inicio marcado (latitud, longitud)",pos(tramoStart)),
    row("Fin marcado (latitud, longitud)",pos(tramoEnd)),
    row("Distancia geodésica entre puntos",distance===null?"No calculable sin ambos extremos":fmt(distance)+" km en línea recta; no equivale a longitud del cauce"),
@@ -53,7 +54,7 @@ export function FloodScenarioPanel({onPoint,onLayer,tramoStart,tramoEnd}:{onPoin
   <style>@page{size:A4;margin:17mm 16mm}body{font:11pt/1.5 Arial,Helvetica,sans-serif;color:#182a35;max-width:900px;margin:0 auto}header{border-bottom:4px solid #b82332;padding:12px 0 18px}header strong{font-size:14pt;color:#b82332;letter-spacing:.04em}h1{font-size:23pt;line-height:1.15;margin:10px 0}h2{font-size:14pt;border-bottom:1px solid #cbd5dd;padding-bottom:5px;margin-top:25px}p,li{orphans:3;widows:3}table{border-collapse:collapse;width:100%;font-size:10pt}td,th{padding:8px;border-bottom:1px solid #d8e1e6;text-align:left;vertical-align:top}th{width:43%;background:#f1f5f7}.lead{font-size:12pt}.note{border-left:4px solid #cc9230;padding:10px 14px;background:#fff7e8}.metric{font-size:18pt;font-weight:700}.meta{color:#5a6a75;font-size:9pt}.footer{margin-top:30px;border-top:1px solid #ddd;padding-top:10px;font-size:9pt}@media print{button{display:none}h2{break-after:avoid}table{break-inside:avoid}}</style></head><body>
   <header><strong>DOTS CAMPO | OBSERVATORIO AGROAMBIENTAL</strong><h1>Informe técnico de escenario de crecida fluvial</h1><div class="meta">Documento de exploración de escenario · Emitido ${esc(new Date().toLocaleString("es-AR"))} · Sin validación hidrodinámica</div></header>
   <h2>1. Objeto y alcance</h2><p class="lead">Evaluar aritméticamente un incremento hipotético de altura hidrométrica para ${esc(selected.name)}, comparándolo con un umbral definido por el usuario. El análisis se limita al escenario numérico y a los puntos cartográficos declarados; no estima extensión, profundidad ni tiempo de llegada de una inundación.</p>
-  <h2>2. Localización y delimitación espacial</h2><p>Referencia territorial: ${esc(selected.name)}. Coordenada del punto orientativo del selector: ${selected.lat.toFixed(5)}, ${selected.lon.toFixed(5)}. Inicio del tramo: ${esc(pos(tramoStart))}; final del tramo: ${esc(pos(tramoEnd))}.</p>
+  <h2>2. Localización y delimitación espacial</h2><p>Referencia territorial: cuenca ${esc(basinName)}, río ${esc(selected.name)}. Inicio del tramo: ${esc(pos(tramoStart))}; final del tramo: ${esc(pos(tramoEnd))}.</p>
   <p>${distance===null?"No se puede determinar la separación entre extremos porque el tramo no está completamente marcado.":`La distancia geodésica entre extremos es ${fmt(distance)} km. Es una línea recta entre coordenadas, no la longitud real del río ni un dominio hidráulico validado.`}</p>
   <h2>3. Datos de entrada y trazabilidad</h2><table>${rows}</table>
   <p class="note"><strong>Advertencia de referencia vertical.</strong> Una altura hidrométrica de escala local no equivale a la elevación absoluta del terreno en metros sobre el nivel del mar. No se ha comprobado que la altura inicial y el umbral correspondan a la misma estación y datum. Si no son comparables, la comparación numérica carece de interpretación hidrológica válida.</p>
@@ -71,13 +72,8 @@ export function FloodScenarioPanel({onPoint,onLayer,tramoStart,tramoEnd}:{onPoin
 
  return <section aria-label="Simulación de crecidas" style={{background:"#142834",color:"#edf5f8",borderRadius:12,padding:16,marginTop:14}}>
   <h2>Escenario interactivo de crecida</h2>
-  <p style={{fontSize:13}}>Elegí un río y probá una variación hipotética de nivel. Los valores iniciales son ejemplos editables, no lecturas oficiales.</p>
-  <label style={{display:"block",marginBottom:10}}>Río y tramo
-   <select value={river} onChange={e=>{const id=e.target.value;setRiver(id);const r=RIVERS.find(x=>x.id===id)!;onPoint(r.lat,r.lon)}} style={{display:"block",width:"100%",padding:10,marginTop:5}}>
-    {RIVERS.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}
-   </select>
-  </label>
-  <button type="button" onClick={()=>onPoint(selected.lat,selected.lon)}>Centrar mapa en el tramo</button>{" "}
+  <p style={{fontSize:13}}>Usá el río y el tramo seleccionados en el mapa para probar una variación hipotética de nivel. Los valores iniciales son ejemplos editables, no lecturas oficiales.</p>
+  <p><strong>Cuenca:</strong> {basinName} · <strong>Río:</strong> {riverName}</p>
   <button type="button" onClick={()=>onLayer("MODIS_Combined_Flood_3-Day")}>Ver capa de agua MODIS</button>
   <p style={{fontSize:12}}>{selected.note}</p>
   <p><strong>Tramo delimitado:</strong> {tramoStart&&tramoEnd?`Inicio ${tramoStart[0].toFixed(4)}, ${tramoStart[1].toFixed(4)} · Fin ${tramoEnd[0].toFixed(4)}, ${tramoEnd[1].toFixed(4)}`:"Usá «Definir tramo sobre el mapa» y marcá dos puntos."}</p>
