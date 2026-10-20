@@ -149,6 +149,29 @@ $('flood-place').addEventListener('change',async()=>{const id=$('flood-place').v
     const t=make('table','');const hr=make('tr','');for(const h of ['Hasta … m sobre el río','Personas','Menores de 5','Mayores de 65','% de la zona'])hr.append(make('th',h));t.append(hr);
     for(const b of d.bands){const tr=make('tr','');tr.append(make('td',`${b.up_to_m} m`),make('td',number(b.people)),make('td',number(b.under5)),make('td',number(b.over65)),make('td',d.total?number(100*b.people/d.total,1)+' %':'Sin dato'));t.append(tr);}
     box.append(grid,t);
+    const exportRow=make('div','');exportRow.className='exports';
+    const download=make('button','Descargar informe PDF · '+d.place);download.type='button';download.className='primary';
+    const exportJson=make('button','Descargar datos JSON');exportJson.type='button';exportJson.className='secondary';
+    exportJson.addEventListener('click',()=>save('DOTS-zona-baja-'+id+'.json',JSON.stringify({data:d,source:j.source||'WorldPop / MERIT Hydro',status:j.status},null,2),'application/json'));
+    download.addEventListener('click',async()=>{
+      download.disabled=true;download.textContent='Generando informe PDF…';
+      try{
+        const response=await fetch('/api/fuentes/informe-temas',{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({temas:['poblaciones'],params:{localidad:id},nombre:'Población en zona baja · '+d.place}),
+          signal:AbortSignal.timeout(90000)
+        });
+        if(!response.ok){const msg=await response.json().catch(()=>({}));throw new Error(msg.error||'Error HTTP '+response.status)}
+        const pdf=await response.blob();
+        if(!pdf.size||!pdf.type.includes('pdf'))throw new Error('El servidor no devolvió un PDF válido');
+        const url=URL.createObjectURL(pdf),link=make('a','');
+        link.href=url;link.download='DOTS-poblacion-zona-baja-'+id+'.pdf';document.body.append(link);link.click();link.remove();
+        setTimeout(()=>URL.revokeObjectURL(url),5000);
+        $('flood-status').textContent='Informe PDF generado para '+d.place+'.';
+      }catch(error){$('flood-status').textContent='No se pudo generar el PDF: '+error.message+'. Podés descargar los datos JSON.'}
+      finally{download.disabled=false;download.textContent='Descargar informe PDF · '+d.place}
+    });
+    exportRow.append(download,exportJson);box.append(exportRow);
   }catch(e){$('flood-status').textContent='No se pudo calcular: '+e.message;}});
 
 // Dengue y olas de calor en 80 localidades
