@@ -28,5 +28,15 @@ export function analyzeD8(values:ArrayLike<number>,width:number,height:number,no
  }
  let drainagePixels=0;const cutoff=Math.max(20,Math.ceil(count*.002));
  for(let i=0;i<n;i++)if(valid(i)&&accumulation[i]>=cutoff)drainagePixels++;
- return {validPixels:count,sinks,maxAccumulation,drainagePixels,cutoff};
+ return {validPixels:count,sinks,maxAccumulation,drainagePixels,cutoff,accumulation,downstream};
+}
+
+/** Trace the upstream contributing cells of a selected pixel, without hydrologic conditioning. */
+export function delineateUpstream(downstream:Int32Array,width:number,height:number,outlet:number){
+ const n=width*height;if(outlet<0||outlet>=n)return new Uint8Array(n);
+ const first=new Int32Array(n).fill(-1),next=new Int32Array(n).fill(-1);
+ for(let i=0;i<n;i++){const d=downstream[i];if(d>=0&&d<n){next[i]=first[d];first[d]=i}}
+ const mask=new Uint8Array(n),stack=new Int32Array(n);let size=1;stack[0]=outlet;mask[outlet]=1;
+ while(size){const i=stack[--size];for(let j=first[i];j>=0;j=next[j])if(!mask[j]){mask[j]=1;stack[size++]=j}}
+ return mask;
 }
