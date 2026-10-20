@@ -1,4 +1,5 @@
 // DOTS / Campo — Verificación de libre de deforestación y carbono (Typst).
+#import "identity.typ": name, cover-id
 #let d = json(bytes(sys.inputs.data))
 
 #let ink = rgb("#101828")
@@ -12,7 +13,7 @@
 #let risk = rgb("#d92d20")
 #let tone(t) = if t == "ok" { ok } else if t == "warn" { warn } else if t == "risk" { risk } else { muted }
 
-#set document(title: d.title, author: "DOTS / Campo")
+#set document(title: d.title, author: name)
 #set text(font: "IBM Plex Sans", size: 9.5pt, fill: ink, lang: "es")
 #set par(leading: 0.62em)
 #set page(paper: "a4", margin: (top: 22mm, bottom: 20mm, x: 18mm),
@@ -40,6 +41,7 @@
 })
 
 // ───────── portada ─────────
+#cover-id()
 #block(width: 100%, fill: brand-dark, radius: 12pt, inset: 18pt)[
   #set text(fill: white)
   #grid(columns: (1fr, auto),
