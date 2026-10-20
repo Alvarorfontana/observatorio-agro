@@ -5,7 +5,7 @@ import { makeTimeline } from "../lib/environmentalTimeline";
 import { INITIAL_VARIABLES } from "../lib/environmentalVariables";
 import type { TemporalFrame, ObservationKind } from "../lib/environmentalTimeline";
 
-type Props = { frames?: readonly TemporalFrame[]; onSelectFrame?: (frame: TemporalFrame) => void; onSelectMapLayer?: (layer: string) => void; activeMapLayer?: string };
+type Props = { frames?: readonly TemporalFrame[]; onSelectFrame?: (frame: TemporalFrame) => void; onSelectMapLayer?: (layer: string) => void; activeMapLayer?: string; mapDate?: string; onMapDateChange?: (date:string)=>void };
 const MAP_LAYERS = [
  {id:"MODIS_Combined_Flood_3-Day",label:"Agua detectada · MODIS",variable:"flood",source:"NASA GIBS · MODIS"},
  {id:"VIIRS_Combined_Flood_3-Day",label:"Agua detectada · VIIRS",variable:"flood",source:"NASA GIBS · VIIRS"},
@@ -19,9 +19,13 @@ const MAP_LAYERS = [
 const labels: Record<ObservationKind,string> = { observed:"Observaciones", forecast:"Pronósticos", scenario:"Escenarios" };
 const status: Record<EnvironmentalModule["status"],string> = { visualizacion:"Capa / visualización", analisis:"Análisis por validar", "requiere-modelo":"Requiere modelo calibrado" };
 /** Panel conectable al mapa Leaflet existente: no crea mapas ficticios ni solicita datos sin endpoint verificado. */
-export function EnvironmentalLab({frames=[],onSelectFrame,onSelectMapLayer,activeMapLayer=""}:Props) {
+export function EnvironmentalLab({frames=[],onSelectFrame,onSelectMapLayer,activeMapLayer="",mapDate="",onMapDateChange}:Props) {
  const [id,setId]=useState("flood");
  const [search,setSearch]=useState("");
+ const today=new Date().toISOString().slice(0,10);
+ const historicalStart="2000-01-01";
+ const dated=Boolean(mapDate);
+ const shiftDay=(amount:number)=>{const current=new Date((mapDate||today)+"T12:00:00Z");current.setUTCDate(current.getUTCDate()+amount);const next=current.toISOString().slice(0,10);if(next>=historicalStart&&next<=today)onMapDateChange?.(next);};
  const [kind,setKind]=useState<ObservationKind>("observed");
  const [index,setIndex]=useState(0);
  const module = ENVIRONMENTAL_CATALOG.find(m=>m.id===id) ?? ENVIRONMENTAL_CATALOG[0];
@@ -41,7 +45,16 @@ export function EnvironmentalLab({frames=[],onSelectFrame,onSelectMapLayer,activ
    <option value="">Sin capa adicional</option>
    {MAP_LAYERS.map(l=><option key={l.id} value={l.id}>{l.label} · {l.source}</option>)}
   </select>
-  <p style={{fontSize:12,color:"#aac7d5"}}>Las capas disponibles muestran el último producto servido por NASA GIBS. Su cobertura y fecha efectiva dependen de cada satélite; no son pronósticos ni simulaciones.</p>
+  <div style={{display:"grid",gap:8,margin:"12px 0"}}>
+   <label htmlFor="dots-lab-date">Fecha satelital solicitada</label>
+   <input id="dots-lab-date" type="date" min={historicalStart} max={today} value={mapDate} onChange={e=>onMapDateChange?.(e.target.value)} disabled={!onMapDateChange} style={{padding:10,background:"#20313d",color:"white"}}/>
+   <div style={{display:"flex",gap:8}}>
+    <button type="button" onClick={()=>shiftDay(-1)} disabled={!onMapDateChange}>◀ Día anterior</button>
+    <button type="button" onClick={()=>shiftDay(1)} disabled={!onMapDateChange||mapDate===today}>Día siguiente ▶</button>
+    <button type="button" onClick={()=>onMapDateChange?.("")} disabled={!onMapDateChange||!dated}>Última disponible</button>
+   </div>
+  </div>
+  <p style={{fontSize:12,color:"#aac7d5"}}>NASA GIBS recibe la fecha elegida mediante WMS TIME. Una solicitud no garantiza una escena válida ese día: cada producto tiene fechas, resolución y cobertura propias. El control no interpola imágenes ni genera pronósticos.</p>
   <label htmlFor="dots-lab-search">Buscar entre {INITIAL_VARIABLES.length} variables registradas</label>
   <input id="dots-lab-search" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Ej.: caudal, NDVI, humedad..." style={{display:"block",width:"100%",boxSizing:"border-box",padding:10,margin:"8px 0",background:"#20313d",color:"white"}}/>
   {search.trim() && <div style={{maxHeight:160,overflowY:"auto",padding:8,background:"#192b35"}}>{INITIAL_VARIABLES.filter(v=>(v.label+" "+v.id+" "+v.unit).toLocaleLowerCase("es").includes(search.toLocaleLowerCase("es"))).map(v=><p key={v.id} style={{margin:"5px 0"}}>{v.label} · {v.unit} <small>({v.support})</small></p>)}</div>}
