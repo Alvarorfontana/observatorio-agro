@@ -1,4 +1,5 @@
 import {useEffect,useMemo,useState} from "react";
+import {ENSO_SOURCES} from "../lib/ensoSourceRegistry";
 type Point={month:string;season:string;anomalyC:number};
 const panels=[
  {title:"Temperatura superficial del Pacífico ecuatorial",src:"https://ftp.cpc.ncep.noaa.gov/CPC/li.xu/enso/ssta_last-4weeks.png",desc:"NOAA CPC · anomalías de temperatura superficial, últimas cuatro semanas"},
@@ -12,6 +13,7 @@ const panels=[
 ];
 export function EnsoObservatory(){
  const [points,setPoints]=useState<Point[]>([]),[error,setError]=useState(""),[loading,setLoading]=useState(true);
+ const [sourceFilter,setSourceFilter]=useState("Todas");
  const [count,setCount]=useState(72),[selected,setSelected]=useState(0),[play,setPlay]=useState(false);
  useEffect(()=>{const ctrl=new AbortController();fetch("/api/enso/oni",{signal:ctrl.signal}).then(async r=>{const j=await r.json();if(!r.ok)throw Error(j.error||"Fuente no disponible");return j}).then(j=>{if(!ctrl.signal.aborted){setPoints(j.points||[]);setSelected(Math.max(0,(j.points||[]).length-1))}}).catch(e=>{if(!ctrl.signal.aborted)setError(String(e))}).finally(()=>{if(!ctrl.signal.aborted)setLoading(false)});return()=>ctrl.abort()},[]);
  const data=useMemo(()=>points.slice(-count),[points,count]);
@@ -36,7 +38,11 @@ export function EnsoObservatory(){
  <p style={{fontSize:12}}>Fuente de la serie: <a href="https://www.cpc.ncep.noaa.gov/data/indices/oni.ascii.txt" target="_blank" rel="noreferrer" style={{color:"#a7e4ff"}}>NOAA CPC · ONI</a>. La animación recorre datos observados; no es una simulación ni un pronóstico.</p></>}
  <h3>Diagnóstico oceánico y atmosférico · productos NOAA CPC</h3>
  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,290px),1fr))",gap:12}}>{panels.map(p=><figure key={p.title} style={{margin:0,background:"#fff",color:"#172d38",padding:10,borderRadius:9}}><img src={p.src} alt={p.desc} loading="lazy" style={{width:"100%",height:"auto"}}/><figcaption><strong>{p.title}</strong><div style={{fontSize:12}}>{p.desc}</div><a href={p.src} target="_blank" rel="noreferrer">Ver figura oficial y fecha</a></figcaption></figure>)}</div>
- <h3>Pronósticos IRI · Universidad de Columbia</h3><p>El pronóstico multimodelo, la distribución de probabilidades y los boletines de NOAA son productos distintos. Para evitar reproducir números desactualizados, se consultan en sus páginas oficiales.</p>
+ <h3>Catálogo de variables y productos verificables</h3>
+ <p>Este inventario identifica variables, unidades, frecuencia y acceso a sus fuentes. <strong>Registro no significa ingesta automática:</strong> por ahora el ONI es la serie conectada; los demás productos requieren conectores y validación por separado.</p>
+ <label>Filtrar por categoría <select value={sourceFilter} onChange={e=>setSourceFilter(e.target.value)}>{["Todas",...Array.from(new Set(ENSO_SOURCES.map(v=>v.group)))].map(g=><option key={g}>{g}</option>)}</select></label>
+ <div style={{overflowX:"auto",maxHeight:460,overflowY:"auto",marginTop:10}}><table style={{width:"100%",fontSize:12,borderCollapse:"collapse"}}><thead><tr><th>Variable / producto</th><th>Origen</th><th>Tipo</th><th>Unidad</th><th>Frecuencia</th><th>Estado</th></tr></thead><tbody>{ENSO_SOURCES.filter(v=>sourceFilter==="Todas"||v.group===sourceFilter).map(v=><tr key={v.id} style={{borderBottom:"1px solid #49606c"}}><td style={{padding:8}}><a href={v.url} target="_blank" rel="noreferrer" style={{color:"#a7e4ff"}}>{v.name} ↗</a></td><td>{v.provider}</td><td>{v.kind}</td><td>{v.unit}</td><td>{v.frequency}</td><td>{v.id==="oni"?"Serie conectada":"Fuente catalogada"}</td></tr>)}</tbody></table></div>
+  <h3>Pronósticos IRI · Universidad de Columbia</h3><p>El pronóstico multimodelo, la distribución de probabilidades y los boletines de NOAA son productos distintos. Para evitar reproducir números desactualizados, se consultan en sus páginas oficiales.</p>
  <div style={{display:"flex",flexWrap:"wrap",gap:12}}><a href="https://iri.columbia.edu/our-expertise/climate/forecasts/enso/current/" target="_blank" rel="noreferrer" style={{color:"#a7e4ff"}}>IRI · pronóstico y pluma de modelos</a><a href="https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/ensodisc.shtml" target="_blank" rel="noreferrer" style={{color:"#a7e4ff"}}>NOAA · diagnóstico oficial</a><a href="https://www.cpc.ncep.noaa.gov/data/indices/" target="_blank" rel="noreferrer" style={{color:"#a7e4ff"}}>NOAA · catálogo de índices</a></div>
  <p style={{fontSize:12,color:"#ffd59b"}}>No se calculan probabilidades locales de sequía o crecida a partir del ONI. Esas evaluaciones requieren datos regionales, validación y modelos específicos. Las imágenes externas dependen de la disponibilidad del proveedor.</p>
  </section>;
