@@ -94,9 +94,16 @@ def summary(block):
                 out.append(f"Histórico {per[0]}-{per[1]}: {h['events']} eventos de crecida en la zona")
             return out or ['Sin dato de amenaza de crecida.']
         if tid == 'poblaciones':
-            out = [f"Total en el radio: {d.get('total')} personas"]
+            out = [f"Localidad: {d.get('place') or 'sin dato'} · río {d.get('river') or 'sin dato'}",
+                   f"Radio de estudio: {d.get('radius_km', 15)} km",
+                   f"Población total estimada: {d.get('total') if d.get('total') is not None else 'sin dato'} personas",
+                   f"Menores de 5 años: {d.get('under5_total') if d.get('under5_total') is not None else 'sin dato'}",
+                   f"Mayores de 65 años: {d.get('over65_total') if d.get('over65_total') is not None else 'sin dato'}"]
+            for b in d.get('bands') or []:
+                out.append(f"HAND hasta {b.get('up_to_m')} m: {b.get('people') if b.get('people') is not None else 'sin dato'} personas; menores de 5: {b.get('under5') if b.get('under5') is not None else 'sin dato'}; mayores de 65: {b.get('over65') if b.get('over65') is not None else 'sin dato'}")
             for sc in d.get('scenarios') or []:
-                out.append(f"{sc.get('label')}: ~{sc.get('people')} personas (subida {sc.get('rise_m')} m)")
+                out.append(f"{sc.get('label')}: {sc.get('people') if sc.get('people') is not None else 'sin dato'} personas (subida {sc.get('rise_m')} m; menores de 5: {sc.get('under5')}; mayores de 65: {sc.get('over65')})")
+            out.append("Fuente: MERIT Hydro HAND v1.0.1 y WorldPop 2020. Estimación de exposición, no pronóstico hidráulico ni conteo de evacuados.")
             return out
         if tid == 'clima':
             cur = d.get('current') or {}
