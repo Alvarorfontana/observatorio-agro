@@ -13,10 +13,13 @@ export function EnvironmentalMap({lat,lon,layer,date,onPoint,onTramoPoint,tramoM
  const modeRef=useRef(tramoMode);modeRef.current=tramoMode;
  const tramoLayer=useRef<L.LayerGroup|null>(null);
  const terrainRef=useRef<TerrainScreeningLayer|null>(null);
+ const labelsRef=useRef<L.TileLayer|null>(null);
  useEffect(()=>{
   if(!el.current)return;
   const m=L.map(el.current,{zoomControl:true}).setView([lat,lon],5);map.current=m;
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:18,attribution:"© OpenStreetMap contributors"}).addTo(m);
+  m.createPane("referenceLabels");m.getPane("referenceLabels")!.style.zIndex="690";m.getPane("referenceLabels")!.style.pointerEvents="none";
+  labelsRef.current=L.tileLayer("https://basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png",{pane:"referenceLabels",maxZoom:19,opacity:1,attribution:"© OpenStreetMap contributors © CARTO"}).addTo(m);
   m.on("click",(event:L.LeafletMouseEvent)=>{if(modeRef.current&&tramoCallback.current)tramoCallback.current(event.latlng.lat,event.latlng.lng);else callback.current(event.latlng.lat,event.latlng.lng)});
   const resize=window.setTimeout(()=>m.invalidateSize(),100);
   return()=>{window.clearTimeout(resize);m.remove();map.current=null};
