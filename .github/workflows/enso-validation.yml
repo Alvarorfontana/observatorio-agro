@@ -9,6 +9,7 @@ on:
       - "iri_enso_api.py"
       - "integrations/clima-enso-analyzer/**"
       - "tests/test_enso_regions.py"
+      - "tests/test_enso_science.py"
       - ".github/workflows/enso-validation.yml"
 jobs:
   validate:
@@ -23,7 +24,7 @@ jobs:
       - name: Validate API Python syntax
         run: python -m py_compile enso_data_api.py enso_science.py iri_enso_api.py api/index.py
       - name: Validate NOAA parser contracts
-        run: python -m pytest -q tests/test_enso_regions.py
+        run: python -m pytest -q tests/test_enso_regions.py tests/test_enso_science.py
       - name: Run imported scientific engine tests if present
         shell: bash
         run: |
