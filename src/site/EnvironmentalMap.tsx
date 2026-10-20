@@ -26,5 +26,5 @@ export function EnvironmentalMap({lat,lon,layer,date,onPoint}:Props){
   wms.addTo(map.current);overlay.current=wms;
   return()=>{wms.remove();if(overlay.current===wms)overlay.current=null};
  },[layer,date]);
- return <div><div ref={el} role="application" aria-label="Mapa interactivo de América del Sur; seleccioná una ubicación para consultar datos" style={{height:480,width:"100%",borderRadius:12,background:"#152b38"}}/><p style={{fontSize:12}}>Mapa base © OpenStreetMap · superposiciones NASA GIBS. Hacé clic en cualquier lugar para consultar sus coordenadas. La ausencia de una imagen puede deberse a la fecha, cobertura o disponibilidad del producto.</p></div>;
+ return <div><div ref={el} role="application" aria-label="Mapa interactivo de América del Sur; seleccioná una ubicación para consultar datos" style={{height:"min(72vh,780px)",minHeight:540,width:"100%",borderRadius:12,background:"#152b38"}}/><p style={{fontSize:12}}>Mapa base © OpenStreetMap · superposiciones NASA GIBS. Hacé clic en cualquier lugar para consultar sus coordenadas. La ausencia de una imagen puede deberse a la fecha, cobertura o disponibilidad del producto.</p></div>;
 }
