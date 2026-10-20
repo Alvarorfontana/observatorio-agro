@@ -2,6 +2,7 @@
  * Separa definición de variables, proveedores de observaciones y modelos físicos.
  * No ejecuta modelos no registrados ni declara cobertura que no fue verificada.
  */
+import { validateFrame } from './environmentalTimeline';
 import type { ObservationKind, TemporalFrame } from './environmentalTimeline';
 
 export type BBox = readonly [west:number,south:number,east:number,north:number];
@@ -69,11 +70,13 @@ export class EnvironmentalEngine {
   const missing=request.variableIds.filter(id=>!this.variables.has(id));
   if(missing.length)throw Error('Variables sin registrar: '+missing.join(', '));
   const candidates=[...this.providers.values()].filter(p=>request.variableIds.some(id=>p.supportedVariables.includes(id)));
+  if (!candidates.length) return {frames:[],warnings:['No hay proveedores conectados para las variables solicitadas']};
   const results=await Promise.allSettled(candidates.map(p=>p.getFrames(request)));
   const frames:TemporalFrame[]=[];const warnings:string[]=[];
   results.forEach((result,i)=>{
    if(result.status==='rejected'){warnings.push(candidates[i].id+': error consultando fuente');return;}
    for(const frame of result.value){
+    if (validateFrame(frame).length) {warnings.push(candidates[i].id+': escena descartada por metadatos inválidos');continue;}
     if(request.variableIds.includes(frame.variable)&&candidates[i].supportedVariables.includes(frame.variable)&&Date.parse(frame.acquiredAt)>=Date.parse(request.start)&&Date.parse(frame.acquiredAt)<=Date.parse(request.end))frames.push(frame);
    }
   });
