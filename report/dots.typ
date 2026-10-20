@@ -3,6 +3,9 @@
 // Principios: la decisión primero, el lote real a la vista, colores de alerta sólo para alertas,
 // gráficos con escala legible y el contenido corrido (sin hojas casi vacías).
 #let d = json(bytes(sys.inputs.data))
+#let dots-name = "DOTS · Sistema de Inteligencia Territorial, Ambiental y Climática"
+#let dots-director = "Dirección: Álvaro Fontana"
+#let dots-method = "Observación satelital · Telemetría · Análisis geoespacial"
 
 // Selección de temas: si el pedido trae "secciones", sólo se arma esa lista; sin lista entran todos.
 #let selected = d.at("selected", default: none)
@@ -24,7 +27,7 @@
 #let risk = rgb("#d92d20")
 #let tone(t) = if t == "ok" { ok } else if t == "warn" { warn } else if t == "risk" { risk } else { muted }
 
-#set document(title: d.title, author: "DOTS / Campo")
+#set document(title: d.title, author: dots-name)
 #set text(font: "IBM Plex Sans", size: 9.5pt, fill: ink, lang: "es")
 #set par(leading: 0.62em, justify: false)
 #set page(
@@ -52,6 +55,11 @@
   },
 )
 
+#block(width: 100%, inset: (bottom: 5pt), {
+  text(size: 8pt, weight: "bold", fill: rgb("#0b2b33"))[#dots-name]
+  v(2pt)
+  text(size: 7.2pt, fill: rgb("#667085"))[#dots-method · #dots-director]
+})
 // ─────────────────────────── utilidades ───────────────────────────
 #let fmt(v, digits: 1) = {
   let r = calc.round(v, digits: digits)
