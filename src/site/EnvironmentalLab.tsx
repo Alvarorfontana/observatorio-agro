@@ -36,7 +36,7 @@ export function EnvironmentalLab({frames=[],onSelectFrame,onSelectMapLayer,activ
  const frame=timeline[Math.min(index,timeline.length-1)];
  function changeModule(value:string){setId(value);setIndex(0);}
  function changeKind(value:ObservationKind){setKind(value);setIndex(0);}
- return <section aria-label="Laboratorio ambiental" className="dots-lab" style={{padding:16,background:"#101c24",color:"#e8f2f7",borderRadius:12,maxWidth:460}}>
+ return <section aria-label="Laboratorio ambiental" className="dots-lab" style={{padding:16,background:"#101c24",color:"#e8f2f7",borderRadius:12,width:"100%",boxSizing:"border-box"}}>
   <h2 style={{marginTop:0}}>Laboratorio ambiental · DOTS Campo</h2>
   <label htmlFor="dots-lab-variable">Variable ambiental</label>
   <select id="dots-lab-variable" value={id} onChange={e=>changeModule(e.target.value)} style={{display:"block",width:"100%",padding:10,margin:"8px 0 14px",background:"#20313d",color:"white"}}>
@@ -60,7 +60,7 @@ export function EnvironmentalLab({frames=[],onSelectFrame,onSelectMapLayer,activ
   <p style={{fontSize:12,color:"#aac7d5"}}>NASA GIBS recibe la fecha elegida mediante WMS TIME. Una solicitud no garantiza una escena válida ese día: cada producto tiene fechas, resolución y cobertura propias. El control no interpola imágenes ni genera pronósticos.</p>
   <label htmlFor="dots-lab-search">Buscar entre {INITIAL_VARIABLES.length} variables registradas</label>
   <input id="dots-lab-search" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Ej.: caudal, NDVI, humedad..." style={{display:"block",width:"100%",boxSizing:"border-box",padding:10,margin:"8px 0",background:"#20313d",color:"white"}}/>
-  {search.trim() && <div style={{maxHeight:160,overflowY:"auto",padding:8,background:"#192b35"}}>{INITIAL_VARIABLES.filter(v=>(v.label+" "+v.id+" "+v.unit).toLocaleLowerCase("es").includes(search.toLocaleLowerCase("es"))).map(v=><p key={v.id} style={{margin:"5px 0"}}>{v.label} · {v.unit} <small>({v.support})</small></p>)}</div>}
+  <div style={{maxHeight:260,overflowY:"auto",padding:8,background:"#192b35"}}>{INITIAL_VARIABLES.filter(v=>(v.label+" "+v.id+" "+v.unit).toLocaleLowerCase("es").includes(search.toLocaleLowerCase("es"))).map(v=><div key={v.id} style={{padding:"8px 0",borderBottom:"1px solid #34505d"}}><strong>{v.label}</strong> · {v.unit}<div style={{fontSize:12,color:"#bbd4e0"}}>{v.sourceIds.join(" · ")} · {v.support}</div></div>)}</div>}
   {id==="flood"&&<div style={{padding:10,border:"1px solid #42687d",borderRadius:10}}>
    <h3 style={{marginTop:0}}>Crecidas e inundaciones · dos análisis</h3>
    <p><strong>1. Crecida:</strong> serie de niveles o caudales, umbrales y variaciones hipotéticas. <strong>2. Inundación:</strong> comparación de las máscaras satelitales MODIS/VIIRS por fecha, mediante el selector del mapa.</p>
