@@ -2,9 +2,21 @@ import {useState} from "react";
 import {EnvironmentalLab} from "./EnvironmentalLab";
 import {EnvironmentalMap} from "./EnvironmentalMap";
 import {FloodScenarioPanel} from "./FloodScenarioPanel";
+const BASINS:Record<string,string[]>={
+ "Cuenca del Plata":["Paraná","Paraguay","Uruguay","Iguazú","Pilcomayo","Bermejo","Salado del Norte","Tercero / Carcarañá","Río de la Plata"],
+ "Amazonas":["Amazonas","Solimões","Negro","Madeira","Tapajós","Xingu","Purus","Juruá","Ucayali","Marañón","Napo","Putumayo / Içá","Javari","Trombetas"],
+ "Orinoco":["Orinoco","Meta","Apure","Guaviare","Caroní","Arauca","Ventuari"],
+ "Tocantins–Araguaia":["Tocantins","Araguaia","Itacaiúnas"],
+ "São Francisco":["São Francisco","Das Velhas","Paracatu","Grande"],
+ "Magdalena–Cauca":["Magdalena","Cauca","San Jorge","Cesar"],
+ "Patagonia y sur":["Colorado","Negro","Limay","Neuquén","Chubut","Santa Cruz","Gallegos","Baker","Biobío"],
+ "Vertiente del Pacífico":["Guayas","Esmeraldas","Tumbes","Chira","Santa","Rímac","Maule","Maipo","Loa"],
+ "Otras cuencas":["Seleccionar libremente en el mapa"]
+};
 export function EnvironmentalWorkspace(){
  const [layer,setLayer]=useState("");
  const [guideStep,setGuideStep]=useState(0);
+ const [guideBasin,setGuideBasin]=useState("Cuenca del Plata");
  const [guideRiver,setGuideRiver]=useState("Paraná");
  const [guideMode,setGuideMode]=useState<"relieve"|"observado">("relieve");
  const [guideMessage,setGuideMessage]=useState("");
@@ -24,7 +36,7 @@ export function EnvironmentalWorkspace(){
  const [error,setError]=useState("");
  function updatePoint(a:number,b:number){setLat(a);setLon(b);setLatInput(a.toFixed(5));setLonInput(b.toFixed(5));setError("")}
  function queryPoint(e:React.FormEvent){e.preventDefault();const a=Number(latInput),b=Number(lonInput);if(!latInput.trim()||!lonInput.trim()||!Number.isFinite(a)||!Number.isFinite(b)||a < -90||a>90||b < -180||b>180){setError("Ingresá latitud entre -90 y 90 y longitud entre -180 y 180");return}updatePoint(a,b)}
- return <><section aria-label="Simulación sencilla" style={{background:"#102d3b",color:"#eef6fa",padding:16,borderRadius:12,margin:"12px 0"}}><h2 style={{margin:"0 0 8px"}}>Simulá en 3 pasos</h2><p style={{fontSize:13}}>1. Elegí el río y marcá dos puntos en el mapa. 2. Activá la visualización y mové la cota. 3. Consultá el resultado y el informe debajo del mapa.</p><div style={{display:"flex",gap:12,flexWrap:"wrap",alignItems:"end"}}><label>Río<select value={guideRiver} onChange={e=>setGuideRiver(e.target.value)} style={{display:"block",padding:9,marginTop:4}}><option>Paraná</option><option>Paraguay</option><option>Uruguay</option></select></label><button type="button" onClick={()=>{setTramoMode(true);setGuideMessage("Marcá el inicio y el final del tramo en el mapa.")}}>1. Marcar tramo</button><button type="button" onClick={()=>{setTerrainEnabled(true);setTramoMode(false);setGuideMessage("Visualización activada: ajustá la cota con el deslizador.")}}>2. Simular zonas bajas</button><button type="button" onClick={()=>{setLayer("MODIS_Combined_Flood_3-Day");setGuideMessage("Capa satelital solicitada: verificá fecha y cobertura.")}}>Ver agua observada (MODIS)</button></div>{guideMessage&&<p role="status" style={{marginBottom:0}}>{guideMessage}</p>}<p style={{fontSize:12,marginBottom:0}}>La simulación de zonas bajas es topográfica, no una predicción de inundación.</p></section><div style={{display:"grid",gridTemplateColumns:"minmax(0,2.2fr) minmax(300px,1fr)",gap:16,alignItems:"start"}} className="dots-environmental-workspace">
+ return <><section aria-label="Simulación sencilla" style={{background:"#102d3b",color:"#eef6fa",padding:16,borderRadius:12,margin:"12px 0"}}><h2 style={{margin:"0 0 8px"}}>Simulá en 3 pasos</h2><p style={{fontSize:13}}>1. Elegí la cuenca, el río y marcá dos puntos en el mapa. 2. Activá la visualización y mové la cota. 3. Consultá el resultado y el informe debajo del mapa.</p><div style={{display:"flex",gap:12,flexWrap:"wrap",alignItems:"end"}}><label>Cuenca<select value={guideBasin} onChange={e=>{setGuideBasin(e.target.value);setGuideRiver(BASINS[e.target.value][0]);setTramoStart(null);setTramoEnd(null)}} style={{display:"block",padding:9,marginTop:4}}>{Object.keys(BASINS).map(b=><option key={b}>{b}</option>)}</select></label><label>Río<select value={guideRiver} onChange={e=>setGuideRiver(e.target.value)} style={{display:"block",padding:9,marginTop:4}}>{BASINS[guideBasin].map(r=><option key={r}>{r}</option>)}</select></label><button type="button" onClick={()=>{setTramoMode(true);setGuideMessage("Marcá el inicio y el final del tramo en el mapa.")}}>1. Marcar tramo</button><button type="button" onClick={()=>{setTerrainEnabled(true);setTramoMode(false);setGuideMessage("Visualización activada: ajustá la cota con el deslizador.")}}>2. Simular zonas bajas</button><button type="button" onClick={()=>{setLayer("MODIS_Combined_Flood_3-Day");setGuideMessage("Capa satelital solicitada: verificá fecha y cobertura.")}}>Ver agua observada (MODIS)</button></div>{guideMessage&&<p role="status" style={{marginBottom:0}}>{guideMessage}</p>}<p style={{fontSize:12,marginBottom:0}}>La simulación de zonas bajas es topográfica, no una predicción de inundación.</p></section><div style={{display:"grid",gridTemplateColumns:"minmax(0,2.2fr) minmax(300px,1fr)",gap:16,alignItems:"start"}} className="dots-environmental-workspace">
   <div style={{minWidth:0}}>
    <details style={{margin:"8px 0"}}><summary>Opciones avanzadas · coordenadas</summary>   <form onSubmit={queryPoint} style={{display:"flex",flexWrap:"wrap",gap:10,alignItems:"end",padding:"12px 0"}}>
     <label>Latitud <input aria-label="Latitud" value={latInput} onChange={e=>setLatInput(e.target.value)} inputMode="decimal" style={{display:"block",width:130,padding:9}}/></label>
