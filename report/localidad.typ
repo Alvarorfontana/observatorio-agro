@@ -1,5 +1,6 @@
 // DOTS / Campo — Informe de alerta de crecidas de una localidad (Typst)
 // Datos desde cuenca_report.local_data vía sys.inputs.data.
+#import "identity.typ": name, cover-id
 #let d = json(bytes(sys.inputs.data))
 
 #let ink = rgb("#101828")
@@ -25,7 +26,7 @@
   s.replace(".", ",")
 }
 
-#set document(title: d.title, author: "DOTS / Campo")
+#set document(title: d.title, author: name)
 #set text(font: "IBM Plex Sans", size: 9.6pt, fill: ink, lang: "es")
 #set par(leading: 0.6em)
 #set page(paper: "a4", margin: (top: 14mm, bottom: 16mm, x: 15mm),
@@ -45,6 +46,7 @@
 
 // ───────────── banda de nivel ─────────────
 #let c = tone(d.tone)
+#cover-id()
 #block(width: 100%, fill: c, radius: 10pt, inset: (x: 16pt, y: 13pt), {
   set text(fill: white)
   grid(columns: (1fr, auto), align: (left + horizon, right + horizon),
