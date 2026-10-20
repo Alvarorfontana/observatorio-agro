@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { ENVIRONMENTAL_CATALOG, modulesByGroup } from "../lib/environmentalCatalog";
 import type { EnvironmentalModule } from "../lib/environmentalCatalog";
 import { makeTimeline } from "../lib/environmentalTimeline";
+import { INITIAL_VARIABLES } from "../lib/environmentalVariables";
 import type { TemporalFrame, ObservationKind } from "../lib/environmentalTimeline";
 
 type Props = { frames?: readonly TemporalFrame[]; onSelectFrame?: (frame: TemporalFrame) => void };
@@ -10,6 +11,7 @@ const status: Record<EnvironmentalModule["status"],string> = { visualizacion:"Ca
 /** Panel conectable al mapa Leaflet existente: no crea mapas ficticios ni solicita datos sin endpoint verificado. */
 export function EnvironmentalLab({frames=[],onSelectFrame}:Props) {
  const [id,setId]=useState("flood");
+ const [search,setSearch]=useState("");
  const [kind,setKind]=useState<ObservationKind>("observed");
  const [index,setIndex]=useState(0);
  const module = ENVIRONMENTAL_CATALOG.find(m=>m.id===id) ?? ENVIRONMENTAL_CATALOG[0];
@@ -24,6 +26,9 @@ export function EnvironmentalLab({frames=[],onSelectFrame}:Props) {
    {Object.entries(modulesByGroup()).map(([group,items])=><optgroup label={group} key={group}>{items.map(m=><option value={m.id} key={m.id}>{m.title}</option>)}</optgroup>)}
   </select>
   <p><strong>Estado:</strong> {status[module.status]}</p>
+  <label htmlFor="dots-lab-search">Buscar entre {INITIAL_VARIABLES.length} variables registradas</label>
+  <input id="dots-lab-search" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Ej.: caudal, NDVI, humedad..." style={{display:"block",width:"100%",boxSizing:"border-box",padding:10,margin:"8px 0",background:"#20313d",color:"white"}}/>
+  {search.trim() && <div style={{maxHeight:160,overflowY:"auto",padding:8,background:"#192b35"}}>{INITIAL_VARIABLES.filter(v=>(v.label+" "+v.id+" "+v.unit).toLocaleLowerCase("es").includes(search.toLocaleLowerCase("es"))).map(v=><p key={v.id} style={{margin:"5px 0"}}>{v.label} · {v.unit} <small>({v.support})</small></p>)}</div>}
   <p><strong>Variables:</strong> {module.parameters.join(" · ")}</p>
   <p><strong>Fuentes candidatas:</strong> {module.sources.join(" · ")}</p>
   <p><strong>Producto:</strong> {module.output}</p>
