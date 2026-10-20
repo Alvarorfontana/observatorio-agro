@@ -132,6 +132,7 @@ const SOURCES = [
   ["kma","KMA / GK2A","Corea · auth key"],
   ["fengyun","FengYun / CMA","China · cuenta"],
   ["variables", "Clima y suelo", "Open-Meteo"],
+  ["simulador", "Simulador ambiental · Sudamérica", "ENSO · crecidas · satélites"],
   ["modelos", "Comparar modelos globales", "Open-Meteo / 7 proveedores"],
   ["escenas", "Escenas satelitales", "Earth Search / Sentinel-2"],
   ["ndvi", "NDVI del lote", "Sentinel-2 10 m · Planetary Computer"],
