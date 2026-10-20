@@ -1,0 +1,30 @@
+/** Official ENSO source registry. Availability of machine-readable feeds must be validated separately. */
+export type EnsoSource={id:string;name:string;group:string;provider:"NOAA CPC"|"IRI Columbia";kind:"observación"|"pronóstico"|"diagnóstico";url:string;unit:string;frequency:string};
+export const ENSO_SOURCES:EnsoSource[]=[
+ ["nino12","Niño 1+2 · SST","Océano","NOAA CPC","observación","https://www.cpc.ncep.noaa.gov/data/indices/","°C","Semanal/mensual"],
+ ["nino3","Niño 3 · SST","Océano","NOAA CPC","observación","https://www.cpc.ncep.noaa.gov/data/indices/","°C","Semanal/mensual"],
+ ["nino34","Niño 3.4 · SST","Océano","NOAA CPC","observación","https://www.cpc.ncep.noaa.gov/data/indices/","°C","Semanal/mensual"],
+ ["nino4","Niño 4 · SST","Océano","NOAA CPC","observación","https://www.cpc.ncep.noaa.gov/data/indices/","°C","Semanal/mensual"],
+ ["oni","ONI · anomalía trimestral","Océano","NOAA CPC","observación","https://www.cpc.ncep.noaa.gov/data/indices/oni.ascii.txt","°C","Mensual (trimestres superpuestos)"],
+ ["roni","RONI · índice relativo","Océano","NOAA CPC","observación","https://www.cpc.ncep.noaa.gov/data/indices/","°C","Mensual"],
+ ["soi","SOI · Oscilación del Sur","Atmósfera","NOAA CPC","observación","https://www.cpc.ncep.noaa.gov/data/indices/","índice","Mensual"],
+ ["eqsoi","SOI ecuatorial","Atmósfera","NOAA CPC","observación","https://www.cpc.ncep.noaa.gov/data/indices/","índice","Mensual"],
+ ["slp","Presión Tahití / Darwin","Atmósfera","NOAA CPC","observación","https://www.cpc.ncep.noaa.gov/data/indices/","hPa","Mensual"],
+ ["olr","Radiación saliente OLR","Atmósfera","NOAA CPC","observación","https://www.cpc.ncep.noaa.gov/data/indices/","W/m²","Mensual"],
+ ["wind850","Viento zonal 850 hPa","Atmósfera","NOAA CPC","diagnóstico","https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/","m/s","Semanal"],
+ ["wind200","Viento zonal 200 hPa","Atmósfera","NOAA CPC","diagnóstico","https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/","m/s","Semanal"],
+ ["thermocline","Profundidad de termoclina","Subsuperficie","NOAA CPC","diagnóstico","https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/","m","Semanal"],
+ ["ohc","Contenido de calor 0–300 m","Subsuperficie","NOAA CPC","diagnóstico","https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/","°C (anomalía media)","Semanal"],
+ ["kelvin","Ondas Kelvin ecuatoriales","Subsuperficie","NOAA CPC","diagnóstico","https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/","anomalía","Semanal"],
+ ["tao","TAO/TRITON · perfil vertical","Subsuperficie","NOAA CPC","diagnóstico","https://www.pmel.noaa.gov/tao/drupal/","°C / m","5 días"],
+ ["iri-quicklook","ENSO Quick Look","IRI · pronósticos","IRI Columbia","diagnóstico","https://iri.columbia.edu/our-expertise/climate/forecasts/enso/current/","boletín","Mensual"],
+ ["iri-update","Actualización técnica ENSO","IRI · pronósticos","IRI Columbia","diagnóstico","https://iri.columbia.edu/our-expertise/climate/forecasts/enso/current/?enso_tab=enso-iri_update","boletín","Mensual"],
+ ["iri-plume","Pluma multimodelo · dinámicos y estadísticos","IRI · pronósticos","IRI Columbia","pronóstico","https://iri.columbia.edu/our-expertise/climate/forecasts/enso/current/?enso_tab=enso-iri_plume","°C","Mensual"],
+ ["iri-probs","Probabilidades El Niño / Neutral / La Niña","IRI · pronósticos","IRI Columbia","pronóstico","https://iri.columbia.edu/our-expertise/climate/forecasts/enso/current/?enso_tab=enso-iri_prob","%","Mensual"],
+ ["iri-percentiles","Percentiles y distribución probabilística","IRI · pronósticos","IRI Columbia","pronóstico","https://iri.columbia.edu/our-expertise/climate/forecasts/enso/current/?enso_tab=enso-iri_prob","°C / %","Mensual"],
+ ["iri-strength","Probabilidades por intensidad ENSO","IRI · pronósticos","IRI Columbia","pronóstico","https://iri.columbia.edu/our-expertise/climate/forecasts/enso/current/","%","Mensual"],
+ ["iri-history","Comparación de pronósticos de 22 meses","IRI · pronósticos","IRI Columbia","pronóstico","https://iri.columbia.edu/our-expertise/climate/forecasts/enso/current/","°C","Mensual"],
+ ["iri-iod","Dipolo del océano Índico · DMI / IOD","Otros océanos","IRI Columbia","pronóstico","https://iri.columbia.edu/our-expertise/climate/forecasts/enso/current/?enso_tab=enso-iod","°C / %","Mensual"],
+ ["iri-rain","Probabilidades de precipitación vinculadas a ENSO","Impactos","IRI Columbia","pronóstico","https://iri.columbia.edu/our-expertise/climate/enso/","%","Estacional"],
+ ["iri-seasonal","Pronósticos estacionales de temperatura y lluvia","Impactos","IRI Columbia","pronóstico","https://iri.columbia.edu/our-expertise/climate/forecasts/","probabilidad","Estacional"]
+ ].map(([id,name,group,provider,kind,url,unit,frequency])=>({id,name,group,provider:provider as EnsoSource["provider"],kind:kind as EnsoSource["kind"],url,unit,frequency}));
