@@ -1,4 +1,5 @@
 // DOTS / Campo — Informe de campo con mapa para el celular (Typst). Datos desde campo_offline.build vía sys.inputs.data.
+#import "identity.typ": name, cover-id
 #let d = json(bytes(sys.inputs.data))
 #let ink = rgb("#101828")
 #let muted = rgb("#5f6e73")
@@ -6,7 +7,7 @@
 #let soft = rgb("#f6f7f9")
 #let navy = rgb("#0b2b33")
 
-#set document(title: "Informe de campo · " + d.name, author: "DOTS / Campo")
+#set document(title: "Informe de campo · " + d.name, author: name)
 #set text(font: "IBM Plex Sans", size: 9.6pt, fill: ink, lang: "es")
 #set par(leading: 0.6em)
 #set page(paper: "a4", margin: (top: 14mm, bottom: 16mm, x: 15mm),
@@ -19,6 +20,7 @@
 #let card(body, fill: soft) = block(fill: fill, radius: 8pt, inset: 10pt, width: 100%, breakable: false, body)
 #let sec(t) = block(above: 14pt, below: 6pt, sticky: true, text(size: 12pt, weight: "semibold")[#t])
 
+#cover-id()
 #block(width: 100%, fill: navy, radius: 10pt, inset: (x: 16pt, y: 14pt), {
   set text(fill: white)
   grid(columns: (1fr, auto), align: (left + horizon, right + horizon), column-gutter: 12pt,
