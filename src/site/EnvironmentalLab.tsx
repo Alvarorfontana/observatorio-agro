@@ -4,9 +4,10 @@ import type { EnvironmentalModule } from "../lib/environmentalCatalog";
 import { makeTimeline } from "../lib/environmentalTimeline";
 import { INITIAL_VARIABLES } from "../lib/environmentalVariables";
 import { EnvironmentalSeriesChart } from "./EnvironmentalSeriesChart";
+import { FloodLiveSources } from "./FloodLiveSources";
 import type { TemporalFrame, ObservationKind } from "../lib/environmentalTimeline";
 
-type Props = { frames?: readonly TemporalFrame[]; onSelectFrame?: (frame: TemporalFrame) => void; onSelectMapLayer?: (layer: string) => void; activeMapLayer?: string; mapDate?: string; onMapDateChange?: (date:string)=>void };
+type Props = { frames?: readonly TemporalFrame[]; onSelectFrame?: (frame: TemporalFrame) => void; onSelectMapLayer?: (layer: string) => void; activeMapLayer?: string; mapDate?: string; onMapDateChange?: (date:string)=>void; lat?:number; lon?:number; polygon?:number[][] };
 const MAP_LAYERS = [
  {id:"MODIS_Combined_Flood_3-Day",label:"Agua detectada · MODIS",variable:"flood",source:"NASA GIBS · MODIS"},
  {id:"VIIRS_Combined_Flood_3-Day",label:"Agua detectada · VIIRS",variable:"flood",source:"NASA GIBS · VIIRS"},
@@ -20,7 +21,7 @@ const MAP_LAYERS = [
 const labels: Record<ObservationKind,string> = { observed:"Observaciones", forecast:"Pronósticos", scenario:"Escenarios" };
 const status: Record<EnvironmentalModule["status"],string> = { visualizacion:"Capa / visualización", analisis:"Análisis por validar", "requiere-modelo":"Requiere modelo calibrado" };
 /** Panel conectable al mapa Leaflet existente: no crea mapas ficticios ni solicita datos sin endpoint verificado. */
-export function EnvironmentalLab({frames=[],onSelectFrame,onSelectMapLayer,activeMapLayer="",mapDate="",onMapDateChange}:Props) {
+export function EnvironmentalLab({frames=[],onSelectFrame,onSelectMapLayer,activeMapLayer="",mapDate="",onMapDateChange,lat,lon,polygon=[]}:Props) {
  const [id,setId]=useState("flood");
  const [search,setSearch]=useState("");
  const today=new Date().toISOString().slice(0,10);
@@ -72,6 +73,7 @@ export function EnvironmentalLab({frames=[],onSelectFrame,onSelectMapLayer,activ
   <select id="dots-lab-kind" value={kind} onChange={e=>changeKind(e.target.value as ObservationKind)} style={{display:"block",padding:9,margin:"8px 0 12px",background:"#20313d",color:"white"}}>
    {(Object.keys(labels) as ObservationKind[]).map(k=><option key={k} value={k}>{labels[k]}</option>)}
   </select>
+  {id==="flood"&&lat!==undefined&&lon!==undefined&&<FloodLiveSources lat={lat} lon={lon} polygon={polygon}/>}
   <EnvironmentalSeriesChart key={id} title={id==="flood"?"Crecida · altura hidrométrica":module.title} unit={id==="flood"?"m":INITIAL_VARIABLES.find(v=>v.id===id)?.unit??"unidad declarada"} description={id==="flood"?"Cargá una serie oficial de una misma estación y con la misma referencia vertical. El desplazamiento hipotético no representa una mancha de inundación.":"Gráfico reutilizable: ingresá observaciones de la misma variable y unidad, con fecha y fuente verificables."}/>
   {timeline.length===0 ? <p role="status">No hay escenas verificadas cargadas para este módulo y tipo. No se generan imágenes simuladas.</p> : <>
    <label htmlFor="dots-lab-time">Fecha de adquisición ({timeline.length} escenas)</label>
