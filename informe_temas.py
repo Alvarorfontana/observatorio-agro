@@ -90,15 +90,18 @@ def summary(block):
                 trend = ina.get('trend_m_day', stn.get('trend_m_day'))
                 out.append(f"{stn.get('place', 'Estación')} (río {stn.get('river', 'sin dato')}): altura {_num(height, 2) or 'sin dato'} m; nivel {level}; tendencia {_num(trend, 2) or 'sin dato'} m/día.")
             travels = d.get('travel') or []
-            if isinstance(travels, dict):
-                travels = list(travels.values())
-            if travels:
-                out.append('Propagación de crecidas: consultar los tiempos de traslado y su incertidumbre en los resultados hidrológicos; no son horarios confirmados de llegada.')
-                for entry in travels[:12]:
-                    if isinstance(entry, dict):
-                        out.append(f"Tramo {entry.get('name') or entry.get('from') or entry.get('id') or 'sin identificar'}: {entry.get('travel_days') or entry.get('days') or entry.get('lag_days') or 'tiempo sin dato validado'}")
-            else:
-                out.append('Tiempo de llegada de la crecida: sin estimación validada para este informe.')
+            valid = 0
+            for chain in travels if isinstance(travels, list) else []:
+                if not isinstance(chain, dict):
+                    continue
+                out.append(f"Propagación: {chain.get('name') or 'tramo sin nombre'}; pico en cabecera: {chain.get('head_peak') or 'sin dato'}.")
+                for row in chain.get('rows') or []:
+                    if row.get('days_from_head') is not None and row.get('arrival'):
+                        valid += 1
+                        out.append(f"Llegada orientativa a {row.get('place')}: {row['arrival']} (desfase acumulado {row['days_from_head']} días; estimación basada en correlación histórica).")
+            if not valid:
+                out.append('Tiempo de llegada: sin estimación respaldada por desfases históricos y fecha de pico disponible.')
+            out.append('Las fechas de llegada son orientativas, no horarios de evacuación ni pronósticos oficiales.')
             return out
         if tid == 'amenaza':
             out = [d.get('reading')] if d.get('reading') else []
@@ -200,6 +203,50 @@ def pdf(doc):
         if b.get('source_url'):
             story.append(Paragraph('Fuente: ' + str(b['source_url']), st['Small2']))
         story.append(Spacer(1, 6))
+
+    # Gráficos generados solo con cifras presentes en las fuentes consultadas.
+    from reportlab.graphics.shapes import Drawing, String
+    from reportlab.graphics.charts.barcharts import VerticalBarChart
+    for b in doc.get('blocks', []):
+        data = b.get('data') or {}
+        if b.get('status') != 'recibido' or not isinstance(data, dict):
+            continue
+        vals, labels, title = [], [], None
+        if b.get('id') == 'poblaciones':
+            for band in data.get('bands') or []:
+                try:
+                    val = float(band.get('people'))
+                    if val >= 0:
+                        vals.append(val); labels.append(str(band.get('up_to_m')) + ' m')
+                except (TypeError, ValueError):
+                    continue
+            title = 'Población potencialmente expuesta por franja HAND'
+        elif b.get('id') == 'crecidas':
+            for station in data.get('stations') or []:
+                try:
+                    val = float((station.get('ina') or {}).get('height'))
+                    if val >= 0:
+                        vals.append(val); labels.append(str(station.get('place') or '')[:14])
+                except (TypeError, ValueError):
+                    continue
+            title = 'Alturas hidrométricas disponibles (m) — no comparables como riesgo entre puertos'
+        if not vals:
+            continue
+        vals, labels = vals[:12], labels[:12]
+        drawing = Drawing(700, 245)
+        chart = VerticalBarChart()
+        chart.x, chart.y, chart.width, chart.height = 48, 55, 615, 150
+        chart.data = [vals]
+        chart.categoryAxis.categoryNames = labels
+        chart.categoryAxis.labels.fontSize = 7
+        chart.categoryAxis.labels.angle = 25
+        chart.valueAxis.valueMin = 0
+        chart.valueAxis.valueMax = max(vals) * 1.15 if max(vals) else 1
+        chart.bars[0].fillColor = cyan
+        drawing.add(chart)
+        story.append(Paragraph(title, st['Section']))
+        story.append(drawing)
+        story.append(Paragraph('Fuente y fecha de consulta: ver sección de trazabilidad. Valores sujetos a cobertura y disponibilidad.', st['Small2']))
 
     story += [PageBreak(), Paragraph('Trazabilidad', st['Section'])]
     rows = [['Tema', 'Organismo', 'Estado', 'Consultado (UTC)', 'URL']]
