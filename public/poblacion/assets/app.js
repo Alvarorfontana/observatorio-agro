@@ -156,9 +156,9 @@ $('flood-place').addEventListener('change',async()=>{const id=$('flood-place').v
     download.addEventListener('click',async()=>{
       download.disabled=true;download.textContent='Generando informe PDF…';
       try{
-        const response=await fetch('/api/fuentes/informe-temas',{
+        const response=await fetch('/api/poblacion/crecida/informe',{
           method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({temas:['poblaciones'],params:{localidad:id},nombre:'Población en zona baja · '+d.place}),
+          body:JSON.stringify(d),
           signal:AbortSignal.timeout(90000)
         });
         if(!response.ok){const msg=await response.json().catch(()=>({}));throw new Error(msg.error||'Error HTTP '+response.status)}
