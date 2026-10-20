@@ -41,7 +41,8 @@ export function GeoRasterWorkbench({basin,river,tramoStart,tramoEnd}:{basin:stri
    let lo=Infinity,hi=-Infinity;
    for(const value of data){const v=Number(value);if(Number.isFinite(v)&&(nodata===null||v!==nodata)){lo=Math.min(lo,v);hi=Math.max(hi,v)}}
    const sampledWidth=Math.ceil(width/sampleStep),sampledHeight=Math.ceil(height/sampleStep);
-   const hydrology=analyzeD8(data,sampledWidth,sampledHeight,nodata);
+   const elevationValues=Float64Array.from(Array.from(data as ArrayLike<number>,value=>Number(value)));
+   const hydrology=analyzeD8(elevationValues,sampledWidth,sampledHeight,nodata);
    setGrid({width:sampledWidth,height:sampledHeight,values:hydrology,bounds:bbox,crs:String(geo.ProjectedCSTypeGeoKey||geo.GeographicTypeGeoKey||"")});
    setInfo({hydrology,name:file.name,width,height,bands:image.getSamplesPerPixel(),bounds:bbox.map(fmt).join(", "),resolution:resolution.slice(0,2).map(fmt).join(" × "),minimum:lo===Infinity?"Sin datos":fmt(lo),maximum:hi===-Infinity?"Sin datos":fmt(hi),nodata:nodata===null?"No declarado":String(nodata),crs:String(geo.ProjectedCSTypeGeoKey||geo.GeographicTypeGeoKey||"No identificado")});
   }catch(e){setError(e instanceof Error?e.message:"No se pudo interpretar el archivo ráster.")}finally{setBusy(false)}
