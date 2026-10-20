@@ -2,7 +2,7 @@
  * Este módulo NO inventa escenas ni simula física. Solo valida y ordena
  * observaciones obtenidas de fuentes externas.
  */
-export type EnvironmentalVariable = 'flood' | 'vegetation' | 'drought' | 'fire';
+export type EnvironmentalVariable = string;
 export type ObservationKind = 'observed' | 'forecast' | 'scenario';
 export type LayerFormat = 'geojson' | 'geotiff' | 'raster-tiles';
 export type TemporalFrame = {
@@ -25,11 +25,10 @@ export const MODULES: ReadonlyArray<{ id: EnvironmentalVariable; title: string; 
 ];
 const kinds: readonly ObservationKind[] = ['observed', 'forecast', 'scenario'];
 const formats: readonly LayerFormat[] = ['geojson', 'geotiff', 'raster-tiles'];
-const variables: readonly EnvironmentalVariable[] = ['flood', 'vegetation', 'drought', 'fire'];
 export function validateFrame(frame: TemporalFrame): string[] {
   const errors: string[] = [];
   if (!frame.id.trim()) errors.push('id vacío');
-  if (!variables.includes(frame.variable)) errors.push('variable desconocida');
+  if (!/^[a-z][a-z0-9_-]{1,63}$/.test(frame.variable)) errors.push('identificador de variable inválido');
   if (!kinds.includes(frame.kind)) errors.push('tipo desconocido');
   if (!formats.includes(frame.format)) errors.push('formato desconocido');
   if (!frame.source.trim()) errors.push('fuente vacía');
