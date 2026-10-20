@@ -6,7 +6,7 @@
  */
 import React from "react";
 import {
-  LayoutDashboard, Layers, Satellite, Sprout, Waves, CircleDot, Beef, CloudSun,
+  LayoutDashboard, Layers, Satellite, Sprout, Waves, CircleDot, Beef, CloudSun, FlaskConical,
   Flame, Gauge, FileText, Network, Thermometer, CloudRain, Sigma, BellRing, Leaf, Wheat, Truck, ChevronsLeft, X, Hexagon, Trees, Globe2,
 } from "lucide-react";
 
@@ -22,6 +22,7 @@ export function buildNav(go: (k: string) => void, draw: () => void, pdf: () => v
   return [
     { title: "Observatorio", items: [
       { key: "variables", label: "Resumen del lote", icon: <LayoutDashboard />, onClick: () => go("variables") },
+      { key: "simulador", label: "Simulador ambiental · Sudamérica", icon: <FlaskConical />, onClick: () => go("simulador") },
       { key: "__draw", label: "Lotes y potreros", icon: <Layers />, onClick: draw },
       { key: "escenas", label: "Satélites", icon: <Satellite />, onClick: () => go("escenas") },
       { key: "ndvi", label: "Vegetación · NDVI", icon: <Sprout />, onClick: () => go("ndvi") },
