@@ -40,6 +40,7 @@ import { fieldAt, fieldsAround, compactness, FTW_ATTRIBUTION, FTW_RELIABLE } fro
 import { terrainForLot, terrainImage, DEM_ATTRIBUTION, DEM_SOURCE_URL, type TerrainAnalysis, type TerrainMode } from "./dashboard/terrain";
 import { RISK_COLORS, DRAIN_COLOR } from "./dashboard/terrainCore";
 import { VariablesPanel } from "./dashboard/VariablesPanel";
+import { EnvironmentalLab } from "./site/EnvironmentalLab";
 const LotDashboard = lazy(() => import("./dashboard/LotDashboard").then(m => ({ default: m.LotDashboard })));
 import { OPEN_LAYERS, LAYER_GROUPS } from "./dashboard/openLayers";
 import { PacificSection, SAImpactMap } from "./site/NinoIllustrations";
@@ -446,6 +447,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
     ),
     [layer, setLayer] = useState("base"),
     [gibsLayer, setGibsLayer] = useState(""),
+    [simulatorDate, setSimulatorDate] = useState(""),
     [openBase, setOpenBase] = useState<string>(() => { try { return localStorage.getItem("dots-open-base") || ""; } catch { return ""; } }),
     [openOver, setOpenOver] = useState<string>(() => { try { return localStorage.getItem("dots-open-over") || ""; } catch { return ""; } }),
     [openOpacity, setOpenOpacity] = useState(0.75),
@@ -671,18 +673,20 @@ function Observatory({onHome}:{onHome:()=>void}) {
   }, [openOver, openOpacity, date]);
   useEffect(() => {
     if (!gibsLayer || !mapRef.current) return;
-    // WMS sin TIME: GIBS devuelve la última fecha disponible de cada capa.
+    // NASA GIBS WMS: TIME solicita una fecha histórica cuando se proporciona.
+    // La disponibilidad real depende de la capa y se comprueba por respuesta del servidor.
     const cfg = GIBS_LAYERS.find(([k])=>k===gibsLayer);
     const isWC = gibsLayer === WORLDCOVER;
     const wms = L.tileLayer.wms(cfg?.[3] || GIBS_WMS, {
       layers: gibsLayer, format: "image/png", transparent: true, opacity: isWC ? .6 : gibsLayer.includes("Flood") ? .85 : .7,
+      ...(!isWC && simulatorDate ? {time: simulatorDate} : {}),
       ...(cfg?.[3] === GIBS_WMS_4326 ? { crs: L.CRS.EPSG4326 } : {}),
       attribution: isWC ? "ESA WorldCover 2021 / VITO Terrascope (CC-BY 4.0)" : "NASA GIBS / EOSDIS",
     } as L.WMSOptions).addTo(mapRef.current);
     let warned = false;
     wms.on("tileerror", () => { if (!warned) { warned = true; notify(gibsLayer===WORLDCOVER?"Terrascope no devolvió la capa WorldCover. Probá más tarde.":"NASA GIBS no devolvió esta capa ahora. Probá más tarde u otra capa."); } });
     return () => { wms.remove(); };
-  }, [gibsLayer]);
+  }, [gibsLayer, simulatorDate]);
   useEffect(() => {
     const d = (sources.lluvia?.payload as any)?.data;
     if (!d?.job || d.status !== "en proceso") return;
@@ -1876,6 +1880,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
               </>}
               {view === "metnorway" && <><p className="footnote">MET Norway · conexión directa · pronóstico modelado. Actualizado: {payload?.properties?.meta?.updated_at || "Sin fecha"}</p>{Object.entries(payload?.properties?.timeseries?.[0]?.data?.instant?.details || {}).map(([key,value])=><div className="soil" key={key}><span style={{fontSize:10,maxWidth:"65%"}}>{key.replaceAll("_"," ")}</span><strong style={{fontSize:12}}>{fmt(value)} <small>{payload?.properties?.meta?.units?.[key]}</small></strong></div>)}<p className="footnote">Hora válida: {payload?.properties?.timeseries?.[0]?.time || "Sin fecha"}. Datos MET Norway, CC BY 4.0.</p></>}
               {view === "variables" && <VariablesPanel weather={weather} />}
+              {view === "simulador" && <EnvironmentalLab activeMapLayer={gibsLayer} onSelectMapLayer={setGibsLayer} mapDate={simulatorDate} onMapDateChange={setSimulatorDate} lat={point[0]} lon={point[1]} polygon={vertices} />}
               {view === "modelos" && (
                 <>
                   <p className="footnote">
