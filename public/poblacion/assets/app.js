@@ -149,6 +149,33 @@ $('flood-place').addEventListener('change',async()=>{const id=$('flood-place').v
     const t=make('table','');const hr=make('tr','');for(const h of ['Hasta … m sobre el río','Personas','Menores de 5','Mayores de 65','% de la zona'])hr.append(make('th',h));t.append(hr);
     for(const b of d.bands){const tr=make('tr','');tr.append(make('td',`${b.up_to_m} m`),make('td',number(b.people)),make('td',number(b.under5)),make('td',number(b.over65)),make('td',d.total?number(100*b.people/d.total,1)+' %':'Sin dato'));t.append(tr);}
     box.append(grid,t);
+    // Ubicación geográfica real de la estación y radio de cálculo, no mancha de inundación.
+    if(Number.isFinite(Number(d.lat))&&Number.isFinite(Number(d.lon))&&window.L){
+      const mapTitle=make('h3','Área geográfica analizada · '+d.place);
+      const mapNote=make('p','El círculo indica el radio de '+d.radius_km+' km utilizado para sumar población. NO representa superficie inundada.');
+      mapNote.className='hint';
+      const mapEl=make('div','');mapEl.style.cssText='height:360px;width:100%;border-radius:12px;overflow:hidden;margin:12px 0 18px';
+      box.append(mapTitle,mapNote,mapEl);
+      const m=L.map(mapEl,{scrollWheelZoom:false}).setView([Number(d.lat),Number(d.lon)],10);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap contributors'}).addTo(m);
+      const circle=L.circle([Number(d.lat),Number(d.lon)],{radius:Number(d.radius_km||15)*1000,color:'#0f9fa6',weight:2,fillOpacity:.10}).addTo(m);
+      L.marker([Number(d.lat),Number(d.lon)]).addTo(m).bindPopup(d.place+' · '+d.river);
+      m.fitBounds(circle.getBounds(),{padding:[20,20]});
+      setTimeout(()=>m.invalidateSize(),100);
+    }
+    // Barras horizontales: las franjas HAND son acumulativas, no sectores excluyentes.
+    const barsTitle=make('h3','Población potencialmente expuesta por franja de altura');
+    const bars=make('div','');bars.style.cssText='display:grid;gap:10px;margin:12px 0 20px';
+    const maximum=Math.max(1,...(d.bands||[]).map(b=>Number(b.people)||0));
+    for(const b of d.bands||[]){
+      const line=make('div','');line.style.cssText='display:grid;grid-template-columns:65px 1fr 105px;align-items:center;gap:10px';
+      const track=make('div','');track.style.cssText='height:22px;background:#e8f1f2;border-radius:5px;overflow:hidden';
+      const bar=make('div','');bar.style.cssText='height:100%;background:#0f9fa6;width:'+Math.max(0,100*(Number(b.people)||0)/maximum)+'%';
+      track.append(bar);line.append(make('span','≤ '+b.up_to_m+' m'),track,make('strong',number(b.people)));bars.append(line);
+    }
+    const note=make('p','Franja acumulada: el valor de 5 m ya incluye a las personas de 1, 2 y 3 m. No sumar las barras.');
+    note.className='hint';box.append(barsTitle,bars,note);
+
     const exportRow=make('div','');exportRow.className='exports';
     const download=make('button','Descargar informe PDF · '+d.place);download.type='button';download.className='primary';
     const exportJson=make('button','Descargar datos JSON');exportJson.type='button';exportJson.className='secondary';
