@@ -143,6 +143,23 @@ def report_pdf():
     except Exception: return jsonify(error='No se pudo generar el informe PDF.'),500
 
 
+@bp.post('/api/poblacion/crecida/informe')
+def flood_report_pdf():
+    from flask import Response
+    from . import flood_report
+    payload=request.get_json(silent=True)
+    try:
+        out=flood_report.pdf(payload)
+        filename='DOTS-poblacion-ribereña-'+datetime.now(timezone.utc).strftime('%Y-%m-%d')+'.pdf'
+        return Response(out,mimetype='application/pdf',
+                        headers={'Content-Disposition':f'attachment; filename="{filename}"','Cache-Control':'no-store'})
+    except ValueError as exc:
+        return jsonify(error=str(exc)),400
+    except Exception:
+        current_app.logger.exception('Error al generar PDF de población ribereña')
+        return jsonify(error='No se pudo generar el PDF de población ribereña.'),500
+
+
 @bp.get('/api/poblacion/localidades')
 def riverside_places():
     import cuenca as cc
