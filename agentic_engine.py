@@ -410,7 +410,7 @@ def pdf_bytes(result, name='Lote'):
         out, pagesize=landscape(A4),
         rightMargin=12*mm, leftMargin=12*mm,
         topMargin=12*mm, bottomMargin=12*mm,
-        title='DOTS / CAMPO — Informe técnico agroambiental'
+        title='DOTS — Sistema de Inteligencia Territorial, Ambiental y Climática'
     )
     st = getSampleStyleSheet()
     cyan = colors.HexColor('#16b9c4')
@@ -433,7 +433,7 @@ def pdf_bytes(result, name='Lote'):
     point = result['point']
     poly = result.get('polygon') or []
     story = [
-        Paragraph('DOTS / CAMPO', st['Kicker']),
+        Paragraph('DOTS / INTELIGENCIA TERRITORIAL', st['Kicker']),
         Paragraph('Informe técnico agroambiental', st['Cover']),
         Paragraph(name, st['Heading2']),
         Spacer(1, 6)
@@ -553,5 +553,24 @@ def pdf_bytes(result, name='Lote'):
     ]))
     story.append(table)
 
-    doc.build(story)
+    def institutional_page(canvas, document):
+        canvas.saveState()
+        width, height = landscape(A4)
+        canvas.setFillColor(navy)
+        canvas.rect(0, height - 15 * mm, width, 15 * mm, stroke=0, fill=1)
+        canvas.setFillColor(colors.white)
+        canvas.setFont('Helvetica-Bold', 9)
+        canvas.drawString(12 * mm, height - 9 * mm, 'DOTS / INTELIGENCIA TERRITORIAL')
+        canvas.setFont('Helvetica', 8)
+        canvas.drawRightString(width - 12 * mm, height - 9 * mm, 'INFORME TECNICO')
+        canvas.setStrokeColor(colors.HexColor('#c4d1d5'))
+        canvas.line(12 * mm, 13 * mm, width - 12 * mm, 13 * mm)
+        canvas.setFillColor(muted)
+        canvas.setFont('Helvetica', 7)
+        canvas.drawString(12 * mm, 8 * mm, 'DOTS · Direccion: Alvaro Fontana · Fuentes y alcances en el documento')
+        canvas.drawRightString(width - 12 * mm, 8 * mm, f'Pagina {document.page}')
+        canvas.restoreState()
+    doc.topMargin = 21 * mm
+    doc.bottomMargin = 19 * mm
+    doc.build(story, onFirstPage=institutional_page, onLaterPages=institutional_page)
     return out.getvalue()
