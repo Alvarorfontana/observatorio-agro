@@ -46,6 +46,27 @@ def pdf(data):
         ('TEXTCOLOR',(0,0),(-1,0),colors.white),('GRID',(0,0),(-1,-1),.3,colors.HexColor('#c4d1d5')),
         ('VALIGN',(0,0),(-1,-1),'MIDDLE'),('BOTTOMPADDING',(0,0),(-1,-1),7)]))
     story.append(t)
+    # Gráfico de barras acumulativas con los mismos datos de la tabla.
+    from reportlab.graphics.shapes import Drawing
+    from reportlab.graphics.charts.barcharts import HorizontalBarChart
+    bands=[b for b in data['bands'] if isinstance(b,dict) and isinstance(b.get('people'),(int,float)) and b['people']>=0]
+    if bands:
+        drawing=Drawing(475, max(155, 32*len(bands)+42))
+        chart=HorizontalBarChart()
+        chart.x,chart.y=90,30
+        chart.width,chart.height=355,max(105,28*len(bands))
+        chart.data=[[float(b['people']) for b in reversed(bands)]]
+        chart.categoryAxis.categoryNames=[str(b.get('up_to_m'))+' m' for b in reversed(bands)]
+        chart.categoryAxis.labels.fontSize=8
+        chart.valueAxis.valueMin=0
+        chart.valueAxis.valueMax=max(float(b['people']) for b in bands)*1.1 or 1
+        chart.bars[0].fillColor=colors.HexColor('#0f9fa6')
+        drawing.add(chart)
+        story += [Spacer(1,10),Paragraph('Gráfico de exposición acumulada',sty['Heading2']),drawing,
+                  Paragraph('Las franjas son acumulativas; no se suman entre sí.',sty['DOTSNote'])]
+    if isinstance(data.get('lat'),(int,float)) and isinstance(data.get('lon'),(int,float)):
+        story.append(Paragraph('Ubicación del análisis: '+safe(round(data['lat'],5))+', '+safe(round(data['lon'],5))+
+                               ' (centro del radio de estudio; no delimita la inundación).',sty['DOTSNote']))
     if data.get('scenarios'):
         story += [Spacer(1,9),Paragraph('Escenarios de crecida',sty['Heading2'])]
         for sc in data['scenarios'][:8]:
