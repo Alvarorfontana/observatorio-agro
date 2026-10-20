@@ -1,5 +1,11 @@
 // DOTS / Campo — Informe de población expuesta (Typst). Datos desde poblacion/report.build vía sys.inputs.data.
 #let d = json(bytes(sys.inputs.data))
+// Identidad institucional compartida de los informes DOTS.
+// La especialidad cambia, pero la denominación y la responsabilidad editorial no.
+#let dots-name = "DOTS · Sistema de Inteligencia Territorial, Ambiental y Climática"
+#let dots-director = "Dirección: Álvaro Fontana"
+#let dots-method = "Observación satelital · Telemetría · Análisis geoespacial"
+
 #let ink = rgb("#101828")
 #let muted = rgb("#667085")
 #let line-c = rgb("#e4e7ec")
@@ -9,7 +15,7 @@
 #let orange = rgb("#b76d27")
 #let red = rgb("#bc3647")
 
-#set document(title: d.title, author: "DOTS / Campo")
+#set document(title: d.title, author: dots-name)
 #set text(font: "IBM Plex Sans", size: 9.6pt, fill: ink, lang: "es")
 #set par(leading: 0.6em)
 #set page(paper: "a4", margin: (top: 14mm, bottom: 16mm, x: 15mm),
@@ -22,6 +28,11 @@
 #let card(body, fill: soft) = block(fill: fill, radius: 8pt, inset: 10pt, width: 100%, breakable: false, body)
 #let sec(t) = block(above: 14pt, below: 6pt, sticky: true, text(size: 12pt, weight: "semibold")[#t])
 
+#block(width: 100%, inset: (bottom: 5pt), {
+  text(size: 8pt, weight: "bold", fill: rgb("#0b2b33"))[#dots-name]
+  v(2pt)
+  text(size: 7.2pt, fill: rgb("#667085"))[#dots-method · #dots-director]
+})
 #block(width: 100%, fill: navy, radius: 10pt, inset: (x: 16pt, y: 14pt), {
   set text(fill: white)
   grid(columns: (1fr, auto), align: (left + horizon, right + horizon),
