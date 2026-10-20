@@ -31,5 +31,6 @@ jobs:
             python -m pip install -e integrations/clima-enso-analyzer
             python -m pytest -q integrations/clima-enso-analyzer/tests
           else
-            echo "Motor Clima ENSO v4 aun no importado: pruebas del motor pendientes"
+            echo "::error::Motor Clima ENSO v4 no importado: integración incompleta"
+            exit 1
           fi
