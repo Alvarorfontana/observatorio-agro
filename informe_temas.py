@@ -80,6 +80,26 @@ def summary(block):
                 out.append(f"{s['place']}: {_num(i.get('height'), 2)} m ({i.get('level') or 'sin nivel'}), "
                            f"tendencia {_num(i.get('trend_m_day'), 2)} m/día")
             return out
+        if tid == 'crecidas':
+            stations = d.get('stations') or []
+            out = [f"Estaciones incluidas: {len(stations)}. Cuencas y ríos: Paraná, Uruguay, Paraguay y tributarios según cobertura disponible."]
+            for stn in stations:
+                ina = stn.get('ina') or {}
+                level = ina.get('level') or stn.get('level') or 'sin nivel'
+                height = ina.get('height', stn.get('height'))
+                trend = ina.get('trend_m_day', stn.get('trend_m_day'))
+                out.append(f"{stn.get('place', 'Estación')} (río {stn.get('river', 'sin dato')}): altura {_num(height, 2) or 'sin dato'} m; nivel {level}; tendencia {_num(trend, 2) or 'sin dato'} m/día.")
+            travels = d.get('travel') or []
+            if isinstance(travels, dict):
+                travels = list(travels.values())
+            if travels:
+                out.append('Propagación de crecidas: consultar los tiempos de traslado y su incertidumbre en los resultados hidrológicos; no son horarios confirmados de llegada.')
+                for entry in travels[:12]:
+                    if isinstance(entry, dict):
+                        out.append(f"Tramo {entry.get('name') or entry.get('from') or entry.get('id') or 'sin identificar'}: {entry.get('travel_days') or entry.get('days') or entry.get('lag_days') or 'tiempo sin dato validado'}")
+            else:
+                out.append('Tiempo de llegada de la crecida: sin estimación validada para este informe.')
+            return out
         if tid == 'amenaza':
             out = [d.get('reading')] if d.get('reading') else []
             for x in d.get('return_periods') or []:
