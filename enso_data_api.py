@@ -129,3 +129,26 @@ def nino_regions():
         })
     except (requests.RequestException, ValueError) as exc:
         return jsonify({"status": "sin dato", "error": "No fue posible obtener o validar las regiones Niño NOAA", "detail": type(exc).__name__}), 503
+
+@enso_data_api.get("/api/enso/scientific-report")
+def scientific_report():
+    """JSON report with data provenance; PDF generation remains a separate task."""
+    from enso_science import summarize_oni, report_metadata
+    try:
+        if _CACHE["data"] is None or time.time() - _CACHE["at"] > 21600:
+            # Reuse the same validated NOAA endpoint logic; no mock fallback.
+            response = oni_official()
+            if isinstance(response, tuple):
+                return response
+        data = summarize_oni(_CACHE["data"])
+        data["traceability"] = report_metadata(
+            _CACHE.get("url", _NOAA_URLS[0]),
+            _CACHE["data"][-1]["month"],
+            data["method"],
+            data["limitations"],
+        )
+        data["traceability"]["source_stale"] = bool(_CACHE.get("stale", False))
+        data["provider"] = "NOAA Climate Prediction Center"
+        return jsonify(data)
+    except (ValueError, TypeError, KeyError):
+        return jsonify({"status": "sin dato", "error": "No hay observaciones NOAA válidas para el informe"}), 503
