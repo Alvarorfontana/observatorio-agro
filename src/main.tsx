@@ -1877,7 +1877,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
               </>}
               {view === "metnorway" && <><p className="footnote">MET Norway · conexión directa · pronóstico modelado. Actualizado: {payload?.properties?.meta?.updated_at || "Sin fecha"}</p>{Object.entries(payload?.properties?.timeseries?.[0]?.data?.instant?.details || {}).map(([key,value])=><div className="soil" key={key}><span style={{fontSize:10,maxWidth:"65%"}}>{key.replaceAll("_"," ")}</span><strong style={{fontSize:12}}>{fmt(value)} <small>{payload?.properties?.meta?.units?.[key]}</small></strong></div>)}<p className="footnote">Hora válida: {payload?.properties?.timeseries?.[0]?.time || "Sin fecha"}. Datos MET Norway, CC BY 4.0.</p></>}
               {view === "variables" && <VariablesPanel weather={weather} />}
-              {view === "simulador" && <EnvironmentalLab />}
+              {view === "simulador" && <EnvironmentalLab activeMapLayer={gibsLayer} onSelectMapLayer={setGibsLayer} />}
               {view === "modelos" && (
                 <>
                   <p className="footnote">
