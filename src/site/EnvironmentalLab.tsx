@@ -1,0 +1,43 @@
+import { useMemo, useState } from "react";
+import { ENVIRONMENTAL_CATALOG, modulesByGroup } from "../lib/environmentalCatalog";
+import type { EnvironmentalModule } from "../lib/environmentalCatalog";
+import { makeTimeline } from "../lib/environmentalTimeline";
+import type { TemporalFrame, ObservationKind } from "../lib/environmentalTimeline";
+
+type Props = { frames?: readonly TemporalFrame[]; onSelectFrame?: (frame: TemporalFrame) => void };
+const labels: Record<ObservationKind,string> = { observed:"Observaciones", forecast:"Pronósticos", scenario:"Escenarios" };
+const status: Record<EnvironmentalModule["status"],string> = { visualizacion:"Capa / visualización", analisis:"Análisis por validar", "requiere-modelo":"Requiere modelo calibrado" };
+/** Panel conectable al mapa Leaflet existente: no crea mapas ficticios ni solicita datos sin endpoint verificado. */
+export function EnvironmentalLab({frames=[],onSelectFrame}:Props) {
+ const [id,setId]=useState("flood");
+ const [kind,setKind]=useState<ObservationKind>("observed");
+ const [index,setIndex]=useState(0);
+ const module = ENVIRONMENTAL_CATALOG.find(m=>m.id===id) ?? ENVIRONMENTAL_CATALOG[0];
+ const timeline=useMemo(()=>makeTimeline(frames,id as TemporalFrame["variable"],kind),[frames,id,kind]);
+ const frame=timeline[Math.min(index,timeline.length-1)];
+ function changeModule(value:string){setId(value);setIndex(0);}
+ function changeKind(value:ObservationKind){setKind(value);setIndex(0);}
+ return <section aria-label="Laboratorio ambiental" className="dots-lab" style={{padding:16,background:"#101c24",color:"#e8f2f7",borderRadius:12,maxWidth:460}}>
+  <h2 style={{marginTop:0}}>Laboratorio ambiental · DOTS Campo</h2>
+  <label htmlFor="dots-lab-variable">Variable ambiental</label>
+  <select id="dots-lab-variable" value={id} onChange={e=>changeModule(e.target.value)} style={{display:"block",width:"100%",padding:10,margin:"8px 0 14px",background:"#20313d",color:"white"}}>
+   {Object.entries(modulesByGroup()).map(([group,items])=><optgroup label={group} key={group}>{items.map(m=><option value={m.id} key={m.id}>{m.title}</option>)}</optgroup>)}
+  </select>
+  <p><strong>Estado:</strong> {status[module.status]}</p>
+  <p><strong>Variables:</strong> {module.parameters.join(" · ")}</p>
+  <p><strong>Fuentes candidatas:</strong> {module.sources.join(" · ")}</p>
+  <p><strong>Producto:</strong> {module.output}</p>
+  <p style={{color:"#f3ca8b"}}>{module.caveat}</p>
+  <label htmlFor="dots-lab-kind">Tipo de información</label>
+  <select id="dots-lab-kind" value={kind} onChange={e=>changeKind(e.target.value as ObservationKind)} style={{display:"block",padding:9,margin:"8px 0 12px",background:"#20313d",color:"white"}}>
+   {(Object.keys(labels) as ObservationKind[]).map(k=><option key={k} value={k}>{labels[k]}</option>)}
+  </select>
+  {timeline.length===0 ? <p role="status">No hay escenas verificadas cargadas para este módulo y tipo. No se generan imágenes simuladas.</p> : <>
+   <label htmlFor="dots-lab-time">Fecha de adquisición ({timeline.length} escenas)</label>
+   <input id="dots-lab-time" type="range" min={0} max={timeline.length-1} value={Math.min(index,timeline.length-1)} onChange={e=>setIndex(Number(e.target.value))} style={{width:"100%"}}/>
+   <p>{frame.acquiredAt} · {frame.source} · {frame.resolutionMeters ? frame.resolutionMeters+" m" : "resolución no declarada"}</p>
+   {frame.qualityNote && <p>{frame.qualityNote}</p>}
+   <button type="button" disabled={!onSelectFrame} onClick={()=>frame&&onSelectFrame?.(frame)}>Mostrar escena en mapa</button>
+  </>}
+ </section>;
+}
