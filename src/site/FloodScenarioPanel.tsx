@@ -1,10 +1,4 @@
 import {useState} from "react";
-type River={id:string;name:string;lat:number;lon:number;note:string};
-const RIVERS:River[]=[
-{id:"parana",name:"Paraná · Corrientes",lat:-27.47,lon:-58.84,note:"Punto de referencia cartográfico; no equivale a una estación oficial"},
-{id:"paraguay",name:"Paraguay · Formosa",lat:-26.18,lon:-58.17,note:"Punto de referencia cartográfico; no equivale a una estación oficial"},
-{id:"uruguay",name:"Uruguay · Concordia",lat:-31.39,lon:-58.02,note:"Punto de referencia cartográfico; no equivale a una estación oficial"}
-];
 export function FloodScenarioPanel({onLayer,tramoStart,tramoEnd,riverName,basinName}:{onLayer:(id:string)=>void;tramoStart:[number,number]|null;tramoEnd:[number,number]|null;riverName:string;basinName:string}){
 
  const [base,setBase]=useState("4");
@@ -12,7 +6,7 @@ export function FloodScenarioPanel({onLayer,tramoStart,tramoEnd,riverName,basinN
  const [threshold,setThreshold]=useState("6");
  const [source,setSource]=useState("");
  const [date,setDate]=useState(new Date().toISOString().slice(0,10));
- const selected={name:riverName,lat:tramoStart?.[0]??0,lon:tramoStart?.[1]??0,note:"El tramo de referencia es el que marcaste en el mapa."};
+ const selected={name:riverName,note:"El tramo de referencia es el que marcaste en el mapa."};
  const b=Number(base),t=Number(threshold);
  const valid=base.trim()!==""&&threshold.trim()!==""&&Number.isFinite(b)&&Number.isFinite(t)&&b>=0&&t>=0;
  const hypothetical=b+rise;
