@@ -152,3 +152,57 @@ def scientific_report():
         return jsonify(data)
     except (ValueError, TypeError, KeyError):
         return jsonify({"status": "sin dato", "error": "No hay observaciones NOAA válidas para el informe"}), 503
+
+# NOAA PSL SOI monthly values. No synthetic or cached fixture fallback.
+_SOI_URL = "https://psl.noaa.gov/data/correlation/soi.data"
+_SOI_CACHE = {"at": 0.0, "data": None}
+
+def _parse_psl_soi(raw):
+    import math
+    result = []
+    for line in raw.splitlines():
+        cols = line.split()
+        if len(cols) != 13:
+            continue
+        try:
+            year = int(cols[0])
+        except ValueError:
+            continue
+        if not 1860 <= year <= 2100:
+            continue
+        for month, token in enumerate(cols[1:], start=1):
+            try:
+                val = float(token)
+            except ValueError:
+                continue
+            if math.isfinite(val) and -30 < val < 30 and val > -99:
+                result.append({"month": f"{year:04d}-{month:02d}", "soi": val})
+    result.sort(key=lambda p: p["month"])
+    if len(result) < 120 or len(set(p["month"] for p in result)) != len(result):
+        raise ValueError("Serie SOI NOAA PSL no válida")
+    return result
+
+@enso_data_api.get("/api/enso/soi")
+def soi_official():
+    try:
+        if _SOI_CACHE["data"] is None or time.time() - _SOI_CACHE["at"] > 21600:
+            try:
+                response = requests.get(_SOI_URL, timeout=12, headers={"User-Agent": "DOTS-Campo/1.0 scientific data"})
+                response.raise_for_status()
+                _SOI_CACHE.update({"at": time.time(), "data": _parse_psl_soi(response.text), "stale": False})
+            except (requests.RequestException, ValueError):
+                if _SOI_CACHE["data"] is None:
+                    raise
+                _SOI_CACHE["stale"] = True
+        return jsonify({
+            "status": "recibido", "source": "NOAA Physical Sciences Laboratory",
+            "source_url": _SOI_URL, "stale": bool(_SOI_CACHE.get("stale")),
+            "index": "SOI", "frequency": "mensual", "kind": "observación",
+            "units": "índice estandarizado",
+            "method": "Índice de Oscilación del Sur mensual publicado por NOAA PSL; valores de relleno excluidos",
+            "limitations": "El SOI no determina por sí solo la fase ENSO ni impactos hidrológicos locales",
+            "points": _SOI_CACHE["data"],
+            "last_month": _SOI_CACHE["data"][-1]["month"],
+        })
+    except (requests.RequestException, ValueError):
+        return jsonify({"status": "sin dato", "error": "No se pudo validar el SOI oficial NOAA PSL"}), 503
