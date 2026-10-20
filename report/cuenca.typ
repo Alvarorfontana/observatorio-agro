@@ -1,12 +1,10 @@
 // DOTS / Campo — Informe de la Cuenca del Plata (Typst)
 // Datos ya formateados desde cuenca_report.py vía sys.inputs.data (JSON).
 // Estructura fija: portada y resumen · El Niño · alertas · imágenes · lluvia por subcuenca · represas y ríos · traslado · fuentes.
+#import "identity.typ": name, director, method, cover-id
 #let d = json(bytes(sys.inputs.data))
 // Identidad institucional compartida de los informes DOTS.
 // La especialidad cambia, pero la denominación y la responsabilidad editorial no.
-#let dots-name = "DOTS · Sistema de Inteligencia Territorial, Ambiental y Climática"
-#let dots-director = "Dirección: Álvaro Fontana"
-#let dots-method = "Observación satelital · Telemetría · Análisis geoespacial"
 
 
 #let ink = rgb("#101828")
@@ -25,7 +23,7 @@
 #let sea = rgb("#1f7ab8")
 #let tone(t) = if t == "ok" { ok } else if t == "warn" { warn } else if t == "alert" { alert-c } else if t == "risk" { risk } else { muted }
 
-#set document(title: d.title, author: dots-name)
+#set document(title: d.title, author: name)
 #set text(font: "IBM Plex Sans", size: 9.2pt, fill: ink, lang: "es")
 #set par(leading: 0.6em, justify: false)
 #set page(
@@ -81,11 +79,7 @@
 }))
 
 // ───────────────────────────── 1. portada ─────────────────────────────
-#block(width: 100%, inset: (bottom: 5pt), {
-  text(size: 8pt, weight: "bold", fill: rgb("#0b2b33"))[#dots-name]
-  v(2pt)
-  text(size: 7.2pt, fill: rgb("#667085"))[#dots-method · #dots-director]
-})
+#cover-id()
 #block(width: 100%, fill: brand-dark, radius: 10pt, inset: 16pt, {
   set text(fill: white)
   grid(columns: (1fr, auto), align: (left + horizon, right + horizon),
