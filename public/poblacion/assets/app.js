@@ -3,6 +3,7 @@ const number=(v,digits=0)=>v==null?'Sin dato':new Intl.NumberFormat('es-AR',{max
 const make=(tag,text)=>{const e=document.createElement(tag);e.textContent=text;return e;};
 const colors={area:'#246fa6',hazard:'#b76d27',intersection:'#bc3647'};
 let map=null,layers={},draw=null,rectMode=false,vertices=[],draft=null,last=null,token=null,busy=false,generation=0;
+let floodMap=null,floodRequest=0;
 const today=new Date();$('event-date').value=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
 function status(text){$('status').textContent=text;}
 function clearResult(){last=null;token=null;generation++;$('resume').hidden=true;
@@ -138,9 +139,9 @@ $('pdf').addEventListener('click',async()=>{if(!last)return;const b=$('pdf');b.d
 // Personas cerca del río en las localidades de las alertas de crecidas
 jsonFetch('/api/poblacion/localidades').then(d=>{for(const p of d.places){const o=make('option',`${p.place} · río ${p.river}`);o.value=p.id;$('flood-place').append(o);}
   const q=new URLSearchParams(location.search).get('localidad');if(q){$('flood-place').value=q;$('flood-place').dispatchEvent(new Event('change'));document.getElementById('crecidas').scrollIntoView();}}).catch(()=>{});
-$('flood-place').addEventListener('change',async()=>{const id=$('flood-place').value;const box=$('flood-result');box.replaceChildren();if(!id)return;
+$('flood-place').addEventListener('change',async()=>{const id=$('flood-place').value;const box=$('flood-result');if(floodMap){floodMap.remove();floodMap=null;}box.replaceChildren();const requestId=++floodRequest;if(!id)return;
   $('flood-status').textContent='Calculando con Earth Engine (puede tardar hasta 30 segundos)…';
-  try{const j=await jsonFetch('/api/poblacion/crecida?id='+encodeURIComponent(id));const d=j.data;if(!d)throw new Error(j.error||'Sin datos');
+  try{const j=await jsonFetch('/api/poblacion/crecida?id='+encodeURIComponent(id));const d=j.data;if(requestId!==floodRequest)return;if(!d)throw new Error(j.error||'Sin datos');
     $('flood-status').textContent=`${d.place} · río ${d.river} · ${number(d.total)} personas en ${d.radius_km} km a la redonda (WorldPop 2020).`;
     const grid=make('div','');grid.className='flood-grid';
     for(const sc of d.scenarios||[]){const a=make('article','');a.className=sc.key==='evac'?'risk':'warn';
@@ -150,16 +151,24 @@ $('flood-place').addEventListener('change',async()=>{const id=$('flood-place').v
     for(const b of d.bands){const tr=make('tr','');tr.append(make('td',`${b.up_to_m} m`),make('td',number(b.people)),make('td',number(b.under5)),make('td',number(b.over65)),make('td',d.total?number(100*b.people/d.total,1)+' %':'Sin dato'));t.append(tr);}
     box.append(grid,t);
     // Ubicación geográfica real de la estación y radio de cálculo, no mancha de inundación.
-    if(Number.isFinite(Number(d.lat))&&Number.isFinite(Number(d.lon))&&window.L){
+    if(d.lat!=null&&d.lon!=null&&Number.isFinite(Number(d.lat))&&Number.isFinite(Number(d.lon))&&window.L){
       const mapTitle=make('h3','Área geográfica analizada · '+d.place);
       const mapNote=make('p','El círculo indica el radio de '+d.radius_km+' km utilizado para sumar población. NO representa superficie inundada.');
       mapNote.className='hint';
       const mapEl=make('div','');mapEl.style.cssText='height:360px;width:100%;border-radius:12px;overflow:hidden;margin:12px 0 18px';
       box.append(mapTitle,mapNote,mapEl);
       const m=L.map(mapEl,{scrollWheelZoom:false}).setView([Number(d.lat),Number(d.lon)],10);
+      floodMap=m;
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap contributors'}).addTo(m);
       const circle=L.circle([Number(d.lat),Number(d.lon)],{radius:Number(d.radius_km||15)*1000,color:'#0f9fa6',weight:2,fillOpacity:.10}).addTo(m);
-      L.marker([Number(d.lat),Number(d.lon)]).addTo(m).bindPopup(d.place+' · '+d.river);
+      const marker=L.marker([Number(d.lat),Number(d.lon)]).addTo(m);
+      const summary=(d.scenarios||[]).map(sc=>sc.label+': '+number(sc.people)+' personas (≤ '+sc.band_m+' m HAND)').join(' · ');
+      marker.bindPopup('<b>'+String(d.place).replace(/[&<>"']/g,'')+'</b><br>Río '+String(d.river).replace(/[&<>"']/g,'')+'<br>'+summary.replace(/[&<>"']/g,'')).openPopup();
+      const mapActions=make('div','');mapActions.className='exports';
+      const focus=make('button','Centrar mapa en '+d.place);focus.type='button';focus.className='secondary';
+      focus.addEventListener('click',()=>{m.fitBounds(circle.getBounds(),{padding:[20,20]});marker.openPopup();});
+      const open=make('a','Abrir mapa ampliado ↗');open.href='https://www.openstreetmap.org/?mlat='+encodeURIComponent(d.lat)+'&mlon='+encodeURIComponent(d.lon)+'#map=11/'+encodeURIComponent(d.lat)+'/'+encodeURIComponent(d.lon);open.target='_blank';open.rel='noopener noreferrer';
+      mapActions.append(focus,open);box.append(mapActions);
       m.fitBounds(circle.getBounds(),{padding:[20,20]});
       setTimeout(()=>m.invalidateSize(),100);
     }
@@ -199,7 +208,7 @@ $('flood-place').addEventListener('change',async()=>{const id=$('flood-place').v
       finally{download.disabled=false;download.textContent='Descargar informe PDF · '+d.place}
     });
     exportRow.append(download,exportJson);box.append(exportRow);
-  }catch(e){$('flood-status').textContent='No se pudo calcular: '+e.message;}});
+  }catch(e){if(requestId===floodRequest)$('flood-status').textContent='No se pudo calcular: '+e.message;}});
 
 // Dengue y olas de calor en 80 localidades
 let health=null;const DCLS={'bajo':'h-low','moderado':'h-mod','alto':'h-high','muy alto':'h-vhigh','sin dato':''};
