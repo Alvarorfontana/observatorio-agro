@@ -3,6 +3,7 @@ import { ENVIRONMENTAL_CATALOG, modulesByGroup } from "../lib/environmentalCatal
 import type { EnvironmentalModule } from "../lib/environmentalCatalog";
 import { makeTimeline } from "../lib/environmentalTimeline";
 import { INITIAL_VARIABLES } from "../lib/environmentalVariables";
+import { EnvironmentalSeriesChart } from "./EnvironmentalSeriesChart";
 import type { TemporalFrame, ObservationKind } from "../lib/environmentalTimeline";
 
 type Props = { frames?: readonly TemporalFrame[]; onSelectFrame?: (frame: TemporalFrame) => void; onSelectMapLayer?: (layer: string) => void; activeMapLayer?: string; mapDate?: string; onMapDateChange?: (date:string)=>void };
@@ -58,6 +59,11 @@ export function EnvironmentalLab({frames=[],onSelectFrame,onSelectMapLayer,activ
   <label htmlFor="dots-lab-search">Buscar entre {INITIAL_VARIABLES.length} variables registradas</label>
   <input id="dots-lab-search" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Ej.: caudal, NDVI, humedad..." style={{display:"block",width:"100%",boxSizing:"border-box",padding:10,margin:"8px 0",background:"#20313d",color:"white"}}/>
   {search.trim() && <div style={{maxHeight:160,overflowY:"auto",padding:8,background:"#192b35"}}>{INITIAL_VARIABLES.filter(v=>(v.label+" "+v.id+" "+v.unit).toLocaleLowerCase("es").includes(search.toLocaleLowerCase("es"))).map(v=><p key={v.id} style={{margin:"5px 0"}}>{v.label} · {v.unit} <small>({v.support})</small></p>)}</div>}
+  {id==="flood"&&<div style={{padding:10,border:"1px solid #42687d",borderRadius:10}}>
+   <h3 style={{marginTop:0}}>Crecidas e inundaciones · dos análisis</h3>
+   <p><strong>1. Crecida:</strong> serie de niveles o caudales, umbrales y variaciones hipotéticas. <strong>2. Inundación:</strong> comparación de las máscaras satelitales MODIS/VIIRS por fecha, mediante el selector del mapa.</p>
+   <p style={{fontSize:12,color:"#ffd38d"}}>La extensión futura de agua aún no se calcula: requiere un modelo hidrodinámico calibrado y datos topográficos.</p>
+  </div>}
   <p><strong>Variables:</strong> {module.parameters.join(" · ")}</p>
   <p><strong>Fuentes candidatas:</strong> {module.sources.join(" · ")}</p>
   <p><strong>Producto:</strong> {module.output}</p>
@@ -66,6 +72,7 @@ export function EnvironmentalLab({frames=[],onSelectFrame,onSelectMapLayer,activ
   <select id="dots-lab-kind" value={kind} onChange={e=>changeKind(e.target.value as ObservationKind)} style={{display:"block",padding:9,margin:"8px 0 12px",background:"#20313d",color:"white"}}>
    {(Object.keys(labels) as ObservationKind[]).map(k=><option key={k} value={k}>{labels[k]}</option>)}
   </select>
+  <EnvironmentalSeriesChart key={id} title={id==="flood"?"Crecida · altura hidrométrica":module.title} unit={id==="flood"?"m":INITIAL_VARIABLES.find(v=>v.id===id)?.unit??"unidad declarada"} description={id==="flood"?"Cargá una serie oficial de una misma estación y con la misma referencia vertical. El desplazamiento hipotético no representa una mancha de inundación.":"Gráfico reutilizable: ingresá observaciones de la misma variable y unidad, con fecha y fuente verificables."}/>
   {timeline.length===0 ? <p role="status">No hay escenas verificadas cargadas para este módulo y tipo. No se generan imágenes simuladas.</p> : <>
    <label htmlFor="dots-lab-time">Fecha de adquisición ({timeline.length} escenas)</label>
    <input id="dots-lab-time" type="range" min={0} max={timeline.length-1} value={Math.min(index,timeline.length-1)} onChange={e=>setIndex(Number(e.target.value))} style={{width:"100%"}}/>
