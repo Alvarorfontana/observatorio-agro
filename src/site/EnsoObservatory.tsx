@@ -1,3 +1,4 @@
+import {EnsoAtmosphereLab} from "./EnsoAtmosphereLab";
 import {EnsoHistoricalLab} from "./EnsoHistoricalLab";
 import {useEffect,useMemo,useState} from "react";
 import {ENSO_SOURCES} from "../lib/ensoSourceRegistry";
@@ -82,6 +83,7 @@ export function EnsoObservatory(){
  </section>
  <TeleconnectionsPanel/>
  <EnsoHistoricalLab/>
+ <EnsoAtmosphereLab/>
  <h3>Diagnóstico oceánico y atmosférico · productos NOAA CPC</h3>
  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,290px),1fr))",gap:12}}>{panels.map(p=><figure key={p.title} style={{margin:0,background:"#fff",color:"#172d38",padding:10,borderRadius:9}}><img src={p.src} alt={p.desc} loading="lazy" style={{width:"100%",height:"auto"}}/><figcaption><strong>{p.title}</strong><div style={{fontSize:12}}>{p.desc}</div><a href={p.src} target="_blank" rel="noreferrer">Ver figura oficial y fecha</a></figcaption></figure>)}</div>
  <h3>Catálogo de variables y productos verificables</h3>
