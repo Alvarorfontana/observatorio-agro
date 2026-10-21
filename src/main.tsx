@@ -2656,16 +2656,12 @@ function SiteLink({to,children,className=""}:{to:string;children:React.ReactNode
   return <a href={to} className={className} onClick={(e)=>{e.preventDefault();history.pushState({},"",to);window.dispatchEvent(new PopStateEvent("popstate"));window.scrollTo({top:0,behavior:"smooth"});}}>{children}</a>
 }
 function Brand(){return <SiteLink to="/" className="site-brand"><img className="brand-logo" src="/dots-logo.svg" alt="DOTS Campo"/><span><b>DOTS <em>CAMPO</em></b><small>DATOS · OBSERVACIÓN · TERRITORIO · SATÉLITE</small></span></SiteLink>}
-function PublicHeader({onDemo}:{onDemo:()=>void}){return <header className="site-header"><Brand/><nav>
-  <SiteLink to="/que-es-dots">Qué es DOTS</SiteLink>
-  <SiteLink to="/el-nino" className="nav-highlight">Mi región</SiteLink>
-  <SiteLink to="/observatorio" className="nav-highlight">Mapa principal</SiteLink>
-  <SiteLink to="/simulador-ambiental" className="nav-highlight">Simulador ambiental</SiteLink>
-  <SiteLink to="/focos">Fuego y heladas</SiteLink>
-  <a href="/agricultura-precision" className="nav-highlight">Agricultura de precisión</a>
-  <a href="/radar" className="nav-highlight">Radar Sentinel-1</a>
-  <SiteLink to="/libre-deforestacion">Vender a Europa</SiteLink>
-  <SiteLink to="/caso-bella-vista">Ejemplo</SiteLink>
+function PublicHeader({onDemo}:{onDemo:()=>void}){return <header className="site-header"><Brand/><nav aria-label="Navegación principal">
+  <SiteLink to="/" className="nav-highlight">Inicio</SiteLink>
+  <SiteLink to="/observatorio">Observatorio</SiteLink>
+  <SiteLink to="/simulador-ambiental">Simulador</SiteLink>
+  <SiteLink to="/el-nino">Clima y agua</SiteLink>
+  <SiteLink to="/modulos">Informes</SiteLink>
   <details className="nav-more"><summary>Más módulos</summary><div aria-label="Módulos DOTS ordenados por función">
     <strong>01 · Observatorio y producción</strong>
     <SiteLink to="/observatorio">Mapa principal · parcelas e informes</SiteLink><SiteLink to="/cultivos">Cultivos y rendimiento</SiteLink><SiteLink to="/agricultura-precision">Agricultura de precisión</SiteLink>
