@@ -2741,7 +2741,7 @@ function Home({onDemo}:{onDemo:()=>void}){
  const sections=[
   {icon:"◫",name:"Observatorio principal",description:"Mapa interactivo, parcelas y análisis local.",cta:"Abrir observatorio",url:"/observatorio",image:"map"},
   {icon:"▥",name:"Simulador ambiental",description:"Clima, inundaciones, cultivos y escenarios.",cta:"Explorar simulador",url:"/simulador-ambiental",image:"crops"},
-  {icon:"♧",name:"Agricultura y ganadería",description:"Gestión de cultivos, pasturas y riesgos productivos.",cta:"Ver herramientas",url:"/agricultura-precision",image:"farm"},
+  {icon:"♧",name:"Agricultura y ganadería",description:"Gestión de cultivos, pasturas y riesgos productivos.",cta:"Abrir ganadería",url:"/ganaderia",image:"farm"},
   {icon:"☁",name:"Clima, agua e inundaciones",description:"Pronósticos, ENSO, mapas de riesgo y análisis hidrológico.",cta:"Explorar clima y agua",url:"/el-nino",image:"water"},
   {icon:"◇",name:"Satélites y geoespacial",description:"NASA POWER, imágenes satelitales, GeoTIFF y teledetección.",cta:"Ver datos satelitales",url:"/capas",image:"satellite"},
   {icon:"▤",name:"Informes y documentación",description:"Reportes técnicos, metodologías y fuentes de datos.",cta:"Acceder a informes",url:"/modulos",image:"reports"}
