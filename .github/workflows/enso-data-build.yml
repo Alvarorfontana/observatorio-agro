@@ -9,7 +9,7 @@ on:
       - 'tools/build_enso_ersst.py'
       - 'tests/test_enso_ersst.py'
 permissions:
-  contents: read
+  contents: write
 jobs:
   build-enso-data:
     runs-on: ubuntu-latest
@@ -46,6 +46,16 @@ jobs:
           assert len(d["indices"]["nino34"])==len(d["months"])
           print("Dataset NOAA verificado:",p.stat().st_size,"bytes",d["months"][0],d["months"][-1])
           PY
+      - name: Incorporar datos NOAA verificados a la rama de integración
+        if: github.ref == 'refs/heads/feature/dots-integracion-total-20261021'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/data/enso-ersst.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'data(enso): actualizar observaciones NOAA ERSST v5'
+            git push origin HEAD:feature/dots-integracion-total-20261021
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: dots-enso-ersst-historico
