@@ -30,7 +30,7 @@ def test_returns_daily_data_with_provenance(monkeypatch):
     assert payload["daily"]["precipitation_sum"] == [2.1]
     assert "precipitation_sum" in captured["daily"]
     assert "temperature_2m_mean" in captured["daily"]
-    assert "model" in payload["data_kind"].lower()
+    assert "modelo" in payload["data_kind"].lower()
 
 def test_future_date_rejected():
     future=(date.today()+timedelta(days=2)).isoformat()
