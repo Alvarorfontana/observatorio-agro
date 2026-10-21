@@ -11,6 +11,44 @@ const panels=[
  {title:"Pronóstico de intensidad",src:"https://ftp.cpc.ncep.noaa.gov/CPC/li.xu/enso/CPCstrengthprobs.png",desc:"NOAA CPC · distribución probabilística de intensidad"},
  {title:"Anomalía relativa Niño 3.4",src:"https://ftp.cpc.ncep.noaa.gov/CPC/li.xu/enso/roni.png",desc:"NOAA CPC · indicador relativo, no idéntico al ONI"}
 ];
+type TeleObservation={month:string;value:number};
+type TelePayload={provider:string;stale?:boolean;status:Record<string,string>;indices:Record<string,{source:string;observations:TeleObservation[]}>};
+const teleLabels:Record<string,string>={soi:"Oscilación del Sur (SOI)",pna:"Pacífico–Norteamérica (PNA)",aao:"Oscilación Antártica (AAO)",nao:"Oscilación del Atlántico Norte (NAO)",ao:"Oscilación Ártica (AO)",tni:"Índice Trans-Niño (TNI)",oni:"ONI (serie PSL; contrastar con CPC)"};
+function TeleconnectionsPanel(){
+ const [data,setData]=useState<TelePayload|null>(null);
+ const [loading,setLoading]=useState(true);
+ const [error,setError]=useState("");
+ const [selected,setSelected]=useState("soi");
+ useEffect(()=>{const controller=new AbortController();fetch("/api/enso/teleconnections",{signal:controller.signal})
+ .then(async response=>{const json=await response.json();if(!response.ok)throw Error(json.error||"Fuente NOAA no disponible");return json as TelePayload})
+ .then(json=>{if(!controller.signal.aborted)setData(json)})
+ .catch(e=>{if(!controller.signal.aborted)setError(String(e))})
+ .finally(()=>{if(!controller.signal.aborted)setLoading(false)});
+ return ()=>controller.abort()},[]);
+ const available=Object.keys(data?.indices||{});
+ const key=available.includes(selected)?selected:available[0];
+ const series=(key&&data?.indices[key]?.observations||[]).slice(-120);
+ const values=series.map(p=>p.value);
+ const lo=Math.min(-1,...values),hi=Math.max(1,...values),span=hi-lo||1;
+ const points=series.map((p,i)=>`${30+i*730/Math.max(1,series.length-1)},${175-(p.value-lo)*145/span}`).join(" ");
+ return <section aria-label="Teleconexiones NOAA" style={{marginTop:18,padding:14,background:"#183744",borderRadius:10}}>
+ <h3>Índices atmosféricos y oceánicos · NOAA PSL</h3>
+ <p>Series mensuales observadas, independientes del ONI trimestral oficial. No se generan valores sintéticos.</p>
+ {loading&&<p role="status">Consultando índices NOAA…</p>}
+ {error&&<p role="alert">{error}</p>}
+ {data?.stale&&<p role="status">Datos en caché: no se pudo actualizar la fuente.</p>}
+ {available.length>0&&<><label>Índice <select value={key} onChange={e=>setSelected(e.target.value)}>{available.map(k=><option key={k} value={k}>{teleLabels[k]||k}</option>)}</select></label>
+ <svg viewBox="0 0 800 205" role="img" aria-label={`Serie mensual NOAA de ${teleLabels[key]||key}`} style={{width:"100%",marginTop:12,background:"#0c2834",borderRadius:8}}>
+ <line x1="30" x2="760" y1={175-(0-lo)*145/span} y2={175-(0-lo)*145/span} stroke="#a2bbc7" strokeDasharray="4 5"/>
+ <polyline points={points} fill="none" stroke="#71d6eb" strokeWidth="2"/>
+ <text x="30" y="195" fontSize="13" fill="#e3eef3">{series[0]?.month||""}</text>
+ <text x="685" y="195" fontSize="13" fill="#e3eef3">{series[series.length-1]?.month||""}</text></svg>
+ <p>Último dato disponible: <strong>{series[series.length-1]?.month||"Sin datos"} · {series[series.length-1]?.value ?? "—"}</strong>. Ventana: hasta 120 meses.</p>
+ <a href={data!.indices[key].source} target="_blank" rel="noreferrer" style={{color:"#a7e4ff"}}>Consultar archivo original NOAA PSL ↗</a></>}
+ {!loading&&data&&available.length===0&&<p>No hay series disponibles en este momento.</p>}
+ </section>
+}
+
 export function EnsoObservatory(){
  const [points,setPoints]=useState<Point[]>([]),[error,setError]=useState(""),[loading,setLoading]=useState(true);
  const [sourceFilter,setSourceFilter]=useState("Todas");
@@ -41,6 +79,7 @@ export function EnsoObservatory(){
  {current?(()=>{const v=current.anomalyC;const phase=v>=0.5?"calentamiento compatible con condiciones de El Niño":v<=-0.5?"enfriamiento compatible con condiciones de La Niña":"condiciones térmicas cercanas a la neutralidad";const previous=data[Math.max(0,Math.min(selected,data.length-1)-1)];const delta=previous&&previous!==current?v-previous.anomalyC:null;return <><p><strong>{current.season} · {current.month}:</strong> ONI de {v.toFixed(1)} °C, indicativo de {phase}.</p><p>{delta===null?"No hay observación anterior en la ventana elegida para estimar la variación.":`Respecto del trimestre superpuesto anterior, la anomalía ${delta>0?"aumentó":delta<0?"disminuyó":"no cambió"} ${Math.abs(delta).toFixed(1)} °C.`}</p><p><strong>Lectura:</strong> {v>=1.5?"Anomalía cálida elevada.":v>=0.5?"Anomalía cálida sobre el umbral orientativo.":v<=-1.5?"Anomalía fría pronunciada.":v<=-0.5?"Anomalía fría bajo el umbral orientativo.":"El índice está dentro de la banda neutral orientativa."} Para identificar un episodio oficial se requiere persistencia y corroboración atmosférica; este panel no declara automáticamente episodios ni predice lluvias o crecidas.</p></>})():<p>La interpretación se habilita cuando se carga la serie NOAA.</p>}
  <p style={{fontSize:12,color:"#c6dbe5"}}>El ONI resume anomalías de temperatura superficial en Niño 3.4 mediante trimestres superpuestos. Los cambios consecutivos no son observaciones independientes. Para el diagnóstico completo contrastá SOI, vientos alisios, OLR, temperatura subsuperficial y pronósticos IRI.</p>
  </section>
+ <TeleconnectionsPanel/>
  <h3>Diagnóstico oceánico y atmosférico · productos NOAA CPC</h3>
  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,290px),1fr))",gap:12}}>{panels.map(p=><figure key={p.title} style={{margin:0,background:"#fff",color:"#172d38",padding:10,borderRadius:9}}><img src={p.src} alt={p.desc} loading="lazy" style={{width:"100%",height:"auto"}}/><figcaption><strong>{p.title}</strong><div style={{fontSize:12}}>{p.desc}</div><a href={p.src} target="_blank" rel="noreferrer">Ver figura oficial y fecha</a></figcaption></figure>)}</div>
  <h3>Catálogo de variables y productos verificables</h3>
