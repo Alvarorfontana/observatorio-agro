@@ -2659,6 +2659,7 @@ function Brand(){return <SiteLink to="/" className="site-brand"><img className="
 function PublicHeader({onDemo}:{onDemo:()=>void}){return <header className="site-header"><Brand/><nav>
   <SiteLink to="/que-es-dots">Qué es DOTS</SiteLink>
   <SiteLink to="/el-nino" className="nav-highlight">Mi región</SiteLink>
+  <SiteLink to="/observatorio" className="nav-highlight">Mapa principal</SiteLink>
   <SiteLink to="/simulador-ambiental" className="nav-highlight">Simulador ambiental</SiteLink>
   <SiteLink to="/focos">Fuego y heladas</SiteLink>
   <a href="/agricultura-precision" className="nav-highlight">Agricultura de precisión</a>
@@ -2666,7 +2667,7 @@ function PublicHeader({onDemo}:{onDemo:()=>void}){return <header className="site
   <SiteLink to="/libre-deforestacion">Vender a Europa</SiteLink>
   <SiteLink to="/caso-bella-vista">Ejemplo</SiteLink>
   <details className="nav-more"><summary>Más</summary><div>
-    <SiteLink to="/simulador-ambiental">Simulador ambiental · Sudamérica</SiteLink><SiteLink to="/cultivos">Cultivos y rinde</SiteLink><SiteLink to="/nino-crecidas">El Niño y crecidas</SiteLink><a href="/poblacion">Población y riesgo</a><SiteLink to="/panel">Panel regional</SiteLink><SiteLink to="/modulos">Módulos</SiteLink>
+    <SiteLink to="/observatorio">Mapa principal · parcelas e informes</SiteLink><SiteLink to="/simulador-ambiental">Simulador ambiental · Sudamérica</SiteLink><SiteLink to="/cultivos">Cultivos y rinde</SiteLink><SiteLink to="/nino-crecidas">El Niño y crecidas</SiteLink><a href="/poblacion">Población y riesgo</a><SiteLink to="/panel">Panel regional</SiteLink><SiteLink to="/modulos">Módulos</SiteLink>
     <SiteLink to="/guia">Cómo funciona</SiteLink><SiteLink to="/capas">Capas del mapa</SiteLink><SiteLink to="/tecnologia">Fuentes</SiteLink><SiteLink to="/conexiones">APIs</SiteLink><SiteLink to="/casos">Casos</SiteLink><SiteLink to="/contacto">Contacto</SiteLink>
   </div></details>
 </nav><div className="site-head-actions"><SiteLink to="/alertas" className="alert-btn">⚠ Alertas</SiteLink><SiteLink to="/acceso" className="ghost-link">Ingresar</SiteLink><button className="demo-btn" onClick={onDemo}>Abrir Observatorio →</button>
@@ -3454,7 +3455,7 @@ function App(){
   const openDemo=()=>{history.pushState({},"","/observatorio");setPath("/observatorio");setInside(true);window.scrollTo(0,0)};
   const home=()=>{history.pushState({},"","/");setPath("/");setInside(false);window.scrollTo(0,0)};
   if(inside)return <Observatory onHome={home}/>;
-  if(path==="/simulador-ambiental")return <div className="public-site"><PublicHeader onDemo={openDemo}/><main style={{maxWidth:1800,margin:"24px auto",padding:"0 20px"}}><h1>Simulador ambiental · América del Sur</h1><p>Explorá El Niño y La Niña, crecidas e inundaciones, capas satelitales y variables climáticas. Para ver las capas sobre el mapa y delimitar un área, abrí el Observatorio.</p><button className="demo-btn" onClick={openDemo}>Abrir mapa del Observatorio →</button><EnvironmentalWorkspace/></main></div>;
+  if(path==="/simulador-ambiental")return <div className="public-site"><PublicHeader onDemo={openDemo}/><main style={{maxWidth:1800,margin:"24px auto",padding:"0 20px"}}><h1>Simulador ambiental · América del Sur</h1><p>Explorá El Niño y La Niña, crecidas e inundaciones, capas satelitales y variables climáticas. Para ver las capas sobre el mapa y delimitar un área, abrí el Observatorio.</p><button className="demo-btn" onClick={openDemo}>Abrir mapa principal · parcelas e informes →</button><EnvironmentalWorkspace/></main></div>;
   if(path==="/producto")return <InfoPage kind="producto" onDemo={openDemo}/>;
   if(path==="/soluciones")return <InfoPage kind="soluciones" onDemo={openDemo}/>;
   if(path==="/ganaderia")return <InfoPage kind="ganaderia" onDemo={openDemo}/>;
