@@ -6,6 +6,7 @@ import {FloodScenarioPanel} from "./FloodScenarioPanel";
 import {GeoRasterWorkbench} from "./GeoRasterWorkbench";
 import {EnsoObservatory} from "./EnsoObservatory";
 import {AgroTelemetryPanel} from "./AgroTelemetryPanel";
+import {PowerObservationsPanel} from "./PowerObservationsPanel";
 const BASINS:Record<string,string[]>={
  "Cuenca del Plata":["Paraná","Paraguay","Uruguay","Iguazú","Pilcomayo","Bermejo","Salado del Norte","Tercero / Carcarañá","Río de la Plata"],
  "Amazonas":["Amazonas","Solimões","Negro","Madeira","Tapajós","Xingu","Purus","Juruá","Ucayali","Marañón","Napo","Putumayo / Içá","Javari","Trombetas"],
@@ -58,6 +59,7 @@ export function EnvironmentalWorkspace(){
    <EnvironmentalMap lat={lat} lon={lon} layer={layer} date={date} onPoint={updatePoint} tramoMode={tramoMode} onTramoPoint={selectTramoPoint} tramoStart={tramoStart} tramoEnd={tramoEnd} terrainEnabled={terrainEnabled} terrainLevel={terrainLevel}/>
    <section style={{padding:14,margin:"14px 0",border:"1px solid #335968",borderRadius:10,background:"#102b37",color:"#eef6fa"}}><h2 style={{margin:"0 0 8px"}}>Clima global · récords térmicos</h2><p>Mapa mundial por país y localidad, comparación con máximos históricos, importación de observaciones verificadas, exportación CSV e informe imprimible.</p><a href="/clima/records-termicos/" style={{display:"inline-block",padding:"10px 16px",borderRadius:8,background:"#20b98d",color:"#06231b",fontWeight:700}}>Abrir monitor global de récords térmicos ↗</a></section><details open style={{margin:"14px 0"}}><summary style={{padding:12,background:"#173743",color:"#fff",borderRadius:8,cursor:"pointer"}}>Observatorio ENSO · NOAA / IRI Columbia · gráficos e informes</summary><EnsoObservatory/></details>
    <details style={{margin:"14px 0"}}><summary style={{padding:12,background:"#173743",color:"#fff",borderRadius:8,cursor:"pointer"}}>Telemetría agroclimática · temperatura, suelo y lluvia</summary><AgroTelemetryPanel lat={lat} lon={lon}/></details>
+   <details style={{margin:"14px 0"}}><summary style={{padding:12,background:"#173743",color:"#fff",borderRadius:8,cursor:"pointer"}}>NASA POWER · observaciones horarias por coordenadas</summary><PowerObservationsPanel/></details>
    <FloodScenarioPanel onLayer={setLayer} tramoStart={tramoStart} tramoEnd={tramoEnd} riverName={guideRiver} basinName={guideBasin}/>
    <details style={{marginTop:14}}><summary style={{padding:12,background:"#173743",color:"#fff",borderRadius:8,cursor:"pointer"}}>Laboratorio geoespacial · importar DEM / GeoTIFF</summary><GeoRasterWorkbench basin={guideBasin} river={guideRiver} tramoStart={tramoStart} tramoEnd={tramoEnd}/></details>
    <details style={{margin:"14px 0"}}><summary style={{padding:12,background:"#173743",color:"#fff",borderRadius:8,cursor:"pointer"}}>Fuentes internacionales · 18 catálogos climáticos</summary><ClimateSourcesCatalog/></details>
