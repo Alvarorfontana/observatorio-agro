@@ -13,7 +13,8 @@ from datetime import datetime, timezone
 
 import requests
 
-SITE = os.environ.get('DOTS_SITE', 'https://observatorio-agro.vercel.app')
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))   # dots_http vive al lado
+from dots_http import SITE
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(HERE, '..', 'data')
 STATE = os.path.join(DATA, 'nino_crecidas.json')

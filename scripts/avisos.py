@@ -17,7 +17,8 @@ from datetime import datetime, timezone
 
 import requests
 
-SITE = os.environ.get('DOTS_SITE', 'https://observatorio-agro.vercel.app')
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))   # dots_http vive al lado
+from dots_http import SITE, check, session
 HERE = os.path.dirname(os.path.abspath(__file__))
 STATE = os.path.join(HERE, '..', 'data', 'avisos_estado.json')
 FEED = os.path.join(HERE, '..', 'data', 'avisos.json')
@@ -114,8 +115,7 @@ def email(msgs, worst):
 
 
 def main():
-    r = requests.get(f'{SITE}/api/fuentes/alertas-resumen', timeout=90)
-    r.raise_for_status()
+    r = check(session().get(f'{SITE}/api/fuentes/alertas-resumen', timeout=90))
     js = r.json()
     stations = (js.get('data') or {}).get('stations') or []
     if not stations:

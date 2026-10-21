@@ -16,7 +16,10 @@ from datetime import datetime, timezone
 
 import requests
 
-SITE = os.environ.get('DOTS_SITE', 'https://observatorio-agro.vercel.app')
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))   # dots_http vive al lado
+from dots_http import SITE, check, session
+
+HTTP = session()
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(HERE, '..', 'data')
 STATE = os.path.join(DATA, 'nino_crecidas.json')
@@ -44,9 +47,7 @@ def save(path, data):
 
 
 def get_json(path, timeout=90):
-    r = requests.get(f'{SITE}/api/fuentes/{path}', timeout=timeout)
-    r.raise_for_status()
-    return r.json()
+    return check(HTTP.get(f'{SITE}/api/fuentes/{path}', timeout=timeout)).json()
 
 
 def unwrap(j):
@@ -82,14 +83,13 @@ def enso():
 
 
 def newsletter(nombre):
-    r = requests.get(f'{SITE}/api/fuentes/newsletter-temas',
-                     params={'temas': ','.join(TEMAS), 'nombre': nombre, 'lat': LAT, 'lon': LON}, timeout=180)
-    r.raise_for_status()
+    r = check(HTTP.get(f'{SITE}/api/fuentes/newsletter-temas',
+                       params={'temas': ','.join(TEMAS), 'nombre': nombre, 'lat': LAT, 'lon': LON}, timeout=180), expect='html')
     return r.text
 
 
 def pdf_snapshot():
-    r = requests.post(f'{SITE}/api/fuentes/informe-temas',
+    r = HTTP.post(f'{SITE}/api/fuentes/informe-temas',
                       json={'temas': TEMAS, 'nombre': 'El Niño y crecidas', 'lat': LAT, 'lon': LON}, timeout=180)
     return r.content if r.ok and r.content[:5] == b'%PDF-' else None
 

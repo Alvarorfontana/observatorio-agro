@@ -20,8 +20,8 @@ function useApi(url: string) {
     const timer = setTimeout(() => controller.abort(), 45000);
     fetch(url, { signal: controller.signal, headers: { Accept: "application/json" } })
       .then(async r => {
-        if (!r.ok) throw new Error(`API DOTS: HTTP ${r.status}`);
-        const j = await r.json();
+        const j = await r.json().catch(() => null);
+        if (!r.ok || !j) throw new Error(j?.error || `API DOTS: HTTP ${r.status}`);
         if (j.status !== "recibido" || !j.data)
           throw new Error(j.error || `Fuente sin información (estado: ${j.status || "desconocido"})`);
         return j.data as D;
@@ -34,14 +34,14 @@ function useApi(url: string) {
       .finally(() => clearTimeout(timer));
     return () => { clearTimeout(timer); controller.abort(); };
   }, [url, retry]);
-  return { ...s, retry: () => setRetry(n => n + 1) };
+  return { ...s, loading: s === null, retry: () => setRetry(n => n + 1) };
 }
 
-function Block({ tag, title, s, children, src }: { tag: string; title: string; s: { d?: D; err?: string; retry?: () => void }; children: (d: D) => React.ReactNode; src: string }) {
+function Block({ tag, title, s, children, src }: { tag: string; title: string; s: { d?: D; err?: string; loading?: boolean; retry?: () => void }; children: (d: D) => React.ReactNode; src: string }) {
   return <section className="bv-block">
     <span className="section-tag">{tag}</span>
     <h3>{title}</h3>
-    {!s ? <p className="small">Consultando…</p> : s.d ? children(s.d) : <p className="nn-warn">Sin dato: {s.err} {s.retry && <button type="button" onClick={s.retry}>Reintentar conexión</button>}</p>}
+    {!s || s.loading ? <p className="small">Consultando…</p> : s.d ? children(s.d) : <p className="nn-warn">Sin dato: {s.err || "la fuente no respondió."} {s.retry && <button type="button" onClick={s.retry}>Reintentar conexión</button>}</p>}
     <p className="bv-src">{src}</p>
   </section>;
 }

@@ -3517,4 +3517,20 @@ function App(){
   if(path==="/acceso")return <Access onDemo={openDemo}/>;
   return <Home onDemo={openDemo}/>;
 }
-createRoot(document.getElementById("root")!).render(<App />);
+// Si un módulo falla al dibujarse (o un despliegue nuevo deja viejo un archivo cargado a demanda),
+// se muestra un aviso con opción de recargar en lugar de dejar la página en blanco.
+class RootBoundary extends React.Component<{children:React.ReactNode},{err:Error|null}>{
+  state={err:null as Error|null};
+  static getDerivedStateFromError(err:Error){return {err}}
+  componentDidCatch(err:Error){console.error("[DOTS] error de interfaz:",err)}
+  render(){
+    if(!this.state.err)return this.props.children;
+    const chunk=/dynamically imported module|Loading chunk|Importing a module script failed/i.test(this.state.err.message);
+    return <main style={{maxWidth:640,margin:"80px auto",padding:"0 16px",fontFamily:"IBM Plex Sans, sans-serif"}}>
+      <h1>No se pudo mostrar esta sección</h1>
+      <p>{chunk?"El sitio se actualizó mientras navegabas. Recargá la página para usar la versión nueva.":"Ocurrió un error al dibujar la página. Recargala; si sigue pasando, avisanos desde Contacto."}</p>
+      <p><button type="button" onClick={()=>location.reload()}>Recargar</button> <a href="/">Volver al inicio</a></p>
+    </main>;
+  }
+}
+createRoot(document.getElementById("root")!).render(<RootBoundary><App /></RootBoundary>);

@@ -6,8 +6,8 @@ export function FloodLiveSources({lat,lon,polygon}:{lat:number;lon:number;polygo
  useEffect(()=>{
   if(!Number.isFinite(lat)||!Number.isFinite(lon))return;
   const ctrl=new AbortController();setLoading(true);setError("");setData(null);
-  fetch("/api/pronostico-crecidas?"+new URLSearchParams({lat:String(lat),lon:String(lon)}),{signal:ctrl.signal})
-   .then(async r=>{const j=await r.json();if(!r.ok)throw Error(j.error||"Pronóstico no disponible");return j as Forecast})
+  fetch("/api/fuentes/pronostico-crecidas?"+new URLSearchParams({lat:String(lat),lon:String(lon)}),{signal:ctrl.signal})
+   .then(async r=>{const j=await r.json().catch(()=>null);if(!r.ok||!j)throw Error(j?.error||`Pronóstico no disponible (HTTP ${r.status})`);return j as Forecast})
    .then(j=>{if(!ctrl.signal.aborted)setData(j)})
    .catch(e=>{if(!ctrl.signal.aborted)setError(e instanceof Error?e.message:"Error de conexión")})
    .finally(()=>{if(!ctrl.signal.aborted)setLoading(false)});

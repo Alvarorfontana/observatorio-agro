@@ -3,11 +3,15 @@ y muestra código, tiempo y error. Sale con código 1 si alguna ruta falla del l
 import json, os, sys, time
 import requests
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))   # dots_http vive al lado
+import dots_http
+
 BASE = (sys.argv[1] if len(sys.argv) > 1 else 'https://observatorio-agro.vercel.app').rstrip('/')
 LOT = [[-28.56, -58.71], [-28.56, -58.69], [-28.54, -58.69], [-28.54, -58.71]]
 LAT, LON = -28.55, -58.70
 Q = {'lat': LAT, 'lon': LON, 'polygon': json.dumps(LOT)}
-S = requests.Session(); S.headers['User-Agent'] = 'DOTS-chequeo-vivo/1.0'
+S = dots_http.session(); S.headers['User-Agent'] = 'DOTS-chequeo-vivo/1.0'
+dots_http.SITE = BASE
 
 GET = ['variables', 'modelos', 'historico', 'escenas', 'rios', 'aire', 'elevacion', 'ndvi', 'ndvi-modis', 'indices',
        'enso-cadena', 'enso-lote', 'enso-tablero', 'enso-sudamerica', 'mapbiomas', 'pasto-historia', 'cobertura-reciente', 'cambios-lote', 'ndvi-anomalia', 'etr-lote', 'heladas-satelite', 'focos', 'rinde-agua', 'salud-sudamerica', 'avisos', 'caminos', 'emergencia', 'estacional', 'precios-hacienda', 'indices-espectrales', 'radar-agua', 'humedad-sar', 'nivel-rio', 'balance-agua', 'sentinel-hub-ndvi', 'openeo-ndvi', 'gee-ndvi', 'gee', 'teleconexiones', 'estadistica', 'enso', 'suelo', 'serie', 'proyeccion', 'sustentabilidad', 'plataformas',
@@ -43,11 +47,22 @@ def show(name, r, t0, extra=''):
     err = js.get('error') if isinstance(js, dict) else None
     st = js.get('status') if isinstance(js, dict) else None
     out(f"{r.status_code:>3}  {ms:>6} ms  {name:<16} {kind:<22} {st or '':<22} {(str(err) if err else '')[:110]}{extra}")
+    if not name.startswith('/') and kind == 'text/html':
+        return 598   # la API respondió una página web: ruta inexistente o login de Vercel
     return r.status_code
 
 
 codes = {}
 print(f'Chequeo en vivo de {BASE}\n')
+# Antes de recorrer todo: si la API devuelve el login de Vercel, nada de lo que sigue es real.
+_h = S.get(f'{BASE}/api/health', timeout=30)
+if dots_http.protegido(_h) or 'json' not in _h.headers.get('Content-Type', ''):
+    msg = (f'La API de {BASE} no es pública: /api/health respondió {_h.status_code} '
+           f"{_h.headers.get('Content-Type', '')} desde {_h.url}. Revisá Deployment Protection en Vercel "
+           'o cargá VERCEL_AUTOMATION_BYPASS_SECRET.')
+    print(msg)
+    if os.environ.get('GITHUB_ACTIONS'): print(f'::error title=Sitio protegido::{msg}')
+    sys.exit(1)
 for name in GET:
     t0 = time.monotonic()
     try:
