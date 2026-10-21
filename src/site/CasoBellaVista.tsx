@@ -37,11 +37,11 @@ function useApi(url: string) {
   return { ...s, retry: () => setRetry(n => n + 1) };
 }
 
-function Block({ tag, title, s, children, src }: { tag: string; title: string; s: { d?: D; err?: string; retry: () => void }; children: (d: D) => React.ReactNode; src: string }) {
+function Block({ tag, title, s, children, src }: { tag: string; title: string; s: { d?: D; err?: string; retry?: () => void }; children: (d: D) => React.ReactNode; src: string }) {
   return <section className="bv-block">
     <span className="section-tag">{tag}</span>
     <h3>{title}</h3>
-    {!s ? <p className="small">Consultando…</p> : s.d ? children(s.d) : <p className="nn-warn">Sin dato: {s.err} <button type="button" onClick={s.retry}>Reintentar conexión</button></p>}
+    {!s ? <p className="small">Consultando…</p> : s.d ? children(s.d) : <p className="nn-warn">Sin dato: {s.err} {s.retry && <button type="button" onClick={s.retry}>Reintentar conexión</button>}</p>}
     <p className="bv-src">{src}</p>
   </section>;
 }
