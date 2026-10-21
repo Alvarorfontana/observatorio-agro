@@ -144,7 +144,11 @@ def water_balance(lat, lon):
     env = c.external(ARCHIVE, {'latitude': lat, 'longitude': lon, 'start_date': '1991-01-01', 'end_date': end.isoformat(),
                                'daily': 'precipitation_sum,et0_fao_evapotranspiration', 'models': 'era5', 'timezone': 'UTC'},
                      scope='balance de agua y sequía (ERA5)', organism='Copernicus ERA5 vía Open-Meteo')
-    data = analyze_series((env['data'] or {}).get('daily') or {})
+    daily = (env.get('data') or {}).get('daily') or {}
+    if not daily.get('time') or not daily.get('precipitation_sum') or not daily.get('et0_fao_evapotranspiration'):
+        pool.shutdown(wait=False)
+        return c.envelope(None, ARCHIVE, 'balance de agua y sequía desde 1991', 'Copernicus ERA5 vía Open-Meteo', 'sin dato', env.get('error') or 'ERA5 no entregó una serie diaria completa de lluvia y evapotranspiración')
+    data = analyze_series(daily)
     data.update(capability='ANALYSIS', method=__doc__.split('\n\n', 1)[1].strip())
     try:   # agua en el perfil (ERA5-Land): complemento, si falla el balance sale igual
         data['profile'] = prof.result(timeout=45)['data']
