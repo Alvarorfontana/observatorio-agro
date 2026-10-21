@@ -13,20 +13,35 @@ const sg = (v: unknown, d = 0) => v == null ? "—" : `${Number(v) > 0 ? "+" : "
 
 function useApi(url: string) {
   const [s, setS] = useState<{ d?: D; err?: string } | null>(null);
+  const [retry, setRetry] = useState(0);
   useEffect(() => {
-    let live = true;
-    fetch(url).then(r => r.json()).then(j => live && setS(j.status === "recibido" && j.data ? { d: j.data } : { err: j.error || "La fuente no devolvió datos." }))
-      .catch(() => live && setS({ err: "La fuente no respondió." }));
-    return () => { live = false };
-  }, [url]);
-  return s;
+    const controller = new AbortController();
+    setS(null);
+    const timer = setTimeout(() => controller.abort(), 45000);
+    fetch(url, { signal: controller.signal, headers: { Accept: "application/json" } })
+      .then(async r => {
+        if (!r.ok) throw new Error(`API DOTS: HTTP ${r.status}`);
+        const j = await r.json();
+        if (j.status !== "recibido" || !j.data)
+          throw new Error(j.error || `Fuente sin información (estado: ${j.status || "desconocido"})`);
+        return j.data as D;
+      })
+      .then(data => { if (!controller.signal.aborted) setS({ d: data }); })
+      .catch(e => {
+        if (controller.signal.aborted && e?.name !== "AbortError") return;
+        setS({ err: e?.name === "AbortError" ? "Tiempo de espera agotado (45 segundos)." : (e?.message || "No se pudo consultar la fuente.") });
+      })
+      .finally(() => clearTimeout(timer));
+    return () => { clearTimeout(timer); controller.abort(); };
+  }, [url, retry]);
+  return { ...s, retry: () => setRetry(n => n + 1) };
 }
 
-function Block({ tag, title, s, children, src }: { tag: string; title: string; s: { d?: D; err?: string } | null; children: (d: D) => React.ReactNode; src: string }) {
+function Block({ tag, title, s, children, src }: { tag: string; title: string; s: { d?: D; err?: string; retry: () => void }; children: (d: D) => React.ReactNode; src: string }) {
   return <section className="bv-block">
     <span className="section-tag">{tag}</span>
     <h3>{title}</h3>
-    {!s ? <p className="small">Consultando…</p> : s.d ? children(s.d) : <p className="nn-warn">Sin dato: {s.err}</p>}
+    {!s ? <p className="small">Consultando…</p> : s.d ? children(s.d) : <p className="nn-warn">Sin dato: {s.err} <button type="button" onClick={s.retry}>Reintentar conexión</button></p>}
     <p className="bv-src">{src}</p>
   </section>;
 }
