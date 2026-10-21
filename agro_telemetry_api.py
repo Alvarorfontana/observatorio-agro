@@ -9,10 +9,10 @@ import requests
 agro_telemetry_api = Blueprint("agro_telemetry_api", __name__)
 ENDPOINT = "https://archive-api.open-meteo.com/v1/archive"
 VARIABLES = (
-    "temperature_2m", "relative_humidity_2m", "precipitation",
+    "temperature_2m_mean", "relative_humidity_2m_mean", "precipitation_sum",
     "et0_fao_evapotranspiration", "shortwave_radiation_sum",
-    "wind_speed_10m_max", "soil_moisture_0_to_7cm",
-    "soil_moisture_7_to_28cm",
+    "wind_speed_10m_max", "soil_moisture_0_to_7cm_mean",
+    "soil_moisture_7_to_28cm_mean",
 )
 
 @agro_telemetry_api.get("/api/agro/telemetria")
