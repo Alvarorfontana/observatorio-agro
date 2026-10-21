@@ -2807,9 +2807,18 @@ const MODULES:[string,string,string,any,{mide:string;fuente:string;como:string;l
   como:"El documento se compone con Typst, un motor de diseño editorial abierto, con tipografía IBM Plex. Cada fuente figura con su estado y hora de consulta.",
   limite:"El informe ordena evidencia; no reemplaza la recorrida ni el criterio profesional."}],
 ];
+const MODULE_ACTIONS:Record<string,{url:string;label:string;guide:string}> = {
+  lotes:{url:"/observatorio",label:"Abrir mapa y delimitar lote",guide:"Ingresá al mapa, buscá tu establecimiento o introducí las coordenadas y dibujá el perímetro. Una vez cerrado el lote, podés consultar superficie, forma y variables territoriales."},
+  ndvi:{url:"/agricultura-precision",label:"Consultar NDVI histórico del lote",guide:"Dibujá un polígono o utilizá el lote de ejemplo, seleccioná los años de consulta y solicitá la serie NDVI. Si la fuente está disponible, podrás revisar las observaciones y exportarlas."},
+  clima:{url:"/observatorio",label:"Consultar clima del establecimiento",guide:"Seleccioná un punto o una parcela en el observatorio, elegí el período y revisá lluvia, temperatura e índices agroclimáticos. Los resultados dependen de la cobertura de cada fuente."},
+  enso:{url:"/el-nino",label:"Abrir análisis de El Niño",guide:"Consultá las condiciones regionales y las teleconexiones climáticas. Para explorar escenarios, ingresá después al simulador ambiental desde el menú principal."},
+  agua:{url:"/observatorio",label:"Analizar agua y suelo",guide:"Delimitá el área de estudio y consultá los indicadores hídricos y edáficos disponibles. Contrastá la fecha, resolución y alcance de cada fuente antes de interpretar el resultado."},
+  riesgos:{url:"/alertas",label:"Consultar alertas y riesgos",guide:"Abrí las alertas hidrológicas y seleccioná la zona de interés. Para mapas de inundación y exposición poblacional, utilizá también Radar Sentinel-1 y Población y riesgo."},
+  informe:{url:"/observatorio",label:"Generar informe territorial PDF",guide:"Elegí un punto o dibujá un lote, ejecutá las consultas necesarias y seleccioná las secciones del informe. Descargá el PDF sólo después de comprobar los resultados y sus fuentes."}
+};
 function Modules({onDemo}:{onDemo:()=>void}){
   return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner modules-page">
-    <PageHero eyebrow="MÓDULOS" title="Qué hace DOTS, por dentro." lead="Cada módulo explica qué mide, de dónde sale el dato, cómo se calcula y qué no puede afirmar. Así se lee un informe DOTS."/>
+    <PageHero eyebrow="MÓDULOS" title="Qué hace DOTS, por dentro." lead="Explorá cada herramienta, conocé las variables que utiliza, sus fuentes, métodos y limitaciones. Desde cada módulo podés ir directamente a la página donde se realiza la consulta y, cuando corresponda, generar informes."/>
     <nav className="module-index">{MODULES.map(([id,t,,Icon])=><a key={id} href={"#"+id}><Icon/>{t}</a>)}</nav>
     {MODULES.map(([id,t,lead,Icon,x],i)=><section className="module-block" id={id} key={id}>
       <div className="module-head"><span className="module-num">{String(i+1).padStart(2,"0")}</span><div className="module-icon"><Icon/></div><div><h2>{t}</h2><p>{lead}</p></div></div>
@@ -2819,6 +2828,7 @@ function Modules({onDemo}:{onDemo:()=>void}){
         <article><span>Cómo se calcula</span><p>{x.como}</p></article>
         <article className="limit"><span>Qué no afirma</span><p>{x.limite}</p></article>
       </div>
+      <div className="module-action"><h3>Cómo utilizar este módulo</h3><p>{MODULE_ACTIONS[id]?.guide}</p><a className="module-action-link" href={MODULE_ACTIONS[id]?.url||"/observatorio"}>{MODULE_ACTIONS[id]?.label||"Abrir herramienta"} →</a></div>
     </section>)}
     <section className="demo-call"><div><span className="section-tag">PROBALO</span><h2>Dibujá un lote y mirá cada módulo funcionando.</h2><p>Los datos son reales y se consultan en el momento. Si una fuente no responde, DOTS lo dice.</p></div><button onClick={onDemo}>Abrir Observatorio →</button></section>
   </main><SiteFooter/></div>;
