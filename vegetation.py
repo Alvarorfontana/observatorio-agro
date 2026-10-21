@@ -302,9 +302,20 @@ def ndvi_modis(polygon, days=120):
         return c._get(ORNL_MODIS, {'latitude': round(lat, 5), 'longitude': round(lon, 5), 'band': '250m_16_days_NDVI',
                                    'startDate': f'A{a.year}{a.timetuple().tm_yday:03d}', 'endDate': f'A{b.year}{b.timetuple().tm_yday:03d}',
                                    'kmAboveBelow': k, 'kmLeftRight': k}, headers={'Accept': 'application/json'}, timeout=40).json()
-    with ThreadPoolExecutor(max_workers=4) as pool:
-        partes = list(pool.map(pedir, tramos))
-    js = partes[0] if partes else {}
+    # Una ventana fallida de NASA no debe descartar los demás compuestos válidos.
+    partes = []
+    with ThreadPoolExecutor(max_workers=3) as pool:
+        futures = [pool.submit(pedir, tramo) for tramo in tramos]
+        for future in futures:
+            try:
+                parte = future.result()
+                if isinstance(parte, dict) and isinstance(parte.get('subset'), list):
+                    partes.append(parte)
+            except Exception:
+                continue
+    if not partes:
+        return c.envelope({'capability': 'ANALYSIS', 'index': 'NDVI', 'sensor': 'MODIS Terra MOD13Q1', 'series': [], 'valid_scenes': 0}, ORNL_MODIS, 'NDVI MODIS por lote', 'NASA ORNL DAAC · MODIS', 'sin dato', 'NASA ORNL DAAC no respondió con compuestos válidos en ninguna ventana')
+    js = partes[0]
     scale = float(js.get('scale') or 0.0001)
     rows, vistos = [], set()
     for sub in [x for p in partes for x in (p.get('subset') or [])]:
