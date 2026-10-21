@@ -94,13 +94,8 @@
   ],
   "git": {
     "deploymentEnabled": {
-      "diag-*": false,
-      "capturas": false,
-      "datos": false,
-      "dependabot/**": false,
-      "rayos": false,
-      "suelos": false,
-      "feature/dots-integracion-total-20261021": false
+      "main": true,
+      "**": false
     }
   }
 }
