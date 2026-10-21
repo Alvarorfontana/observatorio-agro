@@ -9,6 +9,7 @@ export function EnsoHistoricalLab(){
  const segments:string[]=[];let current="";
  for(const p of coords){if(p){current+=(current?" L":"M")+p.x.toFixed(1)+" "+p.y.toFixed(1)}else if(current){segments.push(current);current=""}}if(current)segments.push(current);
  const hov=data?.hovmoller,hmStep=Math.max(1,Math.ceil((data?.months.length||1)/180));
+ function downloadCsv(){if(!data)return;const rows=["mes,region,anomalia_sst_c",...data.months.map((m,i)=>[m,region,data.indices[region]?.[i]??""].join(","))];const url=URL.createObjectURL(new Blob([rows.join("\\n")],{type:"text/csv;charset=utf-8"}));const a=document.createElement("a");a.href=url;a.download="dots-enso-"+region+".csv";a.click();URL.revokeObjectURL(url)}
  return <section aria-label="Laboratorio ENSO histórico" style={{marginTop:20,padding:14,background:"#153441",borderRadius:10,color:"#f1f7fa"}}>
  <h3>Laboratorio histórico ENSO · ERSST v5</h3>
  <p>Temperatura superficial del mar, anomalías mensuales, regiones Niño, Hovmöller ecuatorial y mapas anuales del Pacífico tropical. Base climatológica 1991–2020.</p>
@@ -20,6 +21,7 @@ export function EnsoHistoricalLab(){
  {segments.map((s,i)=><path key={i} d={s} stroke="#ffce77" strokeWidth="2" fill="none"/>)}
  <text x="40" y="132" fontSize="13" fill="#fff">{data.months[0]}</text><text x="675" y="132" fontSize="13" fill="#fff">{data.months[data.months.length-1]}</text></svg>
  <p style={{fontSize:13}}>La curva muestra cuánto se aparta la temperatura superficial del mar del promedio del mismo mes en 1991–2020. Valores positivos indican calentamiento y negativos enfriamiento. Una anomalía aislada no determina por sí sola un episodio ENSO.</p>
+ <button type="button" onClick={downloadCsv} style={{padding:"7px 12px",marginTop:8,cursor:"pointer"}}>Exportar serie SST a CSV</button>
  <h4>Hovmöller · anomalía SST ecuatorial (5°S–5°N)</h4>
  <div style={{overflowX:"auto"}}><svg viewBox="0 0 800 350" role="img" aria-label="Diagrama Hovmöller de anomalías mensuales por longitud" style={{width:"100%",minWidth:400,background:"#092632"}}>
  {(hov?.values||[]).filter((_,i)=>i%hmStep===0).map((row,i)=>row.map((v,j)=><rect key={i+"-"+j} x={35+j*735/Math.max(1,hov!.lon.length)} y={12+i*315/Math.max(1,Math.ceil(hov!.values.length/hmStep))} width={735/Math.max(1,hov!.lon.length)+0.2} height={315/Math.max(1,Math.ceil(hov!.values.length/hmStep))+0.2} fill={palette(v)}/>))}
