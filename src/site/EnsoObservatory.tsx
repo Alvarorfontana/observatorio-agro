@@ -1,3 +1,4 @@
+import {EnsoHistoricalLab} from "./EnsoHistoricalLab";
 import {useEffect,useMemo,useState} from "react";
 import {ENSO_SOURCES} from "../lib/ensoSourceRegistry";
 type Point={month:string;season:string;anomalyC:number};
@@ -80,6 +81,7 @@ export function EnsoObservatory(){
  <p style={{fontSize:12,color:"#c6dbe5"}}>El ONI resume anomalías de temperatura superficial en Niño 3.4 mediante trimestres superpuestos. Los cambios consecutivos no son observaciones independientes. Para el diagnóstico completo contrastá SOI, vientos alisios, OLR, temperatura subsuperficial y pronósticos IRI.</p>
  </section>
  <TeleconnectionsPanel/>
+ <EnsoHistoricalLab/>
  <h3>Diagnóstico oceánico y atmosférico · productos NOAA CPC</h3>
  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,290px),1fr))",gap:12}}>{panels.map(p=><figure key={p.title} style={{margin:0,background:"#fff",color:"#172d38",padding:10,borderRadius:9}}><img src={p.src} alt={p.desc} loading="lazy" style={{width:"100%",height:"auto"}}/><figcaption><strong>{p.title}</strong><div style={{fontSize:12}}>{p.desc}</div><a href={p.src} target="_blank" rel="noreferrer">Ver figura oficial y fecha</a></figcaption></figure>)}</div>
  <h3>Catálogo de variables y productos verificables</h3>
