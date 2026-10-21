@@ -2656,16 +2656,12 @@ function SiteLink({to,children,className=""}:{to:string;children:React.ReactNode
   return <a href={to} className={className} onClick={(e)=>{e.preventDefault();history.pushState({},"",to);window.dispatchEvent(new PopStateEvent("popstate"));window.scrollTo({top:0,behavior:"smooth"});}}>{children}</a>
 }
 function Brand(){return <SiteLink to="/" className="site-brand"><img className="brand-logo" src="/dots-logo.svg" alt="DOTS Campo"/><span><b>DOTS <em>CAMPO</em></b><small>DATOS · OBSERVACIÓN · TERRITORIO · SATÉLITE</small></span></SiteLink>}
-function PublicHeader({onDemo}:{onDemo:()=>void}){return <header className="site-header"><Brand/><nav>
-  <SiteLink to="/que-es-dots">Qué es DOTS</SiteLink>
-  <SiteLink to="/el-nino" className="nav-highlight">Mi región</SiteLink>
-  <SiteLink to="/observatorio" className="nav-highlight">Mapa principal</SiteLink>
-  <SiteLink to="/simulador-ambiental" className="nav-highlight">Simulador ambiental</SiteLink>
-  <SiteLink to="/focos">Fuego y heladas</SiteLink>
-  <a href="/agricultura-precision" className="nav-highlight">Agricultura de precisión</a>
-  <a href="/radar" className="nav-highlight">Radar Sentinel-1</a>
-  <SiteLink to="/libre-deforestacion">Vender a Europa</SiteLink>
-  <SiteLink to="/caso-bella-vista">Ejemplo</SiteLink>
+function PublicHeader({onDemo}:{onDemo:()=>void}){return <header className="site-header"><Brand/><nav aria-label="Navegación principal">
+  <SiteLink to="/" className="nav-highlight">Inicio</SiteLink>
+  <SiteLink to="/observatorio">Observatorio</SiteLink>
+  <SiteLink to="/simulador-ambiental">Simulador</SiteLink>
+  <SiteLink to="/el-nino">Clima y agua</SiteLink>
+  <SiteLink to="/modulos">Informes</SiteLink>
   <details className="nav-more"><summary>Más módulos</summary><div aria-label="Módulos DOTS ordenados por función">
     <strong>01 · Observatorio y producción</strong>
     <SiteLink to="/observatorio">Mapa principal · parcelas e informes</SiteLink><SiteLink to="/cultivos">Cultivos y rendimiento</SiteLink><SiteLink to="/agricultura-precision">Agricultura de precisión</SiteLink>
@@ -2719,7 +2715,7 @@ function HomeLead({onDemo}:{onDemo:()=>void}){
         <span className="hl-kicker">Observatorio agroclimático abierto · Argentina y Sudamérica</span>
         <h1>El campo, leído desde el satélite y contado para todos.</h1>
         <p>DOTS junta satélites y fuentes oficiales para responder tres preguntas: cómo está mi campo, qué pasa en mi región y de qué tengo que cuidarme esta semana. Cada número dice de dónde viene, cuándo se midió y a qué escala. Gratis.</p>
-        <div className="hl-actions"><button onClick={onDemo}>Analizar mi campo</button><SiteLink to="/caso-bella-vista">Ver un ejemplo real</SiteLink></div>
+        <div className="hl-actions"><button onClick={onDemo}>Analizar mi campo</button><SiteLink to="/caso-bella-vista">Ver un ejemplo real</SiteLink></div><div style={{position:"relative",marginTop:22,borderRadius:16,overflow:"hidden",boxShadow:"0 16px 36px rgba(8,30,36,.18)",minHeight:230}}><img src="/dots-hero.jpg" alt="Imagen satelital de parcelas agrícolas: vista territorial utilizada en DOTS" loading="eager" style={{display:"block",width:"100%",height:290,objectFit:"cover"}}/><div style={{position:"absolute",bottom:0,left:0,right:0,padding:"20px 18px 14px",background:"linear-gradient(transparent,rgba(4,23,30,.88))",color:"#fff"}}><b style={{display:"block",fontSize:16}}>El territorio es el punto de partida</b><span style={{fontSize:13}}>Parcelas · imágenes satelitales · capas de análisis</span></div></div>
       </div>
       <aside className="hl-now" aria-label="Ahora en la región">
         <h2>Ahora en la región</h2>
@@ -2742,7 +2738,7 @@ function HomeLead({onDemo}:{onDemo:()=>void}){
 function Home({onDemo}:{onDemo:()=>void}){return <div className="public-site"><PublicHeader onDemo={onDemo}/><main>
  <HomeLead onDemo={onDemo}/>
  <SourceStrip/>
- <section className="hl-case"><div><span className="section-tag">EJEMPLO REAL</span><h2>Un campo de Bella Vista, Corrientes, leído de punta a punta.</h2><p>Sequía y agua en el suelo, El Niño, el río Paraná, el verdor contra 25 años, la historia del suelo desde 1985, heladas por satélite y cambios recientes, sobre el mismo perímetro y con datos de hoy. Así se ve un informe de DOTS antes de dibujar tu propio campo.</p></div><SiteLink to="/caso-bella-vista" className="hl-cta">Ver el caso Bella Vista →</SiteLink></section>
+ <section className="hl-case"><div><img src="/dots-hero.jpg" loading="lazy" alt="Vista de parcelas agrícolas para ilustrar el análisis territorial de Bella Vista" style={{width:"100%",height:210,objectFit:"cover",borderRadius:12,marginBottom:18}}/><span className="section-tag">EJEMPLO REAL</span><h2>Un campo de Bella Vista, Corrientes, leído de punta a punta.</h2><p>Sequía y agua en el suelo, El Niño, el río Paraná, el verdor contra 25 años, la historia del suelo desde 1985, heladas por satélite y cambios recientes, sobre el mismo perímetro y con datos de hoy. Así se ve un informe de DOTS antes de dibujar tu propio campo.</p></div><SiteLink to="/caso-bella-vista" className="hl-cta">Ver el caso Bella Vista →</SiteLink></section>
  <section className="journey"><article><b>01</b><h3>Delimitá</h3><p>Triángulo, rectángulo o polígono libre. Superficie, perímetro y centroide.</p></article><article><b>02</b><h3>Observá</h3><p>Escenas, clima, agua, suelo, vegetación y riesgos sobre el mismo territorio.</p></article><article><b>03</b><h3>Compará</h3><p>Fechas, modelos y fuentes sin perder procedencia ni calidad.</p></article><article><b>04</b><h3>Decidí</h3><p>Hallazgos, alertas, tareas e Informe Territorial DOTS unificado.</p></article></section>
  <section className="layers-teaser"><div><span className="section-tag">CAPAS DEL MAPA</span><h2>{OPEN_LAYERS.length + DOTS_LAYERS.length} capas abiertas sobre tu lote.</h2><p>Bosque, agua, anegamiento, imagen satelital diaria, rutas y vías, más lo que DOTS calcula para cada lote. Superponelas para ver lo que ninguna muestra sola.</p></div><SiteLink to="/capas" className="layers-btn big">Ver qué es una capa y para qué sirve →</SiteLink></section><section className="eudr-feature"><div><span className="section-tag">NUEVO · UNIÓN EUROPEA</span><h2>Libre de deforestación, verificado por satélite.</h2><p>Desde el 30/12/2026 la carne, la soja y la madera que se exporten a Europa deben probar que no vienen de tierras deforestadas después de 2020. DOTS lo verifica lote por lote y entrega el informe y la geolocalización listos para la debida diligencia, con el carbono del suelo y las emisiones del rodeo.</p><div className="cover-actions"><SiteLink to="/libre-deforestacion">Cómo funciona →</SiteLink><button onClick={onDemo}>Verificar un lote</button></div></div><ul><li><b>2017–2023</b>cobertura anual a 10 m</li><li><b>2 fuentes</b>Impact Observatory y ESA</li><li><b>6 decimales</b>polígono GeoJSON</li><li><b>t C/ha</b>carbono del suelo</li></ul></section>
  <section className="field-story"><div className="field-visual"><img src="/dots-hero.jpg" alt="Lotes de un establecimiento con índice de vegetación por sector"/></div><div><span className="section-tag">GEMELO DIGITAL GANADERO</span><h2>Cada potrero tiene contexto.</h2><p>Límites, pasturas, agua, infraestructura, ganado, clima, suelo, satélite, riesgos e historial se leen juntos. El mapa permanece como centro operativo mientras cambian las capas de análisis.</p><button onClick={onDemo}>Explorar el Observatorio</button></div></section>
