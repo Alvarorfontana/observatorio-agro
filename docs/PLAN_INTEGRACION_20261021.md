@@ -1,27 +1,21 @@
-# Integración DOTS — 21 de octubre de 2026
+# DOTS — Integración única sin Vercel
 
-Rama de trabajo: `feature/dots-integracion-total-20261021`. Base: `main`.
+Rama: `feature/dots-integracion-total-20261021`. No usar Vercel, no desplegar, no publicar cambios parciales. Mantener `main` intacta durante el trabajo.
 
-## Objetivo
-Consolidar y verificar módulos pendientes antes de un único merge a producción. No desplegar ni mezclar ramas sin comprobar compatibilidad.
+## Alcance completo
+1. Mapa geoespacial interactivo: capas, parcelas, búsqueda, controles, leyendas y gráficos.
+2. Inundaciones y población: 34 localidades ribereñas, radio de 15 km, cotas, exposición y datos con procedencia verificable.
+3. Radar Sentinel-1, MODIS, GloFAS y detección de cambios con fechas y límites metodológicos.
+4. Clima y ENSO, series históricas y registros térmicos con fuentes.
+5. Agricultura de precisión: Sentinel, índices de vegetación, análisis de lotes y fuentes INPE/STAC.
+6. Informes PDF, gráficos, exportaciones y respuestas de error.
+7. API Flask/Python, frontend React/Vite, rutas, dependencias, pruebas y documentación.
 
-## Módulos a auditar e integrar
-- Mapa interactivo: capas, parcelas, radar, leyendas y gráficos.
-- Crecidas: 34 localidades, población expuesta, cotas y radio de 15 km.
-- Clima: ENSO, series históricas, pronósticos y fuentes.
-- Agricultura: Sentinel, índices de vegetación, focos térmicos y análisis de lotes.
-- Informes: PDF, gráficos, metadatos, fuentes y límites de datos.
-- Infraestructura: Flask/Python, rutas API, dependencias, variables de entorno y despliegue.
-- Cobertura geográfica internacional, con datos reales disponibles por región.
+## Criterios de trabajo
+- Consolidar código por archivo, comparando implementaciones anteriores sin fusiones indiscriminadas.
+- No presentar datos simulados como mediciones.
+- Evitar servicios de publicación y despliegue; realizar pruebas locales o CI en GitHub cuando estén disponibles.
+- Entregar una sola rama consolidada y un resumen de pruebas, limitaciones y pendientes reales.
+- No fusionar con `main` sin revisión final.
 
-## Ramas candidatas (no fusionadas todavía)
-`feature/dots-cierre-integraciones-20261019`, `feature/dots-radar-pronostico-informes`, `feature/gee-agricultura-precision`, `feature/radar-informes-graficos`, `feature/sentinel-1-scene-previews`, `integracion-clima-enso-v4`, `integracion-inpe-stac-gratuito`, `integracion-openfarm`, `modulo-evolucion-inundaciones`, `simulaciones-ambientales-base`, `suelos`, `rayos`.
-
-## Condiciones de cierre
-1. Revisar diferencias por rama y evitar sobrescrituras.
-2. Integrar solo código comprobado; no sustituir resultados reales por datos simulados sin identificarlos.
-3. Ejecutar pruebas API, compilación y navegación del mapa.
-4. Verificar generación de PDF y estados de error.
-5. Abrir PR hacia `main`; desplegar producción solo después de validación.
-
-Estado inicial: rama y plan creados. Integraciones funcionales y pruebas pendientes.
+Estado: alcance aprobado; integración de código y validación aún pendientes.
