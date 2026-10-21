@@ -28,6 +28,7 @@ export function EnsoAtmosphereLab(){
  {paths.map((p,i)=><path key={i} d={p} fill="none" stroke="#7bdbea" strokeWidth="2"/>)}
  <text x="40" y="194" fontSize="12" fill="#fff">{s.months[0]}</text>
  <text x="675" y="194" fontSize="12" fill="#fff">{s.months[s.months.length-1]}</text></svg>
+ <p style={{fontSize:13}}>Lectura científica: la línea horizontal indica anomalía cero frente a 1991–2020. OLR informa sobre radiación saliente y convección; u850, sobre viento zonal; u200−u850, sobre cizalladura vertical; Tahití−Darwin no es el SOI oficial; humedad del suelo es una estimación modelada, no una medición de campo. Las asociaciones con ENSO no prueban causalidad local.</p>
  <p>{finite.length} observaciones válidas · {s.months[0]} a {s.months[s.months.length-1]}</p></>:<p>No hay productos procesados disponibles.</p>}
  <p style={{fontSize:12}}>Estado de fuentes: {Object.entries(data.status).map(([k,v])=>k+": "+v).join(" · ")||"sin fuentes procesadas"}. Los archivos sin cobertura válida no se sustituyen por valores sintéticos.</p>
  <p style={{fontSize:12}}>{Object.entries(data.sources).map(([k,url],i)=><span key={k}>{i>0?" · ":""}<a href={url} target="_blank" rel="noreferrer" style={{color:"#a7e4ff"}}>{k.toUpperCase()} NOAA</a></span>)}</p>
