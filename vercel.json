@@ -99,7 +99,8 @@
       "datos": false,
       "dependabot/**": false,
       "rayos": false,
-      "suelos": false
+      "suelos": false,
+      "feature/dots-integracion-total-20261021": false
     }
   }
 }
