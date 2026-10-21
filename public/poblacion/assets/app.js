@@ -133,7 +133,7 @@ jsonFetch('/api/poblacion/datasets').then(data=>{for(const d of data.datasets.fi
 $('pdf').addEventListener('click',async()=>{if(!last)return;const b=$('pdf');b.disabled=true;const t=b.textContent;b.textContent='Generando PDF…';
   try{const r=await fetch('/api/poblacion/informe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(last)});
     if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.error||'No se pudo generar el PDF.');}
-    const url=URL.createObjectURL(await r.blob());const a=make('a','');a.href=url;a.download=`DOTS-poblacion-expuesta-${(last.event?.date||'')}.pdf`;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);}
+    const pdf=await r.blob();if(!pdf.size||!pdf.type.toLowerCase().includes('pdf'))throw new Error('El servidor no devolvió un archivo PDF válido.');const url=URL.createObjectURL(pdf);const a=make('a','');a.href=url;a.download=`DOTS-poblacion-expuesta-${(last.event?.date||'')}.pdf`;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),5000);}
   catch(e){status(e.message);}finally{b.textContent=t;b.disabled=false;}});
 
 // Personas cerca del río en las localidades de las alertas de crecidas
