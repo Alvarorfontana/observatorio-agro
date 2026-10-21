@@ -1,12 +1,12 @@
 import {useEffect,useState} from "react";
 import {DotsReportExport} from "./DotsReportExport";
 type Power={type:string;geometry:{coordinates:number[]};properties:{parameter:Record<string,Record<string,number>>}};
-const variables:Record<string,string>={T2M:"Temperatura a 2 m (°C)",PRECTOTCORR:"Precipitación corregida (mm/h)",RH2M:"Humedad relativa (%)",WS2M:"Viento a 2 m (m/s)",ALLSKY_SFC_SW_DWN:"Radiación solar (kWh/m²/día)"};
+const variables:Record<string,string>={T2M:"Temperatura a 2 m (°C)",PRECTOTCORR:"Precipitación corregida (mm/h)",RH2M:"Humedad relativa (%)",WS2M:"Velocidad del viento a 2 m (m/s)"};
 export function PowerObservationsPanel({lat:mapLat,lon:mapLon}:{lat:number;lon:number}){
  const [lat,setLat]=useState(String(mapLat)),[lon,setLon]=useState(String(mapLon)),[days,setDays]=useState("7"),[data,setData]=useState<Power|null>(null),[error,setError]=useState(""),[loading,setLoading]=useState(false),[selected,setSelected]=useState("T2M");
  async function load(){
   const latitude=Number(lat),longitude=Number(lon),count=Number(days);
-  if(!Number.isFinite(latitude)||!Number.isFinite(longitude)||Math.abs(latitude)>90||Math.abs(longitude)>180){setError("Coordenadas inválidas");return}
+  if(!lat.trim()||!lon.trim()||!Number.isFinite(latitude)||!Number.isFinite(longitude)||Math.abs(latitude)>90||Math.abs(longitude)>180){setError("Coordenadas inválidas");return}
   setLoading(true);setError("");setData(null);
   const end=new Date();end.setUTCDate(end.getUTCDate()-2);
   const start=new Date(end);start.setUTCDate(start.getUTCDate()-count+1);
