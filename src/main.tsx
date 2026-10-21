@@ -827,7 +827,10 @@ function Observatory({onHome}:{onHome:()=>void}) {
       const r = await fetch(`/api/fuentes/eudr/${kind}`, { method: "POST", headers: { "Content-Type": "application/json" }, signal: AbortSignal.timeout(58000),
         body: JSON.stringify({ lot: { ...lot, movements: movAll[herdKey] || [] }, establecimiento: estName, heads: herdHeads || null, sustentabilidad: (sources.sustentabilidad?.payload as any)?.data, readiness: eudrReady.current }) });
       if (!r.ok) { const j = await r.json().catch(() => ({})); throw Error(j.error || "No se pudo generar"); }
-      download(await r.blob(), kind === "pdf" ? "DOTS-libre-de-deforestacion.pdf" : "DOTS-lote-geolocalizacion.geojson");
+      const blob = await r.blob();
+      if (kind === "pdf" && (await blob.slice(0, 5).text()) !== "%PDF-") throw Error("El servidor no devolvió un PDF válido");
+      if (kind === "geojson" && !blob.size) throw Error("El servidor devolvió un GeoJSON vacío");
+      download(blob, kind === "pdf" ? "DOTS-libre-de-deforestacion.pdf" : "DOTS-lote-geolocalizacion.geojson");
     } catch (e) { notify((e as Error).message); } finally { setEudrBusy(false); }
   };
   useEffect(() => {
