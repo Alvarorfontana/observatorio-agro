@@ -31,11 +31,17 @@ def telemetria():
     except (KeyError, ValueError) as exc:
         return jsonify(error="Indicar lat/lon y período válidos", detail=str(exc)), 400
     try:
-        response = requests.get(ENDPOINT, params={
+        params = {
             "latitude": lat, "longitude": lon,
             "start_date": start.isoformat(), "end_date": end.isoformat(),
             "daily": ",".join(VARIABLES), "timezone": "auto",
-        }, timeout=25)
+        }
+        response = requests.get(ENDPOINT, params=params, timeout=25)
+        if response.status_code == 400:
+            # Algunas combinaciones de modelos/zonas no admiten humedad de suelo.
+            # Conservar las variables meteorológicas en vez de perder toda la consulta.
+            params["daily"] = ",".join(v for v in VARIABLES if not v.startswith("soil_moisture_"))
+            response = requests.get(ENDPOINT, params=params, timeout=25)
         response.raise_for_status()
         payload = response.json()
         if not isinstance(payload.get("daily"), dict) or not isinstance(payload["daily"].get("time"), list):
@@ -46,6 +52,8 @@ def telemetria():
             location={"lat": lat, "lon": lon},
             period={"start": start.isoformat(), "end": end.isoformat()},
             daily=payload["daily"], daily_units=payload.get("daily_units", {}),
+            requested_variables=params["daily"].split(","),
+            omitted_variables=[v for v in VARIABLES if v not in params["daily"].split(",")],
             limitations=["Cobertura y variables dependen del modelo y ubicación",
                          "ET0 no equivale a requerimiento de riego del cultivo",
                          "La humedad del suelo modelada no sustituye una sonda calibrada"],
