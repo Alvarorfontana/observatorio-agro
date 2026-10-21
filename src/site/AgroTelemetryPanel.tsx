@@ -8,6 +8,7 @@ type ResponseData = {
   daily:Record<string, Array<string|number|null>>;
   daily_units:Record<string,string>;
   limitations:string[];
+  omitted_variables?:string[];
 };
 const labels:Record<string,string>={
   temperature_2m_mean:"Temperatura media",
@@ -92,6 +93,7 @@ export function AgroTelemetryPanel({lat,lon}:{lat:number;lon:number}){
       </svg>
       <p>{valid.length} valores · {data.daily_units[selected]||"Unidad no informada"} · Último: {valid.length?valid[valid.length-1]:"Sin dato"}</p>
       </>:<p>No se recibieron series numéricas para este período.</p>}
+      {Boolean(data.omitted_variables?.length)&&<p role="status">La fuente no ofrece humedad del suelo para esta consulta; se muestran las variables meteorológicas disponibles.</p>}
       <p style={{fontSize:12}}>{data.data_kind}. {data.limitations.join(". ")}.</p>
     </>}
   </section>;
