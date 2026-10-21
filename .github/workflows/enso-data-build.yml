@@ -1,0 +1,64 @@
+name: ENSO NOAA - generar datos históricos (sin despliegue)
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/dots-integracion-total-20261021
+    paths:
+      - '.github/workflows/enso-data-build.yml'
+      - 'tools/build_enso_ersst.py'
+      - 'tests/test_enso_ersst.py'
+permissions:
+  contents: write
+jobs:
+  build-enso-data:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Dependencias científicas
+        run: python -m pip install numpy pandas xarray netCDF4 requests pytest
+      - name: Validar transformaciones
+        run: python -m pytest -q tests/test_enso_ersst.py tests/test_enso_atmosphere.py
+      - name: Obtener ERSST v5 oficial NOAA
+        run: |
+          mkdir -p /tmp/dots-enso public/data
+          curl --fail --location --retry 3 --connect-timeout 30 --max-time 600 \
+            'https://downloads.psl.noaa.gov/Datasets/noaa.ersst.v5/sst.mnmean.nc' \
+            --output /tmp/dots-enso/sst.mnmean.nc
+          test $(stat -c%s /tmp/dots-enso/sst.mnmean.nc) -gt 1000000
+      - name: Generar SST, regiones Niño, Hovmöller y mapas
+        run: python tools/build_enso_ersst.py --input /tmp/dots-enso/sst.mnmean.nc --output public/data/enso-ersst.json
+      - name: Comprobar integridad y procedencia
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("public/data/enso-ersst.json")
+          d=json.loads(p.read_text())
+          assert d["source"]=="NOAA ERSST v5"
+          assert len(d["months"])>=400
+          assert len(d["hovmoller"]["values"])==len(d["months"])
+          assert len(d["maps"]["months"])==len(d["maps"]["values"])
+          assert len(d["indices"]["nino34"])==len(d["months"])
+          print("Dataset NOAA verificado:",p.stat().st_size,"bytes",d["months"][0],d["months"][-1])
+          PY
+      - name: Incorporar datos NOAA verificados a la rama de integración
+        if: github.ref == 'refs/heads/feature/dots-integracion-total-20261021'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/data/enso-ersst.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'data(enso): actualizar observaciones NOAA ERSST v5'
+            git push origin HEAD:feature/dots-integracion-total-20261021
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dots-enso-ersst-historico
+          path: public/data/enso-ersst.json
+          retention-days: 30
+          if-no-files-found: error
