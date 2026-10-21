@@ -1300,3 +1300,11 @@ html, body { overflow-x: hidden; }
 @media(max-width:1100px){.dots-cover-modules{grid-template-columns:repeat(3,minmax(0,1fr))}.dots-module-photo{height:150px}.dots-cover-live{grid-template-columns:1fr}}
 @media(max-width:680px){.dots-cover-hero{grid-template-columns:1fr;padding:30px 18px}.dots-cover-location{max-width:420px}.dots-cover-pillars{gap:12px}.dots-cover-pillars svg{width:27px;height:27px;padding:7px}.dots-cover-modules{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;padding:10px}.dots-module-photo{height:110px}.dots-module-body{padding:9px}.dots-cover-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.dots-cover-bottom{grid-template-columns:1fr}.dots-cover-benefits{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:390px){.dots-cover-modules{grid-template-columns:1fr}.dots-module-photo{height:160px}}
+
+/* Acceso práctico desde el catálogo de módulos */
+.module-action{margin:18px 0 34px;padding:22px 26px;background:#e7f5f1;border:1px solid #a9d5c8;border-radius:14px;color:#102e31}
+.module-action h3{margin:0 0 8px;font-size:19px}
+.module-action p{margin:0 0 16px;line-height:1.7;max-width:960px}
+.module-action-link{display:inline-flex;align-items:center;min-height:44px;padding:11px 18px;border-radius:8px;background:#17674f;color:#fff!important;font-weight:750;text-decoration:none}
+.module-action-link:hover,.module-action-link:focus-visible{background:#0e4b3a;outline:2px solid #17674f;outline-offset:3px}
+@media(max-width:680px){.module-action{padding:18px 16px}.module-action-link{width:100%;justify-content:center;text-align:center}}
