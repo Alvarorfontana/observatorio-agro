@@ -70,7 +70,7 @@ export function CasoBellaVista() {
   const mb = useApi(`/api/fuentes/mapbiomas?polygon=${P}`);
   const dw = useApi(`/api/fuentes/cobertura-reciente?polygon=${P}`);
   const emb = useApi(`/api/fuentes/cambios-lote?polygon=${P}`);
-  const rio = useApi(`/api/fuentes/cuenca`);
+  const rio = useApi(`/api/fuentes/rio-bellavista`);
   return <div className="bv">
     <section className="bv-intro">
       <p>Un área rural de unas 1.600 hectáreas al este de Bella Vista, Corrientes, donde conviven citrus, forestación, ganadería y pastizal, a pocos kilómetros del río Paraná. No corresponde a un establecimiento en particular: es una muestra para ver qué arma DOTS sobre cualquier campo. Cada número se consulta en vivo y lleva su fuente; si una fuente no responde, aparece "sin dato".</p>
@@ -97,7 +97,7 @@ export function CasoBellaVista() {
         {d.impact?.reading && <p>{d.impact.reading}</p>}
         {Array.isArray(d.advice) && d.advice.length > 0 && <ul className="bv-list">{d.advice.slice(0, 3).map((a: any, i: number) => <li key={i}>{typeof a === "string" ? a : a.text || a.title}</li>)}</ul>}
       </>}</Block>
-      <Block tag="RÍO" title="El Paraná en Bella Vista" s={rio && rio.d ? { d: (rio.d.rivers?.stations || []).find((x: D) => x.id === "parana-bellavista") || undefined, err: "sin estación" } : rio} src="Copernicus GloFAS vía Open-Meteo · INA · normales 2005-2024">{d => <>
+      <Block tag="RÍO" title="El Paraná en Bella Vista" s={rio} src="Copernicus GloFAS vía Open-Meteo · INA · normales 2005-2024">{d => <>
         <div className="bv-tiles">
           <div><b>{nf(d.discharge)}</b><span>m³/s</span><small>caudal del {d.date ? `${d.date.slice(8, 10)}/${d.date.slice(5, 7)}` : "—"}</small></div>
           <div><b>{d.ratio != null ? `${nf(d.ratio * 100)} %` : "—"}</b><span>de lo normal</span><small>para la fecha</small></div>
