@@ -1,6 +1,13 @@
 name: ENSO NOAA - generar datos históricos (sin despliegue)
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - feature/dots-integracion-total-20261021
+    paths:
+      - '.github/workflows/enso-data-build.yml'
+      - 'tools/build_enso_ersst.py'
+      - 'tests/test_enso_ersst.py'
 permissions:
   contents: read
 jobs:
