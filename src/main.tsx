@@ -827,7 +827,10 @@ function Observatory({onHome}:{onHome:()=>void}) {
       const r = await fetch(`/api/fuentes/eudr/${kind}`, { method: "POST", headers: { "Content-Type": "application/json" }, signal: AbortSignal.timeout(58000),
         body: JSON.stringify({ lot: { ...lot, movements: movAll[herdKey] || [] }, establecimiento: estName, heads: herdHeads || null, sustentabilidad: (sources.sustentabilidad?.payload as any)?.data, readiness: eudrReady.current }) });
       if (!r.ok) { const j = await r.json().catch(() => ({})); throw Error(j.error || "No se pudo generar"); }
-      download(await r.blob(), kind === "pdf" ? "DOTS-libre-de-deforestacion.pdf" : "DOTS-lote-geolocalizacion.geojson");
+      const blob = await r.blob();
+      if (kind === "pdf" && (await blob.slice(0, 5).text()) !== "%PDF-") throw Error("El servidor no devolvió un PDF válido");
+      if (kind === "geojson" && !blob.size) throw Error("El servidor devolvió un GeoJSON vacío");
+      download(blob, kind === "pdf" ? "DOTS-libre-de-deforestacion.pdf" : "DOTS-lote-geolocalizacion.geojson");
     } catch (e) { notify((e as Error).message); } finally { setEudrBusy(false); }
   };
   useEffect(() => {
@@ -2718,7 +2721,7 @@ function HomeLead({onDemo}:{onDemo:()=>void}){
         <div className="hl-actions"><button onClick={onDemo}>Analizar mi campo</button><SiteLink to="/caso-bella-vista">Ver un ejemplo real</SiteLink></div><div style={{position:"relative",marginTop:22,borderRadius:16,overflow:"hidden",boxShadow:"0 16px 36px rgba(8,30,36,.18)",minHeight:230}}><img src="/dots-hero.jpg" alt="Imagen satelital de parcelas agrícolas: vista territorial utilizada en DOTS" loading="eager" style={{display:"block",width:"100%",height:290,objectFit:"cover"}}/><div style={{position:"absolute",bottom:0,left:0,right:0,padding:"20px 18px 14px",background:"linear-gradient(transparent,rgba(4,23,30,.88))",color:"#fff"}}><b style={{display:"block",fontSize:16}}>El territorio es el punto de partida</b><span style={{fontSize:13}}>Parcelas · imágenes satelitales · capas de análisis</span></div></div>
       </div>
       <aside className="hl-now" aria-label="Ahora en la región">
-        <h2>Ahora en la región</h2>
+        <div className="hl-now-heading"><div><span className="hl-now-eyebrow">OBSERVATORIO EN VIVO</span><h2>Ahora en la región</h2><p>Indicadores y accesos a las consultas territoriales</p></div><span className="hl-now-mark" aria-hidden="true">↗</span></div>
         <SiteLink to="/alertas" className="hl-stat"><span>Ríos de la Cuenca del Plata</span><b>{riosTxt}</b><small>{riosSub}</small><em>Fuente: INA y Prefectura Naval</em></SiteLink>
         <SiteLink to="/panel" className="hl-stat"><span>El Niño</span><b>{ninoTxt}</b><small>{ninoSub}</small><em>Fuente: NOAA CPC{nino?.status?` · ${nino.status.es}`:""}</em></SiteLink>
         <a href="/poblacion" className="hl-stat"><span>Población y riesgo climático</span><b>¿Cuánta gente vive en la zona afectada?</b><small>Dibujá el área de inundación, sequía o fuego y obtené el informe</small><em>Fuente: WorldPop · Universidad de Southampton</em></a>
@@ -2735,16 +2738,37 @@ function HomeLead({onDemo}:{onDemo:()=>void}){
   </>;
 }
 
-function Home({onDemo}:{onDemo:()=>void}){return <div className="public-site"><PublicHeader onDemo={onDemo}/><main>
- <HomeLead onDemo={onDemo}/>
- <SourceStrip/>
- <section className="hl-case"><div><img src="/dots-hero.jpg" loading="lazy" alt="Vista de parcelas agrícolas para ilustrar el análisis territorial de Bella Vista" style={{width:"100%",height:210,objectFit:"cover",borderRadius:12,marginBottom:18}}/><span className="section-tag">EJEMPLO REAL</span><h2>Un campo de Bella Vista, Corrientes, leído de punta a punta.</h2><p>Sequía y agua en el suelo, El Niño, el río Paraná, el verdor contra 25 años, la historia del suelo desde 1985, heladas por satélite y cambios recientes, sobre el mismo perímetro y con datos de hoy. Así se ve un informe de DOTS antes de dibujar tu propio campo.</p></div><SiteLink to="/caso-bella-vista" className="hl-cta">Ver el caso Bella Vista →</SiteLink></section>
- <section className="journey"><article><b>01</b><h3>Delimitá</h3><p>Triángulo, rectángulo o polígono libre. Superficie, perímetro y centroide.</p></article><article><b>02</b><h3>Observá</h3><p>Escenas, clima, agua, suelo, vegetación y riesgos sobre el mismo territorio.</p></article><article><b>03</b><h3>Compará</h3><p>Fechas, modelos y fuentes sin perder procedencia ni calidad.</p></article><article><b>04</b><h3>Decidí</h3><p>Hallazgos, alertas, tareas e Informe Territorial DOTS unificado.</p></article></section>
- <section className="layers-teaser"><div><span className="section-tag">CAPAS DEL MAPA</span><h2>{OPEN_LAYERS.length + DOTS_LAYERS.length} capas abiertas sobre tu lote.</h2><p>Bosque, agua, anegamiento, imagen satelital diaria, rutas y vías, más lo que DOTS calcula para cada lote. Superponelas para ver lo que ninguna muestra sola.</p></div><SiteLink to="/capas" className="layers-btn big">Ver qué es una capa y para qué sirve →</SiteLink></section><section className="eudr-feature"><div><span className="section-tag">NUEVO · UNIÓN EUROPEA</span><h2>Libre de deforestación, verificado por satélite.</h2><p>Desde el 30/12/2026 la carne, la soja y la madera que se exporten a Europa deben probar que no vienen de tierras deforestadas después de 2020. DOTS lo verifica lote por lote y entrega el informe y la geolocalización listos para la debida diligencia, con el carbono del suelo y las emisiones del rodeo.</p><div className="cover-actions"><SiteLink to="/libre-deforestacion">Cómo funciona →</SiteLink><button onClick={onDemo}>Verificar un lote</button></div></div><ul><li><b>2017–2023</b>cobertura anual a 10 m</li><li><b>2 fuentes</b>Impact Observatory y ESA</li><li><b>6 decimales</b>polígono GeoJSON</li><li><b>t C/ha</b>carbono del suelo</li></ul></section>
- <section className="field-story"><div className="field-visual"><img src="/dots-hero.jpg" alt="Lotes de un establecimiento con índice de vegetación por sector"/></div><div><span className="section-tag">GEMELO DIGITAL GANADERO</span><h2>Cada potrero tiene contexto.</h2><p>Límites, pasturas, agua, infraestructura, ganado, clima, suelo, satélite, riesgos e historial se leen juntos. El mapa permanece como centro operativo mientras cambian las capas de análisis.</p><button onClick={onDemo}>Explorar el Observatorio</button></div></section>
- <section className="cap-grid">{[[MapPinned,"Lotes y potreros","Geometría, hectáreas, perímetro, historial y comparación."],[Droplets,"Agua e infraestructura","Fuentes de agua, cobertura, balance hídrico e inspecciones."],[Layers,"Pasturas y suelos","Vegetación, humedad y propiedades del suelo con método declarado."],[Thermometer,"Clima y ganado","Pronósticos, THI y contexto térmico para el rodeo."],[TriangleAlert,"Riesgos","Fuego, sequía, exceso hídrico y anomalías con evidencia."],[FileText,"Informe territorial","Un único PDF con mapa, gráficos, interpretación y trazabilidad."]].map(([Icon,t,d]:any)=><article key={t}><Icon/><h3>{t}</h3><p>{d}</p><SiteLink to="/modulos" className="cap-more">Cómo funciona →</SiteLink></article>)}</section>
- <section className="demo-call"><div><span className="section-tag">DEMOSTRACIÓN</span><h2>El mapa es el centro. Los datos explican el territorio.</h2><p>Delimitá un lote y consultá las fuentes disponibles. Si una fuente no responde o una variable no está medida, DOTS lo declara.</p></div><button onClick={onDemo}>Abrir Observatorio →</button></section>
- </main><SiteFooter/></div>}
+function Home({onDemo}:{onDemo:()=>void}){
+ const [nino,setNino]=useState<any>(null),[rios,setRios]=useState<any>(null);
+ useEffect(()=>{let active=true;fetch("/api/fuentes/el-nino?lat=-28.5&lon=-59").then(r=>r.json()).then(j=>{if(active&&j.status==="recibido")setNino(j.data)}).catch(()=>{});fetch("/api/fuentes/alertas-resumen").then(r=>r.json()).then(j=>{if(active&&j.status==="recibido")setRios(j.data)}).catch(()=>{});return()=>{active=false}},[]);
+ const sections=[
+  {icon:"◫",name:"Observatorio principal",description:"Mapa interactivo, parcelas y análisis local.",cta:"Abrir observatorio",url:"/observatorio",image:"map"},
+  {icon:"▥",name:"Simulador ambiental",description:"Clima, inundaciones, cultivos y escenarios.",cta:"Explorar simulador",url:"/simulador-ambiental",image:"crops"},
+  {icon:"♧",name:"Agricultura y ganadería",description:"Gestión de cultivos, pasturas y riesgos productivos.",cta:"Abrir ganadería",url:"/ganaderia",image:"farm"},
+  {icon:"☁",name:"Clima, agua e inundaciones",description:"Pronósticos, ENSO, mapas de riesgo y análisis hidrológico.",cta:"Explorar clima y agua",url:"/el-nino",image:"water"},
+  {icon:"◇",name:"Satélites y geoespacial",description:"NASA POWER, imágenes satelitales, GeoTIFF y teledetección.",cta:"Ver datos satelitales",url:"/capas",image:"satellite"},
+  {icon:"▤",name:"Informes y documentación",description:"Reportes técnicos, metodologías y fuentes de datos.",cta:"Acceder a informes",url:"/modulos",image:"reports"}
+ ];
+ const counts=rios?.counts||{};const riverStatus=rios?(counts["Evacuación"]?"Evacuación":counts.Alerta?"Alerta":counts["Atención"]?"Atención":"Sin alertas informadas"):"Dato no disponible";
+ const climate=nino?.roni||nino?.oni;
+ return <div className="public-site dots-cover"><PublicHeader onDemo={onDemo}/><main>
+  <section className="dots-cover-hero" aria-label="Presentación de DOTS Campo">
+   <div className="dots-cover-intro"><span className="dots-eyebrow">OBSERVATORIO AGROCLIMÁTICO · ARGENTINA Y SUDAMÉRICA</span><h1>Territorio, datos<br/>y decisiones</h1><p>Observatorio geoespacial para una agricultura más productiva, resiliente y sostenible.</p>
+    <div className="dots-cover-pillars"><span><Satellite/>Satélites</span><span><CloudSun/>Clima</span><span><Droplets/>Agua</span><span><Sprout/>Producción</span><span><Layers/>Análisis territorial</span></div>
+   </div>
+   <aside className="dots-cover-location"><span className="dots-location-title">● Bella Vista · Corrientes</span><div className="dots-location-photo" role="img" aria-label="Imagen territorial de parcelas y cursos de agua"/><ul><li>Producción agrícola</li><li>Riesgo de inundación</li><li>Estado de cultivos</li><li>Análisis climático</li></ul><SiteLink to="/caso-bella-vista">Ver análisis de la región →</SiteLink></aside>
+  </section>
+  <section className="dots-cover-modules" aria-label="Herramientas del observatorio">{sections.map((x,i)=><article key={x.url} className="dots-cover-module"><div className={"dots-module-photo dots-photo-"+x.image} role="img" aria-label={"Ilustración temática: "+x.name}/><div className="dots-module-body"><h2><span aria-hidden="true">{x.icon}</span> {x.name}</h2><p>{x.description}</p>{x.url==="/observatorio"?<button onClick={onDemo}>{x.cta} →</button>:<SiteLink to={x.url}>{x.cta} →</SiteLink>}</div></article>)}</section>
+  <section className="dots-cover-modules" aria-label="Herramientas especializadas DOTS">{[["Agricultura de precisión","NDVI histórico, índices espectrales y análisis de parcelas.","/agricultura-precision"],["Población y riesgo","Exposición poblacional, crecidas e informes PDF.","/poblacion"],["Radar Sentinel-1","Análisis radar, agua y pronóstico hidrológico.","/radar"]].map(([name,description,url])=><article key={url} className="dots-cover-module"><div className="dots-module-body"><h2>{name}</h2><p>{description}</p><a href={url}>Abrir herramienta →</a></div></article>)}</section>
+  <SourceStrip/>\n  <section className="dots-cover-live"><div className="dots-cover-live-left"><h2>Información de las fuentes</h2><p>Indicadores y modelos para el análisis territorial. Los valores solo se muestran cuando responde su fuente.</p><div className="dots-cover-metrics">
+   <SiteLink to="/el-nino"><CloudSun/><strong>{climate?climate.phase:"Sin dato"}</strong><small>El Niño / La Niña · NOAA</small></SiteLink>
+   <SiteLink to="/alertas"><Waves/><strong>{riverStatus}</strong><small>Estado de ríos · INA</small></SiteLink>
+   <SiteLink to="/panel"><Satellite/><strong>Panel regional</strong><small>Consultar mediciones actuales</small></SiteLink>
+   <SiteLink to="/observatorio"><Layers/><strong>Mapa de capas</strong><small>Explorar variables por parcela</small></SiteLink>
+  </div></div><div className="dots-cover-alerts"><h2>Alertas y eventos <SiteLink to="/alertas">Ver todas →</SiteLink></h2><SiteLink to="/alertas"><TriangleAlert/><span><strong>Ríos de la Cuenca del Plata</strong><small>{rios?riverStatus+" · "+(rios.stations?.length||0)+" estaciones consultadas":"Consultar el estado actualizado en el panel"}</small></span></SiteLink><SiteLink to="/simulador-ambiental"><Droplets/><span><strong>Inundaciones y escenarios</strong><small>Mapas de riesgo y análisis ambiental</small></span></SiteLink><SiteLink to="/focos"><Thermometer/><span><strong>Fuego, rayos y heladas</strong><small>Acceder a las observaciones satelitales</small></span></SiteLink></div></section>
+  <section className="dots-cover-bottom"><div><h2>Conectando<br/>territorio, clima y producción</h2><p>Tecnología satelital al servicio de decisiones reales en el campo.</p></div><div className="dots-cover-benefits"><span><Sprout/>Producción<br/>más eficiente</span><span><TriangleAlert/>Mayor resiliencia<br/>ante riesgos</span><span><FileText/>Gestión basada<br/>en datos</span><span><MapPinned/>Territorios<br/>más sostenibles</span></div></section>
+ </main><SiteFooter/></div>
+}
 
 const MODULES:[string,string,string,any,{mide:string;fuente:string;como:string;limite:string}][]=[
  ["lotes","Delimitación de lotes","Dibujado a mano o automático con un clic.",MapPinned,{
@@ -2783,9 +2807,18 @@ const MODULES:[string,string,string,any,{mide:string;fuente:string;como:string;l
   como:"El documento se compone con Typst, un motor de diseño editorial abierto, con tipografía IBM Plex. Cada fuente figura con su estado y hora de consulta.",
   limite:"El informe ordena evidencia; no reemplaza la recorrida ni el criterio profesional."}],
 ];
+const MODULE_ACTIONS:Record<string,{url:string;label:string;guide:string}> = {
+  lotes:{url:"/observatorio",label:"Abrir mapa y delimitar lote",guide:"Ingresá al mapa, buscá tu establecimiento o introducí las coordenadas y dibujá el perímetro. Una vez cerrado el lote, podés consultar superficie, forma y variables territoriales."},
+  ndvi:{url:"/agricultura-precision",label:"Consultar NDVI histórico del lote",guide:"Dibujá un polígono o utilizá el lote de ejemplo, seleccioná los años de consulta y solicitá la serie NDVI. Si la fuente está disponible, podrás revisar las observaciones y exportarlas."},
+  clima:{url:"/observatorio",label:"Consultar clima del establecimiento",guide:"Seleccioná un punto o una parcela en el observatorio, elegí el período y revisá lluvia, temperatura e índices agroclimáticos. Los resultados dependen de la cobertura de cada fuente."},
+  enso:{url:"/el-nino",label:"Abrir análisis de El Niño",guide:"Consultá las condiciones regionales y las teleconexiones climáticas. Para explorar escenarios, ingresá después al simulador ambiental desde el menú principal."},
+  agua:{url:"/observatorio",label:"Analizar agua y suelo",guide:"Delimitá el área de estudio y consultá los indicadores hídricos y edáficos disponibles. Contrastá la fecha, resolución y alcance de cada fuente antes de interpretar el resultado."},
+  riesgos:{url:"/alertas",label:"Consultar alertas y riesgos",guide:"Abrí las alertas hidrológicas y seleccioná la zona de interés. Para mapas de inundación y exposición poblacional, utilizá también Radar Sentinel-1 y Población y riesgo."},
+  informe:{url:"/observatorio",label:"Generar informe territorial PDF",guide:"Elegí un punto o dibujá un lote, ejecutá las consultas necesarias y seleccioná las secciones del informe. Descargá el PDF sólo después de comprobar los resultados y sus fuentes."}
+};
 function Modules({onDemo}:{onDemo:()=>void}){
   return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner modules-page">
-    <PageHero eyebrow="MÓDULOS" title="Qué hace DOTS, por dentro." lead="Cada módulo explica qué mide, de dónde sale el dato, cómo se calcula y qué no puede afirmar. Así se lee un informe DOTS."/>
+    <PageHero eyebrow="MÓDULOS" title="Qué hace DOTS, por dentro." lead="Explorá cada herramienta, conocé las variables que utiliza, sus fuentes, métodos y limitaciones. Desde cada módulo podés ir directamente a la página donde se realiza la consulta y, cuando corresponda, generar informes."/>
     <nav className="module-index">{MODULES.map(([id,t,,Icon])=><a key={id} href={"#"+id}><Icon/>{t}</a>)}</nav>
     {MODULES.map(([id,t,lead,Icon,x],i)=><section className="module-block" id={id} key={id}>
       <div className="module-head"><span className="module-num">{String(i+1).padStart(2,"0")}</span><div className="module-icon"><Icon/></div><div><h2>{t}</h2><p>{lead}</p></div></div>
@@ -2795,6 +2828,7 @@ function Modules({onDemo}:{onDemo:()=>void}){
         <article><span>Cómo se calcula</span><p>{x.como}</p></article>
         <article className="limit"><span>Qué no afirma</span><p>{x.limite}</p></article>
       </div>
+      <div className="module-action"><h3>Cómo utilizar este módulo</h3><p>{MODULE_ACTIONS[id]?.guide}</p><a className="module-action-link" href={MODULE_ACTIONS[id]?.url||"/observatorio"}>{MODULE_ACTIONS[id]?.label||"Abrir herramienta"} →</a></div>
     </section>)}
     <section className="demo-call"><div><span className="section-tag">PROBALO</span><h2>Dibujá un lote y mirá cada módulo funcionando.</h2><p>Los datos son reales y se consultan en el momento. Si una fuente no responde, DOTS lo dice.</p></div><button onClick={onDemo}>Abrir Observatorio →</button></section>
   </main><SiteFooter/></div>;

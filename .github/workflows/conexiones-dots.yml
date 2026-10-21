@@ -1,0 +1,42 @@
+name: DOTS conexiones externas (diagnóstico manual)
+on:
+  workflow_dispatch:
+jobs:
+  conexiones:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Comprobar API y fuentes sin mostrar credenciales
+        env:
+          DOTS_URL: https://observatorio-agro.vercel.app
+        run: |
+          python3 - <<'PY'
+          import json, os, urllib.request, urllib.error, time
+          root=os.environ["DOTS_URL"]
+          def read(path, timeout=58):
+              req=urllib.request.Request(root+path,headers={"User-Agent":"DOTS-connection-audit/1.0","Accept":"application/json"})
+              start=time.monotonic()
+              try:
+                  with urllib.request.urlopen(req,timeout=timeout) as resp:
+                      raw=resp.read(2_000_000)
+                      return resp.status,round(time.monotonic()-start,1),json.loads(raw)
+              except Exception as exc:
+                  return 0,round(time.monotonic()-start,1),{"error":type(exc).__name__}
+          failed=[]
+          for path in ["/api/health","/api/fuentes/monitor","/api/fuentes/el-nino?lat=-28.5&lon=-59","/api/fuentes/alertas-resumen"]:
+              code,seconds,data=read(path)
+              print(f"\\n{path}: HTTP {code} ({seconds}s), estado={data.get('status','sin estado')}")
+              if path=="/api/health":
+                  if code!=200 or data.get("status")!="ok":failed.append(path)
+              elif path=="/api/fuentes/monitor":
+                  summary=data.get("data") or {}
+                  print("Fuentes comprobadas:",summary.get("total"),"operativas:",summary.get("up"))
+                  for source in summary.get("sources",[]):
+                      print(" -",source.get("source"),"OK" if source.get("ok") else "FALLA",source.get("http"),str(source.get("ms"))+"ms")
+                  if code!=200 or not summary.get("sources"):failed.append(path)
+              else:
+                  print("Origen:",data.get("source",data.get("fuente","no indicado")),"Fecha:",data.get("updated_at",data.get("fecha","no indicada")))
+                  if code!=200 or data.get("status")!="recibido":failed.append(path)
+          print("\\nResumen: "+("requiere revisión: "+", ".join(failed) if failed else "todas las pruebas HTTP pasaron"))
+          if failed:raise SystemExit(1)
+          PY
