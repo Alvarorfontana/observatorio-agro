@@ -5,6 +5,7 @@ unidades y período; no se calculan prescripciones agronómicas automáticas.
 """
 from flask import Blueprint, jsonify, request
 import requests
+import math
 
 agro_telemetry_api = Blueprint("agro_telemetry_api", __name__)
 ENDPOINT = "https://archive-api.open-meteo.com/v1/archive"
@@ -21,7 +22,7 @@ def telemetria():
     try:
         lat = float(request.args["lat"])
         lon = float(request.args["lon"])
-        if not (-90 <= lat <= 90 and -180 <= lon <= 180):
+        if not (math.isfinite(lat) and math.isfinite(lon) and -90 <= lat <= 90 and -180 <= lon <= 180):
             raise ValueError("coordenadas fuera de rango")
         end = date.fromisoformat(request.args.get("end", (date.today()-timedelta(days=7)).isoformat()))
         start = date.fromisoformat(request.args.get("start", (end-timedelta(days=29)).isoformat()))
