@@ -19,15 +19,18 @@ export function EnsoHistoricalLab(){
  <line x1="40" x2="750" y1="95" y2="95" stroke="#c9d6dc" strokeDasharray="4 5"/>
  {segments.map((s,i)=><path key={i} d={s} stroke="#ffce77" strokeWidth="2" fill="none"/>)}
  <text x="40" y="132" fontSize="13" fill="#fff">{data.months[0]}</text><text x="675" y="132" fontSize="13" fill="#fff">{data.months[data.months.length-1]}</text></svg>
+ <p style={{fontSize:13}}>La curva muestra cuánto se aparta la temperatura superficial del mar del promedio del mismo mes en 1991–2020. Valores positivos indican calentamiento y negativos enfriamiento. Una anomalía aislada no determina por sí sola un episodio ENSO.</p>
  <h4>Hovmöller · anomalía SST ecuatorial (5°S–5°N)</h4>
  <div style={{overflowX:"auto"}}><svg viewBox="0 0 800 350" role="img" aria-label="Diagrama Hovmöller de anomalías mensuales por longitud" style={{width:"100%",minWidth:400,background:"#092632"}}>
  {(hov?.values||[]).filter((_,i)=>i%hmStep===0).map((row,i)=>row.map((v,j)=><rect key={i+"-"+j} x={35+j*735/Math.max(1,hov!.lon.length)} y={12+i*315/Math.max(1,Math.ceil(hov!.values.length/hmStep))} width={735/Math.max(1,hov!.lon.length)+0.2} height={315/Math.max(1,Math.ceil(hov!.values.length/hmStep))+0.2} fill={palette(v)}/>))}
  <text x="35" y="343" fontSize="12" fill="#fff">{hov?.lon[0]}°E</text><text x="680" y="343" fontSize="12" fill="#fff">{hov?.lon[hov.lon.length-1]}°E</text></svg></div>
+ <p style={{fontSize:13}}>Cómo leer el Hovmöller: horizontal = longitud del Pacífico; vertical = meses, del más antiguo arriba al más reciente abajo; colores = anomalía SST en °C. Bandas diagonales pueden indicar propagación espacial de anomalías, pero requieren contrastarse con otros campos atmosféricos.</p>
  <h4>Mapa de anomalías SST · Pacífico tropical</h4>
  <label>Período <select value={mapIndex} onChange={e=>setMapIndex(Number(e.target.value))}>{data.maps.months.map((m,i)=><option key={m} value={i}>{m}</option>)}</select></label>
  <div style={{overflowX:"auto"}}><svg viewBox="0 0 800 290" role="img" aria-label={"Mapa de anomalía SST "+data.maps.months[mapIndex]} style={{width:"100%",minWidth:400,background:"#092632"}}>
  {(data.maps.values[mapIndex]||[]).map((row,i)=>row.map((v,j)=><rect key={i+"-"+j} x={35+j*735/Math.max(1,data.maps.lon.length)} y={10+i*245/Math.max(1,data.maps.lat.length)} width={735/Math.max(1,data.maps.lon.length)+0.2} height={245/Math.max(1,data.maps.lat.length)+0.2} fill={palette(v)}/>))}
  <text x="35" y="276" fontSize="12" fill="#fff">120°E</text><text x="670" y="276" fontSize="12" fill="#fff">80°W</text></svg></div>
+ <p style={{fontSize:13}}>El mapa representa un corte mensual de enero del año seleccionado; no es un promedio anual. Cada celda representa una zona del océano y permite localizar calentamientos o enfriamientos. La escala cromática agrupa valores por intervalos y no reemplaza la lectura numérica.</p>
  <p style={{fontSize:12}}>Escala de anomalías °C: azul = enfriamiento; rojo = calentamiento; gris = sin dato. Datos derivados de NOAA ERSST v5, no pronóstico.</p>
  </>}
  </section>;
