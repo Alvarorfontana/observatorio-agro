@@ -328,6 +328,16 @@ def contact_send():
 def research_data(name):
     if name=='plataformas':
         return jsonify(c.platform_registry())
+    if name=='rio-bellavista':
+        try:
+            # Evita ejecutar todo el tablero de cuenca (pronósticos, represas y clima)
+            # para consultar una única estación. Nunca sustituir por datos simulados.
+            data=cca.rivers()
+            station=next((st for st in (data.get('stations') or []) if st.get('id')=='parana-bellavista'),None)
+            if not station or station.get('discharge') is None:
+                return jsonify({'status':'sin dato','error':'La estación Bella Vista no tiene caudal disponible en la fuente.'}),503
+            return jsonify(c.envelope(station,'multi','Río Paraná en Bella Vista','Copernicus GloFAS vía Open-Meteo · INA'))
+        except Exception as e: return _upstream_error(e)
     if name=='cuenca':
         try: return jsonify(cca.analyze())
         except Exception as e: return _upstream_error(e)
