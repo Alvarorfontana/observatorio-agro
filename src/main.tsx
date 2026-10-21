@@ -2675,7 +2675,7 @@ function PublicHeader({onDemo}:{onDemo:()=>void}){return <header className="site
     <SiteLink to="/radar">Radar Sentinel-1</SiteLink><SiteLink to="/focos">Fuego y heladas</SiteLink><SiteLink to="/capas">Capas del mapa</SiteLink><SiteLink to="/panel">Panel regional</SiteLink>
     <strong>04 · Informes y documentación</strong>
     <SiteLink to="/modulos">Catálogo de módulos</SiteLink><SiteLink to="/guia">Cómo funciona</SiteLink><SiteLink to="/tecnologia">Fuentes</SiteLink><SiteLink to="/conexiones">APIs</SiteLink><SiteLink to="/casos">Casos</SiteLink><SiteLink to="/contacto">Contacto</SiteLink>
-  </div></details>s>
+  </div></details>
 </nav><div className="site-head-actions"><SiteLink to="/alertas" className="alert-btn">⚠ Alertas</SiteLink><SiteLink to="/acceso" className="ghost-link">Ingresar</SiteLink><button className="demo-btn" onClick={onDemo}>Abrir Observatorio →</button>
   <details className="nav-mobile"><summary aria-label="Menú">☰</summary><div>
     <button className="nav-mobile-demo" onClick={onDemo}>Abrir Observatorio →</button>
