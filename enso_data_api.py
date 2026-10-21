@@ -64,3 +64,24 @@ def oni_official():
         })
     except (requests.RequestException, ValueError) as exc:
         return jsonify({"status": "sin dato", "error": "No fue posible obtener o validar el ONI de NOAA", "detail": type(exc).__name__}), 503
+
+
+# Índices mensuales complementarios NOAA PSL; independientes del ONI oficial CPC.
+_TELE_CACHE = {"at": 0.0, "data": None}
+
+@enso_data_api.get("/api/enso/teleconnections")
+def teleconnections():
+    from tools.import_noaa_teleconnections import collect
+    try:
+        if _TELE_CACHE["data"] is None or time.time() - _TELE_CACHE["at"] > 21600:
+            payload = collect()
+            if not payload["indices"]:
+                if _TELE_CACHE["data"] is None:
+                    return jsonify(status="sin dato", error="Fuentes NOAA PSL no disponibles"), 503
+                _TELE_CACHE["data"]["stale"] = True
+            else:
+                payload["stale"] = False
+                _TELE_CACHE.update(at=time.time(), data=payload)
+        return jsonify(_TELE_CACHE["data"])
+    except Exception:
+        return jsonify(status="sin dato", error="No se pudieron obtener índices NOAA PSL"), 503
