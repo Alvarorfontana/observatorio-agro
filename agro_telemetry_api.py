@@ -38,7 +38,7 @@ def telemetria():
         }, timeout=25)
         response.raise_for_status()
         payload = response.json()
-        if not isinstance(payload.get("daily"), dict):
+        if not isinstance(payload.get("daily"), dict) or not isinstance(payload["daily"].get("time"), list):
             raise ValueError("Respuesta sin datos diarios")
         return jsonify(
             status="ok", provider="Open-Meteo Historical Weather API",
