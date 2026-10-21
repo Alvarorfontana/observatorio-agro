@@ -1,3 +1,4 @@
+import {ClimateSourcesCatalog} from "./ClimateSourcesCatalog";
 import {useState} from "react";
 import {EnvironmentalLab} from "./EnvironmentalLab";
 import {EnvironmentalMap} from "./EnvironmentalMap";
@@ -59,6 +60,7 @@ export function EnvironmentalWorkspace(){
    <details style={{margin:"14px 0"}}><summary style={{padding:12,background:"#173743",color:"#fff",borderRadius:8,cursor:"pointer"}}>Telemetría agroclimática · temperatura, suelo y lluvia</summary><AgroTelemetryPanel lat={lat} lon={lon}/></details>
    <FloodScenarioPanel onLayer={setLayer} tramoStart={tramoStart} tramoEnd={tramoEnd} riverName={guideRiver} basinName={guideBasin}/>
    <details style={{marginTop:14}}><summary style={{padding:12,background:"#173743",color:"#fff",borderRadius:8,cursor:"pointer"}}>Laboratorio geoespacial · importar DEM / GeoTIFF</summary><GeoRasterWorkbench basin={guideBasin} river={guideRiver} tramoStart={tramoStart} tramoEnd={tramoEnd}/></details>
+   <details style={{margin:"14px 0"}}><summary style={{padding:12,background:"#173743",color:"#fff",borderRadius:8,cursor:"pointer"}}>Fuentes internacionales · 18 catálogos climáticos</summary><ClimateSourcesCatalog/></details>
    <p>Ubicación seleccionada: {lat.toFixed(5)}, {lon.toFixed(5)} · Capa: {layer||"Mapa base"}</p>
   </div>
   <details style={{minWidth:0}}><summary style={{padding:12,background:"#173743",color:"#fff",borderRadius:8,cursor:"pointer"}}>Opciones avanzadas · capas y variables</summary><EnvironmentalLab lat={lat} lon={lon} activeMapLayer={layer} onSelectMapLayer={setLayer} mapDate={date} onMapDateChange={setDate}/></details>
