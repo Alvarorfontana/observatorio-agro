@@ -1,3 +1,7 @@
+import pytest
+pytest.importorskip("numpy")
+pytest.importorskip("pandas")
+pytest.importorskip("xarray")
 """Pruebas unitarias sin descargar archivos externos."""
 import numpy as np
 import pandas as pd
