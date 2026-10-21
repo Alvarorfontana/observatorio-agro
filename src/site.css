@@ -1244,3 +1244,15 @@ html, body { overflow-x: hidden; }
 .public-site .source-strip{margin:0}
 @media(max-width:960px){.public-site .hl-hero{grid-template-columns:1fr;gap:22px}.public-site .hl-now{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 18px}.public-site .hl-now h2{grid-column:1/-1}.public-site .hl-three>div{grid-template-columns:1fr 1fr}.public-site .hl-case{grid-template-columns:1fr}}
 @media(max-width:600px){.public-site .hl-hero{padding:26px 18px 30px}.public-site .hl-copy h1{max-width:none}.public-site .hl-now{display:block}.public-site .hl-three>div{grid-template-columns:1fr}.public-site .hl-three article{padding:18px}.public-site .hl-case img{height:180px!important;aspect-ratio:auto}}
+
+
+/* Cabecera unificada: enlaces discretos y una sola acción primaria. */
+.public-site .site-header nav>a{background:transparent!important;border:0!important;box-shadow:none!important;color:#e2ecee!important;font-weight:500!important;border-radius:6px;padding:9px 10px}
+.public-site .site-header nav>a:hover,.public-site .site-header nav>a.nav-highlight{background:rgba(255,255,255,.09)!important;color:#fff!important}
+.public-site .site-head-actions .demo-btn{background:#286d4e!important;color:white!important;border:1px solid #397c5d!important;border-radius:8px!important;box-shadow:none!important}
+.public-site .site-head-actions .ghost-link{background:transparent!important;color:#dce9eb!important;border:1px solid rgba(255,255,255,.28)!important;border-radius:8px!important}
+.public-site .site-head-actions .alert-btn{background:transparent!important;color:#f0d9a5!important;border:1px solid rgba(240,217,165,.38)!important;border-radius:8px!important}
+.public-site .nav-more>div{min-width:285px;max-height:min(70vh,640px);overflow-y:auto;z-index:100}
+.public-site .nav-more>div strong{display:block;padding:12px 12px 5px;margin-top:4px;font:700 11px "IBM Plex Sans",sans-serif;letter-spacing:.07em;text-transform:uppercase;color:#8fdbc0;border-top:1px solid rgba(255,255,255,.12)}
+.public-site .nav-more>div strong:first-child{border-top:0;margin-top:0}
+@media(max-width:1180px){.public-site .site-header nav>a{padding:8px 6px;font-size:12px}}
