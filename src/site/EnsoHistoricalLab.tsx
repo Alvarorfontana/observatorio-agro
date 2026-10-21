@@ -9,7 +9,7 @@ export function EnsoHistoricalLab(){
  const segments:string[]=[];let current="";
  for(const p of coords){if(p){current+=(current?" L":"M")+p.x.toFixed(1)+" "+p.y.toFixed(1)}else if(current){segments.push(current);current=""}}if(current)segments.push(current);
  const hov=data?.hovmoller,hmStep=Math.max(1,Math.ceil((data?.months.length||1)/180));
- function downloadCsv(){if(!data)return;const rows=["mes,region,anomalia_sst_c",...data.months.map((m,i)=>[m,region,data.indices[region]?.[i]??""].join(","))];const url=URL.createObjectURL(new Blob([rows.join("\\n")],{type:"text/csv;charset=utf-8"}));const a=document.createElement("a");a.href=url;a.download="dots-enso-"+region+".csv";a.click();URL.revokeObjectURL(url)}
+ function downloadCsv(){if(!data)return;const rows=["mes,region,anomalia_sst_c",...data.months.map((m,i)=>[m,region,data.indices[region]?.[i]??""].join(","))];const url=URL.createObjectURL(new Blob([rows.join("\n")],{type:"text/csv;charset=utf-8"}));const a=document.createElement("a");a.href=url;a.download="dots-enso-"+region+".csv";a.click();URL.revokeObjectURL(url)}
  return <section aria-label="Laboratorio ENSO histórico" style={{marginTop:20,padding:14,background:"#153441",borderRadius:10,color:"#f1f7fa"}}>
  <h3>Laboratorio histórico ENSO · ERSST v5</h3>
  <p>Temperatura superficial del mar, anomalías mensuales, regiones Niño, Hovmöller ecuatorial y mapas anuales del Pacífico tropical. Base climatológica 1991–2020.</p>
