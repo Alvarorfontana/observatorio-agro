@@ -1,8 +1,8 @@
 import {useEffect,useState} from "react";
 type Power={type:string;geometry:{coordinates:number[]};properties:{parameter:Record<string,Record<string,number>>}};
 const variables:Record<string,string>={T2M:"Temperatura a 2 m (°C)",PRECTOTCORR:"Precipitación corregida (mm/h)",RH2M:"Humedad relativa (%)",WS2M:"Viento a 2 m (m/s)",ALLSKY_SFC_SW_DWN:"Radiación solar (kWh/m²/día)"};
-export function PowerObservationsPanel(){
- const [lat,setLat]=useState("-38.5"),[lon,setLon]=useState("-63.5"),[days,setDays]=useState("7"),[data,setData]=useState<Power|null>(null),[error,setError]=useState(""),[loading,setLoading]=useState(false),[selected,setSelected]=useState("T2M");
+export function PowerObservationsPanel({lat:mapLat,lon:mapLon}:{lat:number;lon:number}){
+ const [lat,setLat]=useState(String(mapLat)),[lon,setLon]=useState(String(mapLon)),[days,setDays]=useState("7"),[data,setData]=useState<Power|null>(null),[error,setError]=useState(""),[loading,setLoading]=useState(false),[selected,setSelected]=useState("T2M");
  async function load(){
   const latitude=Number(lat),longitude=Number(lon),count=Number(days);
   if(!Number.isFinite(latitude)||!Number.isFinite(longitude)||Math.abs(latitude)>90||Math.abs(longitude)>180){setError("Coordenadas inválidas");return}
@@ -13,7 +13,7 @@ export function PowerObservationsPanel(){
   const params=new URLSearchParams({parameters:"T2M,PRECTOTCORR,RH2M,WS2M",community:"AG",longitude:String(longitude),latitude:String(latitude),start:fmt(start),end:fmt(end),format:"JSON",time_standard:"UTC"});
   try{const r=await fetch("https://power.larc.nasa.gov/api/temporal/hourly/point?"+params);if(!r.ok)throw Error("NASA POWER no respondió: HTTP "+r.status);const j=await r.json() as Power;if(!j.properties?.parameter)throw Error("Respuesta sin observaciones");setData(j)}catch(e){setError(String(e))}finally{setLoading(false)}
  }
- useEffect(()=>{void load()},[]);
+ useEffect(()=>{setLat(String(mapLat));setLon(String(mapLon))},[mapLat,mapLon]);
  const series=data?.properties.parameter[selected]||{},points=Object.entries(series).filter(([,v])=>typeof v==="number"&&Number.isFinite(v)&&v>-900);
  const values=points.map(([,v])=>v),min=Math.min(...values),max=Math.max(...values),span=max-min||1;
  const path=points.map(([,v],i)=>(i?"L":"M")+(40+i*710/Math.max(1,points.length-1)).toFixed(1)+","+(165-(v-min)/span*130).toFixed(1)).join(" ");
