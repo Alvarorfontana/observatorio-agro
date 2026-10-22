@@ -1,0 +1,703 @@
+{
+ "updated": "2026-10-22",
+ "year": 2024,
+ "model": {
+  "method": "Idea (Sapienza / Pavía): las imágenes en color confunden un barrio popular con un barrio denso común; el radar\nSentinel-1 responde a la forma y al desorden de las construcciones, y casi no cambia entre estaciones.\n\nQué hace, en GitHub Actions y con Google Earth Engine:\n  1. Baja los polígonos del Registro Nacional de Barrios Populares (RENABAP) alrededor de cada localidad.\n  2. Arma, para cada píxel construido (ESA WorldCover), tres escalones de radar —brillo (VV, VH, VH−VV),\n     textura (GLCM: contraste, varianza, entropía, homogeneidad) e índice de dispersión (coeficiente de variación\n     local y temporal, y diferencia entre estación seca y húmeda)—, las bandas ópticas de Sentinel-2 y la\n     morfología de las construcciones (Google Open Buildings temporal: cantidad, altura y su variación).\n  3. Etiquetas: dentro de un polígono RENABAP = barrio popular; construido a más de 60 m de cualquiera = barrio común.\n  4. Entrena bosques aleatorios (solo óptico / óptico + radar / + edificios / + etiquetas de otras ciudades, como\n     los barrios populares de Nairobi mapeados en OpenStreetMap o data/etiquetas_externas.geojson) y los evalúa dejando afuera una ciudad\n     argentina por vez: así se mide cómo anda en una ciudad que el modelo nunca vio.\n  5. Aplica el mejor de los dos con radar a las 34 localidades (también Paraguay y Uruguay, donde no hay RENABAP),\n     y cruza con WorldPop 2020 y la altura sobre el río (MERIT Hydro HAND).\n\nSalida: data/barrios_radar.json y data/barrios_radar/<id>.png (rama datos).\nRequiere los secretos GOOGLE_CLOUD_PROJECT y GOOGLE_APPLICATION_CREDENTIALS_JSON (los mismos de Vercel).",
+  "ciudades_entrenamiento": [
+   "Eldorado",
+   "Posadas",
+   "Ituzaingó",
+   "Corrientes",
+   "Bella Vista",
+   "Goya",
+   "Reconquista",
+   "Esquina",
+   "La Paz",
+   "Santa Fe · Paraná",
+   "Diamante",
+   "Rosario",
+   "San Nicolás",
+   "San Pedro",
+   "Zárate",
+   "Asunción",
+   "Formosa · Alberdi",
+   "Embarcación",
+   "Santo Tomé",
+   "Paso de los Libres",
+   "Monte Caseros",
+   "Concordia · Salto",
+   "Colón",
+   "Concepción del Uruguay"
+  ],
+  "ciudades_externas": [],
+  "puntos_por_clase_y_ciudad": 400,
+  "evaluacion_por_ciudad": [
+   {
+    "city": "Eldorado",
+    "optico": {
+     "f1_barrio": 0.412,
+     "exactitud": 0.53,
+     "puntos": 800
+    },
+    "optico_radar": {
+     "f1_barrio": 0.575,
+     "exactitud": 0.595,
+     "puntos": 800
+    },
+    "optico_radar_edificios": {
+     "f1_barrio": 0.628,
+     "exactitud": 0.68,
+     "puntos": 800
+    }
+   },
+   {
+    "city": "Posadas",
+    "optico": {
+     "f1_barrio": 0.447,
+     "exactitud": 0.564,
+     "puntos": 800
+    },
+    "optico_radar": {
+     "f1_barrio": 0.529,
+     "exactitud": 0.618,
+     "puntos": 800
+    },
+    "optico_radar_edificios": {
+     "f1_barrio": 0.596,
+     "exactitud": 0.681,
+     "puntos": 800
+    }
+   },
+   {
+    "city": "Ituzaingó",
+    "optico": {
+     "f1_barrio": 0.632,
+     "exactitud": 0.618,
+     "puntos": 800
+    },
+    "optico_radar": {
+     "f1_barrio": 0.689,
+     "exactitud": 0.652,
+     "puntos": 800
+    },
+    "optico_radar_edificios": {
+     "f1_barrio": 0.751,
+     "exactitud": 0.733,
+     "puntos": 800
+    }
+   },
+   {
+    "city": "Bella Vista",
+    "optico": {
+     "f1_barrio": 0.494,
+     "exactitud": 0.575,
+     "puntos": 588
+    },
+    "optico_radar": {
+     "f1_barrio": 0.683,
+     "exactitud": 0.736,
+     "puntos": 588
+    },
+    "optico_radar_edificios": {
+     "f1_barrio": 0.8,
+     "exactitud": 0.854,
+     "puntos": 588
+    }
+   },
+   {
+    "city": "Goya",
+    "optico": {
+     "f1_barrio": 0.63,
+     "exactitud": 0.642,
+     "puntos": 800
+    },
+    "optico_radar": {
+     "f1_barrio": 0.535,
+     "exactitud": 0.629,
+     "puntos": 800
+    },
+    "optico_radar_edificios": {
+     "f1_barrio": 0.866,
+     "exactitud": 0.865,
+     "puntos": 800
+    }
+   },
+   {
+    "city": "Esquina",
+    "optico": {
+     "f1_barrio": 0.671,
+     "exactitud": 0.609,
+     "puntos": 800
+    },
+    "optico_radar": {
+     "f1_barrio": 0.714,
+     "exactitud": 0.66,
+     "puntos": 800
+    },
+    "optico_radar_edificios": {
+     "f1_barrio": 0.783,
+     "exactitud": 0.738,
+     "puntos": 800
+    }
+   },
+   {
+    "city": "La Paz",
+    "optico": {
+     "f1_barrio": 0.699,
+     "exactitud": 0.661,
+     "puntos": 800
+    },
+    "optico_radar": {
+     "f1_barrio": 0.685,
+     "exactitud": 0.694,
+     "puntos": 800
+    },
+    "optico_radar_edificios": {
+     "f1_barrio": 0.77,
+     "exactitud": 0.774,
+     "puntos": 800
+    }
+   },
+   {
+    "city": "San Nicolás",
+    "optico": {
+     "f1_barrio": 0.66,
+     "exactitud": 0.652,
+     "puntos": 800
+    },
+    "optico_radar": {
+     "f1_barrio": 0.691,
+     "exactitud": 0.708,
+     "puntos": 800
+    },
+    "optico_radar_edificios": {
+     "f1_barrio": 0.788,
+     "exactitud": 0.777,
+     "puntos": 800
+    }
+   },
+   {
+    "city": "San Pedro",
+    "optico": {
+     "f1_barrio": 0.641,
+     "exactitud": 0.621,
+     "puntos": 800
+    },
+    "optico_radar": {
+     "f1_barrio": 0.66,
+     "exactitud": 0.675,
+     "puntos": 800
+    },
+    "optico_radar_edificios": {
+     "f1_barrio": 0.716,
+     "exactitud": 0.744,
+     "puntos": 800
+    }
+   },
+   {
+    "city": "Zárate",
+    "optico": {
+     "f1_barrio": 0.657,
+     "exactitud": 0.661,
+     "puntos": 800
+    },
+    "optico_radar": {
+     "f1_barrio": 0.688,
+     "exactitud": 0.739,
+     "puntos": 800
+    },
+    "optico_radar_edificios": {
+     "f1_barrio": 0.816,
+     "exactitud": 0.828,
+     "puntos": 800
+    }
+   },
+   {
+    "city": "Asunción",
+    "optico": {
+     "f1_barrio": 0.74,
+     "exactitud": 0.754,
+     "puntos": 800
+    },
+    "optico_radar": {
+     "f1_barrio": 0.756,
+     "exactitud": 0.751,
+     "puntos": 800
+    },
+    "optico_radar_edificios": {
+     "f1_barrio": 0.793,
+     "exactitud": 0.807,
+     "puntos": 800
+    }
+   },
+   {
+    "city": "Formosa · Alberdi",
+    "optico": {
+     "f1_barrio": 0.678,
+     "exactitud": 0.614,
+     "puntos": 800
+    },
+    "optico_radar": {
+     "f1_barrio": 0.713,
+     "exactitud": 0.666,
+     "puntos": 800
+    },
+    "optico_radar_edificios": {
+     "f1_barrio": 0.688,
+     "exactitud": 0.69,
+     "puntos": 800
+    }
+   },
+   {
+    "city": "Santo Tomé",
+    "optico": {
+     "f1_barrio": 0.626,
+     "exactitud": 0.66,
+     "puntos": 800
+    },
+    "optico_radar": {
+     "f1_barrio": 0.701,
+     "exactitud": 0.693,
+     "puntos": 800
+    },
+    "optico_radar_edificios": {
+     "f1_barrio": 0.784,
+     "exactitud": 0.787,
+     "puntos": 800
+    }
+   },
+   {
+    "city": "Paso de los Libres",
+    "optico": {
+     "f1_barrio": 0.647,
+     "exactitud": 0.664,
+     "puntos": 800
+    },
+    "optico_radar": {
+     "f1_barrio": 0.728,
+     "exactitud": 0.723,
+     "puntos": 800
+    },
+    "optico_radar_edificios": {
+     "f1_barrio": 0.782,
+     "exactitud": 0.791,
+     "puntos": 800
+    }
+   },
+   {
+    "city": "Monte Caseros",
+    "optico": {
+     "f1_barrio": 0.627,
+     "exactitud": 0.595,
+     "puntos": 800
+    },
+    "optico_radar": {
+     "f1_barrio": 0.658,
+     "exactitud": 0.615,
+     "puntos": 800
+    },
+    "optico_radar_edificios": {
+     "f1_barrio": 0.776,
+     "exactitud": 0.75,
+     "puntos": 800
+    }
+   },
+   {
+    "city": "Concordia · Salto",
+    "optico": {
+     "f1_barrio": 0.666,
+     "exactitud": 0.649,
+     "puntos": 800
+    },
+    "optico_radar": {
+     "f1_barrio": 0.688,
+     "exactitud": 0.69,
+     "puntos": 800
+    },
+    "optico_radar_edificios": {
+     "f1_barrio": 0.803,
+     "exactitud": 0.792,
+     "puntos": 800
+    }
+   },
+   {
+    "city": "Colón",
+    "optico": {
+     "f1_barrio": 0.664,
+     "exactitud": 0.613,
+     "puntos": 800
+    },
+    "optico_radar": {
+     "f1_barrio": 0.728,
+     "exactitud": 0.696,
+     "puntos": 800
+    },
+    "optico_radar_edificios": {
+     "f1_barrio": 0.784,
+     "exactitud": 0.762,
+     "puntos": 800
+    }
+   },
+   {
+    "city": "Concepción del Uruguay",
+    "optico": {
+     "f1_barrio": 0.654,
+     "exactitud": 0.623,
+     "puntos": 800
+    },
+    "optico_radar": {
+     "f1_barrio": 0.739,
+     "exactitud": 0.711,
+     "puntos": 800
+    },
+    "optico_radar_edificios": {
+     "f1_barrio": 0.789,
+     "exactitud": 0.782,
+     "puntos": 800
+    }
+   }
+  ],
+  "promedio": {
+   "optico": {
+    "f1_barrio": 0.625,
+    "exactitud": 0.628
+   },
+   "optico_radar": {
+    "f1_barrio": 0.676,
+    "exactitud": 0.681
+   },
+   "optico_radar_edificios": {
+    "f1_barrio": 0.762,
+    "exactitud": 0.769
+   }
+  },
+  "modelo_final": "optico_radar_edificios",
+  "capas_mas_utiles": [
+   {
+    "capa": "BLD_hstd",
+    "peso": 0.119
+   },
+   {
+    "capa": "BLD_count",
+    "peso": 0.091
+   },
+   {
+    "capa": "BLD_height",
+    "peso": 0.077
+   },
+   {
+    "capa": "BLD_presence",
+    "peso": 0.071
+   },
+   {
+    "capa": "VH_diff",
+    "peso": 0.051
+   },
+   {
+    "capa": "B8",
+    "peso": 0.037
+   },
+   {
+    "capa": "VH",
+    "peso": 0.032
+   },
+   {
+    "capa": "NDBI",
+    "peso": 0.029
+   },
+   {
+    "capa": "VV_lmean",
+    "peso": 0.028
+   },
+   {
+    "capa": "NDVI",
+    "peso": 0.028
+   }
+  ],
+  "nota": "Evaluado dejando afuera una ciudad por vez, con puntos balanceados entre barrio popular y barrio común construido. No es la misma métrica del estudio de Nairobi, aunque mide lo mismo: cuánto mejora al sumar el radar."
+ },
+ "places": [
+  {
+   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "id": "iguazu-andresito",
+   "place": "Andresito",
+   "river": "Iguazú",
+   "entrenamiento": false,
+   "fuente_renabap": "oficial"
+  },
+  {
+   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "id": "iguazu-cataratas",
+   "place": "Puerto Iguazú · Cataratas",
+   "river": "Iguazú",
+   "entrenamiento": false,
+   "fuente_renabap": "oficial"
+  },
+  {
+   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "id": "parana-eldorado",
+   "place": "Eldorado",
+   "river": "Paraná",
+   "entrenamiento": true,
+   "fuente_renabap": "oficial"
+  },
+  {
+   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "id": "parana-posadas",
+   "place": "Posadas",
+   "river": "Paraná",
+   "entrenamiento": true,
+   "fuente_renabap": "oficial"
+  },
+  {
+   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "id": "parana-ituzaingo",
+   "place": "Ituzaingó",
+   "river": "Paraná",
+   "entrenamiento": true,
+   "fuente_renabap": "oficial"
+  },
+  {
+   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "id": "parana-corrientes",
+   "place": "Corrientes",
+   "river": "Paraná",
+   "entrenamiento": true,
+   "fuente_renabap": "oficial"
+  },
+  {
+   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "id": "parana-bellavista",
+   "place": "Bella Vista",
+   "river": "Paraná",
+   "entrenamiento": true,
+   "fuente_renabap": "oficial"
+  },
+  {
+   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "id": "parana-goya",
+   "place": "Goya",
+   "river": "Paraná",
+   "entrenamiento": true,
+   "fuente_renabap": "oficial"
+  },
+  {
+   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "id": "parana-reconquista",
+   "place": "Reconquista",
+   "river": "Paraná",
+   "entrenamiento": true,
+   "fuente_renabap": "oficial"
+  },
+  {
+   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "id": "parana-esquina",
+   "place": "Esquina",
+   "river": "Paraná",
+   "entrenamiento": true,
+   "fuente_renabap": "oficial"
+  },
+  {
+   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "id": "parana-lapaz",
+   "place": "La Paz",
+   "river": "Paraná",
+   "entrenamiento": true,
+   "fuente_renabap": "oficial"
+  },
+  {
+   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "id": "parana-santafe",
+   "place": "Santa Fe · Paraná",
+   "river": "Paraná",
+   "entrenamiento": true,
+   "fuente_renabap": "oficial"
+  },
+  {
+   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "id": "parana-diamante",
+   "place": "Diamante",
+   "river": "Paraná",
+   "entrenamiento": true,
+   "fuente_renabap": "oficial"
+  },
+  {
+   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "id": "parana-rosario",
+   "place": "Rosario",
+   "river": "Paraná",
+   "entrenamiento": true,
+   "fuente_renabap": "oficial"
+  },
+  {
+   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "id": "parana-sannicolas",
+   "place": "San Nicolás",
+   "river": "Paraná",
+   "entrenamiento": true,
+   "fuente_renabap": "oficial"
+  },
+  {
+   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "id": "parana-sanpedro",
+   "place": "San Pedro",
+   "river": "Paraná",
+   "entrenamiento": true,
+   "fuente_renabap": "oficial"
+  },
+  {
+   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "id": "parana-zarate",
+   "place": "Zárate",
+   "river": "Paraná",
+   "entrenamiento": true,
+   "fuente_renabap": "oficial"
+  },
+  {
+   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "id": "paraguay-bahianegra",
+   "place": "Bahía Negra",
+   "river": "Paraguay",
+   "entrenamiento": false,
+   "fuente_renabap": "oficial"
+  },
+  {
+   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "id": "paraguay-concepcion",
+   "place": "Concepción",
+   "river": "Paraguay",
+   "entrenamiento": false,
+   "fuente_renabap": "oficial"
+  },
+  {
+   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "id": "paraguay-asuncion",
+   "place": "Asunción",
+   "river": "Paraguay",
+   "entrenamiento": true,
+   "fuente_renabap": "oficial"
+  },
+  {
+   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "id": "paraguay-formosa",
+   "place": "Formosa · Alberdi",
+   "river": "Paraguay",
+   "entrenamiento": true,
+   "fuente_renabap": "oficial"
+  },
+  {
+   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "id": "paraguay-pilar",
+   "place": "Pilar",
+   "river": "Paraguay",
+   "entrenamiento": false,
+   "fuente_renabap": "oficial"
+  },
+  {
+   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "id": "paraguay-humaita",
+   "place": "Humaitá",
+   "river": "Paraguay",
+   "entrenamiento": false,
+   "fuente_renabap": "oficial"
+  },
+  {
+   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "id": "bermejo-embarcacion",
+   "place": "Embarcación",
+   "river": "Bermejo",
+   "entrenamiento": true,
+   "fuente_renabap": "oficial"
+  },
+  {
+   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "id": "bermejo-elcolorado",
+   "place": "El Colorado",
+   "river": "Bermejo",
+   "entrenamiento": false,
+   "fuente_renabap": "oficial"
+  },
+  {
+   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "id": "uruguay-soberbio",
+   "place": "El Soberbio",
+   "river": "Uruguay",
+   "entrenamiento": false,
+   "fuente_renabap": "oficial"
+  },
+  {
+   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "id": "uruguay-albaposse",
+   "place": "Alba Posse",
+   "river": "Uruguay",
+   "entrenamiento": false,
+   "fuente_renabap": "oficial"
+  },
+  {
+   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "id": "uruguay-santotome",
+   "place": "Santo Tomé",
+   "river": "Uruguay",
+   "entrenamiento": true,
+   "fuente_renabap": "oficial"
+  },
+  {
+   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "id": "uruguay-libres",
+   "place": "Paso de los Libres",
+   "river": "Uruguay",
+   "entrenamiento": true,
+   "fuente_renabap": "oficial"
+  },
+  {
+   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "id": "uruguay-montecaseros",
+   "place": "Monte Caseros",
+   "river": "Uruguay",
+   "entrenamiento": true,
+   "fuente_renabap": "oficial"
+  },
+  {
+   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "id": "uruguay-concordia",
+   "place": "Concordia · Salto",
+   "river": "Uruguay",
+   "entrenamiento": true,
+   "fuente_renabap": "oficial"
+  },
+  {
+   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "id": "uruguay-colon",
+   "place": "Colón",
+   "river": "Uruguay",
+   "entrenamiento": true,
+   "fuente_renabap": "oficial"
+  },
+  {
+   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "id": "uruguay-cdeluruguay",
+   "place": "Concepción del Uruguay",
+   "river": "Uruguay",
+   "entrenamiento": true,
+   "fuente_renabap": "oficial"
+  },
+  {
+   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "id": "uruguay-fraybentos",
+   "place": "Fray Bentos",
+   "river": "Uruguay",
+   "entrenamiento": false,
+   "fuente_renabap": "oficial"
+  }
+ ],
+ "sources": [
+  "Registro Nacional de Barrios Populares (RENABAP), Secretaría de Integración Socio-Urbana · versión 2023-12-06 publicada en argentina.gob.ar",
+  "Copernicus Sentinel-1 GRD y Sentinel-2 L2A vía Google Earth Engine",
+  "Cloud Score+ (Google)",
+  "OpenStreetMap (ODbL) · barrios populares de Nairobi",
+  "Google Open Buildings temporal v1 · CC BY 4.0",
+  "ESA WorldCover 2021 · CC BY 4.0",
+  "WorldPop 2020 · CC BY 4.0",
+  "MERIT Hydro (Yamazaki et al., 2019)"
+ ]
+}

@@ -1,0 +1,96 @@
+RENABAP descargado: 6467 barrios
+Andresito: 1 barrios RENABAP (oficial)
+Puerto Iguazú · Cataratas: 0 barrios RENABAP (oficial)
+Eldorado: 24 barrios RENABAP (oficial)
+Posadas: 107 barrios RENABAP (oficial)
+Ituzaingó: 6 barrios RENABAP (oficial)
+Corrientes: 202 barrios RENABAP (oficial)
+Bella Vista: 7 barrios RENABAP (oficial)
+Goya: 20 barrios RENABAP (oficial)
+Reconquista: 19 barrios RENABAP (oficial)
+Esquina: 4 barrios RENABAP (oficial)
+La Paz: 18 barrios RENABAP (oficial)
+Santa Fe · Paraná: 106 barrios RENABAP (oficial)
+Diamante: 11 barrios RENABAP (oficial)
+Rosario: 173 barrios RENABAP (oficial)
+San Nicolás: 26 barrios RENABAP (oficial)
+San Pedro: 23 barrios RENABAP (oficial)
+Zárate: 42 barrios RENABAP (oficial)
+Bahía Negra: 0 barrios RENABAP (oficial)
+Concepción: 0 barrios RENABAP (oficial)
+Asunción: 14 barrios RENABAP (oficial)
+Formosa · Alberdi: 50 barrios RENABAP (oficial)
+Pilar: 0 barrios RENABAP (oficial)
+Humaitá: 2 barrios RENABAP (oficial)
+Embarcación: 33 barrios RENABAP (oficial)
+El Colorado: 2 barrios RENABAP (oficial)
+El Soberbio: 2 barrios RENABAP (oficial)
+Alba Posse: 1 barrios RENABAP (oficial)
+Santo Tomé: 4 barrios RENABAP (oficial)
+Paso de los Libres: 15 barrios RENABAP (oficial)
+Monte Caseros: 9 barrios RENABAP (oficial)
+Concordia · Salto: 59 barrios RENABAP (oficial)
+Colón: 4 barrios RENABAP (oficial)
+Concepción del Uruguay: 22 barrios RENABAP (oficial)
+Fray Bentos: 0 barrios RENABAP (oficial)
+  muestras Eldorado: 800
+  muestras Posadas: 800
+  muestras Ituzaingó: 800
+  muestras Corrientes: 400
+  muestras Bella Vista: 588
+  muestras Goya: 800
+  sin muestras en Reconquista: Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands
+  muestras Esquina: 800
+  muestras La Paz: 800
+  sin muestras en Santa Fe · Paraná: Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands
+  sin muestras en Diamante: Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands
+  muestras Rosario: 400
+  muestras San Nicolás: 800
+  muestras San Pedro: 800
+  muestras Zárate: 800
+  muestras Asunción: 800
+  muestras Formosa · Alberdi: 800
+  sin muestras en Embarcación: Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands
+  muestras Santo Tomé: 800
+  muestras Paso de los Libres: 800
+  muestras Monte Caseros: 800
+  muestras Concordia · Salto: 800
+  muestras Colón: 800
+  muestras Concepción del Uruguay: 800
+  OpenStreetMap Nairobi: 0 barrios populares
+Modelo final: optico_radar_edificios
+Andresito: None ha, None personas
+Puerto Iguazú · Cataratas: None ha, None personas
+Eldorado: None ha, None personas
+Posadas: None ha, None personas
+Ituzaingó: None ha, None personas
+Corrientes: None ha, None personas
+Bella Vista: None ha, None personas
+Goya: None ha, None personas
+Reconquista: None ha, None personas
+Esquina: None ha, None personas
+La Paz: None ha, None personas
+Santa Fe · Paraná: None ha, None personas
+Diamante: None ha, None personas
+Rosario: None ha, None personas
+San Nicolás: None ha, None personas
+San Pedro: None ha, None personas
+Zárate: None ha, None personas
+Bahía Negra: None ha, None personas
+Concepción: None ha, None personas
+Asunción: None ha, None personas
+Formosa · Alberdi: None ha, None personas
+Pilar: None ha, None personas
+Humaitá: None ha, None personas
+Embarcación: None ha, None personas
+El Colorado: None ha, None personas
+El Soberbio: None ha, None personas
+Alba Posse: None ha, None personas
+Santo Tomé: None ha, None personas
+Paso de los Libres: None ha, None personas
+Monte Caseros: None ha, None personas
+Concordia · Salto: None ha, None personas
+Colón: None ha, None personas
+Concepción del Uruguay: None ha, None personas
+Fray Bentos: None ha, None personas
+Promedio por ciudad dejada afuera: {"optico": {"f1_barrio": 0.625, "exactitud": 0.628}, "optico_radar": {"f1_barrio": 0.676, "exactitud": 0.681}, "optico_radar_edificios": {"f1_barrio": 0.762, "exactitud": 0.769}}
