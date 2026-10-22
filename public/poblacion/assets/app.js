@@ -243,10 +243,12 @@ function drawBarriosModel(j){const box=$('barrios-model');box.replaceChildren();
     card('Exactitud general',r.exactitud==null?'Sin dato':pct(r.exactitud),'color + radar, en ciudades que el modelo no vio'));
   const e=avg.optico_radar_edificios||{};
   if(e.f1_barrio!=null)grid.append(card('Color + radar + edificios',number(e.f1_barrio,2),'sumando cantidad y altura de construcciones (Google Open Buildings)'));
+  const x=avg.optico_radar_externas||{};
+  if(x.f1_barrio!=null)grid.append(card('Color + radar + otras ciudades',number(x.f1_barrio,2),'sumando etiquetas de '+((m.ciudades_externas||[]).join(', ')||'otras ciudades')));
   box.append(grid);
   const lines=[];
   if(o.f1_barrio!=null&&r.f1_barrio!=null)lines.push(r.f1_barrio>o.f1_barrio?`Sumar el radar mejora la detección de ${number(o.f1_barrio,2)} a ${number(r.f1_barrio,2)}: separa mejor un barrio popular de un barrio denso común.`:`En esta corrida el radar no mejoró la detección (${number(o.f1_barrio,2)} contra ${number(r.f1_barrio,2)}).`);
-  if(m.modelo_final)lines.push(m.modelo_final==='optico_radar_edificios'?'El mapa usa la versión con edificios, que anduvo mejor en ciudades no vistas.':'El mapa usa la versión color + radar.');
+  if(m.modelo_final)lines.push(m.modelo_final==='optico_radar_edificios'?'El mapa usa la versión con edificios, que anduvo mejor en ciudades no vistas.':m.modelo_final==='optico_radar_externas'?'El mapa usa la versión que suma etiquetas de '+((m.ciudades_externas||[]).join(', ')||'otras ciudades')+', que anduvo mejor en ciudades argentinas no vistas.':'El mapa usa la versión color + radar.');
   lines.push(`Entrenado con los barrios RENABAP de ${(m.ciudades_entrenamiento||[]).length} localidades argentinas y evaluado dejando afuera una ciudad por vez. Imágenes de ${j.data.year}; actualizado el ${j.data.updated}.`);
   if(m.nota)lines.push(m.nota);
   for(const l of lines){const p=make('p',l);p.className='hint';box.append(p);}

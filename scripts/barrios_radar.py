@@ -10,8 +10,9 @@ Qué hace, en GitHub Actions y con Google Earth Engine:
      local y temporal, y diferencia entre estación seca y húmeda)—, las bandas ópticas de Sentinel-2 y la
      morfología de las construcciones (Google Open Buildings temporal: cantidad, altura y su variación).
   3. Etiquetas: dentro de un polígono RENABAP = barrio popular; construido a más de 60 m de cualquiera = barrio común.
-  4. Entrena tres bosques aleatorios (solo óptico / óptico + radar / óptico + radar + edificios) y los evalúa
-     dejando afuera una ciudad por vez: así se mide cómo anda en una ciudad que el modelo nunca vio.
+  4. Entrena bosques aleatorios (solo óptico / óptico + radar / + edificios / + etiquetas de otras ciudades, como
+     Nairobi y Eldoret, si están en data/etiquetas_externas.geojson) y los evalúa dejando afuera una ciudad
+     argentina por vez: así se mide cómo anda en una ciudad que el modelo nunca vio.
   5. Aplica el mejor de los dos con radar a las 34 localidades (también Paraguay y Uruguay, donde no hay RENABAP),
      y cruza con WorldPop 2020 y la altura sobre el río (MERIT Hydro HAND).
 
@@ -36,6 +37,9 @@ MIN_POLYGONS = 3            # una ciudad entra al entrenamiento si tiene al meno
 NEG_BUFFER_M = 60
 HAND_BANDS = (1, 2, 3, 5)
 SEED = 7
+# Bosque aleatorio como en el estudio: 500 árboles, profundidad 30, √variables por corte, clases balanceadas
+RF_PARAMS = dict(n_estimators=500, max_depth=30, max_features="sqrt", class_weight="balanced", n_jobs=-1,
+                 random_state=SEED)
 
 RENABAP_WFS = os.environ.get("RENABAP_WFS", "https://geoportal.obraspublicas.gob.ar/geoserver/ows")
 RENABAP_LAYER = os.environ.get("RENABAP_LAYER", "geonode:renabap2020_smz")
@@ -44,11 +48,16 @@ RENABAP_CREDIT = ("Registro Nacional de Barrios Populares (RENABAP), Ministerio 
                   "vía geoportal del Ministerio de Obras Públicas")
 
 RADAR = ["VV", "VH", "VHVV", "VV_dry", "VV_wet", "VV_season", "VV_tstd",
-         "VVt_contrast", "VVt_var", "VVt_ent", "VVt_idm", "VV_cv3", "VV_cv5", "VV_lmean"]
+         "VVt_contrast", "VVt_var", "VVt_ent", "VVt_idm", "VHt_contrast", "VHt_var", "VHt_ent",
+         "VH_diff", "VV_cv3", "VV_cv5", "VV_lmean"]
 OPTICAL = ["B2", "B3", "B4", "B8", "B11", "B12", "NDVI", "NDBI"]
 BUILDINGS = ["BLD_count", "BLD_presence", "BLD_height", "BLD_hstd"]
 SETS = {"optico": OPTICAL, "optico_radar": OPTICAL + RADAR, "optico_radar_edificios": OPTICAL + RADAR + BUILDINGS}
-FINAL_CANDIDATES = ("optico_radar", "optico_radar_edificios")
+FINAL_CANDIDATES = ("optico_radar", "optico_radar_edificios", "optico_radar_externas")
+# Etiquetas de otras ciudades (por ejemplo Nairobi y Eldoret, si los autores las comparten). GeoJSON con polígonos
+# y propiedades «clase» ("informal" o "formal") y «ciudad». Se suman al entrenamiento solo si mejoran el resultado
+# en ciudades argentinas que el modelo no vio.
+EXTERNAL_FILE = os.path.join(ROOT, "data", "etiquetas_externas.geojson")
 
 
 # ───────────────────────────── geometría ─────────────────────────────
@@ -132,9 +141,15 @@ def stack(ee, region):
     dry = s1.filter(ee.Filter.calendarRange(6, 9, "month")).select("VV").median().rename("VV_dry")
     wet = s1.filter(ee.Filter.calendarRange(12, 3, "month")).select("VV").median().rename("VV_wet")
     tstd = s1.select("VV").reduce(ee.Reducer.stdDev()).rename("VV_tstd")
-    # textura: GLCM sobre VV en dB llevado a enteros
+    # textura (escalón 2 del estudio): GLCM 3×3 sobre VV y VH en dB llevados a enteros
     q = vv.add(30).multiply(4).clamp(0, 160).toInt().rename("VVt")
-    glcm = q.glcmTexture(size=2).select(["VVt_contrast", "VVt_var", "VVt_ent", "VVt_idm"])
+    glcm = q.glcmTexture(size=1).select(["VVt_contrast", "VVt_var", "VVt_ent", "VVt_idm"])
+    qh = vh.add(35).multiply(4).clamp(0, 160).toInt().rename("VHt")
+    glcm_h = qh.glcmTexture(size=1).select(["VHt_contrast", "VHt_var", "VHt_ent"])
+    # escalón 3 del estudio: entropía de VH en 7×7 sobre la retrodispersión VH media (lineal)
+    vh_lin = ee.Image(10).pow(vh.divide(10))
+    vh_diff = (qh.glcmTexture(size=3).select("VHt_ent")
+               .divide(vh_lin.reduceNeighborhood(ee.Reducer.mean(), ee.Kernel.square(3))).rename("VH_diff"))
     # índice de dispersión: retornos débiles y desparejos de construcciones chicas y desordenadas
     lin = ee.Image(10).pow(vv.divide(10))
     k3, k5 = ee.Kernel.square(1), ee.Kernel.square(2)
@@ -143,7 +158,7 @@ def stack(ee, region):
     m5 = lin.reduceNeighborhood(ee.Reducer.mean(), k5)
     cv5 = lin.reduceNeighborhood(ee.Reducer.stdDev(), k5).divide(m5).rename("VV_cv5")
     radar = ee.Image.cat([vv.rename("VV"), vh.rename("VH"), vh.subtract(vv).rename("VHVV"), dry, wet,
-                          wet.subtract(dry).rename("VV_season"), tstd, glcm, cv3, cv5,
+                          wet.subtract(dry).rename("VV_season"), tstd, glcm, glcm_h, vh_diff, cv3, cv5,
                           m5.log10().multiply(10).rename("VV_lmean")])
     cs = ee.ImageCollection("GOOGLE/CLOUD_SCORE_PLUS/V1/S2_HARMONIZED")
     s2 = (ee.ImageCollection("COPERNICUS/S2_SR_HARMONIZED").filterBounds(region).filterDate(start, end)
@@ -187,6 +202,36 @@ def sample_city(ee, lat, lon, polys):
     return pts
 
 
+def load_external():
+    """Etiquetas de otras ciudades agrupadas por ciudad: {ciudad: {"informal": [...], "formal": [...]}}."""
+    if not os.path.exists(EXTERNAL_FILE):
+        return {}
+    with open(EXTERNAL_FILE, encoding="utf-8") as f:
+        gj = json.load(f)
+    out = {}
+    for feat in gj.get("features", []):
+        props, geom = feat.get("properties") or {}, feat.get("geometry")
+        clase = str(props.get("clase", "")).lower()
+        if clase not in ("informal", "formal") or not geom:
+            continue
+        out.setdefault(str(props.get("ciudad") or "externa"), {"informal": [], "formal": []})[clase].append(geom)
+    return {c: v for c, v in out.items() if v["informal"] and v["formal"]}
+
+
+def sample_external(ee, groups):
+    """Puntos de barrio popular (1) y barrio común (0) dentro de los polígonos de otra ciudad."""
+    inf = ee.FeatureCollection([ee.Feature(ee.Geometry(g)) for g in groups["informal"]])
+    frm = ee.FeatureCollection([ee.Feature(ee.Geometry(g)) for g in groups["formal"]])
+    region = inf.merge(frm).geometry().bounds()
+    img, built = stack(ee, region)
+    lab = (ee.Image(0).paint(frm, 2).paint(inf, 3).subtract(2).updateMask(
+        ee.Image(0).paint(frm, 1).paint(inf, 1).eq(1)).rename("label").toInt())
+    return img.addBands(lab).stratifiedSample(numPoints=POINTS_PER_CLASS, classBand="label", region=region, scale=10,
+                                              seed=SEED, classValues=[0, 1],
+                                              classPoints=[POINTS_PER_CLASS, POINTS_PER_CLASS],
+                                              dropNulls=True, tileScale=8, geometries=False)
+
+
 # ───────────────────────────── evaluación ─────────────────────────────
 
 def rows_to_xy(rows, feats):
@@ -198,24 +243,34 @@ def rows_to_xy(rows, feats):
     return X, y
 
 
-def leave_one_city_out(samples):
-    """Entrena con todas las ciudades menos una y mide en la que quedó afuera."""
+def leave_one_city_out(samples, external=None):
+    """Entrena con todas las ciudades menos una y mide en la que quedó afuera.
+
+    Las muestras externas (otras ciudades del mundo) solo se suman al entrenamiento de la variante
+    «optico_radar_externas»; la medición es siempre en ciudades argentinas que el modelo no vio."""
+    external = external or []
     from sklearn.ensemble import RandomForestClassifier
     from sklearn.metrics import accuracy_score, f1_score
     cities = [c for c, rows in samples.items() if len({r.get("label") for r in rows}) == 2]
     per_city = []
     for test in cities:
         row = {"city": test}
-        for name, feats in SETS.items():
+        variants = dict(SETS)
+        if external:
+            variants["optico_radar_externas"] = SETS["optico_radar"]
+        for name, feats in variants.items():
             Xtr, ytr = [], []
             for c in cities:
                 if c != test:
                     X, y = rows_to_xy(samples[c], feats)
                     Xtr += X; ytr += y
+            if name == "optico_radar_externas":
+                X, y = rows_to_xy(external, feats)
+                Xtr += X; ytr += y
             Xte, yte = rows_to_xy(samples[test], feats)
             if len(set(ytr)) < 2 or len(set(yte)) < 2:
                 continue
-            rf = RandomForestClassifier(n_estimators=200, min_samples_leaf=2, n_jobs=-1, random_state=SEED)
+            rf = RandomForestClassifier(**RF_PARAMS)
             rf.fit(Xtr, ytr)
             pred = rf.predict(Xte)
             row[name] = {"f1_barrio": round(f1_score(yte, pred, pos_label=1), 3),
@@ -225,18 +280,27 @@ def leave_one_city_out(samples):
     def mean(name, key):
         vals = [r[name][key] for r in per_city if name in r]
         return round(sum(vals) / len(vals), 3) if vals else None
-    summary = {name: {"f1_barrio": mean(name, "f1_barrio"), "exactitud": mean(name, "exactitud")} for name in SETS}
+    names = list(SETS) + (["optico_radar_externas"] if external else [])
+    summary = {name: {"f1_barrio": mean(name, "f1_barrio"), "exactitud": mean(name, "exactitud")} for name in names}
     importance = None
     best = choose_final(summary)
     allX, ally = [], []
+    feats_best = feats_for(best)
     for c in cities:
-        X, y = rows_to_xy(samples[c], SETS[best])
+        X, y = rows_to_xy(samples[c], feats_best)
+        allX += X; ally += y
+    if best == "optico_radar_externas":
+        X, y = rows_to_xy(external, feats_best)
         allX += X; ally += y
     if len(set(ally)) == 2:
-        rf = RandomForestClassifier(n_estimators=200, min_samples_leaf=2, n_jobs=-1, random_state=SEED).fit(allX, ally)
-        pairs = sorted(zip(SETS[best], rf.feature_importances_), key=lambda p: -p[1])
+        rf = RandomForestClassifier(**RF_PARAMS).fit(allX, ally)
+        pairs = sorted(zip(feats_best, rf.feature_importances_), key=lambda p: -p[1])
         importance = [{"capa": k, "peso": round(float(v), 3)} for k, v in pairs[:10]]
     return per_city, summary, importance
+
+
+def feats_for(name):
+    return SETS["optico_radar"] if name == "optico_radar_externas" else SETS[name]
 
 
 def choose_final(summary):
@@ -325,17 +389,26 @@ def main(out_path):
             print(f"  muestras {st['place']}: {len(samples[st['id']])}", flush=True)
         except Exception as exc:
             print(f"  sin muestras en {st['place']}: {str(exc)[:160]}", flush=True)
-    per_city, summary, importance = leave_one_city_out(samples)
+    ext_fcs, ext_rows, ext_cities = [], [], []
+    for city, groups in load_external().items():
+        try:
+            fc = sample_external(ee, groups)
+            rows = [f["properties"] for f in fc.getInfo()["features"]]
+            ext_fcs.append(fc); ext_rows += rows; ext_cities.append(city)
+            print(f"  etiquetas externas {city}: {len(rows)} puntos", flush=True)
+        except Exception as exc:
+            print(f"  sin muestras externas en {city}: {str(exc)[:160]}", flush=True)
+    per_city, summary, importance = leave_one_city_out(samples, ext_rows)
     final = choose_final(summary)
     print("Modelo final:", final, flush=True)
-    training = ee.FeatureCollection(fcs).flatten()
-    clf = ee.Classifier.smileRandomForest(numberOfTrees=200, minLeafPopulation=2, seed=SEED).train(
-        training, "label", SETS[final])
+    training = ee.FeatureCollection(fcs + (ext_fcs if final == "optico_radar_externas" else [])).flatten()
+    clf = ee.Classifier.smileRandomForest(numberOfTrees=500, seed=SEED).train(
+        training, "label", feats_for(final))
     places = []
     img_dir = os.path.join(os.path.dirname(out_path), "barrios_radar")
     os.makedirs(img_dir, exist_ok=True)
     for st in stations:
-        res = map_place(ee, clf, st, polys_by[st["id"]], SETS[final])
+        res = map_place(ee, clf, st, polys_by[st["id"]], feats_for(final))
         png = res.pop("_png", None)
         if png and png.startswith(b"\x89PNG"):
             with open(os.path.join(img_dir, st["id"] + ".png"), "wb") as f:
@@ -351,6 +424,7 @@ def main(out_path):
         "model": {
             "method": __doc__.split("\n\n", 1)[1].strip(),
             "ciudades_entrenamiento": [st["place"] for st in train],
+            "ciudades_externas": ext_cities,
             "puntos_por_clase_y_ciudad": POINTS_PER_CLASS,
             "evaluacion_por_ciudad": [dict(r, city=next(s["place"] for s in stations if s["id"] == r["city"]))
                                       for r in per_city],

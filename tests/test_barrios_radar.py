@@ -79,3 +79,35 @@ def test_final_model_prefers_buildings_only_when_better():
     assert br.choose_final({"optico_radar": {"f1_barrio": 0.7}, "optico_radar_edificios": {"f1_barrio": 0.75}}) == "optico_radar_edificios"
     assert br.choose_final({"optico_radar": {"f1_barrio": 0.7}, "optico_radar_edificios": {"f1_barrio": 0.7}}) == "optico_radar"
     assert br.choose_final({"optico_radar": {"f1_barrio": 0.7}, "optico_radar_edificios": {"f1_barrio": None}}) == "optico_radar"
+
+
+def test_external_labels_are_used_only_if_they_help():
+    pytest.importorskip("sklearn")
+    rnd = random.Random(3)
+    def rows(n, signal):
+        out = []
+        for _ in range(n):
+            label = rnd.randint(0, 1)
+            r = {f: rnd.random() for f in br.OPTICAL + br.RADAR + br.BUILDINGS}
+            r["VH_diff"] = (label + rnd.random() * 0.5) if signal else rnd.random()
+            r["label"] = label
+            out.append(r)
+        return out
+    samples = {c: rows(40, True) for c in ("a", "b", "c")}       # pocas muestras locales
+    external = rows(600, True)                                   # muchas de otra ciudad con la misma firma
+    _, summary, _ = br.leave_one_city_out(samples, external)
+    assert "optico_radar_externas" in summary
+    assert summary["optico_radar_externas"]["f1_barrio"] >= summary["optico_radar"]["f1_barrio"] - 0.02
+
+
+def test_load_external_groups_by_city(monkeypatch, tmp_path):
+    import json
+    poly = {"type": "Polygon", "coordinates": [[[36.8, -1.3], [36.81, -1.3], [36.81, -1.29], [36.8, -1.3]]]}
+    f = tmp_path / "ext.geojson"
+    f.write_text(json.dumps({"features": [
+        {"geometry": poly, "properties": {"clase": "informal", "ciudad": "Nairobi"}},
+        {"geometry": poly, "properties": {"clase": "formal", "ciudad": "Nairobi"}},
+        {"geometry": poly, "properties": {"clase": "informal", "ciudad": "Eldoret"}}]}))
+    monkeypatch.setattr(br, "EXTERNAL_FILE", str(f))
+    groups = br.load_external()
+    assert list(groups) == ["Nairobi"]          # Eldoret no tiene barrios comunes: queda afuera
