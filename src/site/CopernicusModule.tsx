@@ -1,0 +1,78 @@
+import React,{useEffect,useRef,useState} from "react";
+import L from "leaflet";
+import * as echarts from "echarts";
+type Collection={id:string;title?:string};
+type Scene={id:string;collection:string;geometry?:{type:string;coordinates:unknown};properties:{datetime?:string;"eo:cloud_cover"?:number};links:{href:string;rel:string}[]};
+export function CopernicusModule({embedded=false,lat,lon,polygon=[]}:{embedded?:boolean;lat?:number;lon?:number;polygon?:[number,number][]}){
+ const mapElement=useRef<HTMLDivElement|null>(null);
+ const mapInstance=useRef<L.Map|null>(null);
+ const chartElement=useRef<HTMLDivElement|null>(null);
+ const [outline,setOutline]=useState<[number,number][]>([]);
+ const [drawMode,setDrawMode]=useState(false);
+ const drawing=useRef(false);
+ useEffect(()=>{drawing.current=drawMode},[drawMode]);
+ useEffect(()=>{if(polygon.length>=3)setOutline(polygon)},[polygon]);
+ const [collections,setCollections]=useState<Collection[]>([]);
+ const [collection,setCollection]=useState("");
+ const [bbox,setBbox]=useState(()=>lat!==undefined&&lon!==undefined?[lon-0.06,lat-0.06,lon+0.06,lat+0.06].map(x=>x.toFixed(4)).join(","):"-59.10,-28.56,-58.98,-28.44");
+ useEffect(()=>{if(outline.length>=3){const ys=outline.map(p=>p[0]),xs=outline.map(p=>p[1]);setBbox([Math.min(...xs),Math.min(...ys),Math.max(...xs),Math.max(...ys)].map(v=>v.toFixed(6)).join(","))}},[outline]);
+ useEffect(()=>{if(!mapElement.current||mapInstance.current)return;const m=L.map(mapElement.current).setView([lat??-28.507,lon??-59.043],12);mapInstance.current=m;L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"© OpenStreetMap contributors",maxZoom:19}).addTo(m);m.on("click",e=>{if(drawing.current)setOutline(p=>[...p,[e.latlng.lat,e.latlng.lng]])});setTimeout(()=>m.invalidateSize(),100);return ()=>{m.remove();mapInstance.current=null}},[]);
+ useEffect(()=>{const m=mapInstance.current;if(!m)return;const group=L.featureGroup().addTo(m);if(outline.length){L.polyline(outline,{color:"#35b3cf",weight:3}).addTo(group);outline.forEach(p=>L.circleMarker(p,{radius:4,color:"#fff",fillColor:"#35b3cf",fillOpacity:1}).addTo(group));if(outline.length>=3){L.polygon(outline,{color:"#35b3cf",fillOpacity:.13}).addTo(group);m.fitBounds(L.latLngBounds(outline),{padding:[24,24]})}}return ()=>{group.remove()}},[outline]);
+ const [start,setStart]=useState("2026-09-01");
+ const [end,setEnd]=useState("2026-10-22");
+ const [scenes,setScenes]=useState<Scene[]>([]);
+ const [error,setError]=useState("");
+ useEffect(()=>{if(!chartElement.current||!scenes.length)return;const chart=echarts.init(chartElement.current);const ordered=scenes.filter(x=>x.properties?.datetime).sort((a,b)=>(a.properties.datetime||"").localeCompare(b.properties.datetime||""));chart.setOption({backgroundColor:"#192b36",tooltip:{trigger:"axis"},grid:{left:55,right:24,top:40,bottom:75},xAxis:{type:"category",data:ordered.map(x=>(x.properties.datetime||"").slice(0,10)),axisLabel:{color:"#b7c9d1",rotate:45}},yAxis:{type:"value",name:"Nubes (%)",min:0,max:100,axisLabel:{color:"#b7c9d1"},nameTextStyle:{color:"#b7c9d1"}},series:[{type:"line",name:"Cobertura nubosa de la escena",data:ordered.map(x=>x.properties["eo:cloud_cover"]??null),connectNulls:false,smooth:false}]});return ()=>chart.dispose()},[scenes]);
+ const [loading,setLoading]=useState(false);
+ const [pdfBusy,setPdfBusy]=useState(false);
+ function downloadGeoJSON(){if(outline.length<3)return;const ring=[...outline.map(([latitude,longitude])=>[longitude,latitude]),[outline[0][1],outline[0][0]]];const geojson={type:"FeatureCollection",features:[{type:"Feature",properties:{source:"DOTS - delimitacion del usuario",collection,start,end},geometry:{type:"Polygon",coordinates:[ring]}},...scenes.filter(x=>x.geometry).map(x=>({type:"Feature",properties:{id:x.id,collection:x.collection,...x.properties},geometry:(x as any).geometry}))]};const url=URL.createObjectURL(new Blob([JSON.stringify(geojson,null,2)],{type:"application/geo+json"}));const a=document.createElement("a");a.href=url;a.download="DOTS_Copernicus_area.geojson";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+ async function downloadReport(){if(outline.length<3)return;setPdfBusy(true);setError("");try{const r=await fetch("/api/copernicus/report",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({polygon:outline,scenes,collection,start,end})});if(!r.ok){const j=await r.json();throw Error(j.detail||j.error||"No se pudo generar el PDF")}const blob=await r.blob();const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="DOTS_Copernicus_catalogo.pdf";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}catch(e){setError(e instanceof Error?e.message:String(e))}finally{setPdfBusy(false)}}
+ useEffect(()=>{fetch("/api/copernicus/collections").then(async r=>{const j=await r.json();if(!r.ok)throw Error(j.error||"Catálogo no disponible");const c:Collection[]=j.collections||[];setCollections(c);setCollection(c.find(x=>/sentinel-2.*l2a/i.test(x.id))?.id||c[0]?.id||"")}).catch(e=>setError(String(e.message)))},[]);
+ async function search(e:React.FormEvent){e.preventDefault();if(outline.length<3){setError("Delimitá primero una parcela con al menos tres puntos sobre el mapa.");return}setError("");setScenes([]);setLoading(true);try{
+ const q=new URLSearchParams({bbox,start,end,collection,limit:"25"});
+ const r=await fetch("/api/copernicus/scenes?"+q);const j=await r.json();if(!r.ok)throw Error(j.detail||j.error||"Consulta fallida");setScenes(j.features||[]);
+ }catch(e){setError(e instanceof Error?e.message:String(e))}finally{setLoading(false)}}
+ return <main style={{maxWidth:embedded?"100%":1180,margin:"auto",padding:embedded?"12px 4px":"32px 22px",fontFamily:"IBM Plex Sans, sans-serif",color:"#e5edf2",background:"#101c25",minHeight:embedded?0:"100vh"}}>
+ {!embedded&&<a href="/" style={{color:"#8bd3ef"}}>← DOTS · Inicio</a>}<p style={{letterSpacing:2,color:"#78bfd7",marginTop:40}}>NUEVO MÓDULO · COPERNICUS 2026</p>
+ <h1 style={{fontSize:"clamp(32px,5vw,58px)",margin:"8px 0"}}>DOTS amplía su capacidad de análisis satelital con Copernicus</h1>
+ <p style={{fontSize:19,maxWidth:840}}>Explorá imágenes oficiales del programa Copernicus y prepará análisis de parcelas, vegetación, agua, temperatura y atmósfera. Consulta del catálogo en vivo; los cálculos avanzados se incorporarán progresivamente.</p>
+ <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:14,margin:"28px 0"}}>
+ {[
+ ["Sentinel-1","Radar y superficies inundadas"],
+ ["Sentinel-2","Vegetación y cambios agrícolas"],
+ ["Sentinel-3","Temperatura superficial"],
+ ["Sentinel-5P","Composición atmosférica"],
+ ["openEO","Procesamiento remoto · pendiente de conexión"],
+ ["IA geoespacial","TerraMind / TESSERA · en evaluación"]
+ ].map(([name,desc])=><article key={name} style={{border:"1px solid #38505d",borderRadius:12,padding:18,background:"#192b36"}}><h2 style={{fontSize:19,margin:"0 0 8px"}}>{name}</h2><p style={{margin:0,color:"#b7c9d1"}}>{desc}</p></article>)}</div>
+ <section aria-label="Aplicaciones prácticas" style={{margin:"28px 0"}}><h2>¿Para qué sirve en la práctica?</h2><p>DOTS amplía sus capacidades de análisis incorporando fuentes de Copernicus. No es una plataforma separada: sus imágenes y productos se relacionan con los módulos de cultivos, parcelas, agua y clima que ya ofrece DOTS.</p><div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(230px,1fr))",gap:14}}>{[
+ {t:"Producción agrícola",d:"Comparar campañas y reconocer sectores de vegetación menos vigorosa. Ayuda a decidir dónde inspeccionar un lote antes de intervenir.",url:"/cultivos",link:"Ir a cultivos"},
+ {t:"Crecidas e inundaciones",d:"Revisar imágenes de radar para reconocer agua sobre el terreno, incluso cuando las nubes impiden una fotografía óptica.",url:"/nino-crecidas",link:"Ir a crecidas"},
+ {t:"Temperaturas y sequías",d:"Contrastar temperaturas superficiales y cambios en vegetación para investigar períodos de estrés térmico e hídrico.",url:"/simulador-ambiental",link:"Ir al simulador"},
+ {t:"Historia del territorio",d:"Comparar coberturas de distintas fechas para estudiar avance agrícola, pérdida de monte y cambios en pastizales.",url:"/observatorio",link:"Abrir mapa principal"},
+ {t:"Calidad atmosférica",d:"Consultar productos regionales de gases y humo para contextualizar episodios ambientales, sin atribuir emisiones a una parcela individual.",url:"/capas",link:"Ver capas"},
+ {t:"Informes técnicos",d:"Usar las fuentes verificadas como respaldo de análisis de parcelas; los nuevos informes automáticos Copernicus aún están en desarrollo.",url:"/modulos",link:"Ver informes"}
+ ].map(x=><article key={x.t} style={{padding:18,background:"#192b36",border:"1px solid #38505d",borderRadius:12}}><h3>{x.t}</h3><p style={{color:"#bfd0d9"}}>{x.d}</p><a style={{color:"#8bd3ef"}} href={x.url}>{x.link} →</a></article>)}</div></section>
+ <section style={{background:"#192b36",border:"1px solid #38505d",padding:22,borderRadius:14}}>
+ <h2>Delimitar y analizar una parcela</h2><p>Seleccioná un polígono del Observatorio o dibujá uno nuevo. Sin delimitación no se habilita la consulta.</p>
+ <div ref={mapElement} style={{height:340,width:"100%",borderRadius:10,marginBottom:12}} aria-label="Mapa interactivo para delimitar el área de estudio"/>
+ <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}><button type="button" onClick={()=>setDrawMode(v=>!v)} style={action}>{drawMode?"Terminar dibujo":"Dibujar polígono"}</button><button type="button" onClick={()=>{setOutline([]);setScenes([]);setDrawMode(true)}} style={action}>Borrar delimitación</button><span style={{alignSelf:"center"}}>{outline.length>=3?"Área delimitada · "+outline.length+" vértices":outline.length+" puntos · mínimo 3"}</span></div>
+ <p style={{color:"#b7c9d1"}}>El rectángulo de búsqueda se calcula automáticamente desde el polígono. La búsqueda devuelve escenas que intersectan el área; todavía no recorta píxeles ni calcula índices dentro del lote.</p>
+ <form onSubmit={search} style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:12}}>
+ <label>Colección<select required value={collection} onChange={e=>setCollection(e.target.value)} style={field}>{collections.map(c=><option key={c.id} value={c.id}>{c.title||c.id}</option>)}</select></label>
+ <label>Extensión de búsqueda (automática)<input readOnly value={outline.length>=3?bbox:"Delimitá el lote primero"} style={field}/></label>
+ <label>Desde<input required type="date" value={start} onChange={e=>setStart(e.target.value)} style={field}/></label>
+ <label>Hasta<input required type="date" value={end} onChange={e=>setEnd(e.target.value)} style={field}/></label>
+ <button disabled={loading||!collection||outline.length<3} type="submit" style={{background:"#35b3cf",color:"#071820",fontWeight:700,border:0,borderRadius:8,padding:12,cursor:"pointer"}}>{loading?"Consultando…":"Buscar imágenes"}</button>
+ </form>
+ {error&&<p role="alert" style={{color:"#ffb5a7"}}>{error}</p>}
+ <button type="button" onClick={downloadGeoJSON} disabled={outline.length<3} style={action}>Exportar mapa y delimitación GeoJSON</button>{" "}<button type="button" onClick={downloadReport} disabled={pdfBusy||outline.length<3} style={action}>{pdfBusy?"Generando PDF…":"Descargar informe PDF del área delimitada"}</button><p style={{color:"#b7c9d1"}}>El PDF documenta el polígono y las escenas consultadas; no incluye todavía índices de vegetación calculados.</p>
+ <p role="status">{scenes.length?scenes.length+" escenas encontradas":loading?"Buscando en Copernicus…":"Los resultados aparecerán aquí. No se muestran datos simulados."}</p>
+ {scenes.length>0&&<section><h3>Gráfico de cobertura nubosa de las escenas</h3><p style={{color:"#b7c9d1"}}>Metadatos oficiales de cada escena, no mediciones dentro del polígono.</p><div ref={chartElement} style={{width:"100%",height:280}} /></section>}
+ <div style={{display:"grid",gap:8}}>{scenes.map(s=><article key={s.id} style={{borderTop:"1px solid #38505d",padding:"12px 0"}}><strong>{s.id}</strong><p>{s.collection} · {s.properties.datetime||"Fecha no informada"} · Nubes: {s.properties["eo:cloud_cover"]??"sin dato"}%</p>{s.links.find(l=>l.rel==="self")&&<a href={s.links.find(l=>l.rel==="self")!.href} target="_blank" rel="noreferrer" style={{color:"#8bd3ef"}}>Metadatos oficiales ↗</a>}</article>)}</div>
+ </section>
+ <p style={{color:"#9cb2bd",marginTop:22}}>Fuentes: Copernicus Data Space Ecosystem / ESA. Los productos no son mediciones de campo. El acceso al agente openEO alfa requiere autorización; DOTS no declara habilitados procesos que aún no fueron configurados.</p>
+ </main>
+}
+const action:React.CSSProperties={padding:"9px 13px",borderRadius:7,border:"1px solid #54717f",background:"#234454",color:"#fff",cursor:"pointer"};
+const field:React.CSSProperties={display:"block",width:"100%",padding:11,borderRadius:7,border:"1px solid #647d89",background:"#0d1b25",color:"#fff",marginTop:7,boxSizing:"border-box"};
