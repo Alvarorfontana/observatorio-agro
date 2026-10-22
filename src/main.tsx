@@ -41,6 +41,7 @@ import { terrainForLot, terrainImage, DEM_ATTRIBUTION, DEM_SOURCE_URL, type Terr
 import { RISK_COLORS, DRAIN_COLOR } from "./dashboard/terrainCore";
 import { VariablesPanel } from "./dashboard/VariablesPanel";
 import { EnvironmentalLab } from "./site/EnvironmentalLab";
+import { CopernicusModule } from "./site/CopernicusModule";
 import { EnvironmentalWorkspace } from "./site/EnvironmentalWorkspace";
 const LotDashboard = lazy(() => import("./dashboard/LotDashboard").then(m => ({ default: m.LotDashboard })));
 import { OPEN_LAYERS, LAYER_GROUPS } from "./dashboard/openLayers";
@@ -2742,6 +2743,7 @@ function Home({onDemo}:{onDemo:()=>void}){
  const [nino,setNino]=useState<any>(null),[rios,setRios]=useState<any>(null);
  useEffect(()=>{let active=true;fetch("/api/fuentes/el-nino?lat=-28.5&lon=-59").then(r=>r.json()).then(j=>{if(active&&j.status==="recibido")setNino(j.data)}).catch(()=>{});fetch("/api/fuentes/alertas-resumen").then(r=>r.json()).then(j=>{if(active&&j.status==="recibido")setRios(j.data)}).catch(()=>{});return()=>{active=false}},[]);
  const sections=[
+  {icon:"◉",name:"Nuevo · Copernicus 2026",description:"Catálogo satelital europeo en vivo, Sentinel-1/2/3/5P e IA geoespacial en desarrollo.",cta:"Explorar Copernicus",url:"/copernicus",image:"satellite"},
   {icon:"◫",name:"Observatorio principal",description:"Mapa interactivo, parcelas y análisis local.",cta:"Abrir observatorio",url:"/observatorio",image:"map"},
   {icon:"▥",name:"Simulador ambiental",description:"Clima, inundaciones, cultivos y escenarios.",cta:"Explorar simulador",url:"/simulador-ambiental",image:"crops"},
   {icon:"♧",name:"Agricultura y ganadería",description:"Gestión de cultivos, pasturas y riesgos productivos.",cta:"Abrir ganadería",url:"/ganaderia",image:"farm"},
@@ -3482,7 +3484,7 @@ function Contact({onDemo}:{onDemo:()=>void}){
       {ch?.email_enabled===false && <p className="form-status">El envío se habilita cuando el correo de destino esté configurado. No simulamos envíos.</p>}
     </form></section></main><SiteFooter/></div>}
 function Access({onDemo}:{onDemo:()=>void}){return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner access-page"><PageHero eyebrow="ACCESO" title="Observatorio DOTS" lead="La autenticación real se incorporará con permisos por establecimiento. La demostración no simula una cuenta de usuario."/><button className="big-demo" onClick={onDemo}>Entrar a la demostración →</button></main><SiteFooter/></div>}
-function SiteFooter(){return <footer className="site-footer"><Brand/><p>DOTS · Sistema de Inteligencia Territorial, Ambiental y Climática. Observación satelital, telemetría y análisis geoespacial.</p><div><SiteLink to="/guia">Guía: cómo funciona</SiteLink><SiteLink to="/producto">Cómo funciona</SiteLink><SiteLink to="/tecnologia">Fuentes</SiteLink><SiteLink to="/capas">Capas</SiteLink><SiteLink to="/conexiones">APIs</SiteLink><SiteLink to="/demo">Demo</SiteLink><SiteLink to="/cultivos">Informe de cultivo</SiteLink><SiteLink to="/caso-bella-vista">Caso Bella Vista</SiteLink><SiteLink to="/focos">Focos de calor</SiteLink><SiteLink to="/licencias">Fuentes y licencias</SiteLink><SiteLink to="/contacto">Contacto</SiteLink></div></footer>}
+function SiteFooter(){return <footer className="site-footer"><Brand/><p>DOTS · Sistema de Inteligencia Territorial, Ambiental y Climática. Observación satelital, telemetría y análisis geoespacial.</p><div><SiteLink to="/guia">Guía: cómo funciona</SiteLink><SiteLink to="/producto">Cómo funciona</SiteLink><SiteLink to="/tecnologia">Fuentes</SiteLink><SiteLink to="/capas">Capas</SiteLink><SiteLink to="/copernicus">Nuevo · Copernicus</SiteLink><SiteLink to="/conexiones">APIs</SiteLink><SiteLink to="/demo">Demo</SiteLink><SiteLink to="/cultivos">Informe de cultivo</SiteLink><SiteLink to="/caso-bella-vista">Caso Bella Vista</SiteLink><SiteLink to="/focos">Focos de calor</SiteLink><SiteLink to="/licencias">Fuentes y licencias</SiteLink><SiteLink to="/contacto">Contacto</SiteLink></div></footer>}
 
 function App(){
   const [path,setPath]=useState(window.location.pathname);
@@ -3492,6 +3494,7 @@ function App(){
   const home=()=>{history.pushState({},"","/");setPath("/");setInside(false);window.scrollTo(0,0)};
   if(inside)return <Observatory onHome={home}/>;
   if(path==="/simulador-ambiental")return <div className="public-site"><PublicHeader onDemo={openDemo}/><main style={{maxWidth:1800,margin:"24px auto",padding:"0 20px"}}><h1>Simulador ambiental · América del Sur</h1><p>Explorá El Niño y La Niña, crecidas e inundaciones, capas satelitales y variables climáticas. Para ver las capas sobre el mapa y delimitar un área, abrí el Observatorio.</p><button className="demo-btn" onClick={openDemo}>Abrir mapa principal · parcelas e informes →</button><EnvironmentalWorkspace/></main></div>;
+  if(path==="/copernicus")return <CopernicusModule/>;
   if(path==="/producto")return <InfoPage kind="producto" onDemo={openDemo}/>;
   if(path==="/soluciones")return <InfoPage kind="soluciones" onDemo={openDemo}/>;
   if(path==="/ganaderia")return <InfoPage kind="ganaderia" onDemo={openDemo}/>;
