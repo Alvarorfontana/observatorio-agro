@@ -11,7 +11,10 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
 from reportlab.graphics.shapes import Drawing, Polygon, String, Rect, Line
 from xml.sax.saxutils import escape
+import json
+import pngmini
 import requests
+from copernicus_interpret import MAP_CLASSES, map_stats, interpret_map, interpret_scenes
 from flask import Blueprint, jsonify, request
 
 copernicus_api = Blueprint("copernicus_api", __name__)
@@ -205,18 +208,37 @@ def report():
                      bar_graph("Escenas por fecha (hasta 8 fechas)", sorted(dates.items())),
                      bar_graph("Distribucion de cobertura nubosa (%)",
                                list(zip(["0-19", "20-39", "40-59", "60-79", "80-100"], cloud_buckets)) if cloud_total else [])])
+    elements.append(Paragraph("Lectura de los graficos", styles["Heading3"]))
+    for line in interpret_scenes(scenes):
+        elements.append(Paragraph(escape(line), styles["Normal"]))
     map_encoded = body.get("map_png")
     if map_encoded:
         try:
             if not isinstance(map_encoded, str) or len(map_encoded) > 4_000_000:
                 raise ValueError("Map image too large")
             png = base64.b64decode(map_encoded, validate=True)
-            if not png.startswith(b"\\x89PNG\\r\\n\\x1a\\n") or len(png) > 3_000_000:
+            if not png.startswith(b"\x89PNG\r\n\x1a\n") or len(png) > 3_000_000:
                 raise ValueError("Invalid PNG image")
             image_stream = BytesIO(png)
             elements.extend([Spacer(1, 12), Paragraph("Mapa tematico de la parcela", styles["Heading2"]),
                              Paragraph("Producto: " + escape(str(body.get("map_index", "Sentinel-2"))[:30]) + ". Fuente declarada: Copernicus Sentinel-2 L2A. Imagen aportada desde el visor; no verificada de nuevo por el servidor.", styles["Normal"]),
-                             Image(image_stream, width=330, height=330)])
+                             Image(image_stream, *_fit(png, 400, 400))])
+            kind = str(body.get("map_index", ""))
+            if kind in MAP_CLASSES:
+                stats = map_stats(png, kind)
+                if stats["classes"]:
+                    legend = [["", "Rango", "Lectura", "% del lote"]]
+                    for c in stats["classes"]:
+                        legend.append(["", c["range"], c["label"], "%.1f%%" % c["pct"]])
+                    lt = Table(legend, colWidths=[18, 70, 290, 62])
+                    style = [("FONTSIZE",(0,0),(-1,-1),8),("LINEBELOW",(0,0),(-1,-1),0.4,colors.lightgrey),("BACKGROUND",(1,0),(-1,0),colors.HexColor("#123747")),("TEXTCOLOR",(1,0),(-1,0),colors.white)]
+                    for i, c in enumerate(stats["classes"], start=1):
+                        style.append(("BACKGROUND",(0,i),(0,i),colors.HexColor(c["color"])))
+                    lt.setStyle(TableStyle(style))
+                    elements.extend([Spacer(1, 8), Paragraph("Rangos de lectura", styles["Heading3"]), lt])
+                elements.append(Paragraph("Interpretacion del mapa", styles["Heading3"]))
+                for line in interpret_map(kind, stats):
+                    elements.append(Paragraph(escape(line), styles["Normal"]))
         except (ValueError, binascii.Error) as exc:
             return jsonify({"error":"Invalid thematic map image","detail":str(exc)}), 400
     else:
@@ -224,10 +246,16 @@ def report():
                          Paragraph("No disponibles en esta consulta: requieren procesar pixeles satelitales y recortar el resultado a la parcela. No se generan mapas simulados.", styles["Normal"])])
     elements.extend([table, Spacer(1, 20), Paragraph("Fuente: Copernicus Data Space Ecosystem (STAC). La geometria es la delimitacion aportada por el usuario. Este documento registra escenas de catalogo; no incluye calculos NDVI, mediciones de inundacion ni recorte raster. Las escenas deben verificarse en su origen.",styles["Normal"])])
     if notes.strip():
-        elements.extend([Spacer(1, 16), Paragraph("Observaciones del informe", styles["Heading2"]), Paragraph(escape(notes).replace("\\n", "<br/>"), styles["Normal"])])
+        elements.extend([Spacer(1, 16), Paragraph("Observaciones del informe", styles["Heading2"]), Paragraph(escape(notes).replace("\n", "<br/>"), styles["Normal"])])
     doc.build(elements)
     buffer.seek(0)
     return send_file(buffer, mimetype="application/pdf", as_attachment=True, download_name="DOTS_Copernicus_catalogo.pdf")
+
+def _fit(png, max_w, max_h):
+    size = pngmini.size(png) or (1, 1)
+    k = min(max_w / size[0], max_h / size[1])
+    return size[0] * k, size[1] * k
+
 
 def _cdse_token():
     """Reuse the existing shared CDSE OAuth client in vegetation.py."""
@@ -254,6 +282,9 @@ def thematic_map():
             raise ValueError("Invalid or oversized parcel")
         ring = [[lon, lat] for lat, lon in points]
         ring.append(ring[0])
+        import math
+        aspect = (east - west) * math.cos(math.radians((north + south) / 2)) / (north - south)
+        width, height = (512, max(64, round(512 / aspect))) if aspect >= 1 else (max(64, round(512 * aspect)), 512)
         token = _cdse_token()
         if kind == "ndvi":
             script = """//VERSION=3
@@ -273,14 +304,22 @@ function evaluatePixel(s){if(!s.dataMask)return [0,0,0,0];return [Math.min(255,M
         payload = {"input":{"bounds":{"geometry":{"type":"Polygon","coordinates":[ring]},
                       "properties":{"crs":"http://www.opengis.net/def/crs/OGC/1.3/CRS84"}},
                   "data":[{"type":"sentinel-2-l2a","dataFilter":{"timeRange":{"from":start+"T00:00:00Z","to":end+"T23:59:59Z"},"mosaickingOrder":"leastCC"}}]},
-                   "output":{"width":512,"height":512,"responses":[{"identifier":"default","format":{"type":"image/png"}}]},
+                   "output":{"width":width,"height":height,"responses":[{"identifier":"default","format":{"type":"image/png"}}]},
                    "evalscript":script}
         response = requests.post("https://sh.dataspace.copernicus.eu/api/v1/process",
                                  json=payload,headers={"Authorization":"Bearer "+token},timeout=55)
         if not response.ok:
             return jsonify({"error":"Sentinel Hub processing failed","status":response.status_code,
                             "detail":response.text[:350]}), 502
-        return Response(response.content,mimetype="image/png",headers={"Cache-Control":"no-store","X-DOTS-Source":"CDSE Sentinel-2 L2A"})
+        headers = {"Cache-Control":"no-store","X-DOTS-Source":"CDSE Sentinel-2 L2A",
+                   "Access-Control-Expose-Headers":"X-DOTS-Reading"}
+        try:
+            stats = map_stats(response.content, kind)
+            reading = {"stats": stats, "lines": interpret_map(kind, stats), "name": MAP_CLASSES[kind]["name"]}
+            headers["X-DOTS-Reading"] = base64.b64encode(json.dumps(reading, ensure_ascii=False).encode()).decode()
+        except (ValueError, KeyError, IndexError):
+            pass
+        return Response(response.content,mimetype="image/png",headers=headers)
     except (RuntimeError, PermissionError) as exc:
         return jsonify({"error":"Processing unavailable","detail":str(exc)}), 503
     except (ValueError, KeyError, TypeError) as exc:
