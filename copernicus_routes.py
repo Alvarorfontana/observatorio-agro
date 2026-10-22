@@ -1,5 +1,6 @@
 """Copernicus CDSE public STAC discovery for DOTS. No credentials or paid processing."""
 from datetime import datetime, timedelta
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import os
 import base64
 import binascii
@@ -23,16 +24,42 @@ def status():
                     "collections": ["sentinel-1", "sentinel-2", "sentinel-3", "sentinel-5p"],
                     "note": "Availability must be checked in live STAC collections."})
 
+# El STAC de CDSE pagina /collections de a 10 (427 en total) e ignora `limit`,
+# así que las Sentinel nunca aparecían en la primera página. Se consultan
+# directamente las colecciones que usan los temas del módulo.
+DOTS_COLLECTIONS = [
+    ("sentinel-2-l2a", "Producción agrícola e historia del territorio"),
+    ("sentinel-2-l1c", "Historia del territorio"),
+    ("sentinel-1-grd", "Crecidas e inundaciones"),
+    ("sentinel-3-sl-2-lst-ntc", "Temperaturas y sequías"),
+    ("sentinel-5p-l2-no2-offl", "Calidad atmosférica"),
+    ("sentinel-5p-l2-co-offl", "Calidad atmosférica"),
+    ("sentinel-5p-l2-aer-ai-offl", "Calidad atmosférica · humo"),
+]
+
+def _collection_info(item):
+    cid, topic = item
+    r = requests.get(STAC + "/collections/" + cid, timeout=10)
+    r.raise_for_status()
+    data = r.json()
+    return {"id": data.get("id", cid), "title": f"{data.get('title') or cid} · {topic}", "topic": topic}
+
 @copernicus_api.get("/api/copernicus/collections")
 def collections():
-    try:
-        r = requests.get(STAC + "/collections", timeout=12)
-        r.raise_for_status()
-        payload = r.json()
-        return jsonify({"collections": [{"id": x.get("id"), "title": x.get("title")}
-                   for x in payload.get("collections", [])]})
-    except (requests.RequestException, ValueError) as exc:
-        return jsonify({"error": "Copernicus catalog unavailable", "detail": str(exc)}), 502
+    failed = []
+    with ThreadPoolExecutor(max_workers=len(DOTS_COLLECTIONS)) as pool:
+        futures = {pool.submit(_collection_info, item): item[0] for item in DOTS_COLLECTIONS}
+        results = {}
+        for fut in as_completed(futures):
+            cid = futures[fut]
+            try:
+                results[cid] = fut.result()
+            except (requests.RequestException, ValueError):
+                failed.append(cid)
+    found = [results[cid] for cid, _ in DOTS_COLLECTIONS if cid in results]
+    if not found:
+        return jsonify({"error": "Copernicus catalog unavailable", "detail": "Ninguna colección Sentinel respondió", "failed": failed}), 502
+    return jsonify({"collections": found, "failed": failed})
 
 @copernicus_api.get("/api/copernicus/scenes")
 def scenes():
