@@ -1,5 +1,5 @@
 """Copernicus CDSE public STAC discovery for DOTS. No credentials or paid processing."""
-from datetime import datetime
+from datetime import datetime, timedelta
 from io import BytesIO
 from flask import send_file
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
@@ -51,9 +51,15 @@ def scenes():
     except (ValueError, KeyError) as exc:
         return jsonify({"error": "Invalid query", "detail": str(exc)}), 400
     try:
-        r = requests.post(STAC + "/search", json={"bbox": bbox, "datetime": start + "/" + end,
+        r = requests.post(STAC + "/search", json={"bbox": bbox, "datetime": start + "T00:00:00Z/" + end + "T23:59:59Z",
             "collections": [collection], "limit": limit}, timeout=18)
-        r.raise_for_status()
+        if not r.ok:
+            try:
+                upstream = r.json()
+                reason = upstream.get("detail", upstream.get("message", upstream))
+            except ValueError:
+                reason = r.text[:350]
+            return jsonify({"error":"Copernicus rejected the scene search", "detail": str(reason)[:500], "upstream_status":r.status_code}), 502
         data = r.json()
         return jsonify({"type": "FeatureCollection", "features": [{
             "id": f.get("id"), "collection": f.get("collection"),
