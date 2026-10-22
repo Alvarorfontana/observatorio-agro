@@ -6,6 +6,8 @@ type Scene={id:string;collection:string;geometry?:{type:string;coordinates:unkno
 export function CopernicusModule({embedded=false,lat,lon,polygon=[]}:{embedded?:boolean;lat?:number;lon?:number;polygon?:[number,number][]}){
  const mapElement=useRef<HTMLDivElement|null>(null);
  const mapInstance=useRef<L.Map|null>(null);
+ const baseLayer=useRef<L.TileLayer|null>(null);
+ const [mapStyle,setMapStyle]=useState<"satellite"|"streets">("satellite");
  const [outline,setOutline]=useState<[number,number][]>([]);
  const [drawMode,setDrawMode]=useState(false);
  const drawing=useRef(false);
@@ -15,7 +17,8 @@ export function CopernicusModule({embedded=false,lat,lon,polygon=[]}:{embedded?:
  const [collection,setCollection]=useState("");
  const [bbox,setBbox]=useState(()=>lat!==undefined&&lon!==undefined?[lon-0.06,lat-0.06,lon+0.06,lat+0.06].map(x=>x.toFixed(4)).join(","):"-59.10,-28.56,-58.98,-28.44");
  useEffect(()=>{if(outline.length>=3){const ys=outline.map(p=>p[0]),xs=outline.map(p=>p[1]);setBbox([Math.min(...xs),Math.min(...ys),Math.max(...xs),Math.max(...ys)].map(v=>v.toFixed(6)).join(","))}},[outline]);
- useEffect(()=>{if(!mapElement.current||mapInstance.current)return;const m=L.map(mapElement.current).setView([lat??-28.507,lon??-59.043],12);mapInstance.current=m;L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"© OpenStreetMap contributors",maxZoom:19}).addTo(m);m.on("click",e=>{if(drawing.current)setOutline(p=>[...p,[e.latlng.lat,e.latlng.lng]])});setTimeout(()=>m.invalidateSize(),100);return ()=>{m.remove();mapInstance.current=null}},[]);
+ useEffect(()=>{if(!mapElement.current||mapInstance.current)return;const m=L.map(mapElement.current).setView([lat??-28.507,lon??-59.043],12);mapInstance.current=m;m.on("click",e=>{if(drawing.current)setOutline(p=>[...p,[e.latlng.lat,e.latlng.lng]])});setTimeout(()=>m.invalidateSize(),100);return ()=>{m.remove();mapInstance.current=null}},[]);
+ useEffect(()=>{const m=mapInstance.current;if(!m)return; if(baseLayer.current)m.removeLayer(baseLayer.current); const satellite=mapStyle==="satellite"; const layer=L.tileLayer(satellite?"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}":"https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:satellite?"Imagery © Esri, Maxar, Earthstar Geographics and contributors":"© OpenStreetMap contributors",maxZoom:19});layer.addTo(m);layer.bringToBack();baseLayer.current=layer;return ()=>{if(m.hasLayer(layer))m.removeLayer(layer)}},[mapStyle]);
  useEffect(()=>{const m=mapInstance.current;if(!m)return;const group=L.featureGroup().addTo(m);if(outline.length){L.polyline(outline,{color:"#35b3cf",weight:3}).addTo(group);outline.forEach(p=>L.circleMarker(p,{radius:4,color:"#fff",fillColor:"#35b3cf",fillOpacity:1}).addTo(group));if(outline.length>=3){L.polygon(outline,{color:"#35b3cf",fillOpacity:.13}).addTo(group);m.fitBounds(L.latLngBounds(outline),{padding:[24,24]})}}return ()=>{group.remove()}},[outline]);
  const [start,setStart]=useState("2026-09-01");
  const [end,setEnd]=useState("2026-10-22");
@@ -57,6 +60,7 @@ export function CopernicusModule({embedded=false,lat,lon,polygon=[]}:{embedded?:
  ].map(x=><article key={x.t} style={{padding:18,background:"#192b36",border:"1px solid #38505d",borderRadius:12}}><h3>{x.t}</h3><p style={{color:"#bfd0d9"}}>{x.d}</p><a style={{color:"#8bd3ef"}} href={x.url}>{x.link} →</a></article>)}</div></section>
  <section style={{background:"#192b36",border:"1px solid #38505d",padding:22,borderRadius:14}}>
  <h2>Delimitar y analizar una parcela</h2><p>Seleccioná un polígono del Observatorio o dibujá uno nuevo. Sin delimitación no se habilita la consulta.</p>
+ <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:10,flexWrap:"wrap"}}><strong>Mapa base</strong><button type="button" onClick={()=>setMapStyle("satellite")} aria-pressed={mapStyle==="satellite"} style={{...action,background:mapStyle==="satellite"?"#087f9e":"#234454"}}>Imagen satelital</button><button type="button" onClick={()=>setMapStyle("streets")} aria-pressed={mapStyle==="streets"} style={{...action,background:mapStyle==="streets"?"#087f9e":"#234454"}}>Calles y relieve cartográfico</button></div><p style={{color:"#b7c9d1"}}>La imagen de fondo es cartografía de referencia; no corresponde necesariamente a la fecha de búsqueda Copernicus ni constituye un mapa NDVI.</p>
  <div ref={mapElement} style={{height:340,width:"100%",borderRadius:10,marginBottom:12}} aria-label="Mapa interactivo para delimitar el área de estudio"/>
  <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}><button type="button" onClick={()=>setDrawMode(v=>!v)} style={action}>{drawMode?"Terminar dibujo":"Dibujar polígono"}</button><button type="button" onClick={()=>{setOutline([]);setScenes([]);setDrawMode(true)}} style={action}>Borrar delimitación</button><span style={{alignSelf:"center"}}>{outline.length>=3?"Área delimitada · "+outline.length+" vértices":outline.length+" puntos · mínimo 3"}</span></div>
  <p style={{color:"#b7c9d1"}}>El rectángulo de búsqueda se calcula automáticamente desde el polígono. La búsqueda devuelve escenas que intersectan el área; todavía no recorta píxeles ni calcula índices dentro del lote.</p>
