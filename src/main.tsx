@@ -934,6 +934,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
     // Reusing an old payload after changing polygon was a functional bug in earlier versions.
     setView(key);
     setSideTab("datos");
+    if (key === "copernicus") return;
     if (key === "riesgo-hidrico") { void load("suelos-50mil"); }
     if (key === "satelite-lote") { if (vertices.length >= 3) ["ndvi-anomalia", "etr-lote", "heladas-satelite"].forEach(k => void load(k)); else notify("Dibujá o elegí el lote: la anomalía, el consumo de agua y las heladas se calculan sobre el polígono."); return; }
     if (key === "alertas") { void loadAlerts(); } else if (key === "forraje") { void loadForage(); } else if (key === "relieve") { void loadTerrain(); } else if (key === "costos") { void loadCosts(); } else if (key === "ganado") { if ((herdAll[herdKey] || []).some(r => Number(r.heads) > 0)) void loadHerd(); } else void load(key);
@@ -1579,7 +1580,9 @@ function Observatory({onHome}:{onHome:()=>void}) {
             <details style={{marginTop:12}}><summary className="small">Agencias directas · 6 conexiones</summary><div style={{marginTop:10}}>{SOURCES.filter(([key])=>NATIONAL.includes(key)||key==="metnorway").map(([key,label])=><button key={key} className={"data-button "+(view===key?"active":"")} onClick={()=>changeView(key)} aria-pressed={view===key}>{label}<span>{sources[key]?.status.toUpperCase()||"CONSULTAR"}</span></button>)}</div></details>
             <details style={{marginTop:12}}><summary className="small">Conectores globales · abiertos y con credencial</summary><div style={{marginTop:10}}>{SOURCES.filter(([key])=>RESEARCH.includes(key)).map(([key,label])=><button key={key} className={"data-button "+(view===key?"active":"")} onClick={()=>changeView(key)}>{label}<span>{sources[key]?.status.toUpperCase()||"CONSULTAR"}</span></button>)}</div></details>
             <a className="small" href="/CONEXIONES-INVESTIGACION.md" target="_blank" rel="noreferrer">Matriz de 20 servicios y activación</a>
+            <button type="button" className="ta-button" onClick={()=>changeView("copernicus")}>Copernicus · explorar imágenes de esta zona →</button>
             <div style={{ marginTop: 18 }} id="dots-detail">
+              {view === "copernicus" && <CopernicusModule embedded lat={point[0]} lon={point[1]} />}
               {sources[view]?.status === "consultando" && (
                 <p className="small">Consultando datos reales…</p>
               )}
