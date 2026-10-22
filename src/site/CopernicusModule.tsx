@@ -21,6 +21,8 @@ export function CopernicusModule({embedded=false,lat,lon,polygon=[]}:{embedded?:
  const [scenes,setScenes]=useState<Scene[]>([]);
  const [error,setError]=useState("");
  const [loading,setLoading]=useState(false);
+ const [pdfBusy,setPdfBusy]=useState(false);
+ async function downloadReport(){if(outline.length<3)return;setPdfBusy(true);setError("");try{const r=await fetch("/api/copernicus/report",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({polygon:outline,scenes,collection,start,end})});if(!r.ok){const j=await r.json();throw Error(j.detail||j.error||"No se pudo generar el PDF")}const blob=await r.blob();const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="DOTS_Copernicus_catalogo.pdf";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}catch(e){setError(e instanceof Error?e.message:String(e))}finally{setPdfBusy(false)}}
  useEffect(()=>{fetch("/api/copernicus/collections").then(async r=>{const j=await r.json();if(!r.ok)throw Error(j.error||"Catálogo no disponible");const c:Collection[]=j.collections||[];setCollections(c);setCollection(c.find(x=>/sentinel-2.*l2a/i.test(x.id))?.id||c[0]?.id||"")}).catch(e=>setError(String(e.message)))},[]);
  async function search(e:React.FormEvent){e.preventDefault();if(outline.length<3){setError("Delimitá primero una parcela con al menos tres puntos sobre el mapa.");return}setError("");setScenes([]);setLoading(true);try{
  const q=new URLSearchParams({bbox,start,end,collection,limit:"25"});
@@ -60,6 +62,7 @@ export function CopernicusModule({embedded=false,lat,lon,polygon=[]}:{embedded?:
  <button disabled={loading||!collection||outline.length<3} type="submit" style={{background:"#35b3cf",color:"#071820",fontWeight:700,border:0,borderRadius:8,padding:12,cursor:"pointer"}}>{loading?"Consultando…":"Buscar imágenes"}</button>
  </form>
  {error&&<p role="alert" style={{color:"#ffb5a7"}}>{error}</p>}
+ <button type="button" onClick={downloadReport} disabled={pdfBusy||outline.length<3} style={action}>{pdfBusy?"Generando PDF…":"Descargar informe PDF del área delimitada"}</button><p style={{color:"#b7c9d1"}}>El PDF documenta el polígono y las escenas consultadas; no incluye todavía índices de vegetación calculados.</p>
  <p role="status">{scenes.length?scenes.length+" escenas encontradas":loading?"Buscando en Copernicus…":"Los resultados aparecerán aquí. No se muestran datos simulados."}</p>
  <div style={{display:"grid",gap:8}}>{scenes.map(s=><article key={s.id} style={{borderTop:"1px solid #38505d",padding:"12px 0"}}><strong>{s.id}</strong><p>{s.collection} · {s.properties.datetime||"Fecha no informada"} · Nubes: {s.properties["eo:cloud_cover"]??"sin dato"}%</p>{s.links.find(l=>l.rel==="self")&&<a href={s.links.find(l=>l.rel==="self")!.href} target="_blank" rel="noreferrer" style={{color:"#8bd3ef"}}>Metadatos oficiales ↗</a>}</article>)}</div>
  </section>
