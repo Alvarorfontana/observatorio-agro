@@ -111,3 +111,27 @@ def test_load_external_groups_by_city(monkeypatch, tmp_path):
     monkeypatch.setattr(br, "EXTERNAL_FILE", str(f))
     groups = br.load_external()
     assert list(groups) == ["Nairobi"]          # Eldoret no tiene barrios comunes: queda afuera
+
+
+def test_osm_polygons_from_ways_and_relations():
+    pytest.importorskip("shapely")
+    sq = [{"lon": 36.78, "lat": -1.31}, {"lon": 36.79, "lat": -1.31}, {"lon": 36.79, "lat": -1.30}, {"lon": 36.78, "lat": -1.31}]
+    rel = {"type": "relation", "members": [
+        {"role": "outer", "geometry": [{"lon": 36.85, "lat": -1.26}, {"lon": 36.86, "lat": -1.26}, {"lon": 36.86, "lat": -1.25}]},
+        {"role": "outer", "geometry": [{"lon": 36.86, "lat": -1.25}, {"lon": 36.85, "lat": -1.26}]}]}
+    open_way = {"type": "way", "geometry": sq[:3]}
+    out = br.osm_polygons([{"type": "way", "geometry": sq}, rel, open_way])
+    assert len(out) == 2 and {g["type"] for g in out} <= {"Polygon", "MultiPolygon"}
+
+
+def test_overpass_query_targets_informal_tags_and_names():
+    q = br.overpass_query(br.circle_bbox(-1.286, 36.817, 16000), ["Kibera", "Mathare"])
+    assert '["residential"="informal"]' in q and "Kibera|Mathare" in q and q.strip().endswith("out geom;")
+
+
+def test_osm_informal_survives_without_network(monkeypatch):
+    monkeypatch.setattr(br.time, "sleep", lambda s: None)
+    def down(*a, **k):
+        raise br.requests.ConnectionError("sin red")
+    monkeypatch.setattr(br.requests, "post", down)
+    assert br.osm_informal(br.OSM_CITIES[0]) == []

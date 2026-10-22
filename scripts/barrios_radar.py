@@ -11,7 +11,7 @@ Qué hace, en GitHub Actions y con Google Earth Engine:
      morfología de las construcciones (Google Open Buildings temporal: cantidad, altura y su variación).
   3. Etiquetas: dentro de un polígono RENABAP = barrio popular; construido a más de 60 m de cualquiera = barrio común.
   4. Entrena bosques aleatorios (solo óptico / óptico + radar / + edificios / + etiquetas de otras ciudades, como
-     Nairobi y Eldoret, si están en data/etiquetas_externas.geojson) y los evalúa dejando afuera una ciudad
+     los barrios populares de Nairobi mapeados en OpenStreetMap o data/etiquetas_externas.geojson) y los evalúa dejando afuera una ciudad
      argentina por vez: así se mide cómo anda en una ciudad que el modelo nunca vio.
   5. Aplica el mejor de los dos con radar a las 34 localidades (también Paraguay y Uruguay, donde no hay RENABAP),
      y cruza con WorldPop 2020 y la altura sobre el río (MERIT Hydro HAND).
@@ -58,6 +58,16 @@ FINAL_CANDIDATES = ("optico_radar", "optico_radar_edificios", "optico_radar_exte
 # y propiedades «clase» ("informal" o "formal") y «ciudad». Se suman al entrenamiento solo si mejoran el resultado
 # en ciudades argentinas que el modelo no vio.
 EXTERNAL_FILE = os.path.join(ROOT, "data", "etiquetas_externas.geojson")
+# Barrios populares de otras ciudades tomados de OpenStreetMap (Map Kibera, mapeo de Mathare y otros). Solo hay
+# polígonos de barrio popular: los barrios comunes se toman de lo construido a más de EXTERNAL_NEG_BUFFER_M,
+# más lejos que en Argentina porque OSM no marca todos los asentamientos.
+OVERPASS = os.environ.get("OVERPASS_URL", "https://overpass-api.de/api/interpreter")
+EXTERNAL_NEG_BUFFER_M = 300
+OSM_CITIES = [
+    {"ciudad": "Nairobi", "lat": -1.286, "lon": 36.817, "radius_m": 16000,
+     "nombres": ["Kibera", "Kibra", "Mathare", "Mukuru", "Korogocho", "Kawangware", "Kangemi", "Viwandani",
+                 "Kiambiu", "Majengo", "Sinai", "Kosovo", "Kiamaiko", "Gitathuru", "Soweto"]},
+]
 
 
 # ───────────────────────────── geometría ─────────────────────────────
@@ -182,19 +192,19 @@ def stack(ee, region):
     return ee.Image.cat([s2, ndvi, ndbi, radar, bld]).updateMask(built), built
 
 
-def labels(ee, polys, built):
+def labels(ee, polys, built, neg_buffer=NEG_BUFFER_M):
     fc = ee.FeatureCollection([ee.Feature(ee.Geometry(p)) for p in polys])
     inside = ee.Image(0).paint(fc, 1)
-    near = fc.distance(NEG_BUFFER_M * 2).lte(NEG_BUFFER_M).unmask(0)
+    near = fc.distance(neg_buffer * 2).lte(neg_buffer).unmask(0)
     pos = built.And(inside.eq(1))
     neg = built.And(inside.eq(0)).And(near.eq(0))
     return ee.Image(0).where(neg, 0).where(pos, 1).updateMask(pos.Or(neg)).rename("label").toInt(), fc
 
 
-def sample_city(ee, lat, lon, polys):
-    region = ee.Geometry.Point([lon, lat]).buffer(RADIUS_M)
+def sample_city(ee, lat, lon, polys, radius_m=RADIUS_M, neg_buffer=NEG_BUFFER_M):
+    region = ee.Geometry.Point([lon, lat]).buffer(radius_m)
     img, built = stack(ee, region)
-    lab, _ = labels(ee, polys, built)
+    lab, _ = labels(ee, polys, built, neg_buffer)
     pts = img.addBands(lab).stratifiedSample(numPoints=POINTS_PER_CLASS, classBand="label", region=region, scale=10,
                                              seed=SEED, classValues=[0, 1],
                                              classPoints=[POINTS_PER_CLASS, POINTS_PER_CLASS],
@@ -216,6 +226,56 @@ def load_external():
             continue
         out.setdefault(str(props.get("ciudad") or "externa"), {"informal": [], "formal": []})[clase].append(geom)
     return {c: v for c, v in out.items() if v["informal"] and v["formal"]}
+
+
+def overpass_query(bbox, names):
+    w, s_, e, n = bbox
+    bb = f"{s_},{w},{n},{e}"
+    pattern = "|".join(names)
+    return f"""[out:json][timeout:180];
+(
+  way["landuse"="residential"]["residential"="informal"]({bb});
+  relation["landuse"="residential"]["residential"="informal"]({bb});
+  way["informal"="yes"]["landuse"]({bb});
+  relation["informal"="yes"]["landuse"]({bb});
+  way["place"~"^(neighbourhood|suburb|quarter)$"]["name"~"^({pattern})",i]({bb});
+  relation["place"~"^(neighbourhood|suburb|quarter)$"]["name"~"^({pattern})",i]({bb});
+);
+out geom;"""
+
+
+def osm_polygons(elements):
+    """Polígonos a partir de la respuesta de Overpass (vías cerradas y multipolígonos)."""
+    from shapely.geometry import LineString, Polygon, mapping
+    from shapely.ops import polygonize, unary_union
+    out = []
+    for el in elements:
+        if el.get("type") == "way":
+            pts = [(p["lon"], p["lat"]) for p in el.get("geometry") or []]
+            if len(pts) >= 4 and pts[0] == pts[-1]:
+                g = Polygon(pts)
+                if g.is_valid and g.area > 0:
+                    out.append(mapping(g))
+        elif el.get("type") == "relation":
+            lines = [LineString([(p["lon"], p["lat"]) for p in m.get("geometry") or []])
+                     for m in el.get("members") or [] if m.get("role") in ("outer", "") and len(m.get("geometry") or []) >= 2]
+            polys = list(polygonize(unary_union(lines))) if lines else []
+            if polys:
+                out.append(mapping(unary_union(polys)))
+    return out
+
+
+def osm_informal(city):
+    bbox = circle_bbox(city["lat"], city["lon"], city["radius_m"])
+    for attempt in range(3):
+        try:
+            r = requests.post(OVERPASS, data={"data": overpass_query(bbox, city["nombres"])}, timeout=200)
+            if r.ok:
+                return clean_polygons({"features": [{"geometry": g} for g in osm_polygons(r.json().get("elements", []))]}, bbox)
+        except (requests.RequestException, ValueError):
+            pass
+        time.sleep(10 * (attempt + 1))
+    return []
 
 
 def sample_external(ee, groups):
@@ -398,6 +458,18 @@ def main(out_path):
             print(f"  etiquetas externas {city}: {len(rows)} puntos", flush=True)
         except Exception as exc:
             print(f"  sin muestras externas en {city}: {str(exc)[:160]}", flush=True)
+    for city in OSM_CITIES:
+        polys = osm_informal(city)
+        print(f"  OpenStreetMap {city['ciudad']}: {len(polys)} barrios populares", flush=True)
+        if len(polys) < MIN_POLYGONS:
+            continue
+        try:
+            fc = sample_city(ee, city["lat"], city["lon"], polys, city["radius_m"], EXTERNAL_NEG_BUFFER_M)
+            rows = [f["properties"] for f in fc.getInfo()["features"]]
+            ext_fcs.append(fc); ext_rows += rows; ext_cities.append(city["ciudad"] + " (OpenStreetMap)")
+            print(f"  etiquetas externas {city['ciudad']}: {len(rows)} puntos", flush=True)
+        except Exception as exc:
+            print(f"  sin muestras en {city['ciudad']}: {str(exc)[:160]}", flush=True)
     per_city, summary, importance = leave_one_city_out(samples, ext_rows)
     final = choose_final(summary)
     print("Modelo final:", final, flush=True)
@@ -437,7 +509,7 @@ def main(out_path):
         },
         "places": places,
         "sources": [RENABAP_CREDIT, "Copernicus Sentinel-1 GRD y Sentinel-2 L2A vía Google Earth Engine",
-                    "Cloud Score+ (Google)", "Google Open Buildings temporal v1 · CC BY 4.0", "ESA WorldCover 2021 · CC BY 4.0", "WorldPop 2020 · CC BY 4.0",
+                    "Cloud Score+ (Google)", "OpenStreetMap (ODbL) · barrios populares de Nairobi", "Google Open Buildings temporal v1 · CC BY 4.0", "ESA WorldCover 2021 · CC BY 4.0", "WorldPop 2020 · CC BY 4.0",
                     "MERIT Hydro (Yamazaki et al., 2019)"],
     }
     with open(out_path, "w", encoding="utf-8") as f:
