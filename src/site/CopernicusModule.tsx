@@ -28,6 +28,14 @@ export function CopernicusModule(){
  ["openEO","Procesamiento remoto · pendiente de conexión"],
  ["IA geoespacial","TerraMind / TESSERA · en evaluación"]
  ].map(([name,desc])=><article key={name} style={{border:"1px solid #38505d",borderRadius:12,padding:18,background:"#192b36"}}><h2 style={{fontSize:19,margin:"0 0 8px"}}>{name}</h2><p style={{margin:0,color:"#b7c9d1"}}>{desc}</p></article>)}</div>
+ <section aria-label="Aplicaciones prácticas" style={{margin:"28px 0"}}><h2>¿Para qué sirve en la práctica?</h2><p>Copernicus amplía los análisis del observatorio. No es una plataforma separada: sus imágenes y productos se relacionan con los módulos de cultivos, parcelas, agua y clima que ya ofrece DOTS.</p><div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(230px,1fr))",gap:14}}>{[
+ {t:"Producción agrícola",d:"Comparar campañas y reconocer sectores de vegetación menos vigorosa. Ayuda a decidir dónde inspeccionar un lote antes de intervenir.",url:"/cultivos",link:"Ir a cultivos"},
+ {t:"Crecidas e inundaciones",d:"Revisar imágenes de radar para reconocer agua sobre el terreno, incluso cuando las nubes impiden una fotografía óptica.",url:"/nino-crecidas",link:"Ir a crecidas"},
+ {t:"Temperaturas y sequías",d:"Contrastar temperaturas superficiales y cambios en vegetación para investigar períodos de estrés térmico e hídrico.",url:"/simulador-ambiental",link:"Ir al simulador"},
+ {t:"Historia del territorio",d:"Comparar coberturas de distintas fechas para estudiar avance agrícola, pérdida de monte y cambios en pastizales.",url:"/observatorio",link:"Abrir mapa principal"},
+ {t:"Calidad atmosférica",d:"Consultar productos regionales de gases y humo para contextualizar episodios ambientales, sin atribuir emisiones a una parcela individual.",url:"/capas",link:"Ver capas"},
+ {t:"Informes técnicos",d:"Usar las fuentes verificadas como respaldo de análisis de parcelas; los nuevos informes automáticos Copernicus aún están en desarrollo.",url:"/modulos",link:"Ver informes"}
+ ].map(x=><article key={x.t} style={{padding:18,background:"#192b36",border:"1px solid #38505d",borderRadius:12}}><h3>{x.t}</h3><p style={{color:"#bfd0d9"}}>{x.d}</p><a style={{color:"#8bd3ef"}} href={x.url}>{x.link} →</a></article>)}</div></section>
  <section style={{background:"#192b36",border:"1px solid #38505d",padding:22,borderRadius:14}}>
  <h2>Buscar escenas satelitales</h2><p>Área de ejemplo: Bella Vista, Corrientes. Coordenadas en orden oeste, sur, este, norte.</p>
  <form onSubmit={search} style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:12}}>
