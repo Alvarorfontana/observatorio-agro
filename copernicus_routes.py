@@ -51,7 +51,8 @@ def scenes():
     except (ValueError, KeyError) as exc:
         return jsonify({"error": "Invalid query", "detail": str(exc)}), 400
     try:
-        r = requests.post(STAC + "/search", json={"bbox": bbox, "datetime": start + "T00:00:00Z/" + end + "T23:59:59Z",
+        interval = a.strftime("%Y-%m-%dT00:00:00Z") + "/" + b.strftime("%Y-%m-%dT23:59:59Z")
+        r = requests.post(STAC + "/search", json={"bbox": bbox, "datetime": interval,
             "collections": [collection], "limit": limit}, timeout=18)
         if not r.ok:
             try:
