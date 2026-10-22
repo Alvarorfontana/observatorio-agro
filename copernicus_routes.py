@@ -107,7 +107,7 @@ def report():
         report_title = str(body.get("title") or "Informe territorial Copernicus")[:120]
         notes = str(body.get("notes") or "")[:1200]
         if not collection:
-            raise ValueError("Collection required")
+            collection = "sin consulta de escenas"
     except (TypeError, ValueError) as exc:
         return jsonify({"error": "Invalid report request", "detail": str(exc)}), 400
     buffer = BytesIO()
