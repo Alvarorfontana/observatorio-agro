@@ -6,6 +6,7 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
 from reportlab.graphics.shapes import Drawing, Polygon, String
+from xml.sax.saxutils import escape
 import requests
 from flask import Blueprint, jsonify, request
 
@@ -100,6 +101,8 @@ def report():
         datetime.fromisoformat(start)
         datetime.fromisoformat(end)
         collection = str(body.get("collection", ""))[:100]
+        report_title = str(body.get("title") or "Informe territorial Copernicus")[:120]
+        notes = str(body.get("notes") or "")[:1200]
         if not collection:
             raise ValueError("Collection required")
     except (TypeError, ValueError) as exc:
@@ -108,9 +111,9 @@ def report():
     doc = SimpleDocTemplate(buffer, pagesize=(595, 842), topMargin=44, bottomMargin=44)
     styles = getSampleStyleSheet()
     elements = [
-        Paragraph("DOTS | Informe de consulta Copernicus", styles["Title"]),
+        Paragraph("DOTS | " + escape(report_title), styles["Title"]),
         Paragraph("Catalogo satelital y delimitacion territorial", styles["Heading2"]),
-        Paragraph("Periodo: %s a %s | Coleccion: %s" % (start, end, collection), styles["Normal"]),
+        Paragraph("Periodo: %s a %s | Coleccion: %s" % (escape(start), escape(end), escape(collection)), styles["Normal"]),
         Paragraph("Vertices del area: %d | Escenas incluidas: %d" % (len(points), len(scenes)), styles["Normal"]),
         Spacer(1, 18),
         Paragraph("Delimitacion de la zona de estudio", styles["Heading2"]),
@@ -137,6 +140,8 @@ def report():
     table = Table(rows, colWidths=[110, 125, 285], repeatRows=1)
     table.setStyle(TableStyle([("BACKGROUND",(0,0),(-1,0),colors.HexColor("#123747")),("TEXTCOLOR",(0,0),(-1,0),colors.white),("FONTSIZE",(0,0),(-1,-1),8),("BOTTOMPADDING",(0,0),(-1,-1),8),("LINEBELOW",(0,0),(-1,-1),0.4,colors.lightgrey)]))
     elements.extend([table, Spacer(1, 20), Paragraph("Fuente: Copernicus Data Space Ecosystem (STAC). La geometria es la delimitacion aportada por el usuario. Este documento registra escenas de catalogo; no incluye calculos NDVI, mediciones de inundacion ni recorte raster. Las escenas deben verificarse en su origen.",styles["Normal"])])
+    if notes.strip():
+        elements.extend([Spacer(1, 16), Paragraph("Observaciones del informe", styles["Heading2"]), Paragraph(escape(notes).replace("\\n", "<br/>"), styles["Normal"])])
     doc.build(elements)
     buffer.seek(0)
     return send_file(buffer, mimetype="application/pdf", as_attachment=True, download_name="DOTS_Copernicus_catalogo.pdf")
