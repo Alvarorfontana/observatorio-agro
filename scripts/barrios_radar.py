@@ -7,11 +7,12 @@ Qué hace, en GitHub Actions y con Google Earth Engine:
   1. Baja los polígonos del Registro Nacional de Barrios Populares (RENABAP) alrededor de cada localidad.
   2. Arma, para cada píxel construido (ESA WorldCover), tres escalones de radar —brillo (VV, VH, VH−VV),
      textura (GLCM: contraste, varianza, entropía, homogeneidad) e índice de dispersión (coeficiente de variación
-     local y temporal, y diferencia entre estación seca y húmeda)— y las bandas ópticas de Sentinel-2.
+     local y temporal, y diferencia entre estación seca y húmeda)—, las bandas ópticas de Sentinel-2 y la
+     morfología de las construcciones (Google Open Buildings temporal: cantidad, altura y su variación).
   3. Etiquetas: dentro de un polígono RENABAP = barrio popular; construido a más de 60 m de cualquiera = barrio común.
-  4. Entrena dos bosques aleatorios (solo óptico / óptico + radar) y los evalúa dejando afuera una ciudad por vez:
-     así se mide cómo anda en una ciudad que el modelo nunca vio.
-  5. Aplica el modelo óptico + radar a las 34 localidades (también Paraguay y Uruguay, donde no hay RENABAP),
+  4. Entrena tres bosques aleatorios (solo óptico / óptico + radar / óptico + radar + edificios) y los evalúa
+     dejando afuera una ciudad por vez: así se mide cómo anda en una ciudad que el modelo nunca vio.
+  5. Aplica el mejor de los dos con radar a las 34 localidades (también Paraguay y Uruguay, donde no hay RENABAP),
      y cruza con WorldPop 2020 y la altura sobre el río (MERIT Hydro HAND).
 
 Salida: data/barrios_radar.json y data/barrios_radar/<id>.png (rama datos).
@@ -45,7 +46,9 @@ RENABAP_CREDIT = ("Registro Nacional de Barrios Populares (RENABAP), Ministerio 
 RADAR = ["VV", "VH", "VHVV", "VV_dry", "VV_wet", "VV_season", "VV_tstd",
          "VVt_contrast", "VVt_var", "VVt_ent", "VVt_idm", "VV_cv3", "VV_cv5", "VV_lmean"]
 OPTICAL = ["B2", "B3", "B4", "B8", "B11", "B12", "NDVI", "NDBI"]
-SETS = {"optico": OPTICAL, "optico_radar": OPTICAL + RADAR}
+BUILDINGS = ["BLD_count", "BLD_presence", "BLD_height", "BLD_hstd"]
+SETS = {"optico": OPTICAL, "optico_radar": OPTICAL + RADAR, "optico_radar_edificios": OPTICAL + RADAR + BUILDINGS}
+FINAL_CANDIDATES = ("optico_radar", "optico_radar_edificios")
 
 
 # ───────────────────────────── geometría ─────────────────────────────
@@ -148,8 +151,20 @@ def stack(ee, region):
           .select(["B2", "B3", "B4", "B8", "B11", "B12"]).median().divide(10000))
     ndvi = s2.normalizedDifference(["B8", "B4"]).rename("NDVI")
     ndbi = s2.normalizedDifference(["B11", "B8"]).rename("NDBI")
+    # morfología de las construcciones (Google Open Buildings temporal, 4 m): cuántas, qué tan altas y qué tan
+    # parejas en 25 m a la redonda. Si la región no tiene cobertura queda en 0 y el modelo sin edificios gana.
+    yb = min(YEAR, 2023)
+    ob = (ee.ImageCollection("GOOGLE/Research/open-buildings-temporal/v1").filterBounds(region)
+          .filterDate(f"{yb}-01-01", f"{yb + 1}-01-01").mosaic())
+    k25 = ee.Kernel.circle(25, "meters")
+    bld = ee.Image.cat([
+        ob.select("building_fractional_count").reduceNeighborhood(ee.Reducer.sum(), k25).rename("BLD_count"),
+        ob.select("building_presence").reduceNeighborhood(ee.Reducer.mean(), k25).rename("BLD_presence"),
+        ob.select("building_height").reduceNeighborhood(ee.Reducer.mean(), k25).rename("BLD_height"),
+        ob.select("building_height").reduceNeighborhood(ee.Reducer.stdDev(), k25).rename("BLD_hstd"),
+    ]).unmask(0)
     built = ee.ImageCollection("ESA/WorldCover/v200").first().eq(50).rename("built")
-    return ee.Image.cat([s2, ndvi, ndbi, radar]).updateMask(built), built
+    return ee.Image.cat([s2, ndvi, ndbi, radar, bld]).updateMask(built), built
 
 
 def labels(ee, polys, built):
@@ -212,23 +227,30 @@ def leave_one_city_out(samples):
         return round(sum(vals) / len(vals), 3) if vals else None
     summary = {name: {"f1_barrio": mean(name, "f1_barrio"), "exactitud": mean(name, "exactitud")} for name in SETS}
     importance = None
+    best = choose_final(summary)
     allX, ally = [], []
     for c in cities:
-        X, y = rows_to_xy(samples[c], SETS["optico_radar"])
+        X, y = rows_to_xy(samples[c], SETS[best])
         allX += X; ally += y
     if len(set(ally)) == 2:
         rf = RandomForestClassifier(n_estimators=200, min_samples_leaf=2, n_jobs=-1, random_state=SEED).fit(allX, ally)
-        pairs = sorted(zip(SETS["optico_radar"], rf.feature_importances_), key=lambda p: -p[1])
+        pairs = sorted(zip(SETS[best], rf.feature_importances_), key=lambda p: -p[1])
         importance = [{"capa": k, "peso": round(float(v), 3)} for k, v in pairs[:10]]
     return per_city, summary, importance
 
 
+def choose_final(summary):
+    """Modelo final: el que mejor encuentra barrios en ciudades que no vio (sin edificios ante empate)."""
+    score = lambda n: (summary.get(n) or {}).get("f1_barrio") or -1
+    return max(FINAL_CANDIDATES, key=lambda n: (score(n), n == "optico_radar"))
+
+
 # ───────────────────────────── mapeo y exposición ─────────────────────────────
 
-def map_place(ee, clf, st, polys):
+def map_place(ee, clf, st, polys, feats):
     region = ee.Geometry.Point([st["lon"], st["lat"]]).buffer(RADIUS_M)
     img, built = stack(ee, region)
-    informal = img.select(SETS["optico_radar"]).classify(clf).eq(1).And(built).selfMask().rename("informal")
+    informal = img.select(feats).classify(clf).eq(1).And(built).selfMask().rename("informal")
     area = ee.Image.pixelArea()
     pop = (ee.ImageCollection("WorldPop/GP/100m/pop").filter(ee.Filter.eq("year", 2020)).mosaic()
            .select("population"))
@@ -304,14 +326,16 @@ def main(out_path):
         except Exception as exc:
             print(f"  sin muestras en {st['place']}: {str(exc)[:160]}", flush=True)
     per_city, summary, importance = leave_one_city_out(samples)
+    final = choose_final(summary)
+    print("Modelo final:", final, flush=True)
     training = ee.FeatureCollection(fcs).flatten()
     clf = ee.Classifier.smileRandomForest(numberOfTrees=200, minLeafPopulation=2, seed=SEED).train(
-        training, "label", SETS["optico_radar"])
+        training, "label", SETS[final])
     places = []
     img_dir = os.path.join(os.path.dirname(out_path), "barrios_radar")
     os.makedirs(img_dir, exist_ok=True)
     for st in stations:
-        res = map_place(ee, clf, st, polys_by[st["id"]])
+        res = map_place(ee, clf, st, polys_by[st["id"]], SETS[final])
         png = res.pop("_png", None)
         if png and png.startswith(b"\x89PNG"):
             with open(os.path.join(img_dir, st["id"] + ".png"), "wb") as f:
@@ -331,6 +355,7 @@ def main(out_path):
             "evaluacion_por_ciudad": [dict(r, city=next(s["place"] for s in stations if s["id"] == r["city"]))
                                       for r in per_city],
             "promedio": summary,
+            "modelo_final": final,
             "capas_mas_utiles": importance,
             "nota": ("Evaluado dejando afuera una ciudad por vez, con puntos balanceados entre barrio popular y "
                      "barrio común construido. No es la misma métrica del estudio de Nairobi, aunque mide lo mismo: "
@@ -338,7 +363,7 @@ def main(out_path):
         },
         "places": places,
         "sources": [RENABAP_CREDIT, "Copernicus Sentinel-1 GRD y Sentinel-2 L2A vía Google Earth Engine",
-                    "Cloud Score+ (Google)", "ESA WorldCover 2021 · CC BY 4.0", "WorldPop 2020 · CC BY 4.0",
+                    "Cloud Score+ (Google)", "Google Open Buildings temporal v1 · CC BY 4.0", "ESA WorldCover 2021 · CC BY 4.0", "WorldPop 2020 · CC BY 4.0",
                     "MERIT Hydro (Yamazaki et al., 2019)"],
     }
     with open(out_path, "w", encoding="utf-8") as f:

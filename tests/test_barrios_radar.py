@@ -73,3 +73,9 @@ def test_barrios_endpoint(monkeypatch):
     monkeypatch.setattr(datastore, "load", lambda name, *a, **k: {"places": [], "model": {}})
     j = app.test_client().get("/api/poblacion/barrios").get_json()
     assert j["image_base"].startswith("https://raw.githubusercontent.com/")
+
+
+def test_final_model_prefers_buildings_only_when_better():
+    assert br.choose_final({"optico_radar": {"f1_barrio": 0.7}, "optico_radar_edificios": {"f1_barrio": 0.75}}) == "optico_radar_edificios"
+    assert br.choose_final({"optico_radar": {"f1_barrio": 0.7}, "optico_radar_edificios": {"f1_barrio": 0.7}}) == "optico_radar"
+    assert br.choose_final({"optico_radar": {"f1_barrio": 0.7}, "optico_radar_edificios": {"f1_barrio": None}}) == "optico_radar"
