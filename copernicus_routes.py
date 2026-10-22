@@ -363,3 +363,23 @@ function evaluatePixel(s){if(!s.dataMask)return [0,0,0,0];return [Math.min(255,M
         return jsonify({"error":"Invalid processing request","detail":str(exc)}), 400
     except (requests.RequestException, KeyError) as exc:
         return jsonify({"error":"Copernicus processing connection failed","detail":str(exc)[:250]}), 502
+
+
+@copernicus_api.post("/api/historia/timelapse")
+def timelapse_year():
+    """Mosaico anual de Google Earth Timelapse alrededor del lote, con el lote marcado."""
+    import timelapse_history as th
+    try:
+        body = request.get_json(silent=True) or {}
+        points = _valid_polygon(body.get("polygon"))
+        year = int(body.get("year"))
+    except (TypeError, ValueError) as exc:
+        return jsonify({"error": "Pedido inválido", "detail": str(exc)}), 400
+    try:
+        png = th.year_image(points, year)
+    except th.HistoryError as exc:
+        return jsonify({"error": str(exc), "detail": exc.detail}), exc.status
+    except ValueError as exc:
+        return jsonify({"error": "Earth Engine devolvió una imagen ilegible", "detail": str(exc)}), 502
+    return Response(png, mimetype="image/png", headers={
+        "Cache-Control": "public, max-age=86400", "X-DOTS-Source": th.ATTRIBUTION})

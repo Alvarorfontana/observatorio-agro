@@ -41,11 +41,13 @@ export function CopernicusModule({embedded=false,lat,lon,polygon=[]}:{embedded?:
  const [thematicError,setThematicError]=useState("");
  const [thematicBusy,setThematicBusy]=useState(false);
  const [mapReading,setMapReading]=useState<MapReading|null>(null);
+ const [mapDay,setMapDay]=useState("");
+ useEffect(()=>{setMapDay("")},[start,end]);
  const [reportTitle,setReportTitle]=useState("Informe territorial Copernicus");
  const [reportNotes,setReportNotes]=useState("");
  const [includeScenes,setIncludeScenes]=useState(true);
- async function generateThematic(){if(outline.length<3)return;setThematicBusy(true);setThematicError("");setThematicUrl("");setThematicBlob(null);setMapReading(null);try{const r=await fetch("/api/copernicus/map",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({polygon:outline,index:mapIndex,start,end,compare_start:compareStart,compare_end:compareEnd})});if(!r.ok){const j=await r.json();throw Error(j.detail||j.error||"No se pudo generar el mapa")}const blob=await r.blob();setMapReading(decodeReading(r.headers.get("X-DOTS-Reading")));setThematicBlob(blob);setThematicUrl(URL.createObjectURL(blob))}catch(e){setThematicError(e instanceof Error?e.message:String(e))}finally{setThematicBusy(false)}}
- useEffect(()=>{setThematicUrl("");setThematicBlob(null);setThematicError("");setMapReading(null)},[outline,start,end,mapIndex,compareStart,compareEnd]);
+ async function generateThematic(){if(outline.length<3)return;setThematicBusy(true);setThematicError("");setThematicUrl("");setThematicBlob(null);setMapReading(null);try{const r=await fetch("/api/copernicus/map",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({polygon:outline,index:mapIndex,start:mapDay||start,end:mapDay||end,compare_start:compareStart,compare_end:compareEnd})});if(!r.ok){const j=await r.json();throw Error(j.detail||j.error||"No se pudo generar el mapa")}const blob=await r.blob();setMapReading(decodeReading(r.headers.get("X-DOTS-Reading")));setThematicBlob(blob);setThematicUrl(URL.createObjectURL(blob))}catch(e){setThematicError(e instanceof Error?e.message:String(e))}finally{setThematicBusy(false)}}
+ useEffect(()=>{setThematicUrl("");setThematicBlob(null);setThematicError("");setMapReading(null)},[outline,start,end,mapIndex,compareStart,compareEnd,mapDay]);
  function downloadGeoJSON(){if(outline.length<3){setError("Dibujá una parcela con al menos tres vértices para exportar GeoJSON.");return;}const ring=[...outline.map(([latitude,longitude])=>[longitude,latitude]),[outline[0][1],outline[0][0]]];const geojson={type:"FeatureCollection",features:[{type:"Feature",properties:{source:"DOTS - delimitacion del usuario",collection,start,end},geometry:{type:"Polygon",coordinates:[ring]}},...validScenes.filter(x=>x.geometry).map(x=>({type:"Feature",properties:{id:x.id,collection:x.collection,...x.properties},geometry:(x as any).geometry}))]};const url=URL.createObjectURL(new Blob([JSON.stringify(geojson,null,2)],{type:"application/geo+json"}));const a=document.createElement("a");a.href=url;a.download="DOTS_Copernicus_area.geojson";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
  async function downloadReport(){if(outline.length<3){setError("Dibujá una parcela con al menos tres vértices para generar PDF.");return;}setPdfBusy(true);setError("");try{const r=await fetch("/api/copernicus/report",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({polygon:outline,scenes:includeScenes?validScenes:[],collection,start,end,title:reportTitle,notes:reportNotes,map_png:thematicBlob?await new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result).split(",")[1]||"");reader.onerror=()=>reject(Error("No se pudo leer el mapa"));reader.readAsDataURL(thematicBlob)}):undefined,map_index:thematicBlob?mapIndex:undefined,map_reading:thematicBlob&&mapReading?mapReading:undefined})});if(!r.ok){const j=await r.json();throw Error(j.detail||j.error||"No se pudo generar el PDF")}const blob=await r.blob();const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="DOTS_Copernicus_catalogo.pdf";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}catch(e){setError(e instanceof Error?e.message:String(e))}finally{setPdfBusy(false)}}
  useEffect(()=>{let active=true;setCatalogLoading(true);fetch("/api/copernicus/collections").then(async r=>{const j=await r.json();if(!r.ok)throw Error(j.detail||j.error||"Catálogo no disponible");const c:Collection[]=(j.collections||[]).filter((x:Collection)=>x.id&&(/sentinel/i.test(x.id)||/sentinel/i.test(x.title||"")));if(!c.length)throw Error("El catálogo no devolvió colecciones Sentinel compatibles. Se mantiene Sentinel-2 L2A como opción manual, su disponibilidad se comprobará al buscar.");if(!active)return;setCollections(c);setCollection(current=>c.some(x=>x.id===current)?current:(c.find(x=>/sentinel-2/i.test(x.id))||c[0]).id);setCatalogError("")}).catch(e=>{if(active)setCatalogError(e instanceof Error?e.message:String(e))}).finally(()=>{if(active)setCatalogLoading(false)});return ()=>{active=false}},[]);
@@ -56,23 +58,23 @@ export function CopernicusModule({embedded=false,lat,lon,polygon=[]}:{embedded?:
  return <main style={{maxWidth:embedded?"100%":1180,margin:"auto",padding:embedded?"12px 4px":"32px 22px",fontFamily:"IBM Plex Sans, sans-serif",color:"#e5edf2",background:"#101c25",minHeight:embedded?0:"100vh"}}>
  {!embedded&&<a href="/" style={{color:"#8bd3ef"}}>← DOTS · Inicio</a>}<p style={{letterSpacing:2,color:"#78bfd7",marginTop:40}}>NUEVO MÓDULO · COPERNICUS 2026</p>
  <h1 style={{fontSize:"clamp(32px,5vw,58px)",margin:"8px 0"}}>DOTS amplía su capacidad de análisis satelital con Copernicus</h1>
- <p style={{fontSize:19,maxWidth:840}}>Explorá imágenes oficiales del programa Copernicus y prepará análisis de parcelas, vegetación, agua, temperatura y atmósfera. Consulta del catálogo en vivo; los cálculos avanzados se incorporarán progresivamente.</p>
+ <p style={{fontSize:19,maxWidth:840}}>Explorá imágenes oficiales del programa Copernicus y prepará análisis de parcelas, vegetación, agua, temperatura y atmósfera. Los mapas se calculan en vivo sobre píxeles reales del servicio oficial de Copernicus, con rangos de lectura e interpretación.</p>
  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:14,margin:"28px 0"}}>
  {[
- ["Sentinel-1","Radar y superficies inundadas"],
- ["Sentinel-2","Vegetación y cambios agrícolas"],
- ["Sentinel-3","Temperatura superficial"],
- ["Sentinel-5P","Composición atmosférica"],
- ["openEO","Procesamiento remoto · pendiente de conexión"],
+ ["Sentinel-1","Radar: agua sobre el terreno, aun con nubes · disponible"],
+ ["Sentinel-2","NDVI, NDWI, color natural y cambio entre campañas · disponible"],
+ ["Sentinel-3","Temperatura superficial diurna, 1 km · disponible"],
+ ["Sentinel-5P","Humo, aerosoles y NO₂ regionales · disponible"],
+ ["Google Earth Timelapse","Mosaicos anuales 1984–2022 para la historia del lote · disponible"],
  ["IA geoespacial","TerraMind / TESSERA · en evaluación"]
  ].map(([name,desc])=><article key={name} style={{border:"1px solid #38505d",borderRadius:12,padding:18,background:"#192b36"}}><h2 style={{fontSize:19,margin:"0 0 8px"}}>{name}</h2><p style={{margin:0,color:"#b7c9d1"}}>{desc}</p></article>)}</div>
  <section aria-label="Aplicaciones prácticas" style={{margin:"28px 0"}}><h2>¿Para qué sirve en la práctica?</h2><p>DOTS amplía sus capacidades de análisis incorporando fuentes de Copernicus. No es una plataforma separada: sus imágenes y productos se relacionan con los módulos de cultivos, parcelas, agua y clima que ya ofrece DOTS.</p><div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(230px,1fr))",gap:14}}>{[
- {t:"Producción agrícola",d:"Comparar campañas y reconocer sectores de vegetación menos vigorosa. Ayuda a decidir dónde inspeccionar un lote antes de intervenir.",url:"/cultivos",link:"Ir a cultivos"},
- {t:"Crecidas e inundaciones",d:"Revisar imágenes de radar para reconocer agua sobre el terreno, incluso cuando las nubes impiden una fotografía óptica.",url:"/nino-crecidas",link:"Ir a crecidas"},
- {t:"Temperaturas y sequías",d:"Contrastar temperaturas superficiales y cambios en vegetación para investigar períodos de estrés térmico e hídrico.",url:"/simulador-ambiental",link:"Ir al simulador"},
- {t:"Historia del territorio",d:"Comparar coberturas de distintas fechas para estudiar avance agrícola, pérdida de monte y cambios en pastizales.",url:"/observatorio",link:"Abrir mapa principal"},
- {t:"Calidad atmosférica",d:"Consultar productos regionales de gases y humo para contextualizar episodios ambientales, sin atribuir emisiones a una parcela individual.",url:"/capas",link:"Ver capas"},
- {t:"Informes técnicos",d:"Usar las fuentes verificadas como respaldo de análisis de parcelas; los nuevos informes automáticos Copernicus aún están en desarrollo.",url:"/modulos",link:"Ver informes"}
+ {t:"Producción agrícola",d:"Comparar campañas y reconocer sectores de vegetación menos vigorosa. Ayuda a decidir dónde inspeccionar un lote antes de intervenir.",url:"#mapas-tematicos",link:"Generar NDVI o cambio de NDVI"},
+ {t:"Crecidas e inundaciones",d:"Revisar imágenes de radar para reconocer agua sobre el terreno, incluso cuando las nubes impiden una fotografía óptica.",url:"#mapas-tematicos",link:"Generar agua por radar"},
+ {t:"Temperaturas y sequías",d:"Contrastar temperaturas superficiales y cambios en vegetación para investigar períodos de estrés térmico e hídrico.",url:"#mapas-tematicos",link:"Generar temperatura superficial"},
+ {t:"Historia del territorio",d:"Ver el lote año por año desde 1984 con Google Earth Timelapse, y comparar NDVI entre campañas: avance agrícola, pérdida de monte y cambios en pastizales.",url:"#historia-territorio",link:"Ver historia del lote"},
+ {t:"Calidad atmosférica",d:"Consultar productos regionales de gases y humo para contextualizar episodios ambientales, sin atribuir emisiones a una parcela individual.",url:"#mapas-tematicos",link:"Generar humo o NO₂"},
+ {t:"Informes técnicos",d:"Un PDF con la delimitación del lote, el mapa generado, sus rangos de lectura, la interpretación y las imágenes usadas con su enlace oficial para verificarlas.",url:"#generador-informes-copernicus",link:"Armar el informe"}
  ].map(x=><article key={x.t} style={{padding:18,background:"#192b36",border:"1px solid #38505d",borderRadius:12}}><h3>{x.t}</h3><p style={{color:"#bfd0d9"}}>{x.d}</p><a style={{color:"#8bd3ef"}} href={x.url}>{x.link} →</a></article>)}</div></section>
  <section style={{background:"#192b36",border:"1px solid #38505d",padding:22,borderRadius:14}}>
  <h2>Delimitar y analizar una parcela</h2><p>Seleccioná un polígono del Observatorio o dibujá uno nuevo. Sin delimitación no se habilita la consulta.</p>
@@ -88,12 +90,13 @@ export function CopernicusModule({embedded=false,lat,lon,polygon=[]}:{embedded?:
  <button disabled={loading||!collection||outline.length<3} type="submit" style={{background:"#35b3cf",color:"#071820",fontWeight:700,border:0,borderRadius:8,padding:12,cursor:"pointer"}}>{loading?"Consultando…":"Buscar imágenes"}</button>
  </form>
  {error&&<p role="alert" style={{color:"#ffb5a7"}}>{error}</p>}
- <section style={{margin:"22px 0",padding:16,border:"1px solid #54717f",borderRadius:10}}><h3>Mapas temáticos Copernicus · datos reales</h3><p>Calculá productos sobre los píxeles reales de la zona delimitada, con el período elegido arriba. Las imágenes se procesan en el servicio oficial de Copernicus; no se generan resultados de ejemplo.</p><label>Producto<select value={mapIndex} onChange={e=>setMapIndex(e.target.value as MapKind)} style={field}>{MAP_GROUPS.map(g=><optgroup key={g.label} label={g.label}>{g.items.map(([v,l])=><option key={v} value={v}>{l}</option>)}</optgroup>)}</select></label><p style={{color:"#b7c9d1",fontSize:14,margin:"8px 0 0"}}>{MAP_HINTS[mapIndex]}</p>{mapIndex==="ndvi_change"&&<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:12,marginTop:10}}><label>Comparar contra · desde<input type="date" value={compareStart} onChange={e=>setCompareStart(e.target.value)} style={field}/></label><label>Comparar contra · hasta<input type="date" value={compareEnd} onChange={e=>setCompareEnd(e.target.value)} style={field}/></label></div>}<button type="button" disabled={thematicBusy||outline.length<3} onClick={generateThematic} style={{...action,marginTop:12}}>{thematicBusy?"Procesando píxeles…":"Generar mapa temático"}</button>{thematicError&&<p role="alert" style={{color:"#ffb5a7"}}>{thematicError}</p>}{thematicUrl&&<div style={{marginTop:14}}><img src={thematicUrl} alt={"Mapa satelital "+mapIndex+" calculado sobre la parcela"} style={{maxWidth:"100%",maxHeight:520,borderRadius:8}}/><p style={{color:"#b7c9d1"}}>Fuente: {mapReading?.source||"Copernicus"} · período {start} a {end}.</p><a href={thematicUrl} download={"DOTS_Copernicus_"+mapIndex+".png"} style={{color:"#8bd3ef"}}>Descargar mapa PNG</a>{mapReading&&<MapReadingPanel reading={mapReading}/>}</div>}</section>
+ <section id="mapas-tematicos" style={{margin:"22px 0",padding:16,border:"1px solid #54717f",borderRadius:10}}><h3>Mapas temáticos Copernicus · datos reales</h3><p>Calculá productos sobre los píxeles reales de la zona delimitada, con el período elegido arriba. Las imágenes se procesan en el servicio oficial de Copernicus; no se generan resultados de ejemplo.</p><label>Producto<select value={mapIndex} onChange={e=>setMapIndex(e.target.value as MapKind)} style={field}>{MAP_GROUPS.map(g=><optgroup key={g.label} label={g.label}>{g.items.map(([v,l])=><option key={v} value={v}>{l}</option>)}</optgroup>)}</select></label><p style={{color:"#b7c9d1",fontSize:14,margin:"8px 0 0"}}>{MAP_HINTS[mapIndex]}</p>{mapDay&&<p style={{margin:"8px 0 0"}}><span style={{padding:"3px 10px",borderRadius:20,background:"#234454"}}>Usando solo la imagen del {mapDay.split("-").reverse().join("/")}</span> <button type="button" onClick={()=>setMapDay("")} style={{...action,padding:"3px 9px",fontSize:13}}>Volver al período completo</button></p>}{mapIndex==="ndvi_change"&&<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:12,marginTop:10}}><label>Comparar contra · desde<input type="date" value={compareStart} onChange={e=>setCompareStart(e.target.value)} style={field}/></label><label>Comparar contra · hasta<input type="date" value={compareEnd} onChange={e=>setCompareEnd(e.target.value)} style={field}/></label></div>}<button type="button" disabled={thematicBusy||outline.length<3} onClick={generateThematic} style={{...action,marginTop:12}}>{thematicBusy?"Procesando píxeles…":"Generar mapa temático"}</button>{thematicError&&<p role="alert" style={{color:"#ffb5a7"}}>{thematicError}</p>}{thematicUrl&&<div style={{marginTop:14}}><img src={thematicUrl} alt={"Mapa satelital "+mapIndex+" calculado sobre la parcela"} style={{maxWidth:"100%",maxHeight:520,borderRadius:8}}/><p style={{color:"#b7c9d1"}}>Fuente: {mapReading?.source||"Copernicus"} · {mapDay?"imagen del "+mapDay:"período "+start+" a "+end}.</p><a href={thematicUrl} download={"DOTS_Copernicus_"+mapIndex+".png"} style={{color:"#8bd3ef"}}>Descargar mapa PNG</a>{mapReading&&<MapReadingPanel reading={mapReading}/>}</div>}</section>
  <section id="generador-informes-copernicus" style={{margin:"24px 0",padding:18,border:"1px solid #54717f",borderRadius:10}}><h3>Generador de informes técnicos · PDF</h3><p>Configurá el documento para la parcela delimitada. Se incluyen solamente datos disponibles y verificados del catálogo.</p><label>Título del informe<input value={reportTitle} onChange={e=>setReportTitle(e.target.value)} maxLength={120} style={field}/></label><label>Observaciones técnicas<textarea value={reportNotes} onChange={e=>setReportNotes(e.target.value)} maxLength={1200} rows={3} style={{...field,resize:"vertical"}}/></label><label style={{display:"flex",alignItems:"center",gap:8,margin:"12px 0"}}><input type="checkbox" checked={includeScenes} onChange={e=>setIncludeScenes(e.target.checked)}/> Incluir listado de escenas consultadas ({validScenes.length})</label><p style={{color:"#b7c9d1"}}>Incluye: mapa esquemático del polígono, coordenadas, período, colección y metodología. NDVI, humedad e inundaciones no se calcularán sin procesamiento satelital real.</p></section>
  <button type="button" onClick={downloadGeoJSON} disabled={outline.length<3} style={action}>Exportar mapa y delimitación GeoJSON</button>{" "}<button type="button" onClick={downloadReport} disabled={pdfBusy||outline.length<3} style={action}>{pdfBusy?"Generando PDF…":"Descargar informe PDF del área delimitada"}</button><p style={{color:"#b7c9d1"}}>El PDF documenta el polígono y las escenas consultadas; no incluye todavía índices de vegetación calculados.</p>
  <p role="status">{validScenes.length?validScenes.length+" escenas encontradas":loading?"Buscando en Copernicus…":"Los resultados aparecerán aquí. No se muestran datos simulados."}</p>
+ <TerritoryHistory outline={outline}/>
  <section id="graficos-copernicus" style={{marginTop:22}}><h3>Módulos gráficos · monitoreo satelital</h3><p style={{color:"#b7c9d1"}}>Los gráficos se generan exclusivamente con metadatos de las escenas devueltas por Copernicus. No representan mediciones de vegetación ni agua dentro de la parcela.</p>{scenes.length>0?<><div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))",gap:14}}><SceneChart title="Escenas por fecha" kind="dates" scenes={validScenes}/><SceneChart title="Cobertura nubosa por imagen" kind="cloud" scenes={validScenes}/><SceneChart title="Distribución de nubosidad" kind="distribution" scenes={validScenes}/></div><ReadingBox title="Lectura de los gráficos" lines={interpretScenes(validScenes)}/></>:<p style={{padding:20,border:"1px dashed #54717f",borderRadius:9}}>Delimitá el área y consultá imágenes para activar los tres gráficos.</p>}</section>
- <div style={{display:"grid",gap:8}}>{validScenes.map(s=><article key={s.id} style={{borderTop:"1px solid #38505d",padding:"12px 0"}}><strong>{s.id}</strong><p>{s.collection} · {s.properties.datetime||"Fecha no informada"} · Nubes: {s.properties["eo:cloud_cover"]??"sin dato"}%</p>{s.links.find(l=>l.rel==="self")&&<a href={s.links.find(l=>l.rel==="self")!.href} target="_blank" rel="noreferrer" style={{color:"#8bd3ef"}}>Metadatos oficiales ↗</a>}</article>)}</div>
+ <ScenesList scenes={validScenes} onUse={day=>{setMapDay(day);document.getElementById("mapas-tematicos")?.scrollIntoView({behavior:"smooth",block:"start"})}}/>
  </section>
  <p style={{color:"#9cb2bd",marginTop:22}}>Fuentes: Copernicus Data Space Ecosystem / ESA. Los productos no son mediciones de campo. El acceso al agente openEO alfa requiere autorización; DOTS no declara habilitados procesos que aún no fueron configurados.</p>
  </main>
@@ -148,3 +151,70 @@ const MAP_HINTS:Record<MapKind,string>={
  aerosol:"Promedio del período (máximo 31 días), unos 5 km por píxel: muestra la región alrededor del lote.",
  no2:"Promedio del período (máximo 31 días), unos 5 km por píxel: muestra la región alrededor del lote.",
 };
+
+const HISTORY_YEARS=[1985,1990,1995,2000,2005,2010,2015,2020,2022];
+function TerritoryHistory({outline}:{outline:[number,number][]}){
+ const [yearA,setYearA]=useState(1985);
+ const [yearB,setYearB]=useState(2022);
+ const [images,setImages]=useState<Record<number,string>>({});
+ const [busy,setBusy]=useState<number[]>([]);
+ const [error,setError]=useState("");
+ const [showGrid,setShowGrid]=useState(false);
+ const key=JSON.stringify(outline);
+ useEffect(()=>{setImages(prev=>{Object.values(prev).forEach(u=>URL.revokeObjectURL(u));return {}});setShowGrid(false);setError("")},[key]);
+ async function load(year:number){
+  if(images[year]||busy.includes(year))return;
+  setBusy(b=>[...b,year]);
+  try{const r=await fetch("/api/historia/timelapse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({polygon:outline,year})});
+   if(!r.ok){const j=await r.json().catch(()=>({}));throw Error([j.error,j.detail].filter(Boolean).join(": ")||"No se pudo obtener el mosaico")}
+   const url=URL.createObjectURL(await r.blob());setImages(m=>({...m,[year]:url}));setError("")}
+  catch(e){setError(e instanceof Error?e.message:String(e))}
+  finally{setBusy(b=>b.filter(y=>y!==year))}
+ }
+ async function compare(){await Promise.all([load(yearA),load(yearB)])}
+ async function evolution(){setShowGrid(true);for(const y of HISTORY_YEARS){await load(y)}}
+ const years=Array.from({length:2022-1984+1},(_,i)=>1984+i);
+ const ready=outline.length>=3;
+ const frame=(y:number)=><figure key={y} style={{margin:0}}>{images[y]?<img src={images[y]} alt={"Mosaico anual "+y+" alrededor del lote"} style={{width:"100%",borderRadius:8,display:"block"}}/>:<div style={{aspectRatio:"4/3",borderRadius:8,background:"#0d1b25",display:"grid",placeItems:"center",color:"#78939f"}}>{busy.includes(y)?"Cargando…":"Sin cargar"}</div>}<figcaption style={{marginTop:6,fontWeight:600}}>{y}</figcaption></figure>;
+ return <section id="historia-territorio" style={{margin:"22px 0",padding:16,border:"1px solid #54717f",borderRadius:10}}>
+  <h3>Historia del territorio · 1984 a 2022</h3>
+  <p>Mosaicos anuales sin nubes de Google Earth Timelapse, a 30 m, con tu lote marcado en blanco. Sirven para ver cómo cambió el campo y su entorno a lo largo de casi 40 años.</p>
+  {!ready?<p style={{padding:16,border:"1px dashed #54717f",borderRadius:9}}>Dibujá el lote en el mapa para ver su historia.</p>:<>
+  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:12,alignItems:"end"}}>
+   <label>Año A<select value={yearA} onChange={e=>setYearA(+e.target.value)} style={field}>{years.map(y=><option key={y}>{y}</option>)}</select></label>
+   <label>Año B<select value={yearB} onChange={e=>setYearB(+e.target.value)} style={field}>{years.map(y=><option key={y}>{y}</option>)}</select></label>
+   <button type="button" onClick={compare} style={action}>Comparar los dos años</button>
+   <button type="button" onClick={evolution} style={action}>Ver evolución cada 5 años</button>
+  </div>
+  {error&&<p role="alert" style={{color:"#ffb5a7"}}>{error}</p>}
+  {(images[yearA]||images[yearB]||busy.includes(yearA)||busy.includes(yearB))&&<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))",gap:14,marginTop:14}}>{frame(yearA)}{frame(yearB)}</div>}
+  {showGrid&&<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(170px,1fr))",gap:12,marginTop:16}}>{HISTORY_YEARS.map(frame)}</div>}
+  <ReadingBox title="Cómo leer estas imágenes" lines={[
+   "Verde oscuro es monte o vegetación densa; verde claro, pasturas o cultivos en crecimiento; marrón o beige, suelo arado, rastrojo o pastizal seco; azul oscuro o negro, agua.",
+   "Compará los dos años buscando monte que desaparece, lotes nuevos con formas rectas, lagunas que se secan o aparecen y cambios en el cauce de los ríos.",
+   "Cada mosaico combina imágenes de todo el año para quitar las nubes: muestra cómo estaba el lugar ese año, no un día puntual. Hasta 2014 son imágenes Landsat; desde 2015 se suman las de Sentinel-2.",
+   "Es una imagen para mirar, no para medir: para cifras de cobertura usá el cambio de NDVI o el análisis de deforestación de DOTS.",
+  ]}/>
+  </>}
+  <p style={{color:"#8fa6b0",fontSize:13,marginTop:10}}>Fuente: Google Earth Timelapse (Google, Landsat, Copernicus) · CC-BY 4.0. Contiene datos modificados de Copernicus Sentinel (2015 en adelante).</p>
+ </section>
+}
+
+function cloudTag(c:number|undefined){if(typeof c!=="number")return {text:"Sin dato de nubes",color:"#8fa6b0",bg:"#22343f"};if(c<20)return {text:"Útil · "+c.toFixed(0)+"% nubes",color:"#0e2a17",bg:"#7fd18b"};if(c<50)return {text:"Regular · "+c.toFixed(0)+"% nubes",color:"#3a2a00",bg:"#f2cf6b"};return {text:"Nublada · "+c.toFixed(0)+"% nubes",color:"#fff",bg:"#8a3b33"}}
+function ScenesList({scenes,onUse}:{scenes:Scene[];onUse:(day:string)=>void}){
+ if(!scenes.length)return null;
+ const sorted=scenes.slice().sort((a,b)=>(a.properties["eo:cloud_cover"]??999)-(b.properties["eo:cloud_cover"]??999));
+ const useful=scenes.filter(s=>(s.properties["eo:cloud_cover"]??999)<20).length;
+ return <details style={{marginTop:14,border:"1px solid #38505d",borderRadius:10,padding:"10px 14px",background:"#14252f"}}>
+  <summary style={{cursor:"pointer",fontWeight:600}}>Ver imágenes usadas ({scenes.length}) · {useful} útiles para medir</summary>
+  <p style={{color:"#b7c9d1",fontSize:14}}>Ordenadas de menos a más nubes. «Usar esta fecha» acota el período a ese día para que el mapa temático use esa imagen. El enlace oficial permite a cualquiera verificar el dato en Copernicus.</p>
+  <div style={{display:"grid",gap:6}}>{sorted.map(s=>{const day=(s.properties.datetime||"").slice(0,10);const tag=cloudTag(s.properties["eo:cloud_cover"]);const self=s.links.find(l=>l.rel==="self");
+   return <article key={s.id} style={{display:"flex",flexWrap:"wrap",gap:10,alignItems:"center",borderTop:"1px solid #2c4350",padding:"8px 0"}}>
+    <b style={{minWidth:96}}>{day?day.split("-").reverse().join("/"):"Sin fecha"}</b>
+    <span style={{padding:"2px 8px",borderRadius:20,fontSize:13,background:tag.bg,color:tag.color}}>{tag.text}</span>
+    <span style={{color:"#8fa6b0",fontSize:13,flex:"1 1 200px",overflowWrap:"anywhere"}}>{s.collection} · {s.id}</span>
+    {day&&<button type="button" onClick={()=>onUse(day)} style={{...action,padding:"5px 10px",fontSize:13}}>Usar esta fecha</button>}
+    {self&&<a href={self.href} target="_blank" rel="noreferrer" style={{color:"#8bd3ef",fontSize:13}}>Ficha oficial ↗</a>}
+   </article>})}</div>
+ </details>
+}
