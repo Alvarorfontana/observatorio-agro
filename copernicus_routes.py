@@ -5,7 +5,7 @@ from flask import send_file
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
-from reportlab.graphics.shapes import Drawing, Polygon, String
+from reportlab.graphics.shapes import Drawing, Polygon, String, Rect, Line
 from xml.sax.saxutils import escape
 import requests
 from flask import Blueprint, jsonify, request
@@ -137,8 +137,46 @@ def report():
         rows.append([str(props.get("datetime") or "N/D")[:19], str(scene.get("collection") or "")[:24], str(scene.get("id") or "")[:44]])
     if len(rows) == 1:
         rows.append(["Sin escenas", "-", "-"])
-    table = Table(rows, colWidths=[110, 125, 285], repeatRows=1)
+    table = Table(rows, colWidths=[95, 110, 245], repeatRows=1)
     table.setStyle(TableStyle([("BACKGROUND",(0,0),(-1,0),colors.HexColor("#123747")),("TEXTCOLOR",(0,0),(-1,0),colors.white),("FONTSIZE",(0,0),(-1,-1),8),("BOTTOMPADDING",(0,0),(-1,-1),8),("LINEBELOW",(0,0),(-1,-1),0.4,colors.lightgrey)]))
+    # Graficos reproducibles basados solo en metadatos del catalogo.
+    from collections import Counter
+    dates = Counter()
+    cloud_buckets = [0, 0, 0, 0, 0]
+    cloud_total = 0
+    for scene in scenes:
+        if not isinstance(scene, dict):
+            continue
+        props = scene.get("properties") or {}
+        dt = str(props.get("datetime") or "")[:10]
+        if len(dt) == 10:
+            dates[dt] += 1
+        cloud = props.get("eo:cloud_cover")
+        if isinstance(cloud, (int, float)) and 0 <= cloud <= 100:
+            cloud_buckets[min(int(cloud // 20), 4)] += 1
+            cloud_total += 1
+    def bar_graph(title, pairs):
+        canvas = Drawing(450, 160)
+        canvas.add(String(8, 145, title, fontSize=11, fillColor=colors.HexColor("#123747")))
+        if not pairs:
+            canvas.add(String(8, 85, "Sin datos disponibles para este grafico", fontSize=9))
+            return canvas
+        max_value = max(1, max(v for _, v in pairs))
+        top = pairs[:8]
+        for i, (label, value) in enumerate(top):
+            y = 124 - i * 15
+            canvas.add(String(8, y, str(label)[:18], fontSize=8))
+            canvas.add(Rect(125, y - 2, 245 * value / max_value, 10,
+                            fillColor=colors.HexColor("#35b3cf"), strokeColor=None))
+            canvas.add(String(378, y, str(value), fontSize=8))
+        return canvas
+    elements.extend([Spacer(1, 14), Paragraph("Graficos de las escenas consultadas", styles["Heading2"]),
+                     Paragraph("Los siguientes graficos representan metadatos del catalogo, no mediciones dentro de la parcela.", styles["Normal"]),
+                     bar_graph("Escenas por fecha (hasta 8 fechas)", sorted(dates.items())),
+                     bar_graph("Distribucion de cobertura nubosa (%)",
+                               list(zip(["0-19", "20-39", "40-59", "60-79", "80-100"], cloud_buckets)) if cloud_total else [])])
+    elements.extend([Spacer(1, 12), Paragraph("Mapas tematicos de vegetacion, agua y temperatura", styles["Heading2"]),
+                     Paragraph("No disponibles en esta consulta: requieren procesar pixeles satelitales y recortar el resultado a la parcela. No se generan mapas simulados.", styles["Normal"])])
     elements.extend([table, Spacer(1, 20), Paragraph("Fuente: Copernicus Data Space Ecosystem (STAC). La geometria es la delimitacion aportada por el usuario. Este documento registra escenas de catalogo; no incluye calculos NDVI, mediciones de inundacion ni recorte raster. Las escenas deben verificarse en su origen.",styles["Normal"])])
     if notes.strip():
         elements.extend([Spacer(1, 16), Paragraph("Observaciones del informe", styles["Heading2"]), Paragraph(escape(notes).replace("\\n", "<br/>"), styles["Normal"])])
