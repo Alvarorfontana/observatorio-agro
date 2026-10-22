@@ -183,7 +183,8 @@ def ee_init():
 def stack(ee, region):
     """Capas por píxel: radar en tres escalones + óptico. 10 m."""
     start, end = f"{YEAR}-01-01", f"{YEAR + 1}-01-01"
-    s1 = (ee.ImageCollection("COPERNICUS/S1_GRD").filterBounds(region).filterDate(start, end)
+    # radar: tres años centrados en YEAR. Desde la falla de Sentinel-1B hay zonas sin pasadas VV+VH en un solo año.
+    s1 = (ee.ImageCollection("COPERNICUS/S1_GRD").filterBounds(region).filterDate(f"{YEAR - 1}-01-01", f"{YEAR + 2}-01-01")
           .filter(ee.Filter.eq("instrumentMode", "IW"))
           .filter(ee.Filter.listContains("transmitterReceiverPolarisation", "VV"))
           .filter(ee.Filter.listContains("transmitterReceiverPolarisation", "VH"))
@@ -282,6 +283,10 @@ def overpass_query(bbox, names):
   relation["informal"="yes"]["landuse"]({bb});
   way["place"~"^(neighbourhood|suburb|quarter)$"]["name"~"^({pattern})",i]({bb});
   relation["place"~"^(neighbourhood|suburb|quarter)$"]["name"~"^({pattern})",i]({bb});
+  way["landuse"="residential"]["name"~"^({pattern})",i]({bb});
+  relation["landuse"="residential"]["name"~"^({pattern})",i]({bb});
+  way["residential"="informal"]({bb});
+  relation["residential"="informal"]({bb});
 );
 out geom;"""
 
@@ -311,11 +316,19 @@ def osm_informal(city):
     bbox = circle_bbox(city["lat"], city["lon"], city["radius_m"])
     for attempt in range(3):
         try:
-            r = requests.post(OVERPASS, data={"data": overpass_query(bbox, city["nombres"])}, timeout=200)
+            r = requests.post(OVERPASS, data={"data": overpass_query(bbox, city["nombres"])}, timeout=200,
+                              headers={"User-Agent": "DOTS observatorio (datos abiertos)"})
             if r.ok:
-                return clean_polygons({"features": [{"geometry": g} for g in osm_polygons(r.json().get("elements", []))]}, bbox)
-        except (requests.RequestException, ValueError):
-            pass
+                els = r.json().get("elements", [])
+                kinds = {}
+                for el in els:
+                    kinds[el.get("type")] = kinds.get(el.get("type"), 0) + 1
+                names = sorted({(el.get("tags") or {}).get("name", "") for el in els} - {""})[:15]
+                log(f"  Overpass {city['ciudad']}: {len(els)} elementos {kinds} · {', '.join(names)}")
+                return clean_polygons({"features": [{"geometry": g} for g in osm_polygons(els)]}, bbox)
+            log(f"  Overpass respondió HTTP {r.status_code}")
+        except (requests.RequestException, ValueError) as exc:
+            log(f"  Overpass no respondió: {type(exc).__name__}")
         time.sleep(10 * (attempt + 1))
     return []
 
@@ -486,9 +499,9 @@ def main(out_path):
     fcs = []
     for st in train:
         fc = sample_city(ee, st["lat"], st["lon"], polys_by[st["id"]])
-        fcs.append(fc)
         try:
             samples[st["id"]] = [f["properties"] for f in fc.getInfo()["features"]]
+            fcs.append(fc)          # solo las ciudades que muestrearon bien: una con error arruina el entrenamiento
             print(f"  muestras {st['place']}: {len(samples[st['id']])}", flush=True)
         except Exception as exc:
             print(f"  sin muestras en {st['place']}: {str(exc)[:160]}", flush=True)
