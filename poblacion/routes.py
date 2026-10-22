@@ -179,3 +179,16 @@ def flood_people():
     except LookupError as exc: return jsonify(error=str(exc)),404
     except PermissionError: return jsonify(error='Earth Engine sin credencial en el servidor.'),503
     except Exception as exc: return jsonify(error=f'No se pudo calcular ({type(exc).__name__}).'),502
+
+
+@bp.get('/api/poblacion/barrios')
+def informal_settlements():
+    """Barrios populares detectados por radar (calculado por la tarea «Barrios populares por radar»)."""
+    import datastore
+    data=datastore.load('barrios_radar.json')
+    if not data:
+        return jsonify(data=None,error='El modelo todavía no se ejecutó: correr la tarea «Barrios populares por radar» en GitHub Actions.'),200
+    base=f'https://raw.githubusercontent.com/{datastore.REPO}/{datastore.BRANCH}/data/'
+    r=jsonify(data=data,image_base=base)
+    r.headers['Cache-Control']='public, s-maxage=3600'
+    return r

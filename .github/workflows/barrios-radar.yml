@@ -1,0 +1,49 @@
+# Barrios populares por radar (Sentinel-1 + Sentinel-2 + RENABAP) en las localidades ribereñas.
+# Reentrena el modelo y recalcula población expuesta. A pedido y cada tres meses.
+# Guarda en la rama datos: no publica la web.
+# Requiere los secretos GOOGLE_CLOUD_PROJECT y GOOGLE_APPLICATION_CREDENTIALS_JSON (los mismos que en Vercel).
+name: Barrios populares por radar
+
+on:
+  workflow_dispatch:
+    inputs:
+      year:
+        description: "Año de las imágenes"
+        required: false
+        default: "2024"
+  schedule:
+    - cron: "13 8 5 1,4,7,10 *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: barrios-radar
+  cancel-in-progress: false
+
+jobs:
+  barrios:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Traer datos de la rama datos
+        run: bash scripts/datos_rama.sh traer
+      - name: Entrenar y mapear
+        env:
+          GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT }}
+          GOOGLE_APPLICATION_CREDENTIALS_JSON: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}
+          BARRIOS_YEAR: ${{ github.event.inputs.year || '2024' }}
+        run: |
+          if [ -z "$GOOGLE_CLOUD_PROJECT" ] || [ -z "$GOOGLE_APPLICATION_CREDENTIALS_JSON" ]; then
+            echo "Faltan los secretos GOOGLE_CLOUD_PROJECT y GOOGLE_APPLICATION_CREDENTIALS_JSON en GitHub." && exit 1
+          fi
+          pip install -r requirements.txt earthengine-api scikit-learn shapely
+          python scripts/barrios_radar.py data/barrios_radar.json
+      - name: Guardar en la rama datos (no publica la web)
+        if: success()
+        run: |
+          cp scripts/datos_rama.sh /tmp/datos_rama.sh && bash /tmp/datos_rama.sh guardar "Barrios por radar $(date -u +%Y-%m-%d)" data/barrios_radar.json data/barrios_radar

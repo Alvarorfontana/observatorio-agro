@@ -208,6 +208,7 @@ $('flood-place').addEventListener('change',async()=>{const id=$('flood-place').v
       finally{download.disabled=false;download.textContent='Descargar informe PDF · '+d.place}
     });
     exportRow.append(download,exportJson);box.append(exportRow);
+    renderBarrios(id,box);
   }catch(e){if(requestId===floodRequest)$('flood-status').textContent='No se pudo calcular: '+e.message;}});
 
 // Dengue y olas de calor en 80 localidades
@@ -227,3 +228,55 @@ jsonFetch('/api/fuentes/salud-sudamerica').then(j=>{health=j.data;const cs=[...n
   const k=health.dengue_counts||{};$('health-status').textContent=`Dengue: ${k['muy alto']||0} localidades con riesgo muy alto, ${k['alto']||0} alto, ${k['moderado']||0} moderado. Olas de calor en los próximos 16 días: ${health.heatwave_places.length?health.heatwave_places.join(', '):'ninguna'}.`+(health.p90_available?'':' Umbrales de calor provisorios (35 °C y 22 °C) hasta completar los de cada localidad.');drawHealth();})
   .catch(e=>{$('health-status').textContent='No se pudo consultar: '+e.message;});
 $('health-country').addEventListener('change',drawHealth);$('health-sort').addEventListener('change',drawHealth);
+
+// Barrios populares por radar (modelo entrenado con RENABAP; se recalcula en GitHub Actions)
+let barriosData=null;
+const barriosLoad=jsonFetch('/api/poblacion/barrios').then(j=>{barriosData=j.data?j:null;drawBarriosModel(j);return barriosData;}).catch(e=>{$('barrios-model').replaceChildren(make('p','No se pudo consultar el modelo: '+e.message));return null;});
+function pct(v){return v==null?'Sin dato':number(100*v,0)+' %';}
+function drawBarriosModel(j){const box=$('barrios-model');box.replaceChildren();
+  if(!j||!j.data){const p=make('p',(j&&j.error)||'Todavía no hay resultados del modelo.');p.className='hint';box.append(p);return;}
+  const m=j.data.model||{},avg=m.promedio||{},o=avg.optico||{},r=avg.optico_radar||{};
+  const grid=make('div','');grid.className='flood-grid';
+  const card=(label,val,sub,cls)=>{const a=make('article','');if(cls)a.className=cls;a.append(make('span',label),make('strong',val),make('span',sub));return a;};
+  grid.append(card('Solo imagen en color',o.f1_barrio==null?'Sin dato':number(o.f1_barrio,2),'acierto para encontrar barrios populares (F1, 0 a 1)'),
+    card('Color + radar',r.f1_barrio==null?'Sin dato':number(r.f1_barrio,2),'acierto para encontrar barrios populares (F1, 0 a 1)','warn'),
+    card('Exactitud general',r.exactitud==null?'Sin dato':pct(r.exactitud),'color + radar, en ciudades que el modelo no vio'));
+  const e=avg.optico_radar_edificios||{};
+  if(e.f1_barrio!=null)grid.append(card('Color + radar + edificios',number(e.f1_barrio,2),'sumando cantidad y altura de construcciones (Google Open Buildings)'));
+  const x=avg.optico_radar_externas||{};
+  if(x.f1_barrio!=null)grid.append(card('Color + radar + otras ciudades',number(x.f1_barrio,2),'sumando etiquetas de '+((m.ciudades_externas||[]).join(', ')||'otras ciudades')));
+  box.append(grid);
+  const lines=[];
+  if(o.f1_barrio!=null&&r.f1_barrio!=null)lines.push(r.f1_barrio>o.f1_barrio?`Sumar el radar mejora la detección de ${number(o.f1_barrio,2)} a ${number(r.f1_barrio,2)}: separa mejor un barrio popular de un barrio denso común.`:`En esta corrida el radar no mejoró la detección (${number(o.f1_barrio,2)} contra ${number(r.f1_barrio,2)}).`);
+  if(m.modelo_final)lines.push(m.modelo_final==='optico_radar_edificios'?'El mapa usa la versión con edificios, que anduvo mejor en ciudades no vistas.':m.modelo_final==='optico_radar_externas'?'El mapa usa la versión que suma etiquetas de '+((m.ciudades_externas||[]).join(', ')||'otras ciudades')+', que anduvo mejor en ciudades argentinas no vistas.':'El mapa usa la versión color + radar.');
+  lines.push(`Entrenado con los barrios RENABAP de ${(m.ciudades_entrenamiento||[]).length} localidades argentinas y evaluado dejando afuera una ciudad por vez. Imágenes de ${j.data.year}; actualizado el ${j.data.updated}.`);
+  if(m.nota)lines.push(m.nota);
+  for(const l of lines){const p=make('p',l);p.className='hint';box.append(p);}
+  const rows=m.evaluacion_por_ciudad||[];
+  if(rows.length){const d=make('details','');d.append(make('summary','Ver resultado por ciudad'));const t=make('table','');const hr=make('tr','');for(const h of ['Ciudad dejada afuera','Solo color (F1)','Color + radar (F1)','Exactitud color + radar','Con edificios (F1)'])hr.append(make('th',h));t.append(hr);
+    for(const x of rows){const tr=make('tr','');tr.append(make('td',x.city),make('td',x.optico?number(x.optico.f1_barrio,2):'—'),make('td',x.optico_radar?number(x.optico_radar.f1_barrio,2):'—'),make('td',x.optico_radar?pct(x.optico_radar.exactitud):'—'),make('td',x.optico_radar_edificios?number(x.optico_radar_edificios.f1_barrio,2):'—'));t.append(tr);}
+    d.append(t);box.append(d);}
+  if((m.capas_mas_utiles||[]).length){const p=make('p','Capas que más pesan en el modelo: '+m.capas_mas_utiles.slice(0,6).map(c=>c.capa).join(', ')+'.');p.className='hint';box.append(p);}
+  const src=make('p','Fuentes: '+(j.data.sources||[]).join(' · '));src.className='hint';box.append(src);}
+async function renderBarrios(id,box){const j=barriosData||await barriosLoad;if(!j||!j.data)return;
+  const p=(j.data.places||[]).find(x=>x.id===id);if(!p)return;
+  const sec=make('div','');sec.style.cssText='margin-top:22px';sec.append(make('h3','Barrios populares · '+p.place));
+  if(p.error){sec.append(make('p','No se pudo calcular esta localidad: '+p.error));box.append(sec);return;}
+  const grid=make('div','');grid.className='flood-grid';
+  const card=(label,val,sub,cls)=>{const a=make('article','');if(cls)a.className=cls;a.append(make('span',label),make('strong',val),make('span',sub));return a;};
+  grid.append(card('Superficie con firma de barrio popular',number(p.informal_ha)+' ha','construcciones con la textura de radar típica'),
+    card('Personas en esas zonas',number(p.pop_informal),'estimación WorldPop 2020','warn'));
+  const h2=(p.pop_informal_hand||[]).find(b=>b.hasta_m===2);
+  if(h2)grid.append(card('Y a 2 m o menos sobre el río',number(h2.personas),'personas en barrios populares de la zona más baja','risk'));
+  sec.append(grid);
+  const lines=[];
+  if(p.renabap_barrios!=null){lines.push(`El RENABAP registra ${number(p.renabap_barrios)} barrios en la zona; el modelo reconoce ${pct(p.renabap_detectado)} de su superficie construida.`);
+    if(p.a_verificar_ha)lines.push(`Hay ${number(p.a_verificar_ha)} ha con la misma firma fuera de los barrios registrados: zonas a verificar en terreno, pueden ser barrios nuevos o no relevados, o falsos positivos.`);}
+  else lines.push('En esta localidad no hay RENABAP (fuera de Argentina): el resultado sale solo del modelo y conviene verificarlo con datos locales.');
+  lines.push('Es una estimación satelital para planificar agua, refugios y evacuación; no identifica viviendas ni personas.');
+  for(const l of lines){const q=make('p',l);q.className='hint';sec.append(q);}
+  if((p.pop_informal_hand||[]).length){const t=make('table','');const hr=make('tr','');for(const h of ['Hasta … m sobre el río','Personas en barrios populares'])hr.append(make('th',h));t.append(hr);
+    for(const b of p.pop_informal_hand){const tr=make('tr','');tr.append(make('td',b.hasta_m+' m'),make('td',number(b.personas)));t.append(tr);}sec.append(t);}
+  if(p.imagen){const fig=make('figure','');fig.style.cssText='margin:14px 0';const img=make('img','');img.src=j.image_base+p.imagen;img.alt='Mapa de barrios populares detectados por radar en '+p.place;img.loading='lazy';img.style.cssText='width:100%;max-width:640px;border-radius:12px;display:block';
+    fig.append(img,make('figcaption','Rojo: firma de barrio popular según el modelo. Amarillo: barrios del RENABAP. Fondo: Sentinel-2 en color natural, radio de 15 km.'));sec.append(fig);}
+  box.append(sec);}
