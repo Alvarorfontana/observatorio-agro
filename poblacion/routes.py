@@ -188,7 +188,20 @@ def informal_settlements():
     data=datastore.load('barrios_radar.json')
     if not data:
         return jsonify(data=None,error='El modelo todavía no se ejecutó: correr la tarea «Barrios populares por radar» en GitHub Actions.'),200
-    base=f'https://raw.githubusercontent.com/{datastore.REPO}/{datastore.BRANCH}/data/'
-    r=jsonify(data=data,image_base=base)
+    r=jsonify(data=data,image_base='/api/poblacion/barrios/')
     r.headers['Cache-Control']='public, s-maxage=3600'
     return r
+
+
+@bp.get('/api/poblacion/barrios/barrios_radar/<name>')
+def informal_settlements_image(name):
+    """Imagen de una localidad, leída de la rama de datos (sirve aunque el repositorio sea privado)."""
+    import re
+    import datastore
+    from flask import Response
+    if not re.fullmatch(r'[a-z0-9-]{1,60}\.png',name):
+        return jsonify(error='Imagen inválida'),400
+    png=datastore.fetch_bytes('barrios_radar/'+name)
+    if not png or not png.startswith(b'\x89PNG'):
+        return jsonify(error='Imagen no disponible'),404
+    return Response(png,mimetype='image/png',headers={'Cache-Control':'public, s-maxage=86400'})

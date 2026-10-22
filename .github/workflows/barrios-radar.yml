@@ -42,8 +42,9 @@ jobs:
             echo "Faltan los secretos GOOGLE_CLOUD_PROJECT y GOOGLE_APPLICATION_CREDENTIALS_JSON en GitHub." && exit 1
           fi
           pip install -r requirements.txt earthengine-api scikit-learn shapely
-          python scripts/barrios_radar.py data/barrios_radar.json
+          set -o pipefail
+          python -u scripts/barrios_radar.py data/barrios_radar.json 2>&1 | tee data/barrios_radar.log
       - name: Guardar en la rama datos (no publica la web)
-        if: success()
+        if: always()
         run: |
-          cp scripts/datos_rama.sh /tmp/datos_rama.sh && bash /tmp/datos_rama.sh guardar "Barrios por radar $(date -u +%Y-%m-%d)" data/barrios_radar.json data/barrios_radar
+          cp scripts/datos_rama.sh /tmp/datos_rama.sh && bash /tmp/datos_rama.sh guardar "Barrios por radar $(date -u +%Y-%m-%d)" data/barrios_radar.json data/barrios_radar data/barrios_radar.log

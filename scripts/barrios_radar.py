@@ -41,11 +41,14 @@ SEED = 7
 RF_PARAMS = dict(n_estimators=500, max_depth=30, max_features="sqrt", class_weight="balanced", n_jobs=-1,
                  random_state=SEED)
 
+# Archivo nacional oficial del RENABAP (6.467 barrios, diciembre de 2023). Se baja una sola vez y se guarda en caché.
+RENABAP_URL = os.environ.get("RENABAP_URL", "https://www.argentina.gob.ar/sites/default/files/renabap-2023-12-06.geojson")
+RENABAP_CACHE = os.path.join(ROOT, "scripts", "cache", "renabap.geojson")
 RENABAP_WFS = os.environ.get("RENABAP_WFS", "https://geoportal.obraspublicas.gob.ar/geoserver/ows")
 RENABAP_LAYER = os.environ.get("RENABAP_LAYER", "geonode:renabap2020_smz")
 RENABAP_FILE = os.path.join(ROOT, "data", "renabap.geojson")      # alternativa: archivo descargado a mano
-RENABAP_CREDIT = ("Registro Nacional de Barrios Populares (RENABAP), Ministerio de Desarrollo Social de la Nación, "
-                  "vía geoportal del Ministerio de Obras Públicas")
+RENABAP_CREDIT = ("Registro Nacional de Barrios Populares (RENABAP), Secretaría de Integración Socio-Urbana · "
+                  "versión 2023-12-06 publicada en argentina.gob.ar")
 
 RADAR = ["VV", "VH", "VHVV", "VV_dry", "VV_wet", "VV_season", "VV_tstd",
          "VVt_contrast", "VVt_var", "VVt_ent", "VVt_idm", "VHt_contrast", "VHt_var", "VHt_ent",
@@ -104,28 +107,67 @@ def clean_polygons(geojson, bbox, tolerance=0.00003):
 # ───────────────────────────── RENABAP ─────────────────────────────
 
 _RENABAP_ALL = None
+_WFS_DOWN = False
+
+
+def _national():
+    """Archivo nacional: caché local, si no el archivo oficial, si no un archivo dejado a mano en data/."""
+    global _RENABAP_ALL
+    if _RENABAP_ALL is not None:
+        return _RENABAP_ALL
+    for path in (RENABAP_CACHE, RENABAP_FILE):
+        if os.path.exists(path):
+            try:
+                with open(path, encoding="utf-8") as f:
+                    _RENABAP_ALL = json.load(f)
+                log(f"RENABAP desde {os.path.relpath(path, ROOT)}: {len(_RENABAP_ALL.get('features', []))} barrios")
+                return _RENABAP_ALL
+            except (OSError, ValueError):
+                pass
+    for attempt in range(2):
+        try:
+            r = requests.get(RENABAP_URL, timeout=300, headers={"User-Agent": "DOTS observatorio (datos abiertos)"})
+            if r.ok:
+                data = r.json()
+                if data.get("features"):
+                    os.makedirs(os.path.dirname(RENABAP_CACHE), exist_ok=True)
+                    with open(RENABAP_CACHE, "w", encoding="utf-8") as f:
+                        json.dump(data, f)
+                    _RENABAP_ALL = data
+                    log(f"RENABAP descargado: {len(data['features'])} barrios")
+                    return data
+            log(f"RENABAP oficial respondió HTTP {r.status_code}")
+        except (requests.RequestException, ValueError) as exc:
+            log(f"RENABAP oficial no respondió: {type(exc).__name__}")
+        time.sleep(10)
+    _RENABAP_ALL = {}
+    return _RENABAP_ALL
 
 
 def renabap(bbox):
-    """Barrios RENABAP dentro del recuadro: primero el WFS oficial, si no un archivo local."""
-    global _RENABAP_ALL
-    params = {"service": "WFS", "version": "1.0.0", "request": "GetFeature", "typeName": RENABAP_LAYER,
-              "outputFormat": "application/json", "srsName": "EPSG:4326",
-              "bbox": "%f,%f,%f,%f,EPSG:4326" % bbox}
-    for attempt in range(3):
+    """Barrios RENABAP dentro del recuadro: archivo nacional oficial; el WFS queda como último recurso."""
+    global _WFS_DOWN
+    data = _national()
+    if data.get("features"):
+        return clean_polygons(data, bbox), "oficial"
+    if not _WFS_DOWN:
+        params = {"service": "WFS", "version": "1.0.0", "request": "GetFeature", "typeName": RENABAP_LAYER,
+                  "outputFormat": "application/json", "srsName": "EPSG:4326",
+                  "bbox": "%f,%f,%f,%f,EPSG:4326" % bbox}
         try:
-            r = requests.get(RENABAP_WFS, params=params, timeout=90)
+            r = requests.get(RENABAP_WFS, params=params, timeout=45)
             if r.ok and r.headers.get("content-type", "").startswith(("application/json", "application/geo+json")):
                 return clean_polygons(r.json(), bbox), "wfs"
         except (requests.RequestException, ValueError):
             pass
-        time.sleep(3 * (attempt + 1))
-    if _RENABAP_ALL is None and os.path.exists(RENABAP_FILE):
-        with open(RENABAP_FILE, encoding="utf-8") as f:
-            _RENABAP_ALL = json.load(f)
-    if _RENABAP_ALL:
-        return clean_polygons(_RENABAP_ALL, bbox), "archivo"
+        _WFS_DOWN = True          # si no responde una vez, no se insiste en cada localidad
+        log("El WFS del RENABAP tampoco responde: se sigue sin él")
     return [], "sin fuente"
+
+
+def log(msg, error=False):
+    """Mensaje al registro de la tarea; los errores además quedan como anotación visible en GitHub."""
+    print(("::error::" if error else "") + msg, flush=True)
 
 
 # ───────────────────────────── Earth Engine ─────────────────────────────
@@ -439,7 +481,8 @@ def main(out_path):
         print(f"{st['place']}: {len(polys)} barrios RENABAP ({src})", flush=True)
     train = [st for st in stations if len(polys_by[st["id"]]) >= MIN_POLYGONS]
     if len(train) < 3:
-        raise SystemExit("Muy pocas localidades con barrios RENABAP: revisá la fuente (RENABAP_WFS o data/renabap.geojson).")
+        log(f"Solo {len(train)} localidades con barrios RENABAP: no alcanza para entrenar. Revisá la fuente.", error=True)
+        raise SystemExit(1)
     fcs = []
     for st in train:
         fc = sample_city(ee, st["lat"], st["lon"], polys_by[st["id"]])
@@ -518,4 +561,12 @@ def main(out_path):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, "data", "barrios_radar.json"))
+    try:
+        main(sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, "data", "barrios_radar.json"))
+    except SystemExit:
+        raise
+    except Exception as exc:  # que el motivo quede visible como anotación
+        import traceback
+        log(f"Falló: {type(exc).__name__}: {str(exc)[:300]}", error=True)
+        traceback.print_exc()
+        raise SystemExit(1)
