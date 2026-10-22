@@ -3,8 +3,6 @@ from datetime import datetime, timedelta
 import os
 import base64
 import binascii
-import time
-from threading import Lock
 from io import BytesIO
 from flask import send_file, Response
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
@@ -16,8 +14,6 @@ import requests
 from flask import Blueprint, jsonify, request
 
 copernicus_api = Blueprint("copernicus_api", __name__)
-_token_cache = {"token": None, "expires": 0}
-_token_lock = Lock()
 STAC = "https://stac.dataspace.copernicus.eu/v1"
 
 @copernicus_api.get("/api/copernicus/status")
@@ -207,22 +203,9 @@ def report():
     return send_file(buffer, mimetype="application/pdf", as_attachment=True, download_name="DOTS_Copernicus_catalogo.pdf")
 
 def _cdse_token():
-    client_id = os.getenv("CDSE_CLIENT_ID")
-    secret = os.getenv("CDSE_CLIENT_SECRET")
-    if not client_id or not secret:
-        raise RuntimeError("Copernicus processing credentials not configured")
-    with _token_lock:
-        if _token_cache["token"] and time.time() < _token_cache["expires"]:
-            return _token_cache["token"]
-        response = requests.post(
-            "https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token",
-            data={"grant_type": "client_credentials", "client_id": client_id, "client_secret": secret},
-            timeout=15)
-        response.raise_for_status()
-        data = response.json()
-        _token_cache.update(token=data["access_token"],
-                            expires=time.time() + max(30, int(data.get("expires_in", 300)) - 60))
-        return data["access_token"]
+    """Reuse the existing shared CDSE OAuth client in vegetation.py."""
+    from vegetation import cdse_token
+    return cdse_token()
 
 
 @copernicus_api.post("/api/copernicus/map")
@@ -271,7 +254,7 @@ function evaluatePixel(s){if(!s.dataMask)return [0,0,0,0];return [Math.min(255,M
             return jsonify({"error":"Sentinel Hub processing failed","status":response.status_code,
                             "detail":response.text[:350]}), 502
         return Response(response.content,mimetype="image/png",headers={"Cache-Control":"no-store","X-DOTS-Source":"CDSE Sentinel-2 L2A"})
-    except RuntimeError as exc:
+    except (RuntimeError, PermissionError) as exc:
         return jsonify({"error":"Processing unavailable","detail":str(exc)}), 503
     except (ValueError, KeyError, TypeError) as exc:
         return jsonify({"error":"Invalid processing request","detail":str(exc)}), 400
