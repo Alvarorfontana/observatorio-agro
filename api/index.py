@@ -15,6 +15,7 @@ try:
 except ImportError:   # el módulo de población necesita pyclipper
     population_bp = None
 import security
+from copernicus_routes import copernicus_api
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024
@@ -22,6 +23,7 @@ app.register_blueprint(research_api)
 app.register_blueprint(lotes_api)
 app.register_blueprint(enso_data_api)
 app.register_blueprint(agro_telemetry_api)
+app.register_blueprint(copernicus_api)
 if population_bp is not None:
     app.register_blueprint(population_bp)
 security.install(app)
