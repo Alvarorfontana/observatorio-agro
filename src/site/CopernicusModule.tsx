@@ -1,10 +1,11 @@
 import React,{useEffect,useState} from "react";
 type Collection={id:string;title?:string};
 type Scene={id:string;collection:string;properties:{datetime?:string;"eo:cloud_cover"?:number};links:{href:string;rel:string}[]};
-export function CopernicusModule(){
+export function CopernicusModule({embedded=false,lat,lon}:{embedded?:boolean;lat?:number;lon?:number}){
  const [collections,setCollections]=useState<Collection[]>([]);
  const [collection,setCollection]=useState("");
- const [bbox,setBbox]=useState("-59.10,-28.56,-58.98,-28.44");
+ const [bbox,setBbox]=useState(()=>lat!==undefined&&lon!==undefined?[lon-0.06,lat-0.06,lon+0.06,lat+0.06].map(x=>x.toFixed(4)).join(","):"-59.10,-28.56,-58.98,-28.44");
+ useEffect(()=>{if(lat!==undefined&&lon!==undefined)setBbox([lon-0.06,lat-0.06,lon+0.06,lat+0.06].map(x=>x.toFixed(4)).join(","))},[lat,lon]);
  const [start,setStart]=useState("2026-09-01");
  const [end,setEnd]=useState("2026-10-22");
  const [scenes,setScenes]=useState<Scene[]>([]);
@@ -15,8 +16,8 @@ export function CopernicusModule(){
  const q=new URLSearchParams({bbox,start,end,collection,limit:"25"});
  const r=await fetch("/api/copernicus/scenes?"+q);const j=await r.json();if(!r.ok)throw Error(j.detail||j.error||"Consulta fallida");setScenes(j.features||[]);
  }catch(e){setError(e instanceof Error?e.message:String(e))}finally{setLoading(false)}}
- return <main style={{maxWidth:1180,margin:"auto",padding:"32px 22px",fontFamily:"IBM Plex Sans, sans-serif",color:"#e5edf2",background:"#101c25",minHeight:"100vh"}}>
- <a href="/" style={{color:"#8bd3ef"}}>← DOTS · Inicio</a><p style={{letterSpacing:2,color:"#78bfd7",marginTop:40}}>NUEVO MÓDULO · COPERNICUS 2026</p>
+ return <main style={{maxWidth:embedded?"100%":1180,margin:"auto",padding:embedded?"12px 4px":"32px 22px",fontFamily:"IBM Plex Sans, sans-serif",color:"#e5edf2",background:"#101c25",minHeight:embedded?0:"100vh"}}>
+ {!embedded&&<a href="/" style={{color:"#8bd3ef"}}>← DOTS · Inicio</a>}<p style={{letterSpacing:2,color:"#78bfd7",marginTop:40}}>NUEVO MÓDULO · COPERNICUS 2026</p>
  <h1 style={{fontSize:"clamp(32px,5vw,58px)",margin:"8px 0"}}>DOTS amplía su capacidad de análisis satelital con Copernicus</h1>
  <p style={{fontSize:19,maxWidth:840}}>Explorá imágenes oficiales del programa Copernicus y prepará análisis de parcelas, vegetación, agua, temperatura y atmósfera. Consulta del catálogo en vivo; los cálculos avanzados se incorporarán progresivamente.</p>
  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:14,margin:"28px 0"}}>
