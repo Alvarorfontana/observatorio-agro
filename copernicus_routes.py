@@ -13,6 +13,7 @@ from reportlab.graphics.shapes import Drawing, Polygon, String, Rect, Line
 from xml.sax.saxutils import escape
 import json
 import pngmini
+import copernicus_products as products
 import requests
 from copernicus_interpret import MAP_CLASSES, map_stats, interpret_map, interpret_scenes
 from flask import Blueprint, jsonify, request
@@ -220,12 +221,17 @@ def report():
             if not png.startswith(b"\x89PNG\r\n\x1a\n") or len(png) > 3_000_000:
                 raise ValueError("Invalid PNG image")
             image_stream = BytesIO(png)
-            elements.extend([Spacer(1, 12), Paragraph("Mapa tematico de la parcela", styles["Heading2"]),
-                             Paragraph("Producto: " + escape(str(body.get("map_index", "Sentinel-2"))[:30]) + ". Fuente declarada: Copernicus Sentinel-2 L2A. Imagen aportada desde el visor; no verificada de nuevo por el servidor.", styles["Normal"]),
-                             Image(image_stream, *_fit(png, 400, 400))])
             kind = str(body.get("map_index", ""))
+            reading = body.get("map_reading") if isinstance(body.get("map_reading"), dict) else {}
+            name = MAP_CLASSES.get(kind, {}).get("name", kind[:30])
+            source = str(reading.get("source") or "Copernicus Sentinel-2 L2A")[:120]
+            elements.extend([Spacer(1, 12), Paragraph("Mapa tematico: " + escape(name), styles["Heading2"]),
+                             Paragraph("Fuente: " + escape(source) + ". Imagen generada por DOTS con el procesamiento de Copernicus y aportada desde el visor.", styles["Normal"]),
+                             Image(image_stream, *_fit(png, 400, 400))])
             if kind in MAP_CLASSES:
                 stats = map_stats(png, kind)
+                if isinstance(reading.get("stats"), dict) and isinstance(reading["stats"].get("extra"), dict):
+                    stats["extra"] = _clean_extra(reading["stats"]["extra"])
                 if stats["classes"]:
                     legend = [["", "Rango", "Lectura", "% del lote"]]
                     for c in stats["classes"]:
@@ -263,6 +269,39 @@ def _cdse_token():
     return cdse_token()
 
 
+def _clean_extra(extra):
+    """Solo deja los datos auxiliares esperados y con el tipo correcto."""
+    out = {}
+    for key in ("before", "after", "acquired"):
+        if isinstance(extra.get(key), str):
+            out[key] = extra[key][:40]
+    for key in ("mean_before", "mean_after", "region_km"):
+        if isinstance(extra.get(key), (int, float)) and not isinstance(extra.get(key), bool):
+            out[key] = extra[key]
+    if "mean_before" in out and "mean_after" not in out:
+        out.pop("mean_before")
+    p = extra.get("parcel")
+    if isinstance(p, dict) and isinstance(p.get("label"), str) and isinstance(p.get("range"), str):
+        out["parcel"] = {"label": p["label"][:80], "range": p["range"][:40]}
+    elif "parcel" in extra:
+        out["parcel"] = None
+    return out
+
+
+def _map_response(png, kind, source, extra):
+    headers = {"Cache-Control": "no-store", "X-DOTS-Source": source,
+               "Access-Control-Expose-Headers": "X-DOTS-Reading"}
+    try:
+        stats = map_stats(png, kind)
+        stats["extra"] = extra
+        reading = {"stats": stats, "lines": interpret_map(kind, stats),
+                   "name": MAP_CLASSES[kind]["name"], "source": source}
+        headers["X-DOTS-Reading"] = base64.b64encode(json.dumps(reading, ensure_ascii=False).encode()).decode()
+    except (ValueError, KeyError, IndexError):
+        pass
+    return Response(png, mimetype="image/png", headers=headers)
+
+
 @copernicus_api.post("/api/copernicus/map")
 def thematic_map():
     """Process actual Sentinel-2 pixels. Never fabricate thematic rasters."""
@@ -270,8 +309,8 @@ def thematic_map():
         body = request.get_json(silent=True) or {}
         points = _valid_polygon(body.get("polygon"))
         kind = body.get("index", "ndvi")
-        if kind not in ("ndvi", "ndwi", "truecolor"):
-            raise ValueError("Supported indexes: ndvi, ndwi, truecolor")
+        if kind not in MAP_CLASSES:
+            raise ValueError("Supported products: " + ", ".join(MAP_CLASSES))
         start, end = str(body["start"]), str(body["end"])
         a, b = datetime.fromisoformat(start), datetime.fromisoformat(end)
         if a > b or (b - a).days > 366:
@@ -286,6 +325,12 @@ def thematic_map():
         aspect = (east - west) * math.cos(math.radians((north + south) / 2)) / (north - south)
         width, height = (512, max(64, round(512 / aspect))) if aspect >= 1 else (max(64, round(512 * aspect)), 512)
         token = _cdse_token()
+        if kind not in ("ndvi", "ndwi", "truecolor"):
+            try:
+                png, extra, source = products.run(kind, token, points, body)
+            except products.ProductError as exc:
+                return jsonify({"error": str(exc), "detail": exc.detail}), exc.status
+            return _map_response(png, kind, source, extra)
         if kind == "ndvi":
             script = """//VERSION=3
 function setup(){return {input:[{bands:["B04","B08","dataMask"]}],output:{bands:4,sampleType:"UINT8"}}}
@@ -311,15 +356,7 @@ function evaluatePixel(s){if(!s.dataMask)return [0,0,0,0];return [Math.min(255,M
         if not response.ok:
             return jsonify({"error":"Sentinel Hub processing failed","status":response.status_code,
                             "detail":response.text[:350]}), 502
-        headers = {"Cache-Control":"no-store","X-DOTS-Source":"CDSE Sentinel-2 L2A",
-                   "Access-Control-Expose-Headers":"X-DOTS-Reading"}
-        try:
-            stats = map_stats(response.content, kind)
-            reading = {"stats": stats, "lines": interpret_map(kind, stats), "name": MAP_CLASSES[kind]["name"]}
-            headers["X-DOTS-Reading"] = base64.b64encode(json.dumps(reading, ensure_ascii=False).encode()).decode()
-        except (ValueError, KeyError, IndexError):
-            pass
-        return Response(response.content,mimetype="image/png",headers=headers)
+        return _map_response(response.content, kind, "Copernicus Sentinel-2 L2A", {})
     except (RuntimeError, PermissionError) as exc:
         return jsonify({"error":"Processing unavailable","detail":str(exc)}), 503
     except (ValueError, KeyError, TypeError) as exc:
