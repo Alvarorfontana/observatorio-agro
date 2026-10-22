@@ -1582,7 +1582,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
             <a className="small" href="/CONEXIONES-INVESTIGACION.md" target="_blank" rel="noreferrer">Matriz de 20 servicios y activación</a>
             <button type="button" className="ta-button" onClick={()=>changeView("copernicus")}>Copernicus · explorar imágenes de esta zona →</button>
             <div style={{ marginTop: 18 }} id="dots-detail">
-              {view === "copernicus" && <CopernicusModule embedded lat={point[0]} lon={point[1]} />}
+              {view === "copernicus" && <CopernicusModule embedded lat={point[0]} lon={point[1]} polygon={vertices} />}
               {sources[view]?.status === "consultando" && (
                 <p className="small">Consultando datos reales…</p>
               )}
