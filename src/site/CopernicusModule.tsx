@@ -1,10 +1,12 @@
 import React,{useEffect,useRef,useState} from "react";
 import L from "leaflet";
+import * as echarts from "echarts";
 type Collection={id:string;title?:string};
 type Scene={id:string;collection:string;properties:{datetime?:string;"eo:cloud_cover"?:number};links:{href:string;rel:string}[]};
 export function CopernicusModule({embedded=false,lat,lon,polygon=[]}:{embedded?:boolean;lat?:number;lon?:number;polygon?:[number,number][]}){
  const mapElement=useRef<HTMLDivElement|null>(null);
  const mapInstance=useRef<L.Map|null>(null);
+ const chartElement=useRef<HTMLDivElement|null>(null);
  const [outline,setOutline]=useState<[number,number][]>([]);
  const [drawMode,setDrawMode]=useState(false);
  const drawing=useRef(false);
@@ -20,6 +22,7 @@ export function CopernicusModule({embedded=false,lat,lon,polygon=[]}:{embedded?:
  const [end,setEnd]=useState("2026-10-22");
  const [scenes,setScenes]=useState<Scene[]>([]);
  const [error,setError]=useState("");
+ useEffect(()=>{if(!chartElement.current||!scenes.length)return;const chart=echarts.init(chartElement.current);const ordered=scenes.filter(x=>x.properties?.datetime).sort((a,b)=>(a.properties.datetime||"").localeCompare(b.properties.datetime||""));chart.setOption({backgroundColor:"#192b36",tooltip:{trigger:"axis"},grid:{left:55,right:24,top:40,bottom:75},xAxis:{type:"category",data:ordered.map(x=>(x.properties.datetime||"").slice(0,10)),axisLabel:{color:"#b7c9d1",rotate:45}},yAxis:{type:"value",name:"Nubes (%)",min:0,max:100,axisLabel:{color:"#b7c9d1"},nameTextStyle:{color:"#b7c9d1"}},series:[{type:"line",name:"Cobertura nubosa de la escena",data:ordered.map(x=>x.properties["eo:cloud_cover"]??null),connectNulls:false,smooth:false}]});return ()=>chart.dispose()},[scenes]);
  const [loading,setLoading]=useState(false);
  const [pdfBusy,setPdfBusy]=useState(false);
  async function downloadReport(){if(outline.length<3)return;setPdfBusy(true);setError("");try{const r=await fetch("/api/copernicus/report",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({polygon:outline,scenes,collection,start,end})});if(!r.ok){const j=await r.json();throw Error(j.detail||j.error||"No se pudo generar el PDF")}const blob=await r.blob();const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="DOTS_Copernicus_catalogo.pdf";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}catch(e){setError(e instanceof Error?e.message:String(e))}finally{setPdfBusy(false)}}
@@ -64,6 +67,7 @@ export function CopernicusModule({embedded=false,lat,lon,polygon=[]}:{embedded?:
  {error&&<p role="alert" style={{color:"#ffb5a7"}}>{error}</p>}
  <button type="button" onClick={downloadReport} disabled={pdfBusy||outline.length<3} style={action}>{pdfBusy?"Generando PDF…":"Descargar informe PDF del área delimitada"}</button><p style={{color:"#b7c9d1"}}>El PDF documenta el polígono y las escenas consultadas; no incluye todavía índices de vegetación calculados.</p>
  <p role="status">{scenes.length?scenes.length+" escenas encontradas":loading?"Buscando en Copernicus…":"Los resultados aparecerán aquí. No se muestran datos simulados."}</p>
+ {scenes.length>0&&<section><h3>Gráfico de cobertura nubosa de las escenas</h3><p style={{color:"#b7c9d1"}}>Metadatos oficiales de cada escena, no mediciones dentro del polígono.</p><div ref={chartElement} style={{width:"100%",height:280}} /></section>}
  <div style={{display:"grid",gap:8}}>{scenes.map(s=><article key={s.id} style={{borderTop:"1px solid #38505d",padding:"12px 0"}}><strong>{s.id}</strong><p>{s.collection} · {s.properties.datetime||"Fecha no informada"} · Nubes: {s.properties["eo:cloud_cover"]??"sin dato"}%</p>{s.links.find(l=>l.rel==="self")&&<a href={s.links.find(l=>l.rel==="self")!.href} target="_blank" rel="noreferrer" style={{color:"#8bd3ef"}}>Metadatos oficiales ↗</a>}</article>)}</div>
  </section>
  <p style={{color:"#9cb2bd",marginTop:22}}>Fuentes: Copernicus Data Space Ecosystem / ESA. Los productos no son mediciones de campo. El acceso al agente openEO alfa requiere autorización; DOTS no declara habilitados procesos que aún no fueron configurados.</p>
