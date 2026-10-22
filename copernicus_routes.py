@@ -1,7 +1,10 @@
 """Copernicus CDSE public STAC discovery for DOTS. No credentials or paid processing."""
 from datetime import datetime, timedelta
+import os
+import time
+from threading import Lock
 from io import BytesIO
-from flask import send_file
+from flask import send_file, Response
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
@@ -11,12 +14,14 @@ import requests
 from flask import Blueprint, jsonify, request
 
 copernicus_api = Blueprint("copernicus_api", __name__)
+_token_cache = {"token": None, "expires": 0}
+_token_lock = Lock()
 STAC = "https://stac.dataspace.copernicus.eu/v1"
 
 @copernicus_api.get("/api/copernicus/status")
 def status():
     return jsonify({"service": "copernicus", "catalog": STAC, "catalog_mode": "public",
-                    "processing": "not_configured", "agent": "alpha_access_required",
+                    "processing": "configured" if os.getenv("CDSE_CLIENT_ID") and os.getenv("CDSE_CLIENT_SECRET") else "credentials_required", "agent": "alpha_access_required",
                     "collections": ["sentinel-1", "sentinel-2", "sentinel-3", "sentinel-5p"],
                     "note": "Availability must be checked in live STAC collections."})
 
@@ -183,3 +188,75 @@ def report():
     doc.build(elements)
     buffer.seek(0)
     return send_file(buffer, mimetype="application/pdf", as_attachment=True, download_name="DOTS_Copernicus_catalogo.pdf")
+
+def _cdse_token():
+    client_id = os.getenv("CDSE_CLIENT_ID")
+    secret = os.getenv("CDSE_CLIENT_SECRET")
+    if not client_id or not secret:
+        raise RuntimeError("Copernicus processing credentials not configured")
+    with _token_lock:
+        if _token_cache["token"] and time.time() < _token_cache["expires"]:
+            return _token_cache["token"]
+        response = requests.post(
+            "https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token",
+            data={"grant_type": "client_credentials", "client_id": client_id, "client_secret": secret},
+            timeout=15)
+        response.raise_for_status()
+        data = response.json()
+        _token_cache.update(token=data["access_token"],
+                            expires=time.time() + max(30, int(data.get("expires_in", 300)) - 60))
+        return data["access_token"]
+
+
+@copernicus_api.post("/api/copernicus/map")
+def thematic_map():
+    """Process actual Sentinel-2 pixels. Never fabricate thematic rasters."""
+    try:
+        body = request.get_json(silent=True) or {}
+        points = _valid_polygon(body.get("polygon"))
+        kind = body.get("index", "ndvi")
+        if kind not in ("ndvi", "ndwi", "truecolor"):
+            raise ValueError("Supported indexes: ndvi, ndwi, truecolor")
+        start, end = str(body["start"]), str(body["end"])
+        a, b = datetime.fromisoformat(start), datetime.fromisoformat(end)
+        if a > b or (b - a).days > 366:
+            raise ValueError("Invalid period or period longer than 366 days")
+        west, east = min(p[1] for p in points), max(p[1] for p in points)
+        south, north = min(p[0] for p in points), max(p[0] for p in points)
+        if west == east or south == north or (east-west)*(north-south) > 0.2:
+            raise ValueError("Invalid or oversized parcel")
+        ring = [[lon, lat] for lat, lon in points]
+        ring.append(ring[0])
+        token = _cdse_token()
+        if kind == "ndvi":
+            script = """//VERSION=3
+function setup(){return {input:[{bands:["B04","B08","dataMask"]}],output:{bands:4,sampleType:"UINT8"}}}
+function evaluatePixel(s){if(!s.dataMask)return [0,0,0,0];let v=(s.B08-s.B04)/(s.B08+s.B04+0.00001);return v<0?[145,95,65,255]:v<0.2?[230,188,90,255]:v<0.45?[203,223,83,255]:v<0.7?[86,171,77,255]:[16,106,54,255]}
+"""
+        elif kind == "ndwi":
+            script = """//VERSION=3
+function setup(){return {input:[{bands:["B03","B08","dataMask"]}],output:{bands:4,sampleType:"UINT8"}}}
+function evaluatePixel(s){if(!s.dataMask)return [0,0,0,0];let v=(s.B03-s.B08)/(s.B03+s.B08+0.00001);return v<0?[171,139,92,255]:v<0.2?[197,212,172,255]:v<0.4?[98,177,209,255]:[26,96,180,255]}
+"""
+        else:
+            script = """//VERSION=3
+function setup(){return {input:[{bands:["B04","B03","B02","dataMask"]}],output:{bands:4,sampleType:"UINT8"}}}
+function evaluatePixel(s){if(!s.dataMask)return [0,0,0,0];return [Math.min(255,Math.round(s.B04*650)),Math.min(255,Math.round(s.B03*650)),Math.min(255,Math.round(s.B02*650)),255]}
+"""
+        payload = {"input":{"bounds":{"geometry":{"type":"Polygon","coordinates":[ring]},
+                      "properties":{"crs":"http://www.opengis.net/def/crs/OGC/1.3/CRS84"}},
+                  "data":[{"type":"sentinel-2-l2a","dataFilter":{"timeRange":{"from":start+"T00:00:00Z","to":end+"T23:59:59Z"},"mosaickingOrder":"leastCC"}}]},
+                   "output":{"width":512,"height":512,"responses":[{"identifier":"default","format":{"type":"image/png"}}]},
+                   "evalscript":script}
+        response = requests.post("https://sh.dataspace.copernicus.eu/api/v1/process",
+                                 json=payload,headers={"Authorization":"Bearer "+token},timeout=55)
+        if not response.ok:
+            return jsonify({"error":"Sentinel Hub processing failed","status":response.status_code,
+                            "detail":response.text[:350]}), 502
+        return Response(response.content,mimetype="image/png",headers={"Cache-Control":"no-store","X-DOTS-Source":"CDSE Sentinel-2 L2A"})
+    except RuntimeError as exc:
+        return jsonify({"error":"Processing unavailable","detail":str(exc)}), 503
+    except (ValueError, KeyError, TypeError) as exc:
+        return jsonify({"error":"Invalid processing request","detail":str(exc)}), 400
+    except (requests.RequestException, KeyError) as exc:
+        return jsonify({"error":"Copernicus processing connection failed","detail":str(exc)[:250]}), 502
