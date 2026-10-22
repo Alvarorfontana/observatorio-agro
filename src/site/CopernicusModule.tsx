@@ -6,7 +6,6 @@ type Scene={id:string;collection:string;geometry?:{type:string;coordinates:unkno
 export function CopernicusModule({embedded=false,lat,lon,polygon=[]}:{embedded?:boolean;lat?:number;lon?:number;polygon?:[number,number][]}){
  const mapElement=useRef<HTMLDivElement|null>(null);
  const mapInstance=useRef<L.Map|null>(null);
- const chartElement=useRef<HTMLDivElement|null>(null);
  const [outline,setOutline]=useState<[number,number][]>([]);
  const [drawMode,setDrawMode]=useState(false);
  const drawing=useRef(false);
@@ -22,7 +21,7 @@ export function CopernicusModule({embedded=false,lat,lon,polygon=[]}:{embedded?:
  const [end,setEnd]=useState("2026-10-22");
  const [scenes,setScenes]=useState<Scene[]>([]);
  const [error,setError]=useState("");
- useEffect(()=>{if(!chartElement.current||!scenes.length)return;const chart=echarts.init(chartElement.current);const ordered=scenes.filter(x=>x.properties?.datetime).sort((a,b)=>(a.properties.datetime||"").localeCompare(b.properties.datetime||""));chart.setOption({backgroundColor:"#192b36",tooltip:{trigger:"axis"},grid:{left:55,right:24,top:40,bottom:75},xAxis:{type:"category",data:ordered.map(x=>(x.properties.datetime||"").slice(0,10)),axisLabel:{color:"#b7c9d1",rotate:45}},yAxis:{type:"value",name:"Nubes (%)",min:0,max:100,axisLabel:{color:"#b7c9d1"},nameTextStyle:{color:"#b7c9d1"}},series:[{type:"line",name:"Cobertura nubosa de la escena",data:ordered.map(x=>x.properties["eo:cloud_cover"]??null),connectNulls:false,smooth:false}]});return ()=>chart.dispose()},[scenes]);
+
  const [loading,setLoading]=useState(false);
  const [pdfBusy,setPdfBusy]=useState(false);
  const [reportTitle,setReportTitle]=useState("Informe territorial Copernicus");
@@ -72,7 +71,7 @@ export function CopernicusModule({embedded=false,lat,lon,polygon=[]}:{embedded?:
  <section id="generador-informes-copernicus" style={{margin:"24px 0",padding:18,border:"1px solid #54717f",borderRadius:10}}><h3>Generador de informes técnicos · PDF</h3><p>Configurá el documento para la parcela delimitada. Se incluyen solamente datos disponibles y verificados del catálogo.</p><label>Título del informe<input value={reportTitle} onChange={e=>setReportTitle(e.target.value)} maxLength={120} style={field}/></label><label>Observaciones técnicas<textarea value={reportNotes} onChange={e=>setReportNotes(e.target.value)} maxLength={1200} rows={3} style={{...field,resize:"vertical"}}/></label><label style={{display:"flex",alignItems:"center",gap:8,margin:"12px 0"}}><input type="checkbox" checked={includeScenes} onChange={e=>setIncludeScenes(e.target.checked)}/> Incluir listado de escenas consultadas ({scenes.length})</label><p style={{color:"#b7c9d1"}}>Incluye: mapa esquemático del polígono, coordenadas, período, colección y metodología. NDVI, humedad e inundaciones no se calcularán sin procesamiento satelital real.</p></section>
  <button type="button" onClick={downloadGeoJSON} disabled={outline.length<3} style={action}>Exportar mapa y delimitación GeoJSON</button>{" "}<button type="button" onClick={downloadReport} disabled={pdfBusy||outline.length<3} style={action}>{pdfBusy?"Generando PDF…":"Descargar informe PDF del área delimitada"}</button><p style={{color:"#b7c9d1"}}>El PDF documenta el polígono y las escenas consultadas; no incluye todavía índices de vegetación calculados.</p>
  <p role="status">{scenes.length?scenes.length+" escenas encontradas":loading?"Buscando en Copernicus…":"Los resultados aparecerán aquí. No se muestran datos simulados."}</p>
- {scenes.length>0&&<section><h3>Gráfico de cobertura nubosa de las escenas</h3><p style={{color:"#b7c9d1"}}>Metadatos oficiales de cada escena, no mediciones dentro del polígono.</p><div ref={chartElement} style={{width:"100%",height:280}} /></section>}
+ <section id="graficos-copernicus" style={{marginTop:22}}><h3>Módulos gráficos · monitoreo satelital</h3><p style={{color:"#b7c9d1"}}>Los gráficos se generan exclusivamente con metadatos de las escenas devueltas por Copernicus. No representan mediciones de vegetación ni agua dentro de la parcela.</p>{scenes.length>0?<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))",gap:14}}><SceneChart title="Escenas por fecha" kind="dates" scenes={scenes}/><SceneChart title="Cobertura nubosa por imagen" kind="cloud" scenes={scenes}/><SceneChart title="Distribución de nubosidad" kind="distribution" scenes={scenes}/></div>:<p style={{padding:20,border:"1px dashed #54717f",borderRadius:9}}>Delimitá el área y consultá imágenes para activar los tres gráficos.</p>}</section>
  <div style={{display:"grid",gap:8}}>{scenes.map(s=><article key={s.id} style={{borderTop:"1px solid #38505d",padding:"12px 0"}}><strong>{s.id}</strong><p>{s.collection} · {s.properties.datetime||"Fecha no informada"} · Nubes: {s.properties["eo:cloud_cover"]??"sin dato"}%</p>{s.links.find(l=>l.rel==="self")&&<a href={s.links.find(l=>l.rel==="self")!.href} target="_blank" rel="noreferrer" style={{color:"#8bd3ef"}}>Metadatos oficiales ↗</a>}</article>)}</div>
  </section>
  <p style={{color:"#9cb2bd",marginTop:22}}>Fuentes: Copernicus Data Space Ecosystem / ESA. Los productos no son mediciones de campo. El acceso al agente openEO alfa requiere autorización; DOTS no declara habilitados procesos que aún no fueron configurados.</p>
@@ -80,3 +79,26 @@ export function CopernicusModule({embedded=false,lat,lon,polygon=[]}:{embedded?:
 }
 const action:React.CSSProperties={padding:"9px 13px",borderRadius:7,border:"1px solid #54717f",background:"#234454",color:"#fff",cursor:"pointer"};
 const field:React.CSSProperties={display:"block",width:"100%",padding:11,borderRadius:7,border:"1px solid #647d89",background:"#0d1b25",color:"#fff",marginTop:7,boxSizing:"border-box"};
+
+type SceneChartKind="dates"|"cloud"|"distribution";
+function SceneChart({title,kind,scenes}:{title:string;kind:SceneChartKind;scenes:Scene[]}){
+ const el=useRef<HTMLDivElement|null>(null);
+ useEffect(()=>{
+  if(!el.current)return;
+  const chart=echarts.init(el.current);
+  const dated=scenes.filter(x=>x.properties.datetime).slice().sort((a,b)=>(a.properties.datetime||"").localeCompare(b.properties.datetime||""));
+  const daily=new Map<string,number>();
+  for(const scene of dated){const day=(scene.properties.datetime||"").slice(0,10);daily.set(day,(daily.get(day)||0)+1)}
+  const clouds=dated.filter(x=>typeof x.properties["eo:cloud_cover"]==="number");
+  const buckets=[0,0,0,0,0];
+  for(const scene of clouds){const n=scene.properties["eo:cloud_cover"]!;buckets[Math.min(4,Math.max(0,Math.floor(n/20)))]+=1}
+  const axisColor="#b7c9d1";
+  const labels=kind==="dates"?[...daily.keys()]:kind==="cloud"?clouds.map(x=>(x.properties.datetime||"").slice(0,10)):["0–19%","20–39%","40–59%","60–79%","80–100%"];
+  const values=kind==="dates"?[...daily.values()]:kind==="cloud"?clouds.map(x=>x.properties["eo:cloud_cover"]):buckets;
+  chart.setOption({backgroundColor:"#192b36",tooltip:{trigger:"axis"},grid:{left:48,right:18,top:30,bottom:80},xAxis:{type:"category",data:labels,axisLabel:{color:axisColor,rotate:labels.length>5?45:0}},yAxis:{type:"value",min:0,max:kind==="cloud"?100:undefined,name:kind==="cloud"?"Nubes (%)":"Escenas",nameTextStyle:{color:axisColor},axisLabel:{color:axisColor}},series:[{name:title,type:kind==="cloud"?"line":"bar",data:values,itemStyle:{color:"#35b3cf"},lineStyle:{color:"#35b3cf"}}]});
+  const observer=new ResizeObserver(()=>chart.resize());observer.observe(el.current);
+  return ()=>{observer.disconnect();chart.dispose()};
+ },[kind,scenes,title]);
+ const noData=kind==="cloud"&&!scenes.some(x=>typeof x.properties["eo:cloud_cover"]==="number");
+ return <article style={{border:"1px solid #38505d",borderRadius:10,padding:14,background:"#192b36"}}><h4 style={{margin:"0 0 8px"}}>{title}</h4>{noData&&<p>Esta colección no proporciona porcentajes de nubosidad.</p>}<div ref={el} style={{width:"100%",height:270}} role="img" aria-label={title}/></article>
+}
