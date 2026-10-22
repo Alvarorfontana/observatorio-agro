@@ -1,11 +1,13 @@
 """Copernicus CDSE public STAC discovery for DOTS. No credentials or paid processing."""
 from datetime import datetime, timedelta
 import os
+import base64
+import binascii
 import time
 from threading import Lock
 from io import BytesIO
 from flask import send_file, Response
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
 from reportlab.graphics.shapes import Drawing, Polygon, String, Rect, Line
@@ -180,8 +182,23 @@ def report():
                      bar_graph("Escenas por fecha (hasta 8 fechas)", sorted(dates.items())),
                      bar_graph("Distribucion de cobertura nubosa (%)",
                                list(zip(["0-19", "20-39", "40-59", "60-79", "80-100"], cloud_buckets)) if cloud_total else [])])
-    elements.extend([Spacer(1, 12), Paragraph("Mapas tematicos de vegetacion, agua y temperatura", styles["Heading2"]),
-                     Paragraph("No disponibles en esta consulta: requieren procesar pixeles satelitales y recortar el resultado a la parcela. No se generan mapas simulados.", styles["Normal"])])
+    map_encoded = body.get("map_png")
+    if map_encoded:
+        try:
+            if not isinstance(map_encoded, str) or len(map_encoded) > 4_000_000:
+                raise ValueError("Map image too large")
+            png = base64.b64decode(map_encoded, validate=True)
+            if not png.startswith(b"\\x89PNG\\r\\n\\x1a\\n") or len(png) > 3_000_000:
+                raise ValueError("Invalid PNG image")
+            image_stream = BytesIO(png)
+            elements.extend([Spacer(1, 12), Paragraph("Mapa tematico de la parcela", styles["Heading2"]),
+                             Paragraph("Producto: " + escape(str(body.get("map_index", "Sentinel-2"))[:30]) + ". Fuente declarada: Copernicus Sentinel-2 L2A. Imagen aportada desde el visor; no verificada de nuevo por el servidor.", styles["Normal"]),
+                             Image(image_stream, width=330, height=330)])
+        except (ValueError, binascii.Error) as exc:
+            return jsonify({"error":"Invalid thematic map image","detail":str(exc)}), 400
+    else:
+        elements.extend([Spacer(1, 12), Paragraph("Mapas tematicos de vegetacion, agua y temperatura", styles["Heading2"]),
+                         Paragraph("No disponibles en esta consulta: requieren procesar pixeles satelitales y recortar el resultado a la parcela. No se generan mapas simulados.", styles["Normal"])])
     elements.extend([table, Spacer(1, 20), Paragraph("Fuente: Copernicus Data Space Ecosystem (STAC). La geometria es la delimitacion aportada por el usuario. Este documento registra escenas de catalogo; no incluye calculos NDVI, mediciones de inundacion ni recorte raster. Las escenas deben verificarse en su origen.",styles["Normal"])])
     if notes.strip():
         elements.extend([Spacer(1, 16), Paragraph("Observaciones del informe", styles["Heading2"]), Paragraph(escape(notes).replace("\\n", "<br/>"), styles["Normal"])])
