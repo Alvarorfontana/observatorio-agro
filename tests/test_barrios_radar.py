@@ -175,3 +175,28 @@ def test_osm_informal_survives_without_network(monkeypatch):
         raise br.requests.ConnectionError("sin red")
     monkeypatch.setattr(br.requests, "post", down)
     assert br.osm_informal(br.OSM_CITIES[0]) == []
+
+
+def test_samples_cache_round_trip(monkeypatch, tmp_path):
+    monkeypatch.setattr(br, "SAMPLES_CACHE", str(tmp_path / "cache" / "m.json"))
+    monkeypatch.delenv("BARRIOS_RESAMPLE", raising=False)
+    br.save_samples_cache({"corrientes": [{"label": 1}]}, {"Nairobi (OpenStreetMap)": [{"label": 0}]})
+    c = br.load_samples_cache()
+    assert c["ciudades"]["corrientes"] == [{"label": 1}] and "Nairobi (OpenStreetMap)" in c["externas"]
+    monkeypatch.setenv("BARRIOS_RESAMPLE", "1")
+    assert br.load_samples_cache() is None
+    monkeypatch.delenv("BARRIOS_RESAMPLE")
+    monkeypatch.setattr(br, "YEAR", 1999)
+    assert br.load_samples_cache() is None            # otro año: no sirve
+
+
+def test_rows_to_fc_balances_classes():
+    class FakeEE:
+        class Feature:
+            def __init__(self, geom, props): self.props = props
+        @staticmethod
+        def FeatureCollection(feats): return feats
+    rows = {"a": [{"label": i % 2, "x": float(i)} for i in range(1000)], "b": [{"label": 1, "x": 1.0}] * 10}
+    fc = br.rows_to_fc(FakeEE, rows, ["x"], n=100)
+    labels = [f.props["label"] for f in fc]
+    assert labels.count(0) == 50 and labels.count(1) == 60

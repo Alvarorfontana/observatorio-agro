@@ -11,6 +11,10 @@ on:
         description: "Año de las imágenes"
         required: false
         default: "2024"
+      resample:
+        description: "Volver a muestrear (gasta mucha cuota de Earth Engine)"
+        required: false
+        default: "0"
   schedule:
     - cron: "13 8 5 1,4,7,10 *"
 
@@ -37,6 +41,7 @@ jobs:
           GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT }}
           GOOGLE_APPLICATION_CREDENTIALS_JSON: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}
           BARRIOS_YEAR: ${{ github.event.inputs.year || '2024' }}
+          BARRIOS_RESAMPLE: ${{ github.event.inputs.resample || '0' }}
         run: |
           if [ -z "$GOOGLE_CLOUD_PROJECT" ] || [ -z "$GOOGLE_APPLICATION_CREDENTIALS_JSON" ]; then
             echo "Faltan los secretos GOOGLE_CLOUD_PROJECT y GOOGLE_APPLICATION_CREDENTIALS_JSON en GitHub." && exit 1
@@ -47,4 +52,4 @@ jobs:
       - name: Guardar en la rama datos (no publica la web)
         if: always()
         run: |
-          cp scripts/datos_rama.sh /tmp/datos_rama.sh && bash /tmp/datos_rama.sh guardar "Barrios por radar $(date -u +%Y-%m-%d)" data/barrios_radar.json data/barrios_radar data/barrios_radar.log
+          cp scripts/datos_rama.sh /tmp/datos_rama.sh && bash /tmp/datos_rama.sh guardar "Barrios por radar $(date -u +%Y-%m-%d)" data/barrios_radar.json data/barrios_radar data/barrios_radar.log scripts/cache/barrios_muestras.json

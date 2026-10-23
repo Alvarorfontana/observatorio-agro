@@ -36,6 +36,10 @@ POINTS_PER_CLASS = int(os.environ.get("BARRIOS_POINTS", "400"))
 MIN_POLYGONS = 3            # una ciudad entra al entrenamiento si tiene al menos estos barrios RENABAP
 NEG_BUFFER_M = 60
 HAND_BANDS = (1, 2, 3, 5)
+# Muestras ya calculadas: muestrear es lo que más cuota de Earth Engine gasta. Se reutilizan si no cambió el año ni
+# las capas; BARRIOS_RESAMPLE=1 obliga a recalcularlas.
+SAMPLES_CACHE = os.path.join(ROOT, "scripts", "cache", "barrios_muestras.json")
+TRAIN_PER_CITY = 250       # puntos por ciudad que se suben a Earth Engine para entrenar el mapa
 SEED = 7
 # Bosque aleatorio como en el estudio: 500 árboles, profundidad 30, √variables por corte, clases balanceadas
 RF_PARAMS = dict(n_estimators=500, max_depth=30, max_features="sqrt", class_weight="balanced", n_jobs=-1,
@@ -431,9 +435,10 @@ def map_place(ee, clf, st, polys, feats):
     img, built = stack(ee, region)
     informal = img.select(feats).classify(clf).eq(1).And(built).selfMask().rename("informal")
     area = ee.Image.pixelArea()
-    pop = (ee.ImageCollection("WorldPop/GP/100m/pop").filter(ee.Filter.eq("year", 2020)).mosaic()
-           .select("population"))
-    popd = pop.divide(ee.Image.pixelArea().reproject(pop.projection()))          # personas por m²
+    popcoll = ee.ImageCollection("WorldPop/GP/100m/pop").filter(ee.Filter.eq("year", 2020))
+    proj = popcoll.first().projection()   # el mosaico pierde la grilla de 100 m: se la devuelvo
+    pop = popcoll.mosaic().select("population").setDefaultProjection(proj)
+    popd = pop.divide(ee.Image.pixelArea().reproject(proj))                       # personas por m²
     hand = ee.Image("MERIT/Hydro/v1_0_1").select("hnd")
     bands = [area.updateMask(informal).rename("informal_m2"),
              popd.multiply(area).updateMask(informal).rename("pop_informal")]
@@ -483,6 +488,39 @@ def map_place(ee, clf, st, polys, feats):
     return out
 
 
+def rows_to_fc(ee, rows_by_city, feats, n=TRAIN_PER_CITY):
+    """Colección de entrenamiento armada con las muestras guardadas (equilibrada por clase y ciudad)."""
+    import random
+    rnd = random.Random(SEED)
+    feats_out = []
+    for rows in rows_by_city.values():
+        for label in (0, 1):
+            pool = [r for r in rows if r.get("label") == label and all(isinstance(r.get(f), (int, float)) for f in feats)]
+            for r in rnd.sample(pool, min(len(pool), n // 2)):
+                feats_out.append(ee.Feature(None, {**{f: r[f] for f in feats}, "label": label}))
+    return ee.FeatureCollection(feats_out)
+
+
+def load_samples_cache():
+    if os.environ.get("BARRIOS_RESAMPLE") == "1" or not os.path.exists(SAMPLES_CACHE):
+        return None
+    try:
+        with open(SAMPLES_CACHE, encoding="utf-8") as f:
+            c = json.load(f)
+    except (OSError, ValueError):
+        return None
+    if c.get("year") != YEAR or c.get("capas") != sorted(set(OPTICAL + RADAR + BUILDINGS)):
+        return None
+    return c
+
+
+def save_samples_cache(samples, external):
+    os.makedirs(os.path.dirname(SAMPLES_CACHE), exist_ok=True)
+    with open(SAMPLES_CACHE, "w", encoding="utf-8") as f:
+        json.dump({"year": YEAR, "capas": sorted(set(OPTICAL + RADAR + BUILDINGS)),
+                   "ciudades": samples, "externas": external}, f)
+
+
 def main(out_path):
     import cuenca
     ee = ee_init()
@@ -496,8 +534,12 @@ def main(out_path):
     if len(train) < 3:
         log(f"Solo {len(train)} localidades con barrios RENABAP: no alcanza para entrenar. Revisá la fuente.", error=True)
         raise SystemExit(1)
+    cache = load_samples_cache()
+    if cache:
+        log(f"Reutilizo las muestras guardadas de {len(cache['ciudades'])} ciudades (no se vuelve a muestrear)")
+        samples = {k: v for k, v in cache["ciudades"].items() if k in {st["id"] for st in train}}
     fcs = []
-    for st in train:
+    for st in ([] if cache else train):
         fc = sample_city(ee, st["lat"], st["lon"], polys_by[st["id"]])
         try:
             samples[st["id"]] = [f["properties"] for f in fc.getInfo()["features"]]
@@ -506,15 +548,18 @@ def main(out_path):
         except Exception as exc:
             print(f"  sin muestras en {st['place']}: {str(exc)[:160]}", flush=True)
     ext_fcs, ext_rows, ext_cities = [], [], []
-    for city, groups in load_external().items():
+    ext_by = dict((cache or {}).get("externas") or {})
+    for city, rows in ext_by.items():
+        ext_rows += rows; ext_cities.append(city)
+    for city, groups in ({} if cache else load_external()).items():
         try:
             fc = sample_external(ee, groups)
             rows = [f["properties"] for f in fc.getInfo()["features"]]
-            ext_fcs.append(fc); ext_rows += rows; ext_cities.append(city)
+            ext_fcs.append(fc); ext_rows += rows; ext_cities.append(city); ext_by[city] = rows
             print(f"  etiquetas externas {city}: {len(rows)} puntos", flush=True)
         except Exception as exc:
             print(f"  sin muestras externas en {city}: {str(exc)[:160]}", flush=True)
-    for city in OSM_CITIES:
+    for city in ([] if cache else OSM_CITIES):
         polys = osm_informal(city)
         print(f"  OpenStreetMap {city['ciudad']}: {len(polys)} barrios populares", flush=True)
         if len(polys) < MIN_POLYGONS:
@@ -522,14 +567,21 @@ def main(out_path):
         try:
             fc = sample_city(ee, city["lat"], city["lon"], polys, city["radius_m"], EXTERNAL_NEG_BUFFER_M)
             rows = [f["properties"] for f in fc.getInfo()["features"]]
-            ext_fcs.append(fc); ext_rows += rows; ext_cities.append(city["ciudad"] + " (OpenStreetMap)")
+            name = city["ciudad"] + " (OpenStreetMap)"
+            ext_fcs.append(fc); ext_rows += rows; ext_cities.append(name); ext_by[name] = rows
             print(f"  etiquetas externas {city['ciudad']}: {len(rows)} puntos", flush=True)
         except Exception as exc:
             print(f"  sin muestras en {city['ciudad']}: {str(exc)[:160]}", flush=True)
+    if not cache:
+        save_samples_cache(samples, ext_by)
     per_city, summary, importance = leave_one_city_out(samples, ext_rows)
     final = choose_final(summary)
-    print("Modelo final:", final, flush=True)
-    training = ee.FeatureCollection(fcs + (ext_fcs if final == "optico_radar_externas" else [])).flatten()
+    log("Promedio por variante: " + json.dumps(summary, ensure_ascii=False))
+    log(f"Modelo final: {final}")
+    train_rows = dict(samples)
+    if final == "optico_radar_externas":
+        train_rows.update({"ext:" + k: v for k, v in ext_by.items()})
+    training = rows_to_fc(ee, train_rows, feats_for(final))
     # para mapear alcanzan 200 árboles (la evaluación usa 500): el mapa sale mucho más rápido
     clf = ee.Classifier.smileRandomForest(numberOfTrees=200, seed=SEED).train(
         training, "label", feats_for(final))
