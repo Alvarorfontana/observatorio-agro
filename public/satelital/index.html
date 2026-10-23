@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Panel Satelital DOTS</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Mapa a pantalla completa con panel de módulos a la izquierda (abajo en el celular). Misma familia visual que la Lente de Relieve. */
+:root {
+  --bg: #f3f4f1; --panel: #ffffff; --fg: #1b211c; --muted: #5d665e;
+  --line: #d9ddd6; --accent: #b4532a; --chip: #eceee9;
+  --sans: 'IBM Plex Sans', system-ui, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #121512; --panel: #1a1e1a; --fg: #e7ebe5; --muted: #9aa49b;
+    --line: #2f362f; --accent: #e07a4b; --chip: #242a24; color-scheme: dark; }
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--fg); font: 14px/1.45 var(--sans); }
+#app { display: flex; height: 100%; }
+#panel { width: 340px; flex: none; background: var(--panel); border-right: 1px solid var(--line); overflow-y: auto;
+  padding: 16px; padding-top: max(16px, env(safe-area-inset-top)); display: flex; flex-direction: column; gap: 16px; z-index: 1000; }
+#mapwrap { position: relative; flex: 1; min-width: 0; }
+#map { position: absolute; inset: 0; }
+h1 { font-size: 17px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
+.sub { color: var(--muted); font-size: 12.5px; margin: 2px 0 0; }
+.tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; background: var(--chip); padding: 4px; border-radius: 8px; }
+.tabs button { font: 600 13px var(--sans); color: var(--muted); background: transparent; border: 0; border-radius: 6px; padding: 8px 4px; cursor: pointer; }
+.tabs button[aria-selected="true"] { background: var(--panel); color: var(--fg); box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+.grupo { display: flex; flex-direction: column; gap: 8px; }
+.rotulo { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips button { font: 500 12.5px var(--sans); color: var(--fg); background: var(--chip); border: 1px solid transparent; border-radius: 6px; padding: 6px 9px; cursor: pointer; }
+.chips button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); background: transparent; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+input[type="date"], select { font: 13px var(--sans); color: var(--fg); background: var(--chip); border: 1px solid var(--line); border-radius: 6px; padding: 7px 8px; width: 100%; }
+.fila-fecha { display: flex; gap: 6px; }
+.fila-fecha button { font: 500 13px var(--sans); background: var(--chip); color: var(--fg); border: 1px solid var(--line); border-radius: 6px; padding: 0 10px; cursor: pointer; }
+label.fila { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; font-size: 13px; }
+label.fila input { grid-column: 1 / -1; width: 100%; accent-color: var(--accent); }
+.val { font-family: var(--mono); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.rangos { border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.rangos div { display: grid; grid-template-columns: 112px 1fr; gap: 8px; padding: 6px 10px; font-size: 12.5px; border-top: 1px solid var(--line); }
+.rangos div:first-child { border-top: 0; }
+.rangos b { font-family: var(--mono); font-weight: 500; font-size: 12px; }
+.leyenda img { width: 100%; max-width: 300px; background: #fff; border-radius: 4px; padding: 4px; }
+.rampa { height: 12px; border-radius: 3px; background: linear-gradient(90deg, #ffe066, #f08c2e, #d6402b, #8e1b3f, #4b1060); }
+.rampa-et { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 11px; color: var(--muted); }
+.texto { font-size: 13px; }
+.texto p { margin: 0 0 6px; }
+.nota { font-size: 12.5px; color: var(--muted); border-left: 3px solid var(--accent); padding-left: 10px; }
+.nota strong { color: var(--fg); font-weight: 600; }
+#estado { font-size: 12px; color: var(--muted); font-family: var(--mono); }
+#toggle { display: none; }
+.leaflet-container { background: var(--bg); font-family: var(--sans); }
+@media (max-width: 760px) {
+  #app { flex-direction: column-reverse; }
+  #panel { width: 100%; height: 46%; border-right: 0; border-top: 1px solid var(--line);
+    padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right));
+    padding-bottom: max(16px, env(safe-area-inset-bottom)); padding-top: 12px; }
+  #panel.cerrado { height: auto; }
+  #panel.cerrado .plegable { display: none; }
+  #toggle { display: block; font: 500 12.5px var(--sans); background: var(--chip); color: var(--fg); border: 0; border-radius: 6px; padding: 6px 10px; }
+  .cabeza { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="panel">
+    <div class="cabeza">
+      <div>
+        <h1>Panel Satelital</h1>
+        <p class="sub">Aire, nieve y desmontes en Argentina, con datos satelitales abiertos.</p>
+      </div>
+      <button id="toggle" type="button">Opciones</button>
+    </div>
+
+    <div class="tabs" role="tablist">
+      <button role="tab" data-mod="aire" aria-selected="true">Aire</button>
+      <button role="tab" data-mod="nieve" aria-selected="false">Nieve</button>
+      <button role="tab" data-mod="desmontes" aria-selected="false">Desmontes</button>
+    </div>
+
+    <!-- ============ AIRE ============ -->
+    <section class="modulo plegable" data-mod="aire">
+      <div class="grupo">
+        <span class="rotulo">Dióxido de nitrógeno · Sentinel-5P</span>
+        <div class="fila-fecha">
+          <input type="date" id="f-aire" aria-label="Fecha de la imagen de aire">
+          <button type="button" data-dia="-1" data-para="aire" aria-label="Día anterior">‹</button>
+          <button type="button" data-dia="1" data-para="aire" aria-label="Día siguiente">›</button>
+        </div>
+        <div class="chips" data-lugares>
+          <button data-ll="-34.65,-58.5,8">AMBA</button>
+          <button data-ll="-38.4,-68.9,8">Vaca Muerta</button>
+          <button data-ll="-32.95,-60.65,8">Gran Rosario</button>
+          <button data-ll="-31.4,-64.2,8">Córdoba</button>
+          <button data-ll="-38.75,-62.25,8">Bahía Blanca</button>
+          <button data-ll="-35,-63,5">Todo el país</button>
+        </div>
+      </div>
+      <div class="grupo">
+        <span class="rotulo">Cómo leerlo</span>
+        <div class="leyenda"><img src="https://gibs.earthdata.nasa.gov/legends/OMI_Nitrogen_Dioxide_Tropo_Column_H.png" alt="Escala de colores del dióxido de nitrógeno: amarillo pálido bajo, marrón oscuro alto"></div>
+        <div class="rangos">
+          <div><b>&lt; 1</b><span>Aire limpio: campo, montaña, mar</span></div>
+          <div><b>1 – 3</b><span>Ciudad mediana o rutas con tránsito</span></div>
+          <div><b>3 – 7</b><span>Gran ciudad, polo industrial o petrolero</span></div>
+          <div><b>&gt; 7</b><span>Muy alto: episodio de contaminación o incendio grande</span></div>
+        </div>
+        <p class="sub">Columna troposférica en 10¹⁵ moléculas por cm². Rangos orientativos.</p>
+      </div>
+      <div class="texto">
+        <p><strong>Qué mide.</strong> El gas que sale de motores, centrales eléctricas, industrias, quemas y antorchas de gas. Una pasada por día, cerca del mediodía, en píxeles de unos 5 km.</p>
+        <p class="nota"><strong>Límites.</strong> Con nubes no hay dato y el mapa queda vacío ese día. Mide la columna de aire entera, no lo que respira una persona en la calle: para eso están las estaciones de calidad de aire.</p>
+      </div>
+    </section>
+
+    <!-- ============ NIEVE ============ -->
+    <section class="modulo plegable" data-mod="nieve" hidden>
+      <div class="grupo">
+        <span class="rotulo">Cobertura de nieve · MODIS</span>
+        <div class="chips" id="nieve-modo">
+          <button data-modo="mes" aria-pressed="true">Promedio del mes</button>
+          <button data-modo="dia" aria-pressed="false">Día puntual</button>
+        </div>
+        <div class="fila-fecha" id="nieve-dia" hidden>
+          <input type="date" id="f-nieve" aria-label="Fecha de la imagen de nieve">
+          <button type="button" data-dia="-1" data-para="nieve" aria-label="Día anterior">‹</button>
+          <button type="button" data-dia="1" data-para="nieve" aria-label="Día siguiente">›</button>
+        </div>
+        <div id="nieve-mes">
+          <select id="m-nieve" aria-label="Mes del promedio de nieve"></select>
+        </div>
+        <div class="chips" data-lugares>
+          <button data-ll="-32.8,-69.9,8">Mendoza · Aconcagua</button>
+          <button data-ll="-30.4,-69.6,8">San Juan</button>
+          <button data-ll="-36.9,-70.6,8">Neuquén norte</button>
+          <button data-ll="-41.1,-71.5,8">Bariloche</button>
+          <button data-ll="-36,-69.5,6">Toda la cordillera</button>
+        </div>
+      </div>
+      <div class="grupo">
+        <span class="rotulo">Cómo leerlo</span>
+        <div class="leyenda"><img src="https://gibs.earthdata.nasa.gov/legends/MODIS_NDSI_Snow_Cover_H.png" alt="Escala de colores de la cobertura de nieve"></div>
+        <div class="rangos">
+          <div><b>&lt; 10</b><span>Sin nieve</span></div>
+          <div><b>10 – 40</b><span>Nieve rala o en manchones</span></div>
+          <div><b>40 – 70</b><span>Cobertura importante</span></div>
+          <div><b>&gt; 70</b><span>Cubierto casi por completo</span></div>
+        </div>
+        <p class="sub">Índice de nieve de 0 a 100 por píxel de 500 m. Rangos orientativos.</p>
+      </div>
+      <div class="texto">
+        <p><strong>Para qué sirve.</strong> La nieve del invierno es el agua de riego del verano en Cuyo y el norte patagónico. Comparar agosto de este año con agosto de años anteriores anticipa si viene una temporada de ríos bajos.</p>
+        <p class="nota"><strong>Límites.</strong> Mide superficie cubierta, no espesor ni cuánta agua tiene la nieve. Las nubes tapan el día puntual: el promedio mensual las saltea. Para caudales, la referencia oficial son los pronósticos de escurrimiento del DGI y la Subsecretaría de Recursos Hídricos.</p>
+      </div>
+    </section>
+
+    <!-- ============ DESMONTES ============ -->
+    <section class="modulo plegable" data-mod="desmontes" hidden>
+      <div class="grupo">
+        <span class="rotulo">Pérdida de cobertura arbórea · Global Forest Watch</span>
+        <label class="fila">Desde <span class="val" id="v-desde">2001</span>
+          <input type="range" id="desde" min="2001" max="2024" value="2001"></label>
+        <label class="fila">Hasta <span class="val" id="v-hasta">2024</span>
+          <input type="range" id="hasta" min="2001" max="2024" value="2024"></label>
+        <div class="chips" id="atajos-anios">
+          <button data-r="2001,2024">Todo</button>
+          <button data-r="2008,2024">Desde la Ley de Bosques</button>
+          <button data-r="2021,2024">Desde el corte del EUDR</button>
+        </div>
+        <div class="chips" data-lugares>
+          <button data-ll="-24.3,-63.6,9">Chaco salteño</button>
+          <button data-ll="-26.2,-63.2,9">Santiago del Estero norte</button>
+          <button data-ll="-25.4,-61.0,9">Impenetrable</button>
+          <button data-ll="-24.6,-60.5,9">Formosa</button>
+          <button data-ll="-25.5,-62.5,6">Gran Chaco</button>
+        </div>
+      </div>
+      <div class="grupo">
+        <span class="rotulo">Cómo leerlo</span>
+        <div class="rampa" aria-hidden="true"></div>
+        <div class="rampa-et"><span id="r-ini">2001</span><span id="r-fin">2024</span></div>
+        <div class="rangos">
+          <div><b>Amarillo</b><span>Pérdida en los primeros años del rango</span></div>
+          <div><b>Rojo</b><span>Años intermedios</span></div>
+          <div><b>Violeta</b><span>Pérdida más reciente</span></div>
+        </div>
+        <p class="sub">Píxeles de 30 m que en 2000 tenían más de 30 % de cobertura de árboles.</p>
+      </div>
+      <div class="texto">
+        <p><strong>Qué mide.</strong> Dónde y en qué año desapareció la cobertura de árboles, a partir de imágenes Landsat (Universidad de Maryland, Hansen et al.). En el Chaco seco casi toda la pérdida es desmonte para agricultura y ganadería.</p>
+        <p class="nota"><strong>Límites.</strong> Pérdida no es lo mismo que desmonte ilegal: también entran incendios, cosecha de plantaciones y tormentas. No cruza las categorías de la Ley de Bosques. Para un campo puntual y la debida diligencia ante la UE, usá el módulo de Europa de DOTS, que suma MapBiomas y el mapa oficial de bosques de la UE.</p>
+      </div>
+    </section>
+
+    <div id="estado" class="plegable"></div>
+  </aside>
+  <div id="mapwrap"><div id="map"></div></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+(function () {
+  'use strict';
+  function $(id) { return document.getElementById(id); }
+  function iso(d) { return d.toISOString().slice(0, 10); }
+  var hoy = new Date();
+
+  var map = L.map('map', { zoomControl: true }).setView([-34.65, -58.5], 8);
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18, attribution: 'Imágenes © Esri' }).addTo(map);
+  var etiquetas = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18, pane: 'shadowPane' });
+  L.control.scale({ imperial: false }).addTo(map);
+
+  // ---------- NASA GIBS (WMTS) ----------
+  function gibs(capa, fecha, nivel, opacidad) {
+    return L.tileLayer('https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/' + capa + '/default/' + fecha + '/GoogleMapsCompatible_Level' + nivel + '/{z}/{y}/{x}.png',
+      { maxNativeZoom: nivel, maxZoom: 18, opacity: opacidad, attribution: 'NASA GIBS / EOSDIS' });
+  }
+
+  // ---------- Global Forest Watch: pérdida de árboles por año (teselas codificadas) ----------
+  // Cada píxel trae el año de pérdida en el canal azul (años desde 2000) y la intensidad en el rojo.
+  var rango = { desde: 2001, hasta: 2024 };
+  var RAMPA = [[255,224,102],[240,140,46],[214,64,43],[142,27,63],[75,16,96]];
+  function colorAnio(t) {
+    var x = t * (RAMPA.length - 1), i = Math.min(RAMPA.length - 2, Math.floor(x)), f = x - i;
+    return RAMPA[i].map(function (v, k) { return Math.round(v + (RAMPA[i+1][k] - v) * f); });
+  }
+  var cacheGFW = {};
+  var Perdida = L.GridLayer.extend({
+    createTile: function (c, done) {
+      var t = document.createElement('canvas'); t.width = t.height = 256; t._c = c;
+      var k = c.z + '/' + c.x + '/' + c.y;
+      var p = cacheGFW[k] || (cacheGFW[k] = new Promise(function (ok, mal) {
+        var im = new Image(); im.crossOrigin = 'anonymous';
+        im.onload = function () { var cv = document.createElement('canvas'); cv.width = cv.height = 256; var g = cv.getContext('2d'); g.drawImage(im, 0, 0, 256, 256); ok(g.getImageData(0, 0, 256, 256).data); };
+        im.onerror = mal;
+        im.src = 'https://tiles.globalforestwatch.org/umd_tree_cover_loss/v1.12/tcd_30/' + c.z + '/' + c.x + '/' + c.y + '.png';
+      }));
+      p.then(function (d) { pintarPerdida(t, d); done(null, t); }, function (e) { done(e, t); });
+      return t;
+    },
+    repintar: function () {
+      for (var k in this._tiles) { var t = this._tiles[k].el, c = t._c; var pr = cacheGFW[c.z + '/' + c.x + '/' + c.y]; if (pr) pr.then(pintarPerdida.bind(null, t)); }
+    }
+  });
+  function pintarPerdida(t, d) {
+    var g = t.getContext('2d'), img = g.createImageData(256, 256), o = img.data, span = Math.max(1, rango.hasta - rango.desde);
+    for (var i = 0; i < 65536; i++) {
+      var a = d[i*4+3]; if (!a) continue;
+      var anio = 2000 + d[i*4+2]; if (anio < rango.desde || anio > rango.hasta) continue;
+      var col = colorAnio((anio - rango.desde) / span);
+      o[i*4] = col[0]; o[i*4+1] = col[1]; o[i*4+2] = col[2];
+      o[i*4+3] = Math.round(255 * Math.max(.45, Math.min(1, d[i*4] / 160)));
+    }
+    g.putImageData(img, 0, 0);
+  }
+  var capaPerdida = new Perdida({ maxNativeZoom: 12, maxZoom: 18, attribution: 'Hansen/UMD/Google/USGS/NASA · Global Forest Watch' });
+
+  // ---------- Estado de cada módulo ----------
+  var modulo = 'aire', capa = null;
+  var fechas = { aire: new Date(hoy.getTime() - 86400000), nieve: new Date(hoy.getTime() - 86400000) };
+  var nieveModo = 'mes';
+  // Meses disponibles del promedio de nieve (MODIS publica el mes cuando termina)
+  (function () {
+    var sel = $('m-nieve'), d = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
+    var nombres = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    for (var i = 0; i < 60; i++) {
+      var o = document.createElement('option');
+      o.value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-01';
+      o.textContent = nombres[d.getMonth()] + ' de ' + d.getFullYear();
+      sel.appendChild(o); d.setMonth(d.getMonth() - 1);
+    }
+    // por defecto, el último agosto (pico de nieve)
+    for (var j = 0; j < sel.options.length; j++) if (sel.options[j].value.slice(5, 7) === '08') { sel.selectedIndex = j; break; }
+  })();
+  $('f-aire').value = iso(fechas.aire); $('f-aire').max = iso(hoy);
+  $('f-nieve').value = iso(fechas.nieve); $('f-nieve').max = iso(hoy);
+
+  function estado(t) { $('estado').textContent = t; }
+  function poner(nueva) {
+    if (capa) map.removeLayer(capa);
+    capa = nueva; capa.addTo(map);
+    var errores = 0;
+    capa.on('tileerror', function () { if (++errores === 4) estado('Algunas teselas no llegaron. Probá otra fecha o esperá un momento.'); });
+    etiquetas.addTo(map);
+  }
+  function actualizar() {
+    estado('');
+    if (modulo === 'aire') {
+      poner(gibs('TROPOMI_L2_Nitrogen_Dioxide_Tropospheric_Column', $('f-aire').value, 6, .8));
+      estado('Sentinel-5P · ' + $('f-aire').value.split('-').reverse().join('/') + ' · zonas vacías = nubes o sin pasada');
+    } else if (modulo === 'nieve') {
+      if (nieveModo === 'mes') { poner(gibs('MODIS_Terra_L3_Snow_Cover_Monthly_Average_Pct', $('m-nieve').value, 6, .85)); estado('MODIS Terra · promedio de ' + $('m-nieve').selectedOptions[0].textContent); }
+      else { poner(gibs('MODIS_Terra_NDSI_Snow_Cover', $('f-nieve').value, 8, .9)); estado('MODIS Terra · ' + $('f-nieve').value.split('-').reverse().join('/') + ' · zonas vacías = nubes'); }
+    } else {
+      poner(capaPerdida); capaPerdida.repintar();
+      estado('Pérdida de árboles ' + rango.desde + '–' + rango.hasta + ' · Hansen/UMD v1.12');
+    }
+  }
+
+  // ---------- Controles ----------
+  document.querySelectorAll('.tabs button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      modulo = b.dataset.mod;
+      document.querySelectorAll('.tabs button').forEach(function (x) { x.setAttribute('aria-selected', x === b ? 'true' : 'false'); });
+      document.querySelectorAll('.modulo').forEach(function (s) { s.hidden = s.dataset.mod !== modulo; });
+      var primero = document.querySelector('.modulo[data-mod="' + modulo + '"] [data-lugares] button');
+      if (primero) primero.click(); else actualizar();
+    });
+  });
+  document.querySelectorAll('[data-lugares] button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var p = b.dataset.ll.split(',').map(Number); map.setView([p[0], p[1]], p[2]);
+      b.parentNode.querySelectorAll('button').forEach(function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+      actualizar();
+    });
+  });
+  document.querySelectorAll('[data-dia]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var inp = $('f-' + b.dataset.para), d = new Date(inp.value + 'T12:00:00');
+      d.setDate(d.getDate() + Number(b.dataset.dia)); if (d > hoy) return;
+      inp.value = iso(d); actualizar();
+    });
+  });
+  $('f-aire').addEventListener('change', actualizar);
+  $('f-nieve').addEventListener('change', actualizar);
+  $('m-nieve').addEventListener('change', actualizar);
+  document.querySelectorAll('#nieve-modo button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      nieveModo = b.dataset.modo;
+      document.querySelectorAll('#nieve-modo button').forEach(function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+      $('nieve-dia').hidden = nieveModo !== 'dia'; $('nieve-mes').hidden = nieveModo !== 'mes';
+      actualizar();
+    });
+  });
+  function setRango(a, b) {
+    rango.desde = Math.min(a, b); rango.hasta = Math.max(a, b);
+    $('desde').value = rango.desde; $('hasta').value = rango.hasta;
+    $('v-desde').textContent = rango.desde; $('v-hasta').textContent = rango.hasta;
+    $('r-ini').textContent = rango.desde; $('r-fin').textContent = rango.hasta;
+    if (modulo === 'desmontes') { capaPerdida.repintar(); estado('Pérdida de árboles ' + rango.desde + '–' + rango.hasta + ' · Hansen/UMD v1.12'); }
+  }
+  var tr = null;
+  function rangoDiferido() { clearTimeout(tr); tr = setTimeout(function () { setRango(+$('desde').value, +$('hasta').value); }, 80); }
+  $('desde').addEventListener('input', rangoDiferido); $('hasta').addEventListener('input', rangoDiferido);
+  document.querySelectorAll('#atajos-anios button').forEach(function (b) {
+    b.addEventListener('click', function () { var r = b.dataset.r.split(',').map(Number); setRango(r[0], r[1]); });
+  });
+  $('toggle').addEventListener('click', function () { $('panel').classList.toggle('cerrado'); setTimeout(function () { map.invalidateSize(); }, 50); });
+  if (window.matchMedia('(max-width: 760px)').matches) $('panel').classList.add('cerrado');
+  window.addEventListener('resize', function () { map.invalidateSize(); });
+
+  // Abre el módulo pedido en la dirección (#aire, #nieve, #desmontes)
+  var pedido = (location.hash || '').slice(1);
+  var tab = document.querySelector('.tabs button[data-mod="' + pedido + '"]') || document.querySelector('.tabs button');
+  tab.click();
+})();
+</script>
+</body>
+</html>

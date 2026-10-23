@@ -47,7 +47,11 @@
       "destination": "/lente/index.html"
     },
     {
-      "source": "/((?!api/|ftw/|dem/|assets/|poblacion|avisos-widget|campo|radar|agricultura-precision|lente).*)",
+      "source": "/satelital",
+      "destination": "/satelital/index.html"
+    },
+    {
+      "source": "/((?!api/|ftw/|dem/|assets/|poblacion|avisos-widget|campo|radar|agricultura-precision|lente|satelital).*)",
       "destination": "/index.html"
     }
   ],
