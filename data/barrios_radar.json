@@ -1,5 +1,5 @@
 {
- "updated": "2026-10-22",
+ "updated": "2026-10-23",
  "year": 2024,
  "model": {
   "method": "Idea (Sapienza / Pavía): las imágenes en color confunden un barrio popular con un barrio denso común; el radar\nSentinel-1 responde a la forma y al desorden de las construcciones, y casi no cambia entre estaciones.\n\nQué hace, en GitHub Actions y con Google Earth Engine:\n  1. Baja los polígonos del Registro Nacional de Barrios Populares (RENABAP) alrededor de cada localidad.\n  2. Arma, para cada píxel construido (ESA WorldCover), tres escalones de radar —brillo (VV, VH, VH−VV),\n     textura (GLCM: contraste, varianza, entropía, homogeneidad) e índice de dispersión (coeficiente de variación\n     local y temporal, y diferencia entre estación seca y húmeda)—, las bandas ópticas de Sentinel-2 y la\n     morfología de las construcciones (Google Open Buildings temporal: cantidad, altura y su variación).\n  3. Etiquetas: dentro de un polígono RENABAP = barrio popular; construido a más de 60 m de cualquiera = barrio común.\n  4. Entrena bosques aleatorios (solo óptico / óptico + radar / + edificios / + etiquetas de otras ciudades, como\n     los barrios populares de Nairobi mapeados en OpenStreetMap o data/etiquetas_externas.geojson) y los evalúa dejando afuera una ciudad\n     argentina por vez: así se mide cómo anda en una ciudad que el modelo nunca vio.\n  5. Aplica el mejor de los dos con radar a las 34 localidades (también Paraguay y Uruguay, donde no hay RENABAP),\n     y cruza con WorldPop 2020 y la altura sobre el río (MERIT Hydro HAND).\n\nSalida: data/barrios_radar.json y data/barrios_radar/<id>.png (rama datos).\nRequiere los secretos GOOGLE_CLOUD_PROJECT y GOOGLE_APPLICATION_CREDENTIALS_JSON (los mismos de Vercel).",
@@ -29,388 +29,622 @@
    "Colón",
    "Concepción del Uruguay"
   ],
-  "ciudades_externas": [],
+  "ciudades_externas": [
+   "Nairobi (OpenStreetMap)"
+  ],
   "puntos_por_clase_y_ciudad": 400,
   "evaluacion_por_ciudad": [
    {
     "city": "Eldorado",
     "optico": {
-     "f1_barrio": 0.412,
-     "exactitud": 0.53,
+     "f1_barrio": 0.414,
+     "exactitud": 0.532,
      "puntos": 800
     },
     "optico_radar": {
-     "f1_barrio": 0.575,
-     "exactitud": 0.595,
+     "f1_barrio": 0.573,
+     "exactitud": 0.584,
      "puntos": 800
     },
     "optico_radar_edificios": {
-     "f1_barrio": 0.628,
-     "exactitud": 0.68,
+     "f1_barrio": 0.661,
+     "exactitud": 0.703,
+     "puntos": 800
+    },
+    "optico_radar_externas": {
+     "f1_barrio": 0.559,
+     "exactitud": 0.585,
      "puntos": 800
     }
    },
    {
     "city": "Posadas",
     "optico": {
-     "f1_barrio": 0.447,
-     "exactitud": 0.564,
+     "f1_barrio": 0.455,
+     "exactitud": 0.562,
      "puntos": 800
     },
     "optico_radar": {
-     "f1_barrio": 0.529,
-     "exactitud": 0.618,
+     "f1_barrio": 0.534,
+     "exactitud": 0.61,
      "puntos": 800
     },
     "optico_radar_edificios": {
-     "f1_barrio": 0.596,
-     "exactitud": 0.681,
+     "f1_barrio": 0.644,
+     "exactitud": 0.711,
+     "puntos": 800
+    },
+    "optico_radar_externas": {
+     "f1_barrio": 0.557,
+     "exactitud": 0.629,
      "puntos": 800
     }
    },
    {
     "city": "Ituzaingó",
     "optico": {
-     "f1_barrio": 0.632,
-     "exactitud": 0.618,
+     "f1_barrio": 0.635,
+     "exactitud": 0.611,
      "puntos": 800
     },
     "optico_radar": {
-     "f1_barrio": 0.689,
-     "exactitud": 0.652,
+     "f1_barrio": 0.704,
+     "exactitud": 0.667,
      "puntos": 800
     },
     "optico_radar_edificios": {
-     "f1_barrio": 0.751,
-     "exactitud": 0.733,
+     "f1_barrio": 0.761,
+     "exactitud": 0.74,
+     "puntos": 800
+    },
+    "optico_radar_externas": {
+     "f1_barrio": 0.688,
+     "exactitud": 0.654,
+     "puntos": 800
+    }
+   },
+   {
+    "city": "Corrientes",
+    "optico": {
+     "f1_barrio": 0.61,
+     "exactitud": 0.603,
+     "puntos": 800
+    },
+    "optico_radar": {
+     "f1_barrio": 0.652,
+     "exactitud": 0.665,
+     "puntos": 800
+    },
+    "optico_radar_edificios": {
+     "f1_barrio": 0.745,
+     "exactitud": 0.744,
+     "puntos": 800
+    },
+    "optico_radar_externas": {
+     "f1_barrio": 0.661,
+     "exactitud": 0.675,
      "puntos": 800
     }
    },
    {
     "city": "Bella Vista",
     "optico": {
-     "f1_barrio": 0.494,
-     "exactitud": 0.575,
-     "puntos": 588
+     "f1_barrio": 0.604,
+     "exactitud": 0.57,
+     "puntos": 800
     },
     "optico_radar": {
-     "f1_barrio": 0.683,
-     "exactitud": 0.736,
-     "puntos": 588
+     "f1_barrio": 0.667,
+     "exactitud": 0.661,
+     "puntos": 800
     },
     "optico_radar_edificios": {
-     "f1_barrio": 0.8,
-     "exactitud": 0.854,
-     "puntos": 588
+     "f1_barrio": 0.839,
+     "exactitud": 0.834,
+     "puntos": 800
+    },
+    "optico_radar_externas": {
+     "f1_barrio": 0.669,
+     "exactitud": 0.67,
+     "puntos": 800
     }
    },
    {
     "city": "Goya",
     "optico": {
-     "f1_barrio": 0.63,
-     "exactitud": 0.642,
+     "f1_barrio": 0.625,
+     "exactitud": 0.606,
      "puntos": 800
     },
     "optico_radar": {
-     "f1_barrio": 0.535,
-     "exactitud": 0.629,
+     "f1_barrio": 0.675,
+     "exactitud": 0.691,
      "puntos": 800
     },
     "optico_radar_edificios": {
-     "f1_barrio": 0.866,
-     "exactitud": 0.865,
+     "f1_barrio": 0.797,
+     "exactitud": 0.789,
+     "puntos": 800
+    },
+    "optico_radar_externas": {
+     "f1_barrio": 0.672,
+     "exactitud": 0.688,
+     "puntos": 800
+    }
+   },
+   {
+    "city": "Reconquista",
+    "optico": {
+     "f1_barrio": 0.662,
+     "exactitud": 0.615,
+     "puntos": 800
+    },
+    "optico_radar": {
+     "f1_barrio": 0.706,
+     "exactitud": 0.685,
+     "puntos": 800
+    },
+    "optico_radar_edificios": {
+     "f1_barrio": 0.849,
+     "exactitud": 0.838,
+     "puntos": 800
+    },
+    "optico_radar_externas": {
+     "f1_barrio": 0.704,
+     "exactitud": 0.682,
      "puntos": 800
     }
    },
    {
     "city": "Esquina",
     "optico": {
-     "f1_barrio": 0.671,
-     "exactitud": 0.609,
+     "f1_barrio": 0.683,
+     "exactitud": 0.616,
      "puntos": 800
     },
     "optico_radar": {
-     "f1_barrio": 0.714,
-     "exactitud": 0.66,
+     "f1_barrio": 0.699,
+     "exactitud": 0.662,
      "puntos": 800
     },
     "optico_radar_edificios": {
-     "f1_barrio": 0.783,
-     "exactitud": 0.738,
+     "f1_barrio": 0.798,
+     "exactitud": 0.764,
+     "puntos": 800
+    },
+    "optico_radar_externas": {
+     "f1_barrio": 0.708,
+     "exactitud": 0.672,
      "puntos": 800
     }
    },
    {
     "city": "La Paz",
     "optico": {
-     "f1_barrio": 0.699,
-     "exactitud": 0.661,
+     "f1_barrio": 0.709,
+     "exactitud": 0.666,
      "puntos": 800
     },
     "optico_radar": {
-     "f1_barrio": 0.685,
-     "exactitud": 0.694,
+     "f1_barrio": 0.656,
+     "exactitud": 0.676,
      "puntos": 800
     },
     "optico_radar_edificios": {
-     "f1_barrio": 0.77,
-     "exactitud": 0.774,
+     "f1_barrio": 0.74,
+     "exactitud": 0.749,
+     "puntos": 800
+    },
+    "optico_radar_externas": {
+     "f1_barrio": 0.661,
+     "exactitud": 0.681,
+     "puntos": 800
+    }
+   },
+   {
+    "city": "Santa Fe · Paraná",
+    "optico": {
+     "f1_barrio": 0.62,
+     "exactitud": 0.59,
+     "puntos": 800
+    },
+    "optico_radar": {
+     "f1_barrio": 0.646,
+     "exactitud": 0.685,
+     "puntos": 800
+    },
+    "optico_radar_edificios": {
+     "f1_barrio": 0.723,
+     "exactitud": 0.736,
+     "puntos": 800
+    },
+    "optico_radar_externas": {
+     "f1_barrio": 0.64,
+     "exactitud": 0.681,
+     "puntos": 800
+    }
+   },
+   {
+    "city": "Diamante",
+    "optico": {
+     "f1_barrio": 0.612,
+     "exactitud": 0.568,
+     "puntos": 800
+    },
+    "optico_radar": {
+     "f1_barrio": 0.66,
+     "exactitud": 0.669,
+     "puntos": 800
+    },
+    "optico_radar_edificios": {
+     "f1_barrio": 0.684,
+     "exactitud": 0.691,
+     "puntos": 800
+    },
+    "optico_radar_externas": {
+     "f1_barrio": 0.656,
+     "exactitud": 0.671,
+     "puntos": 800
+    }
+   },
+   {
+    "city": "Rosario",
+    "optico": {
+     "f1_barrio": 0.451,
+     "exactitud": 0.544,
+     "puntos": 800
+    },
+    "optico_radar": {
+     "f1_barrio": 0.466,
+     "exactitud": 0.603,
+     "puntos": 800
+    },
+    "optico_radar_edificios": {
+     "f1_barrio": 0.596,
+     "exactitud": 0.69,
+     "puntos": 800
+    },
+    "optico_radar_externas": {
+     "f1_barrio": 0.463,
+     "exactitud": 0.603,
      "puntos": 800
     }
    },
    {
     "city": "San Nicolás",
     "optico": {
-     "f1_barrio": 0.66,
-     "exactitud": 0.652,
+     "f1_barrio": 0.651,
+     "exactitud": 0.645,
      "puntos": 800
     },
     "optico_radar": {
-     "f1_barrio": 0.691,
-     "exactitud": 0.708,
+     "f1_barrio": 0.726,
+     "exactitud": 0.729,
      "puntos": 800
     },
     "optico_radar_edificios": {
-     "f1_barrio": 0.788,
-     "exactitud": 0.777,
+     "f1_barrio": 0.792,
+     "exactitud": 0.779,
+     "puntos": 800
+    },
+    "optico_radar_externas": {
+     "f1_barrio": 0.717,
+     "exactitud": 0.725,
      "puntos": 800
     }
    },
    {
     "city": "San Pedro",
     "optico": {
-     "f1_barrio": 0.641,
+     "f1_barrio": 0.644,
      "exactitud": 0.621,
      "puntos": 800
     },
     "optico_radar": {
-     "f1_barrio": 0.66,
-     "exactitud": 0.675,
+     "f1_barrio": 0.685,
+     "exactitud": 0.689,
      "puntos": 800
     },
     "optico_radar_edificios": {
-     "f1_barrio": 0.716,
-     "exactitud": 0.744,
+     "f1_barrio": 0.729,
+     "exactitud": 0.746,
+     "puntos": 800
+    },
+    "optico_radar_externas": {
+     "f1_barrio": 0.684,
+     "exactitud": 0.69,
      "puntos": 800
     }
    },
    {
     "city": "Zárate",
     "optico": {
-     "f1_barrio": 0.657,
+     "f1_barrio": 0.662,
      "exactitud": 0.661,
      "puntos": 800
     },
     "optico_radar": {
-     "f1_barrio": 0.688,
-     "exactitud": 0.739,
+     "f1_barrio": 0.728,
+     "exactitud": 0.755,
      "puntos": 800
     },
     "optico_radar_edificios": {
-     "f1_barrio": 0.816,
-     "exactitud": 0.828,
+     "f1_barrio": 0.825,
+     "exactitud": 0.831,
+     "puntos": 800
+    },
+    "optico_radar_externas": {
+     "f1_barrio": 0.71,
+     "exactitud": 0.745,
      "puntos": 800
     }
    },
    {
     "city": "Asunción",
     "optico": {
-     "f1_barrio": 0.74,
-     "exactitud": 0.754,
+     "f1_barrio": 0.778,
+     "exactitud": 0.777,
      "puntos": 800
     },
     "optico_radar": {
-     "f1_barrio": 0.756,
+     "f1_barrio": 0.775,
      "exactitud": 0.751,
      "puntos": 800
     },
     "optico_radar_edificios": {
-     "f1_barrio": 0.793,
-     "exactitud": 0.807,
+     "f1_barrio": 0.807,
+     "exactitud": 0.819,
+     "puntos": 800
+    },
+    "optico_radar_externas": {
+     "f1_barrio": 0.762,
+     "exactitud": 0.736,
      "puntos": 800
     }
    },
    {
     "city": "Formosa · Alberdi",
     "optico": {
-     "f1_barrio": 0.678,
-     "exactitud": 0.614,
+     "f1_barrio": 0.664,
+     "exactitud": 0.599,
      "puntos": 800
     },
     "optico_radar": {
-     "f1_barrio": 0.713,
-     "exactitud": 0.666,
+     "f1_barrio": 0.727,
+     "exactitud": 0.669,
      "puntos": 800
     },
     "optico_radar_edificios": {
-     "f1_barrio": 0.688,
-     "exactitud": 0.69,
+     "f1_barrio": 0.704,
+     "exactitud": 0.699,
+     "puntos": 800
+    },
+    "optico_radar_externas": {
+     "f1_barrio": 0.731,
+     "exactitud": 0.681,
+     "puntos": 800
+    }
+   },
+   {
+    "city": "Embarcación",
+    "optico": {
+     "f1_barrio": 0.686,
+     "exactitud": 0.656,
+     "puntos": 800
+    },
+    "optico_radar": {
+     "f1_barrio": 0.738,
+     "exactitud": 0.674,
+     "puntos": 800
+    },
+    "optico_radar_edificios": {
+     "f1_barrio": 0.819,
+     "exactitud": 0.785,
+     "puntos": 800
+    },
+    "optico_radar_externas": {
+     "f1_barrio": 0.735,
+     "exactitud": 0.671,
      "puntos": 800
     }
    },
    {
     "city": "Santo Tomé",
     "optico": {
-     "f1_barrio": 0.626,
-     "exactitud": 0.66,
+     "f1_barrio": 0.622,
+     "exactitud": 0.655,
      "puntos": 800
     },
     "optico_radar": {
-     "f1_barrio": 0.701,
-     "exactitud": 0.693,
+     "f1_barrio": 0.721,
+     "exactitud": 0.709,
      "puntos": 800
     },
     "optico_radar_edificios": {
-     "f1_barrio": 0.784,
+     "f1_barrio": 0.783,
      "exactitud": 0.787,
+     "puntos": 800
+    },
+    "optico_radar_externas": {
+     "f1_barrio": 0.707,
+     "exactitud": 0.704,
      "puntos": 800
     }
    },
    {
     "city": "Paso de los Libres",
     "optico": {
-     "f1_barrio": 0.647,
-     "exactitud": 0.664,
+     "f1_barrio": 0.666,
+     "exactitud": 0.681,
      "puntos": 800
     },
     "optico_radar": {
-     "f1_barrio": 0.728,
-     "exactitud": 0.723,
+     "f1_barrio": 0.734,
+     "exactitud": 0.726,
      "puntos": 800
     },
     "optico_radar_edificios": {
-     "f1_barrio": 0.782,
-     "exactitud": 0.791,
+     "f1_barrio": 0.776,
+     "exactitud": 0.782,
+     "puntos": 800
+    },
+    "optico_radar_externas": {
+     "f1_barrio": 0.719,
+     "exactitud": 0.719,
      "puntos": 800
     }
    },
    {
     "city": "Monte Caseros",
     "optico": {
-     "f1_barrio": 0.627,
-     "exactitud": 0.595,
+     "f1_barrio": 0.631,
+     "exactitud": 0.591,
      "puntos": 800
     },
     "optico_radar": {
-     "f1_barrio": 0.658,
-     "exactitud": 0.615,
+     "f1_barrio": 0.679,
+     "exactitud": 0.639,
      "puntos": 800
     },
     "optico_radar_edificios": {
-     "f1_barrio": 0.776,
-     "exactitud": 0.75,
+     "f1_barrio": 0.773,
+     "exactitud": 0.746,
+     "puntos": 800
+    },
+    "optico_radar_externas": {
+     "f1_barrio": 0.664,
+     "exactitud": 0.627,
      "puntos": 800
     }
    },
    {
     "city": "Concordia · Salto",
     "optico": {
-     "f1_barrio": 0.666,
-     "exactitud": 0.649,
+     "f1_barrio": 0.663,
+     "exactitud": 0.647,
      "puntos": 800
     },
     "optico_radar": {
-     "f1_barrio": 0.688,
-     "exactitud": 0.69,
+     "f1_barrio": 0.729,
+     "exactitud": 0.72,
      "puntos": 800
     },
     "optico_radar_edificios": {
-     "f1_barrio": 0.803,
-     "exactitud": 0.792,
+     "f1_barrio": 0.796,
+     "exactitud": 0.784,
+     "puntos": 800
+    },
+    "optico_radar_externas": {
+     "f1_barrio": 0.729,
+     "exactitud": 0.72,
      "puntos": 800
     }
    },
    {
     "city": "Colón",
     "optico": {
-     "f1_barrio": 0.664,
-     "exactitud": 0.613,
+     "f1_barrio": 0.665,
+     "exactitud": 0.603,
      "puntos": 800
     },
     "optico_radar": {
-     "f1_barrio": 0.728,
-     "exactitud": 0.696,
+     "f1_barrio": 0.726,
+     "exactitud": 0.699,
      "puntos": 800
     },
     "optico_radar_edificios": {
-     "f1_barrio": 0.784,
-     "exactitud": 0.762,
+     "f1_barrio": 0.792,
+     "exactitud": 0.771,
+     "puntos": 800
+    },
+    "optico_radar_externas": {
+     "f1_barrio": 0.731,
+     "exactitud": 0.703,
      "puntos": 800
     }
    },
    {
     "city": "Concepción del Uruguay",
     "optico": {
-     "f1_barrio": 0.654,
-     "exactitud": 0.623,
+     "f1_barrio": 0.669,
+     "exactitud": 0.641,
      "puntos": 800
     },
     "optico_radar": {
-     "f1_barrio": 0.739,
-     "exactitud": 0.711,
+     "f1_barrio": 0.744,
+     "exactitud": 0.715,
      "puntos": 800
     },
     "optico_radar_edificios": {
-     "f1_barrio": 0.789,
-     "exactitud": 0.782,
+     "f1_barrio": 0.799,
+     "exactitud": 0.792,
+     "puntos": 800
+    },
+    "optico_radar_externas": {
+     "f1_barrio": 0.736,
+     "exactitud": 0.708,
      "puntos": 800
     }
    }
   ],
   "promedio": {
    "optico": {
-    "f1_barrio": 0.625,
-    "exactitud": 0.628
+    "f1_barrio": 0.628,
+    "exactitud": 0.619
    },
    "optico_radar": {
-    "f1_barrio": 0.676,
+    "f1_barrio": 0.681,
     "exactitud": 0.681
    },
    "optico_radar_edificios": {
-    "f1_barrio": 0.762,
-    "exactitud": 0.769
+    "f1_barrio": 0.76,
+    "exactitud": 0.763
+   },
+   "optico_radar_externas": {
+    "f1_barrio": 0.678,
+    "exactitud": 0.68
    }
   },
   "modelo_final": "optico_radar_edificios",
   "capas_mas_utiles": [
    {
     "capa": "BLD_hstd",
-    "peso": 0.119
+    "peso": 0.122
    },
    {
     "capa": "BLD_count",
-    "peso": 0.091
+    "peso": 0.081
    },
    {
     "capa": "BLD_height",
-    "peso": 0.077
+    "peso": 0.076
    },
    {
     "capa": "BLD_presence",
-    "peso": 0.071
+    "peso": 0.068
    },
    {
     "capa": "VH_diff",
-    "peso": 0.051
+    "peso": 0.046
    },
    {
     "capa": "B8",
-    "peso": 0.037
+    "peso": 0.036
+   },
+   {
+    "capa": "VHt_contrast",
+    "peso": 0.032
    },
    {
     "capa": "VH",
     "peso": 0.032
    },
    {
-    "capa": "NDBI",
-    "peso": 0.029
+    "capa": "VV_cv5",
+    "peso": 0.031
    },
    {
-    "capa": "VV_lmean",
-    "peso": 0.028
-   },
-   {
-    "capa": "NDVI",
+    "capa": "VHt_var",
     "peso": 0.028
    }
   ],
@@ -418,7 +652,31 @@
  },
  "places": [
   {
-   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "informal_ha": 151.7,
+   "pop_informal": null,
+   "pop_informal_hand": [
+    {
+     "hasta_m": 1,
+     "personas": null
+    },
+    {
+     "hasta_m": 2,
+     "personas": null
+    },
+    {
+     "hasta_m": 3,
+     "personas": null
+    },
+    {
+     "hasta_m": 5,
+     "personas": null
+    }
+   ],
+   "renabap_barrios": 1,
+   "in_renabap_ha": 18.6,
+   "a_verificar_ha": 140.7,
+   "renabap_detectado": 0.976,
+   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
    "id": "iguazu-andresito",
    "place": "Andresito",
    "river": "Iguazú",
@@ -426,7 +684,27 @@
    "fuente_renabap": "oficial"
   },
   {
-   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "informal_ha": 18.1,
+   "pop_informal": 11,
+   "pop_informal_hand": [
+    {
+     "hasta_m": 1,
+     "personas": 0
+    },
+    {
+     "hasta_m": 2,
+     "personas": 0
+    },
+    {
+     "hasta_m": 3,
+     "personas": 0
+    },
+    {
+     "hasta_m": 5,
+     "personas": 1
+    }
+   ],
+   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
    "id": "iguazu-cataratas",
    "place": "Puerto Iguazú · Cataratas",
    "river": "Iguazú",
@@ -434,7 +712,31 @@
    "fuente_renabap": "oficial"
   },
   {
-   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "informal_ha": 540.5,
+   "pop_informal": 5432,
+   "pop_informal_hand": [
+    {
+     "hasta_m": 1,
+     "personas": 122
+    },
+    {
+     "hasta_m": 2,
+     "personas": 131
+    },
+    {
+     "hasta_m": 3,
+     "personas": 169
+    },
+    {
+     "hasta_m": 5,
+     "personas": 248
+    }
+   ],
+   "renabap_barrios": 24,
+   "in_renabap_ha": 56.8,
+   "a_verificar_ha": 501.3,
+   "renabap_detectado": 0.783,
+   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
    "id": "parana-eldorado",
    "place": "Eldorado",
    "river": "Paraná",
@@ -442,7 +744,31 @@
    "fuente_renabap": "oficial"
   },
   {
-   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "informal_ha": 1793.2,
+   "pop_informal": null,
+   "pop_informal_hand": [
+    {
+     "hasta_m": 1,
+     "personas": null
+    },
+    {
+     "hasta_m": 2,
+     "personas": null
+    },
+    {
+     "hasta_m": 3,
+     "personas": null
+    },
+    {
+     "hasta_m": 5,
+     "personas": null
+    }
+   ],
+   "renabap_barrios": 107,
+   "in_renabap_ha": 246.9,
+   "a_verificar_ha": 1569.2,
+   "renabap_detectado": 0.612,
+   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
    "id": "parana-posadas",
    "place": "Posadas",
    "river": "Paraná",
@@ -450,7 +776,31 @@
    "fuente_renabap": "oficial"
   },
   {
-   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "informal_ha": 242.7,
+   "pop_informal": 1405,
+   "pop_informal_hand": [
+    {
+     "hasta_m": 1,
+     "personas": 177
+    },
+    {
+     "hasta_m": 2,
+     "personas": 411
+    },
+    {
+     "hasta_m": 3,
+     "personas": 621
+    },
+    {
+     "hasta_m": 5,
+     "personas": 942
+    }
+   ],
+   "renabap_barrios": 6,
+   "in_renabap_ha": 4.7,
+   "a_verificar_ha": 233.7,
+   "renabap_detectado": 0.859,
+   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
    "id": "parana-ituzaingo",
    "place": "Ituzaingó",
    "river": "Paraná",
@@ -458,7 +808,31 @@
    "fuente_renabap": "oficial"
   },
   {
-   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "informal_ha": 3300.8,
+   "pop_informal": null,
+   "pop_informal_hand": [
+    {
+     "hasta_m": 1,
+     "personas": null
+    },
+    {
+     "hasta_m": 2,
+     "personas": null
+    },
+    {
+     "hasta_m": 3,
+     "personas": null
+    },
+    {
+     "hasta_m": 5,
+     "personas": null
+    }
+   ],
+   "renabap_barrios": 202,
+   "in_renabap_ha": 738.1,
+   "a_verificar_ha": 2486.1,
+   "renabap_detectado": 0.809,
+   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
    "id": "parana-corrientes",
    "place": "Corrientes",
    "river": "Paraná",
@@ -466,7 +840,31 @@
    "fuente_renabap": "oficial"
   },
   {
-   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "informal_ha": 216.3,
+   "pop_informal": 3796,
+   "pop_informal_hand": [
+    {
+     "hasta_m": 1,
+     "personas": 425
+    },
+    {
+     "hasta_m": 2,
+     "personas": 1035
+    },
+    {
+     "hasta_m": 3,
+     "personas": 1874
+    },
+    {
+     "hasta_m": 5,
+     "personas": 2603
+    }
+   ],
+   "renabap_barrios": 7,
+   "in_renabap_ha": 5.3,
+   "a_verificar_ha": 202.0,
+   "renabap_detectado": 0.852,
+   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
    "id": "parana-bellavista",
    "place": "Bella Vista",
    "river": "Paraná",
@@ -474,7 +872,31 @@
    "fuente_renabap": "oficial"
   },
   {
-   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "informal_ha": 615.2,
+   "pop_informal": 16713,
+   "pop_informal_hand": [
+    {
+     "hasta_m": 1,
+     "personas": 11642
+    },
+    {
+     "hasta_m": 2,
+     "personas": 14887
+    },
+    {
+     "hasta_m": 3,
+     "personas": 15614
+    },
+    {
+     "hasta_m": 5,
+     "personas": 15985
+    }
+   ],
+   "renabap_barrios": 20,
+   "in_renabap_ha": 45.9,
+   "a_verificar_ha": 555.1,
+   "renabap_detectado": 0.842,
+   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
    "id": "parana-goya",
    "place": "Goya",
    "river": "Paraná",
@@ -482,7 +904,31 @@
    "fuente_renabap": "oficial"
   },
   {
-   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "informal_ha": 630.6,
+   "pop_informal": 8849,
+   "pop_informal_hand": [
+    {
+     "hasta_m": 1,
+     "personas": 2985
+    },
+    {
+     "hasta_m": 2,
+     "personas": 5036
+    },
+    {
+     "hasta_m": 3,
+     "personas": 6190
+    },
+    {
+     "hasta_m": 5,
+     "personas": 7643
+    }
+   ],
+   "renabap_barrios": 19,
+   "in_renabap_ha": 64.4,
+   "a_verificar_ha": 552.2,
+   "renabap_detectado": 0.908,
+   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
    "id": "parana-reconquista",
    "place": "Reconquista",
    "river": "Paraná",
@@ -490,7 +936,31 @@
    "fuente_renabap": "oficial"
   },
   {
-   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "informal_ha": 236.5,
+   "pop_informal": 3234,
+   "pop_informal_hand": [
+    {
+     "hasta_m": 1,
+     "personas": 1083
+    },
+    {
+     "hasta_m": 2,
+     "personas": 1825
+    },
+    {
+     "hasta_m": 3,
+     "personas": 2166
+    },
+    {
+     "hasta_m": 5,
+     "personas": 2415
+    }
+   ],
+   "renabap_barrios": 4,
+   "in_renabap_ha": 5.0,
+   "a_verificar_ha": 230.3,
+   "renabap_detectado": 0.941,
+   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
    "id": "parana-esquina",
    "place": "Esquina",
    "river": "Paraná",
@@ -498,7 +968,31 @@
    "fuente_renabap": "oficial"
   },
   {
-   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "informal_ha": 177.9,
+   "pop_informal": null,
+   "pop_informal_hand": [
+    {
+     "hasta_m": 1,
+     "personas": null
+    },
+    {
+     "hasta_m": 2,
+     "personas": null
+    },
+    {
+     "hasta_m": 3,
+     "personas": null
+    },
+    {
+     "hasta_m": 5,
+     "personas": null
+    }
+   ],
+   "renabap_barrios": 18,
+   "in_renabap_ha": 20.3,
+   "a_verificar_ha": 141.1,
+   "renabap_detectado": 0.787,
+   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
    "id": "parana-lapaz",
    "place": "La Paz",
    "river": "Paraná",
@@ -506,7 +1000,31 @@
    "fuente_renabap": "oficial"
   },
   {
-   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "informal_ha": 1583.0,
+   "pop_informal": 34438,
+   "pop_informal_hand": [
+    {
+     "hasta_m": 1,
+     "personas": 2785
+    },
+    {
+     "hasta_m": 2,
+     "personas": 4848
+    },
+    {
+     "hasta_m": 3,
+     "personas": 6946
+    },
+    {
+     "hasta_m": 5,
+     "personas": 10916
+    }
+   ],
+   "renabap_barrios": 106,
+   "in_renabap_ha": 265.0,
+   "a_verificar_ha": 1320.8,
+   "renabap_detectado": 0.691,
+   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
    "id": "parana-santafe",
    "place": "Santa Fe · Paraná",
    "river": "Paraná",
@@ -514,7 +1032,31 @@
    "fuente_renabap": "oficial"
   },
   {
-   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "informal_ha": 241.3,
+   "pop_informal": 2606,
+   "pop_informal_hand": [
+    {
+     "hasta_m": 1,
+     "personas": 67
+    },
+    {
+     "hasta_m": 2,
+     "personas": 91
+    },
+    {
+     "hasta_m": 3,
+     "personas": 176
+    },
+    {
+     "hasta_m": 5,
+     "personas": 312
+    }
+   ],
+   "renabap_barrios": 11,
+   "in_renabap_ha": 11.2,
+   "a_verificar_ha": 221.6,
+   "renabap_detectado": 0.685,
+   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
    "id": "parana-diamante",
    "place": "Diamante",
    "river": "Paraná",
@@ -522,7 +1064,31 @@
    "fuente_renabap": "oficial"
   },
   {
-   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "informal_ha": 1443.7,
+   "pop_informal": 58883,
+   "pop_informal_hand": [
+    {
+     "hasta_m": 1,
+     "personas": 19115
+    },
+    {
+     "hasta_m": 2,
+     "personas": 33327
+    },
+    {
+     "hasta_m": 3,
+     "personas": 40665
+    },
+    {
+     "hasta_m": 5,
+     "personas": 48404
+    }
+   ],
+   "renabap_barrios": 173,
+   "in_renabap_ha": 404.5,
+   "a_verificar_ha": 1053.5,
+   "renabap_detectado": 0.466,
+   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
    "id": "parana-rosario",
    "place": "Rosario",
    "river": "Paraná",
@@ -530,7 +1096,31 @@
    "fuente_renabap": "oficial"
   },
   {
-   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "informal_ha": 1082.4,
+   "pop_informal": null,
+   "pop_informal_hand": [
+    {
+     "hasta_m": 1,
+     "personas": null
+    },
+    {
+     "hasta_m": 2,
+     "personas": null
+    },
+    {
+     "hasta_m": 3,
+     "personas": null
+    },
+    {
+     "hasta_m": 5,
+     "personas": null
+    }
+   ],
+   "renabap_barrios": 26,
+   "in_renabap_ha": 52.8,
+   "a_verificar_ha": 1015.5,
+   "renabap_detectado": 0.812,
+   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
    "id": "parana-sannicolas",
    "place": "San Nicolás",
    "river": "Paraná",
@@ -538,7 +1128,31 @@
    "fuente_renabap": "oficial"
   },
   {
-   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "informal_ha": 324.3,
+   "pop_informal": null,
+   "pop_informal_hand": [
+    {
+     "hasta_m": 1,
+     "personas": null
+    },
+    {
+     "hasta_m": 2,
+     "personas": null
+    },
+    {
+     "hasta_m": 3,
+     "personas": null
+    },
+    {
+     "hasta_m": 5,
+     "personas": null
+    }
+   ],
+   "renabap_barrios": 23,
+   "in_renabap_ha": 42.0,
+   "a_verificar_ha": 251.3,
+   "renabap_detectado": 0.715,
+   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
    "id": "parana-sanpedro",
    "place": "San Pedro",
    "river": "Paraná",
@@ -546,7 +1160,31 @@
    "fuente_renabap": "oficial"
   },
   {
-   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "informal_ha": 735.4,
+   "pop_informal": 11405,
+   "pop_informal_hand": [
+    {
+     "hasta_m": 1,
+     "personas": 2992
+    },
+    {
+     "hasta_m": 2,
+     "personas": 4506
+    },
+    {
+     "hasta_m": 3,
+     "personas": 5362
+    },
+    {
+     "hasta_m": 5,
+     "personas": 7081
+    }
+   ],
+   "renabap_barrios": 42,
+   "in_renabap_ha": 216.2,
+   "a_verificar_ha": 556.2,
+   "renabap_detectado": 0.787,
+   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
    "id": "parana-zarate",
    "place": "Zárate",
    "river": "Paraná",
@@ -554,7 +1192,27 @@
    "fuente_renabap": "oficial"
   },
   {
-   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "informal_ha": 27.9,
+   "pop_informal": 2,
+   "pop_informal_hand": [
+    {
+     "hasta_m": 1,
+     "personas": 0
+    },
+    {
+     "hasta_m": 2,
+     "personas": 0
+    },
+    {
+     "hasta_m": 3,
+     "personas": 1
+    },
+    {
+     "hasta_m": 5,
+     "personas": 1
+    }
+   ],
+   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
    "id": "paraguay-bahianegra",
    "place": "Bahía Negra",
    "river": "Paraguay",
@@ -562,7 +1220,27 @@
    "fuente_renabap": "oficial"
   },
   {
-   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "informal_ha": 519.3,
+   "pop_informal": 12084,
+   "pop_informal_hand": [
+    {
+     "hasta_m": 1,
+     "personas": 2556
+    },
+    {
+     "hasta_m": 2,
+     "personas": 5254
+    },
+    {
+     "hasta_m": 3,
+     "personas": 7108
+    },
+    {
+     "hasta_m": 5,
+     "personas": 9361
+    }
+   ],
+   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
    "id": "paraguay-concepcion",
    "place": "Concepción",
    "river": "Paraguay",
@@ -570,7 +1248,31 @@
    "fuente_renabap": "oficial"
   },
   {
-   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "informal_ha": 3814.7,
+   "pop_informal": null,
+   "pop_informal_hand": [
+    {
+     "hasta_m": 1,
+     "personas": null
+    },
+    {
+     "hasta_m": 2,
+     "personas": null
+    },
+    {
+     "hasta_m": 3,
+     "personas": null
+    },
+    {
+     "hasta_m": 5,
+     "personas": null
+    }
+   ],
+   "renabap_barrios": 14,
+   "in_renabap_ha": 100.9,
+   "a_verificar_ha": 3736.6,
+   "renabap_detectado": 0.837,
+   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
    "id": "paraguay-asuncion",
    "place": "Asunción",
    "river": "Paraguay",
@@ -578,7 +1280,31 @@
    "fuente_renabap": "oficial"
   },
   {
-   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "informal_ha": 2045.8,
+   "pop_informal": null,
+   "pop_informal_hand": [
+    {
+     "hasta_m": 1,
+     "personas": null
+    },
+    {
+     "hasta_m": 2,
+     "personas": null
+    },
+    {
+     "hasta_m": 3,
+     "personas": null
+    },
+    {
+     "hasta_m": 5,
+     "personas": null
+    }
+   ],
+   "renabap_barrios": 50,
+   "in_renabap_ha": 372.6,
+   "a_verificar_ha": 1774.0,
+   "renabap_detectado": 0.821,
+   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
    "id": "paraguay-formosa",
    "place": "Formosa · Alberdi",
    "river": "Paraguay",
@@ -586,7 +1312,27 @@
    "fuente_renabap": "oficial"
   },
   {
-   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "informal_ha": 366.5,
+   "pop_informal": null,
+   "pop_informal_hand": [
+    {
+     "hasta_m": 1,
+     "personas": null
+    },
+    {
+     "hasta_m": 2,
+     "personas": null
+    },
+    {
+     "hasta_m": 3,
+     "personas": null
+    },
+    {
+     "hasta_m": 5,
+     "personas": null
+    }
+   ],
+   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
    "id": "paraguay-pilar",
    "place": "Pilar",
    "river": "Paraguay",
@@ -594,7 +1340,31 @@
    "fuente_renabap": "oficial"
   },
   {
-   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "informal_ha": 30.1,
+   "pop_informal": null,
+   "pop_informal_hand": [
+    {
+     "hasta_m": 1,
+     "personas": null
+    },
+    {
+     "hasta_m": 2,
+     "personas": null
+    },
+    {
+     "hasta_m": 3,
+     "personas": null
+    },
+    {
+     "hasta_m": 5,
+     "personas": null
+    }
+   ],
+   "renabap_barrios": 2,
+   "in_renabap_ha": 1.0,
+   "a_verificar_ha": 28.9,
+   "renabap_detectado": 0.692,
+   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
    "id": "paraguay-humaita",
    "place": "Humaitá",
    "river": "Paraguay",
@@ -602,7 +1372,31 @@
    "fuente_renabap": "oficial"
   },
   {
-   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "informal_ha": 244.8,
+   "pop_informal": 2807,
+   "pop_informal_hand": [
+    {
+     "hasta_m": 1,
+     "personas": 244
+    },
+    {
+     "hasta_m": 2,
+     "personas": 854
+    },
+    {
+     "hasta_m": 3,
+     "personas": 1333
+    },
+    {
+     "hasta_m": 5,
+     "personas": 1731
+    }
+   ],
+   "renabap_barrios": 33,
+   "in_renabap_ha": 62.8,
+   "a_verificar_ha": 177.6,
+   "renabap_detectado": 0.947,
+   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
    "id": "bermejo-embarcacion",
    "place": "Embarcación",
    "river": "Bermejo",
@@ -610,7 +1404,31 @@
    "fuente_renabap": "oficial"
   },
   {
-   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "informal_ha": 360.2,
+   "pop_informal": null,
+   "pop_informal_hand": [
+    {
+     "hasta_m": 1,
+     "personas": null
+    },
+    {
+     "hasta_m": 2,
+     "personas": null
+    },
+    {
+     "hasta_m": 3,
+     "personas": null
+    },
+    {
+     "hasta_m": 5,
+     "personas": null
+    }
+   ],
+   "renabap_barrios": 2,
+   "in_renabap_ha": 14.9,
+   "a_verificar_ha": 345.0,
+   "renabap_detectado": 0.889,
+   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
    "id": "bermejo-elcolorado",
    "place": "El Colorado",
    "river": "Bermejo",
@@ -618,7 +1436,31 @@
    "fuente_renabap": "oficial"
   },
   {
-   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "informal_ha": 94.4,
+   "pop_informal": 708,
+   "pop_informal_hand": [
+    {
+     "hasta_m": 1,
+     "personas": 50
+    },
+    {
+     "hasta_m": 2,
+     "personas": 73
+    },
+    {
+     "hasta_m": 3,
+     "personas": 73
+    },
+    {
+     "hasta_m": 5,
+     "personas": 106
+    }
+   ],
+   "renabap_barrios": 2,
+   "in_renabap_ha": 3.5,
+   "a_verificar_ha": 90.4,
+   "renabap_detectado": 0.556,
+   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
    "id": "uruguay-soberbio",
    "place": "El Soberbio",
    "river": "Uruguay",
@@ -626,7 +1468,31 @@
    "fuente_renabap": "oficial"
   },
   {
-   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "informal_ha": 134.6,
+   "pop_informal": 571,
+   "pop_informal_hand": [
+    {
+     "hasta_m": 1,
+     "personas": 5
+    },
+    {
+     "hasta_m": 2,
+     "personas": 5
+    },
+    {
+     "hasta_m": 3,
+     "personas": 5
+    },
+    {
+     "hasta_m": 5,
+     "personas": 10
+    }
+   ],
+   "renabap_barrios": 1,
+   "in_renabap_ha": 0.1,
+   "a_verificar_ha": 134.5,
+   "renabap_detectado": 0.5,
+   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
    "id": "uruguay-albaposse",
    "place": "Alba Posse",
    "river": "Uruguay",
@@ -634,7 +1500,31 @@
    "fuente_renabap": "oficial"
   },
   {
-   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "informal_ha": 487.9,
+   "pop_informal": null,
+   "pop_informal_hand": [
+    {
+     "hasta_m": 1,
+     "personas": null
+    },
+    {
+     "hasta_m": 2,
+     "personas": null
+    },
+    {
+     "hasta_m": 3,
+     "personas": null
+    },
+    {
+     "hasta_m": 5,
+     "personas": null
+    }
+   ],
+   "renabap_barrios": 4,
+   "in_renabap_ha": 11.8,
+   "a_verificar_ha": 479.3,
+   "renabap_detectado": 0.835,
+   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
    "id": "uruguay-santotome",
    "place": "Santo Tomé",
    "river": "Uruguay",
@@ -642,7 +1532,31 @@
    "fuente_renabap": "oficial"
   },
   {
-   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "informal_ha": 887.9,
+   "pop_informal": null,
+   "pop_informal_hand": [
+    {
+     "hasta_m": 1,
+     "personas": null
+    },
+    {
+     "hasta_m": 2,
+     "personas": null
+    },
+    {
+     "hasta_m": 3,
+     "personas": null
+    },
+    {
+     "hasta_m": 5,
+     "personas": null
+    }
+   ],
+   "renabap_barrios": 15,
+   "in_renabap_ha": 35.8,
+   "a_verificar_ha": 832.4,
+   "renabap_detectado": 0.867,
+   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
    "id": "uruguay-libres",
    "place": "Paso de los Libres",
    "river": "Uruguay",
@@ -650,7 +1564,31 @@
    "fuente_renabap": "oficial"
   },
   {
-   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "informal_ha": 387.1,
+   "pop_informal": 8690,
+   "pop_informal_hand": [
+    {
+     "hasta_m": 1,
+     "personas": 277
+    },
+    {
+     "hasta_m": 2,
+     "personas": 561
+    },
+    {
+     "hasta_m": 3,
+     "personas": 1119
+    },
+    {
+     "hasta_m": 5,
+     "personas": 2473
+    }
+   ],
+   "renabap_barrios": 9,
+   "in_renabap_ha": 18.4,
+   "a_verificar_ha": 363.7,
+   "renabap_detectado": 0.86,
+   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
    "id": "uruguay-montecaseros",
    "place": "Monte Caseros",
    "river": "Uruguay",
@@ -658,7 +1596,31 @@
    "fuente_renabap": "oficial"
   },
   {
-   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "informal_ha": 1681.4,
+   "pop_informal": 54625,
+   "pop_informal_hand": [
+    {
+     "hasta_m": 1,
+     "personas": 2714
+    },
+    {
+     "hasta_m": 2,
+     "personas": 4131
+    },
+    {
+     "hasta_m": 3,
+     "personas": 5880
+    },
+    {
+     "hasta_m": 5,
+     "personas": 10332
+    }
+   ],
+   "renabap_barrios": 59,
+   "in_renabap_ha": 175.2,
+   "a_verificar_ha": 1427.8,
+   "renabap_detectado": 0.851,
+   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
    "id": "uruguay-concordia",
    "place": "Concordia · Salto",
    "river": "Uruguay",
@@ -666,7 +1628,31 @@
    "fuente_renabap": "oficial"
   },
   {
-   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "informal_ha": 1081.6,
+   "pop_informal": 30347,
+   "pop_informal_hand": [
+    {
+     "hasta_m": 1,
+     "personas": 1782
+    },
+    {
+     "hasta_m": 2,
+     "personas": 2687
+    },
+    {
+     "hasta_m": 3,
+     "personas": 4195
+    },
+    {
+     "hasta_m": 5,
+     "personas": 7379
+    }
+   ],
+   "renabap_barrios": 4,
+   "in_renabap_ha": 11.8,
+   "a_verificar_ha": 1060.9,
+   "renabap_detectado": 0.865,
+   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
    "id": "uruguay-colon",
    "place": "Colón",
    "river": "Uruguay",
@@ -674,7 +1660,31 @@
    "fuente_renabap": "oficial"
   },
   {
-   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "informal_ha": 440.5,
+   "pop_informal": 7864,
+   "pop_informal_hand": [
+    {
+     "hasta_m": 1,
+     "personas": 597
+    },
+    {
+     "hasta_m": 2,
+     "personas": 894
+    },
+    {
+     "hasta_m": 3,
+     "personas": 1447
+    },
+    {
+     "hasta_m": 5,
+     "personas": 2433
+    }
+   ],
+   "renabap_barrios": 22,
+   "in_renabap_ha": 31.6,
+   "a_verificar_ha": 377.4,
+   "renabap_detectado": 0.822,
+   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
    "id": "uruguay-cdeluruguay",
    "place": "Concepción del Uruguay",
    "river": "Uruguay",
@@ -682,7 +1692,27 @@
    "fuente_renabap": "oficial"
   },
   {
-   "error": "Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands",
+   "informal_ha": 220.2,
+   "pop_informal": null,
+   "pop_informal_hand": [
+    {
+     "hasta_m": 1,
+     "personas": null
+    },
+    {
+     "hasta_m": 2,
+     "personas": null
+    },
+    {
+     "hasta_m": 3,
+     "personas": null
+    },
+    {
+     "hasta_m": 5,
+     "personas": null
+    }
+   ],
+   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
    "id": "uruguay-fraybentos",
    "place": "Fray Bentos",
    "river": "Uruguay",
