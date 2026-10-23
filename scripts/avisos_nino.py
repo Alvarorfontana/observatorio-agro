@@ -91,101 +91,12 @@ def leer_serie():
 
 
 # ───────────────────────── Gráficos (mismo diseño que la nota del diario y la página /nino-diario) ─────────────────────────
-MES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
-INICIO = [0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335]
-EVENTOS = [('1982-83', ['1982', '1983']), ('1997-98', ['1997', '1998']), ('2015-16', ['2015', '2016']), ('2023-24', ['2023', '2024'])]
-FUENTE_TXT = 'Fuente: DOTS, con datos NOAA OISST 2.1 vía Climate Reanalyzer (Univ. de Maine).'
 
 
 def graficos(dato, carpeta):
-    """Genera los tres gráficos en PNG y devuelve sus rutas."""
-    import matplotlib
-    matplotlib.use('Agg')
-    import matplotlib.pyplot as plt
-    plt.rcParams.update({'font.size': 13, 'axes.spines.top': False, 'axes.spines.right': False, 'axes.edgecolor': '#9a9a92',
-                         'xtick.color': '#5a5a55', 'ytick.color': '#5a5a55', 'axes.labelcolor': '#3a3a36'})
-    RED, INK = '#c8102e', '#141414'
-    d, anio, serie, ult = dato['_d'], dato['_anio'], dato['_serie'], dato['_ult']
-    normal = d['1991-2020']
-    an = lambda arr: [(v - c) if v is not None and c is not None else None for v, c in zip(arr, normal)]
-    os.makedirs(carpeta, exist_ok=True)
-    rutas = []
-    fecha = datetime.fromisoformat(dato['fecha']).strftime('%d/%m/%Y')
-
-    # 1) Evolución diaria
-    fig, ax = plt.subplots(figsize=(12, 6.3), dpi=130)
-    for y, v in d.items():
-        if y.isdigit() and y not in ('1982', '1997', '2015', anio):
-            ax.plot(an(v), color='#cfcfc8', lw=.8, zorder=1)
-    for y, col, lab in [('1982', '#8a8a84', '1982'), ('1997', '#5b6f8c', '1997'), ('2015', '#e08a3c', '2015')]:
-        a = an(d[y]); j = max(i for i, v in enumerate(a) if v is not None)
-        ax.plot(a, color=col, lw=2, zorder=3); ax.text(j + 3, a[j], lab, color=col, fontsize=12, fontweight='bold', va='center')
-    a26 = an(serie)
-    ax.plot(a26, color=RED, lw=3.4, zorder=5); ax.scatter([ult], [a26[ult]], color=RED, s=60, zorder=6)
-    ax.annotate(f'{anio}: {num(a26[ult])} °C\n{fecha}', (ult, a26[ult]), xytext=(-14, 18), textcoords='offset points',
-                ha='right', color=RED, fontsize=14, fontweight='bold', va='bottom')
-    ax.axhline(0, color='#777', lw=1)
-    ax.set_xticks(INICIO); ax.set_xticklabels(MES); ax.set_xlim(0, 410); ax.spines['bottom'].set_bounds(0, 365)
-    ax.set_ylabel('Diferencia con el promedio 1991-2020 (°C)'); ax.grid(axis='y', color='#ebebe6', lw=.8)
-    ax.set_title('El Niño día por día: temperatura del mar en la región Niño 3.4', loc='left', fontsize=17, fontweight='bold', color=INK, pad=26)
-    ax.text(0, 1.02, 'Cada línea gris es un año desde 1981.', transform=ax.transAxes, fontsize=12, color='#555')
-    fig.text(.01, .01, FUENTE_TXT, fontsize=9.5, color='#777'); fig.tight_layout(rect=(0, .03, 1, 1))
-    rutas.append(os.path.join(carpeta, 'nino-evolucion.png')); fig.savefig(rutas[-1]); plt.close(fig)
-
-    # 2) Pico de cada gran El Niño
-    filas = [(lab, max(v for y in ys for v in an(d[y]) if v is not None)) for lab, ys in EVENTOS if all(y in d for y in ys)]
-    filas.append((anio, max(v for v in a26 if v is not None)))
-    fig, ax = plt.subplots(figsize=(10, 5.6), dpi=130)
-    bars = ax.bar([f[0] for f in filas], [f[1] for f in filas], color=['#bdbdb6'] * (len(filas) - 1) + [RED], width=.62)
-    for b, f in zip(bars, filas):
-        ax.text(b.get_x() + b.get_width() / 2, f[1] + .05, num(f[1]) + ' °C', ha='center', fontsize=14, fontweight='bold', color=INK)
-    ax.set_ylim(0, max(f[1] for f in filas) * 1.15); ax.set_yticks([]); ax.spines['left'].set_visible(False)
-    ax.set_title('El pico de cada gran El Niño', loc='left', fontsize=17, fontweight='bold', color=INK, pad=26)
-    ax.text(0, 1.02, 'Mayor diferencia diaria con lo normal en la región Niño 3.4.', transform=ax.transAxes, fontsize=12, color='#555')
-    fig.text(.01, .01, FUENTE_TXT, fontsize=9.5, color='#777'); fig.tight_layout(rect=(0, .03, 1, 1))
-    rutas.append(os.path.join(carpeta, 'nino-picos.png')); fig.savefig(rutas[-1]); plt.close(fig)
-
-    # 3) Mes a mes del año actual
-    meses, vals = [], []
-    for m in range(12):
-        seg = [v for v in a26[INICIO[m]:(INICIO[m + 1] if m < 11 else 366)] if v is not None]
-        if not seg:
-            break
-        meses.append(MES[m]); vals.append(sum(seg) / len(seg))
-    fig, ax = plt.subplots(figsize=(10, 5.4), dpi=130)
-    cols = ['#5b8bd0' if v < 0 else ('#f2b134' if v < 1 else ('#e0662e' if v < 2 else RED)) for v in vals]
-    bars = ax.bar(meses, vals, color=cols, width=.66)
-    for b, v in zip(bars, vals):
-        ax.text(b.get_x() + b.get_width() / 2, v + (.06 if v >= 0 else -.2), num(v), ha='center', fontsize=12.5, fontweight='bold', color=INK)
-    ax.axhline(0, color='#777', lw=1); ax.set_ylim(min(-1, min(vals) - .4), max(vals) * 1.18 + .2)
-    ax.set_yticks([]); ax.spines['left'].set_visible(False); ax.spines['bottom'].set_visible(False)
-    ax.set_title(f'Cómo se calentó el Pacífico en {anio}', loc='left', fontsize=17, fontweight='bold', color=INK, pad=26)
-    ax.text(0, 1.02, 'Diferencia promedio de cada mes con lo normal, en °C. Región Niño 3.4.', transform=ax.transAxes, fontsize=12, color='#555')
-    fig.text(.01, .01, FUENTE_TXT, fontsize=9.5, color='#777'); fig.tight_layout(rect=(0, .03, 1, 1))
-    rutas.append(os.path.join(carpeta, 'nino-mes-a-mes.png')); fig.savefig(rutas[-1]); plt.close(fig)
-    return rutas
-
-
-def evaluar(dato, prev):
-    """Devuelve la lista de avisos (texto) para el dato del día."""
-    avisos = []
-    fecha = datetime.fromisoformat(dato['fecha']).strftime('%d/%m/%Y')
-    cat = categoria(dato['anom'])
-    temp = f"{dato['temp']:.1f}".replace('.', ',')
-    base = (f"Región Niño 3.4, {fecha}: el mar está a {temp} °C, {num(dato['anom'])} °C respecto de lo "
-            f"normal 1991-2020.")
-    if prev.get('categoria') and cat != prev['categoria']:
-        sube = nivel(cat) > nivel(prev['categoria'])
-        avisos.append(f"Cambio de categoría: de {prev['categoria']} a {cat}. "
-                      + ('El Pacífico se sigue calentando. ' if sube else 'El Pacífico se está enfriando. ') + base)
-    if dato['anom'] > dato['max_previo'] and dato['anom'] > prev.get('max_avisado', -99):
-        avisos.append(f"Nuevo récord de la serie diaria desde 1981: {num(dato['anom'])} °C. El máximo anterior era "
-                      f"{num(dato['max_previo'])} °C ({dato['max_previo_anio']}). " + base)
-    if dato['hace7'] is not None and dato['anom'] - dato['hace7'] >= SUBA_7D:
-        avisos.append(f"Suba rápida: {num(dato['anom'] - dato['hace7'])} °C en 7 días. " + base)
-    if avisos and dato['preliminar']:
-        avisos[-1] += ' Dato preliminar: puede corregirse unas décimas.'
-    return avisos, cat
+    """Genera los tres gráficos con el diseño de DOTS (ver scripts/nino_graficos.py) y devuelve sus rutas."""
+    import nino_graficos
+    return nino_graficos.generar(dato['_d'], carpeta, serie=dato['_serie'])
 
 
 def telegram(texto, imagenes=()):
