@@ -37,6 +37,8 @@ jobs:
       - name: Traer datos de la rama datos
         run: bash scripts/datos_rama.sh traer
       - name: Entrenar y mapear
+        # Corta antes que el trabajo completo, así el paso siguiente guarda lo que se haya calculado.
+        timeout-minutes: 300
         env:
           GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT }}
           GOOGLE_APPLICATION_CREDENTIALS_JSON: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}

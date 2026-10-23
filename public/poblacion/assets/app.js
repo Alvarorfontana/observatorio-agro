@@ -231,9 +231,23 @@ $('health-country').addEventListener('change',drawHealth);$('health-sort').addEv
 
 // Barrios populares por radar (modelo entrenado con RENABAP; se recalcula en GitHub Actions)
 let barriosData=null;
+// Informes PDF de barrios populares (por localidad y regional)
+function barriosPdfButton(label,url,fname){const wrap=make('div','');wrap.className='exports';wrap.style.cssText='margin-top:14px';
+  const b=make('button',label);b.type='button';b.className='primary';const msg=make('p','');msg.className='hint';
+  b.addEventListener('click',async()=>{const t=b.textContent;b.disabled=true;b.textContent='Generando informe PDF… (puede tardar hasta un minuto)';msg.textContent='';
+    try{const r=await fetch(url,{signal:AbortSignal.timeout(90000)});
+      if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.error||'Error HTTP '+r.status);}
+      const pdf=await r.blob();if(!pdf.size||!pdf.type.includes('pdf'))throw new Error('El servidor no devolvió un PDF válido');
+      const u=URL.createObjectURL(pdf),a=make('a','');a.href=u;a.download=fname;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),5000);
+      msg.textContent='Informe descargado.';}
+    catch(e){msg.textContent='No se pudo generar el informe: '+e.message;}
+    finally{b.disabled=false;b.textContent=t;}});
+  wrap.append(b,msg);return wrap;}
+function barriosLocalPdf(id,place){return barriosPdfButton('Descargar informe de barrios populares · '+place,'/api/poblacion/barrios/informe?id='+encodeURIComponent(id),'DOTS-barrios-populares-'+id+'.pdf');}
 const barriosLoad=jsonFetch('/api/poblacion/barrios').then(j=>{barriosData=j;drawBarriosModel(j);return j;}).catch(e=>{$('barrios-model').replaceChildren(make('p','No se pudo consultar el modelo: '+e.message));return null;});
 function pct(v){return v==null?'Sin dato':number(100*v,0)+' %';}
 function drawBarriosModel(j){const box=$('barrios-model');box.replaceChildren();
+  box.append(barriosPdfButton('Descargar informe regional · todas las localidades (PDF)','/api/poblacion/barrios/informe-regional','DOTS-barrios-populares-Cuenca-del-Plata.pdf'));
   if(!j||!j.data){const p=make('p',(j&&j.error)||'Todavía no hay resultados del modelo.');p.className='hint';box.append(p);drawRenabapTable(j&&j.renabap,box);return;}
   const m=j.data.model||{},avg=m.promedio||{},o=avg.optico||{},r=avg.optico_radar||{};
   const grid=make('div','');grid.className='flood-grid';
@@ -273,7 +287,8 @@ function renderRenabap(id,box,j){const r=j&&j.renabap&&(j.renabap.places||[]).fi
   grid.append(card('Barrios registrados',number(r.barrios),j.renabap.radius_km+' km a la redonda'),card('Familias',number(r.familias),'según estima el registro','warn'),card('Superficie',number(r.superficie_ha)+' ha','de los barrios registrados'));
   sec.append(grid);
   if((r.mayores||[]).length){const q=make('p','Los más grandes: '+r.mayores.map(m=>`${m.nombre} (${number(m.familias)} familias)`).join(', ')+'.');q.className='hint';sec.append(q);}
-  const q=make('p','Dato oficial del RENABAP (2023). El mapa con radar y la cantidad de personas cerca del río se suman cuando se ejecute el modelo.');q.className='hint';sec.append(q);
+  const q=make('p','Dato oficial del RENABAP (2023). El mapa con radar se suma cuando se ejecute el modelo.');q.className='hint';sec.append(q);
+  sec.append(barriosLocalPdf(id,r.place));
   box.append(sec);}
 async function renderBarrios(id,box){const j=barriosData||await barriosLoad;if(!j)return;
   const p=j.data&&(j.data.places||[]).find(x=>x.id===id);if(!p||p.informal_ha==null){renderRenabap(id,box,j);return;}
@@ -296,4 +311,5 @@ async function renderBarrios(id,box){const j=barriosData||await barriosLoad;if(!
     for(const b of p.pop_informal_hand){const tr=make('tr','');tr.append(make('td',b.hasta_m+' m'),make('td',number(b.personas)));t.append(tr);}sec.append(t);}
   if(p.imagen){const fig=make('figure','');fig.style.cssText='margin:14px 0';const img=make('img','');img.src=j.image_base+p.imagen;img.alt='Mapa de barrios populares detectados por radar en '+p.place;img.loading='lazy';img.style.cssText='width:100%;max-width:640px;border-radius:12px;display:block';
     fig.append(img,make('figcaption','Rojo: firma de barrio popular según el modelo. Amarillo: barrios del RENABAP. Fondo: Sentinel-2 en color natural, radio de 15 km.'));sec.append(fig);}
+  sec.append(barriosLocalPdf(id,p.place));
   box.append(sec);}

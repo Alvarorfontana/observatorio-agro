@@ -438,12 +438,16 @@ def map_place(ee, clf, st, polys, feats):
     popcoll = ee.ImageCollection("WorldPop/GP/100m/pop").filter(ee.Filter.eq("year", 2020))
     proj = popcoll.first().projection()   # el mosaico pierde la grilla de 100 m: se la devuelvo
     pop = popcoll.mosaic().select("population").setDefaultProjection(proj)
-    popd = pop.divide(ee.Image.pixelArea().reproject(proj))                       # personas por m²
     hand = ee.Image("MERIT/Hydro/v1_0_1").select("hnd")
-    bands = [area.updateMask(informal).rename("informal_m2"),
-             popd.multiply(area).updateMask(informal).rename("pop_informal")]
+    bands = [area.updateMask(informal).rename("informal_m2")]
+    # Personas: se cuentan en la grilla nativa de WorldPop (100 m), como en el módulo de zona baja, multiplicando la
+    # gente de cada celda por la fracción de esa celda que el modelo marca como barrio popular (calculada a 20 m).
+    # La versión anterior (densidad × área a 20 m) devolvía 0 personas en todas las localidades.
+    frac = (informal.unmask(0).toFloat().reproject(ee.Projection("EPSG:3857").atScale(20))
+            .reduceResolution(ee.Reducer.mean(), maxPixels=1024).reproject(proj))
+    pop_bands = [pop.multiply(frac).rename("pop_informal")]
     for t in HAND_BANDS:
-        bands.append(popd.multiply(area).updateMask(informal).updateMask(hand.lte(t)).rename(f"pop_informal_le{t}"))
+        pop_bands.append(pop.multiply(frac).multiply(hand.lte(t)).rename(f"pop_informal_le{t}"))
     if polys:
         fc = ee.FeatureCollection([ee.Feature(ee.Geometry(p)) for p in polys])
         ren = ee.Image(0).paint(fc, 1).eq(1)
@@ -462,6 +466,11 @@ def map_place(ee, clf, st, polys, feats):
             err = str(exc)[:200]
     if stats is None:
         return {"error": err}
+    try:
+        stats.update(ee.Image.cat(pop_bands).reduceRegion(ee.Reducer.sum(), region, crs=proj, maxPixels=1e10,
+                                                          tileScale=8).getInfo() or {})
+    except Exception as exc:  # sin personas, pero con superficie y mapa
+        stats["pop_error"] = str(exc)[:200]
     ha = lambda k: None if stats.get(k) is None else round(stats[k] / 10000, 1)
     pp = lambda k: None if stats.get(k) is None else round(stats[k])
     out = {"informal_ha": ha("informal_m2"), "pop_informal": pp("pop_informal"),

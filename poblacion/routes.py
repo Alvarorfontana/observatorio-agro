@@ -196,6 +196,45 @@ def informal_settlements():
     return r
 
 
+def _pdf_response(content, filename):
+    from flask import Response
+    return Response(content, mimetype='application/pdf',
+                    headers={'Content-Disposition': f'attachment; filename="{filename}"', 'Cache-Control': 'no-store'})
+
+
+def _slug(text):
+    import unicodedata
+    t = unicodedata.normalize('NFKD', str(text)).encode('ascii', 'ignore').decode()
+    return ''.join(ch if ch.isalnum() else '-' for ch in t).strip('-')
+
+
+@bp.get('/api/poblacion/barrios/informe')
+def informal_settlements_report():
+    """Informe PDF de barrios populares de una localidad (RENABAP, río, población por altura y mapa de radar)."""
+    from . import barrios_report
+    sid = request.args.get('id', '')
+    try:
+        out, place = barrios_report.local_pdf(sid)
+        return _pdf_response(out, f"DOTS-barrios-populares-{_slug(place)}-{datetime.now(timezone.utc):%Y-%m-%d}.pdf")
+    except ValueError as exc:
+        return jsonify(error=str(exc)), 400
+    except Exception:
+        current_app.logger.exception('Error al generar el informe de barrios populares')
+        return jsonify(error='No se pudo generar el informe de barrios populares.'), 500
+
+
+@bp.get('/api/poblacion/barrios/informe-regional')
+def informal_settlements_regional_report():
+    """Informe PDF con todas las localidades ribereñas: barrios, familias y estado del río."""
+    from . import barrios_report
+    try:
+        out = barrios_report.regional_pdf()
+        return _pdf_response(out, f"DOTS-barrios-populares-Cuenca-del-Plata-{datetime.now(timezone.utc):%Y-%m-%d}.pdf")
+    except Exception:
+        current_app.logger.exception('Error al generar el informe regional de barrios populares')
+        return jsonify(error='No se pudo generar el informe regional.'), 500
+
+
 @bp.get('/api/poblacion/barrios/barrios_radar/<name>')
 def informal_settlements_image(name):
     """Imagen de una localidad, leída de la rama de datos (sirve aunque el repositorio sea privado)."""
