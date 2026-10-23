@@ -1,0 +1,839 @@
+{
+ "updated": "2026-10-23",
+ "radius_km": 15,
+ "source": "Registro Nacional de Barrios Populares (RENABAP) · versión 2023-12-06 · argentina.gob.ar",
+ "nota": "Barrios cuyo centro está a 15 km o menos de la localidad. Las familias son las que estima el registro; los barrios posteriores a su último relevamiento no figuran. Fuera de Argentina no hay RENABAP.",
+ "places": [
+  {
+   "id": "iguazu-andresito",
+   "place": "Andresito",
+   "river": "Iguazú",
+   "barrios": 1,
+   "familias": 1056,
+   "superficie_ha": 23.6,
+   "mayores": [
+    {
+     "nombre": "Veinte de Junio",
+     "familias": 1056
+    }
+   ]
+  },
+  {
+   "id": "iguazu-cataratas",
+   "place": "Puerto Iguazú · Cataratas",
+   "river": "Iguazú",
+   "barrios": 0,
+   "familias": null,
+   "superficie_ha": 0,
+   "mayores": []
+  },
+  {
+   "id": "parana-eldorado",
+   "place": "Eldorado",
+   "river": "Paraná",
+   "barrios": 22,
+   "familias": 3503,
+   "superficie_ha": 545.3,
+   "mayores": [
+    {
+     "nombre": "Elena",
+     "familias": 1023
+    },
+    {
+     "nombre": "Roulet",
+     "familias": 440
+    },
+    {
+     "nombre": "Sarmiento",
+     "familias": 330
+    },
+    {
+     "nombre": "Parque Schwelm",
+     "familias": 314
+    },
+    {
+     "nombre": "Badaraco",
+     "familias": 165
+    }
+   ]
+  },
+  {
+   "id": "parana-posadas",
+   "place": "Posadas",
+   "river": "Paraná",
+   "barrios": 102,
+   "familias": 22585,
+   "superficie_ha": 925.7,
+   "mayores": [
+    {
+     "nombre": "Aeroclub",
+     "familias": 1320
+    },
+    {
+     "nombre": "Familias Unidas",
+     "familias": 1100
+    },
+    {
+     "nombre": "Chacra 181",
+     "familias": 1100
+    },
+    {
+     "nombre": "Horacio Quiroga",
+     "familias": 1067
+    },
+    {
+     "nombre": "Belén",
+     "familias": 770
+    }
+   ]
+  },
+  {
+   "id": "parana-ituzaingo",
+   "place": "Ituzaingó",
+   "river": "Paraná",
+   "barrios": 6,
+   "familias": 259,
+   "superficie_ha": 23.4,
+   "mayores": [
+    {
+     "nombre": "Jardín",
+     "familias": 110
+    },
+    {
+     "nombre": "Iberá",
+     "familias": 46
+    },
+    {
+     "nombre": "Florida",
+     "familias": 44
+    },
+    {
+     "nombre": "Aguará Cuá",
+     "familias": 25
+    },
+    {
+     "nombre": "San Francisco",
+     "familias": 17
+    }
+   ]
+  },
+  {
+   "id": "parana-corrientes",
+   "place": "Corrientes",
+   "river": "Paraná",
+   "barrios": 186,
+   "familias": 33097,
+   "superficie_ha": 1939.9,
+   "mayores": [
+    {
+     "nombre": "La Rubita",
+     "familias": 1760
+    },
+    {
+     "nombre": "Villa Forestación",
+     "familias": 1100
+    },
+    {
+     "nombre": "Ex Campo Zampa",
+     "familias": 990
+    },
+    {
+     "nombre": "Lomas del Mirador",
+     "familias": 990
+    },
+    {
+     "nombre": "Pirayui I",
+     "familias": 979
+    }
+   ]
+  },
+  {
+   "id": "parana-bellavista",
+   "place": "Bella Vista",
+   "river": "Paraná",
+   "barrios": 7,
+   "familias": 490,
+   "superficie_ha": 17.7,
+   "mayores": [
+    {
+     "nombre": "Costa Esperanza",
+     "familias": 129
+    },
+    {
+     "nombre": "El Transportista",
+     "familias": 110
+    },
+    {
+     "nombre": "Barrio Norte",
+     "familias": 83
+    },
+    {
+     "nombre": "Los Piletones",
+     "familias": 55
+    },
+    {
+     "nombre": "Epam 50 Viviendas",
+     "familias": 44
+    }
+   ]
+  },
+  {
+   "id": "parana-goya",
+   "place": "Goya",
+   "river": "Paraná",
+   "barrios": 19,
+   "familias": 1712,
+   "superficie_ha": 111.9,
+   "mayores": [
+    {
+     "nombre": "Francisco I",
+     "familias": 330
+    },
+    {
+     "nombre": "Esperanza",
+     "familias": 198
+    },
+    {
+     "nombre": "San Ramón",
+     "familias": 187
+    },
+    {
+     "nombre": "Mataderos",
+     "familias": 138
+    },
+    {
+     "nombre": "Devoto Nuevo",
+     "familias": 132
+    }
+   ]
+  },
+  {
+   "id": "parana-reconquista",
+   "place": "Reconquista",
+   "river": "Paraná",
+   "barrios": 16,
+   "familias": 2274,
+   "superficie_ha": 118.8,
+   "mayores": [
+    {
+     "nombre": "Loteo Belen",
+     "familias": 600
+    },
+    {
+     "nombre": "Virgen de Guadalupe Sur",
+     "familias": 286
+    },
+    {
+     "nombre": "Guadalupe Oeste",
+     "familias": 264
+    },
+    {
+     "nombre": "Barrio Nuevo",
+     "familias": 220
+    },
+    {
+     "nombre": "Callejón La Cortada",
+     "familias": 165
+    }
+   ]
+  },
+  {
+   "id": "parana-esquina",
+   "place": "Esquina",
+   "river": "Paraná",
+   "barrios": 4,
+   "familias": 248,
+   "superficie_ha": 18.6,
+   "mayores": [
+    {
+     "nombre": "La Tablada",
+     "familias": 116
+    },
+    {
+     "nombre": "Itatí",
+     "familias": 77
+    },
+    {
+     "nombre": "San Fernando",
+     "familias": 33
+    },
+    {
+     "nombre": "Cortadita 35 Viviendas",
+     "familias": 22
+    }
+   ]
+  },
+  {
+   "id": "parana-lapaz",
+   "place": "La Paz",
+   "river": "Paraná",
+   "barrios": 18,
+   "familias": 1439,
+   "superficie_ha": 84.9,
+   "mayores": [
+    {
+     "nombre": "La Ribera",
+     "familias": 330
+    },
+    {
+     "nombre": "La Milagrosa Norte",
+     "familias": 330
+    },
+    {
+     "nombre": "La Feria",
+     "familias": 132
+    },
+    {
+     "nombre": "La Milagrosa Sur",
+     "familias": 121
+    },
+    {
+     "nombre": "La Laguna",
+     "familias": 88
+    }
+   ]
+  },
+  {
+   "id": "parana-santafe",
+   "place": "Santa Fe · Paraná",
+   "river": "Paraná",
+   "barrios": 91,
+   "familias": 15980,
+   "superficie_ha": 809.6,
+   "mayores": [
+    {
+     "nombre": "Alto Verde",
+     "familias": 3300
+    },
+    {
+     "nombre": "Bajada Grande",
+     "familias": 1375
+    },
+    {
+     "nombre": "General Mosconi Viejo",
+     "familias": 550
+    },
+    {
+     "nombre": "Hijos de María",
+     "familias": 550
+    },
+    {
+     "nombre": "Antártida",
+     "familias": 495
+    }
+   ]
+  },
+  {
+   "id": "parana-diamante",
+   "place": "Diamante",
+   "river": "Paraná",
+   "barrios": 11,
+   "familias": 946,
+   "superficie_ha": 57.1,
+   "mayores": [
+    {
+     "nombre": "Puerto Viejo",
+     "familias": 308
+    },
+    {
+     "nombre": "Puerto Nuevo",
+     "familias": 187
+    },
+    {
+     "nombre": "San Francisco Javier",
+     "familias": 105
+    },
+    {
+     "nombre": "Urquiza",
+     "familias": 88
+    },
+    {
+     "nombre": "Martín Fierro",
+     "familias": 77
+    }
+   ]
+  },
+  {
+   "id": "parana-rosario",
+   "place": "Rosario",
+   "river": "Paraná",
+   "barrios": 163,
+   "familias": 51365,
+   "superficie_ha": 1237.0,
+   "mayores": [
+    {
+     "nombre": "Cabín 9",
+     "familias": 3960
+    },
+    {
+     "nombre": "Ludueña",
+     "familias": 3850
+    },
+    {
+     "nombre": "Nuevo Alberdi Oeste",
+     "familias": 1980
+    },
+    {
+     "nombre": "Bella Vista",
+     "familias": 1650
+    },
+    {
+     "nombre": "Los Pumitas",
+     "familias": 1650
+    }
+   ]
+  },
+  {
+   "id": "parana-sannicolas",
+   "place": "San Nicolás",
+   "river": "Paraná",
+   "barrios": 18,
+   "familias": 2232,
+   "superficie_ha": 134.4,
+   "mayores": [
+    {
+     "nombre": "Don Miguel",
+     "familias": 275
+    },
+    {
+     "nombre": "Cavalli",
+     "familias": 220
+    },
+    {
+     "nombre": "Unión Sur",
+     "familias": 220
+    },
+    {
+     "nombre": "Unión",
+     "familias": 198
+    },
+    {
+     "nombre": "Provincianos",
+     "familias": 165
+    }
+   ]
+  },
+  {
+   "id": "parana-sanpedro",
+   "place": "San Pedro",
+   "river": "Paraná",
+   "barrios": 20,
+   "familias": 2798,
+   "superficie_ha": 115.3,
+   "mayores": [
+    {
+     "nombre": "La Barranca",
+     "familias": 616
+    },
+    {
+     "nombre": "La Tosquera",
+     "familias": 462
+    },
+    {
+     "nombre": "Banfield",
+     "familias": 341
+    },
+    {
+     "nombre": "Cementerio",
+     "familias": 275
+    },
+    {
+     "nombre": "Las Cañitas",
+     "familias": 220
+    }
+   ]
+  },
+  {
+   "id": "parana-zarate",
+   "place": "Zárate",
+   "river": "Paraná",
+   "barrios": 41,
+   "familias": 8006,
+   "superficie_ha": 461.1,
+   "mayores": [
+    {
+     "nombre": "Veintiuno de septiembre",
+     "familias": 1034
+    },
+    {
+     "nombre": "Cementerio",
+     "familias": 880
+    },
+    {
+     "nombre": "El Progreso",
+     "familias": 649
+    },
+    {
+     "nombre": "Pecorena",
+     "familias": 528
+    },
+    {
+     "nombre": "El Destino",
+     "familias": 495
+    }
+   ]
+  },
+  {
+   "id": "paraguay-bahianegra",
+   "place": "Bahía Negra",
+   "river": "Paraguay",
+   "barrios": 0,
+   "familias": null,
+   "superficie_ha": 0,
+   "mayores": []
+  },
+  {
+   "id": "paraguay-concepcion",
+   "place": "Concepción",
+   "river": "Paraguay",
+   "barrios": 0,
+   "familias": null,
+   "superficie_ha": 0,
+   "mayores": []
+  },
+  {
+   "id": "paraguay-asuncion",
+   "place": "Asunción",
+   "river": "Paraguay",
+   "barrios": 14,
+   "familias": 3585,
+   "superficie_ha": 373.5,
+   "mayores": [
+    {
+     "nombre": "Porteño Norte",
+     "familias": 858
+    },
+    {
+     "nombre": "Veinticinco de Mayo",
+     "familias": 618
+    },
+    {
+     "nombre": "ACA",
+     "familias": 517
+    },
+    {
+     "nombre": "Veinticinco de Mayo I",
+     "familias": 396
+    },
+    {
+     "nombre": "Guadalupe",
+     "familias": 242
+    }
+   ]
+  },
+  {
+   "id": "paraguay-formosa",
+   "place": "Formosa · Alberdi",
+   "river": "Paraguay",
+   "barrios": 47,
+   "familias": 15569,
+   "superficie_ha": 838.8,
+   "mayores": [
+    {
+     "nombre": "Simon Bolívar",
+     "familias": 2860
+    },
+    {
+     "nombre": "Lote 111",
+     "familias": 2618
+    },
+    {
+     "nombre": "Doce de Octubre",
+     "familias": 770
+    },
+    {
+     "nombre": "Eva Perón",
+     "familias": 660
+    },
+    {
+     "nombre": "El Palomar",
+     "familias": 649
+    }
+   ]
+  },
+  {
+   "id": "paraguay-pilar",
+   "place": "Pilar",
+   "river": "Paraguay",
+   "barrios": 0,
+   "familias": null,
+   "superficie_ha": 0,
+   "mayores": []
+  },
+  {
+   "id": "paraguay-humaita",
+   "place": "Humaitá",
+   "river": "Paraguay",
+   "barrios": 1,
+   "familias": 20,
+   "superficie_ha": 9.1,
+   "mayores": [
+    {
+     "nombre": "Sonalinde",
+     "familias": 20
+    }
+   ]
+  },
+  {
+   "id": "bermejo-embarcacion",
+   "place": "Embarcación",
+   "river": "Bermejo",
+   "barrios": 25,
+   "familias": 2068,
+   "superficie_ha": 181.0,
+   "mayores": [
+    {
+     "nombre": "La Loma",
+     "familias": 224
+    },
+    {
+     "nombre": "Cherenta",
+     "familias": 198
+    },
+    {
+     "nombre": "La Unión",
+     "familias": 165
+    },
+    {
+     "nombre": "Comunidad San Juan",
+     "familias": 165
+    },
+    {
+     "nombre": "Dieciseis de Julio",
+     "familias": 154
+    }
+   ]
+  },
+  {
+   "id": "bermejo-elcolorado",
+   "place": "El Colorado",
+   "river": "Bermejo",
+   "barrios": 2,
+   "familias": 479,
+   "superficie_ha": 38.5,
+   "mayores": [
+    {
+     "nombre": "Dos de Abril",
+     "familias": 275
+    },
+    {
+     "nombre": "Doce de Octubre",
+     "familias": 204
+    }
+   ]
+  },
+  {
+   "id": "uruguay-soberbio",
+   "place": "El Soberbio",
+   "river": "Uruguay",
+   "barrios": 2,
+   "familias": 176,
+   "superficie_ha": 16.1,
+   "mayores": [
+    {
+     "nombre": "Unión",
+     "familias": 165
+    },
+    {
+     "nombre": "Maracaná",
+     "familias": 11
+    }
+   ]
+  },
+  {
+   "id": "uruguay-albaposse",
+   "place": "Alba Posse",
+   "river": "Uruguay",
+   "barrios": 1,
+   "familias": 17,
+   "superficie_ha": 1.2,
+   "mayores": [
+    {
+     "nombre": "Ringo",
+     "familias": 17
+    }
+   ]
+  },
+  {
+   "id": "uruguay-santotome",
+   "place": "Santo Tomé",
+   "river": "Uruguay",
+   "barrios": 4,
+   "familias": 418,
+   "superficie_ha": 95.4,
+   "mayores": [
+    {
+     "nombre": "La Tablada",
+     "familias": 330
+    },
+    {
+     "nombre": "Sin Nombre",
+     "familias": 44
+    },
+    {
+     "nombre": "Torres",
+     "familias": 33
+    },
+    {
+     "nombre": "Cerro",
+     "familias": 11
+    }
+   ]
+  },
+  {
+   "id": "uruguay-libres",
+   "place": "Paso de los Libres",
+   "river": "Uruguay",
+   "barrios": 15,
+   "familias": 1409,
+   "superficie_ha": 96.7,
+   "mayores": [
+    {
+     "nombre": "Catamarca",
+     "familias": 440
+    },
+    {
+     "nombre": "La Tablita",
+     "familias": 165
+    },
+    {
+     "nombre": "San José",
+     "familias": 121
+    },
+    {
+     "nombre": "Barrio del Sol",
+     "familias": 99
+    },
+    {
+     "nombre": "La Balanza",
+     "familias": 99
+    }
+   ]
+  },
+  {
+   "id": "uruguay-montecaseros",
+   "place": "Monte Caseros",
+   "river": "Uruguay",
+   "barrios": 9,
+   "familias": 646,
+   "superficie_ha": 63.8,
+   "mayores": [
+    {
+     "nombre": "Fedullo",
+     "familias": 160
+    },
+    {
+     "nombre": "Gauchito Gil",
+     "familias": 88
+    },
+    {
+     "nombre": "La Rana",
+     "familias": 88
+    },
+    {
+     "nombre": "Puerto Ceibo",
+     "familias": 83
+    },
+    {
+     "nombre": "Juan Esteban Martínez",
+     "familias": 58
+    }
+   ]
+  },
+  {
+   "id": "uruguay-concordia",
+   "place": "Concordia · Salto",
+   "river": "Uruguay",
+   "barrios": 59,
+   "familias": 7607,
+   "superficie_ha": 347.2,
+   "mayores": [
+    {
+     "nombre": "Viña",
+     "familias": 693
+    },
+    {
+     "nombre": "Pampa Soler",
+     "familias": 583
+    },
+    {
+     "nombre": "Nueva Esperanza",
+     "familias": 475
+    },
+    {
+     "nombre": "Sarmiento",
+     "familias": 358
+    },
+    {
+     "nombre": "Carretera La Cruz",
+     "familias": 352
+    }
+   ]
+  },
+  {
+   "id": "uruguay-colon",
+   "place": "Colón",
+   "river": "Uruguay",
+   "barrios": 4,
+   "familias": 494,
+   "superficie_ha": 24.9,
+   "mayores": [
+    {
+     "nombre": "Tiro Sur",
+     "familias": 385
+    },
+    {
+     "nombre": "El Brillante",
+     "familias": 64
+    },
+    {
+     "nombre": "Juan Domingo Perón",
+     "familias": 32
+    },
+    {
+     "nombre": "San Francisco",
+     "familias": 13
+    }
+   ]
+  },
+  {
+   "id": "uruguay-cdeluruguay",
+   "place": "Concepción del Uruguay",
+   "river": "Uruguay",
+   "barrios": 22,
+   "familias": 1698,
+   "superficie_ha": 72.6,
+   "mayores": [
+    {
+     "nombre": "La Tablada",
+     "familias": 227
+    },
+    {
+     "nombre": "La Mandarina",
+     "familias": 198
+    },
+    {
+     "nombre": "Circuito Mena",
+     "familias": 182
+    },
+    {
+     "nombre": "Villa Loma Sur",
+     "familias": 143
+    },
+    {
+     "nombre": "Concepción",
+     "familias": 143
+    }
+   ]
+  },
+  {
+   "id": "uruguay-fraybentos",
+   "place": "Fray Bentos",
+   "river": "Uruguay",
+   "barrios": 0,
+   "familias": null,
+   "superficie_ha": 0,
+   "mayores": []
+  }
+ ]
+}
