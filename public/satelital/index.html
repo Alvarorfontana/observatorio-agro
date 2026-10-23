@@ -241,12 +241,12 @@ label.fila input { grid-column: 1 / -1; width: 100%; accent-color: var(--accent)
           <div><b>Celeste – verde</b><span>Nubes medias, 0 a −30 °C</span></div>
           <div><b>Amarillo – rojo</b><span>Nubes altas, −30 a −60 °C: posible lluvia fuerte</span></div>
           <div><b>Negro – blanco</b><span>Menos de −60 °C: tormenta severa, granizo posible</span></div>
-          <div><b>Punto amarillo</b><span>Rayos en esa zona en la media hora del cuadro; más grande, más rayos</span></div>
+          <div><b>Punto amarillo</b><span>Rayos en esa zona en los 10 minutos del cuadro; más grande, más rayos</span></div>
         </div>
       </div>
       <div class="texto">
         <p><strong>Qué mide.</strong> El satélite mide la temperatura del tope de las nubes cada 10 minutos. Cuanto más fría, más alto llegó la nube y más fuerte suele ser la tormenta. El GLM, en el mismo satélite, detecta cada rayo de día y de noche.</p>
-        <p class="nota"><strong>Límites.</strong> Ve la nube desde arriba, no la lluvia que cae: una nube fría puede no estar lloviendo justo debajo. Para la lluvia en el suelo, los radares meteorológicos del SMN y el INTA son la referencia. Los rayos se agrupan en celdas de unos 10 km y se actualizan cada media hora.</p>
+        <p class="nota"><strong>Límites.</strong> Ve la nube desde arriba, no la lluvia que cae: una nube fría puede no estar lloviendo justo debajo. Para la lluvia en el suelo, los radares meteorológicos del SMN y el INTA son la referencia. Los rayos se agrupan en celdas de unos 10 km y DOTS los procesa cada media hora, así que los últimos minutos pueden no tener rayos todavía.</p>
       </div>
     </section>
 
@@ -412,7 +412,7 @@ label.fila input { grid-column: 1 / -1; width: 100%; accent-color: var(--accent)
   // ================== TORMENTAS: animación GOES + rayos ==================
   var T = { cuadros: [], capas: [], i: 0, play: null, rayos: null, capaRayos: L.layerGroup(), listo: false, cargando: false };
   var VEL = { 1: [900, 'lenta'], 2: [550, 'normal'], 3: [280, 'rápida'] };
-  function horaLocal(d) { return d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Argentina/Buenos_Aires' }); }
+  function horaLocal(d) { return d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'America/Argentina/Buenos_Aires' }); }
   function isoMin(d) { return d.toISOString().slice(0, 16) + ':00Z'; }
   function urlGoes(t) { return 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/GOES-East_ABI_Band13_Clean_Infrared/default/' + t + '/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png'; }
   function probar(d) {
@@ -473,8 +473,8 @@ label.fila input { grid-column: 1 / -1; width: 100%; accent-color: var(--accent)
   function dibujarRayos(d) {
     T.capaRayos.clearLayers();
     if (!$('t-rayos').checked || !T.rayos || !T.rayos.cells) { $('t-cuenta').textContent = T.rayos ? '' : 'No se pudieron cargar los rayos.'; return; }
-    // Las celdas vienen en tramos de media hora (hora UTC): se muestra el tramo que contiene el cuadro
-    var tramo = new Date(Math.floor(d.getTime() / 1800000) * 1800000).toISOString().slice(0, 16);
+    // Las celdas vienen en tramos de 10 minutos (hora UTC), igual que los cuadros del GOES
+    var tramo = new Date(Math.floor(d.getTime() / 600000) * 600000).toISOString().slice(0, 16);
     var total = 0, b = map.getBounds().pad(.2), enVista = 0;
     T.rayos.cells.forEach(function (c) {
       if (c[2] !== tramo) return;
@@ -484,8 +484,9 @@ label.fila input { grid-column: 1 / -1; width: 100%; accent-color: var(--accent)
       L.circleMarker([c[0], c[1]], { radius: Math.min(9, 2 + Math.sqrt(c[3]) * .9), stroke: false, fillColor: c[3] > 40 ? '#ffffff' : '#ffe14d', fillOpacity: .9, interactive: false }).addTo(T.capaRayos);
     });
     var hayTramo = T.rayos.cells.some(function (c) { return c[2] === tramo; });
-    $('t-cuenta').innerHTML = hayTramo ? 'Rayos en esta media hora: <b>' + enVista.toLocaleString('es-AR') + '</b> en la zona visible · <b>' + total.toLocaleString('es-AR') + '</b> en toda la región'
-      : 'Todavía no hay rayos procesados para este horario (se actualizan cada 30 minutos).';
+    var tramos = T.rayos.cells.map(function (c) { return c[2]; }).sort(), ult = tramos[tramos.length - 1];
+    $('t-cuenta').innerHTML = hayTramo ? 'Rayos en estos 10 minutos: <b>' + enVista.toLocaleString('es-AR') + '</b> en la zona visible · <b>' + total.toLocaleString('es-AR') + '</b> en toda la región'
+      : 'Sin rayos procesados para este horario.' + (ult ? ' El último dato de rayos es de las ' + horaLocal(new Date(ult + ':00Z')) + '.' : '');
   }
   function pausar() { if (T.play) { clearInterval(T.play); T.play = null; } $('t-play').textContent = 'Reproducir'; }
   function reproducir() {
