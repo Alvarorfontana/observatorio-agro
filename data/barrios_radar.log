@@ -36,61 +36,36 @@ Fray Bentos: 0 barrios RENABAP (oficial)
   muestras Eldorado: 800
   muestras Posadas: 800
   muestras Ituzaingó: 800
-  muestras Corrientes: 400
-  muestras Bella Vista: 588
+  muestras Corrientes: 800
+  muestras Bella Vista: 800
   muestras Goya: 800
-  sin muestras en Reconquista: Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands
+  muestras Reconquista: 800
   muestras Esquina: 800
   muestras La Paz: 800
-  sin muestras en Santa Fe · Paraná: Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands
-  sin muestras en Diamante: Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands
-  muestras Rosario: 400
+  muestras Santa Fe · Paraná: 800
+  muestras Diamante: 800
+  muestras Rosario: 800
   muestras San Nicolás: 800
   muestras San Pedro: 800
   muestras Zárate: 800
   muestras Asunción: 800
   muestras Formosa · Alberdi: 800
-  sin muestras en Embarcación: Image.select: Band pattern 'VV' was applied to an Image with no bands. See https://developers.google.com/earth-engine/guides/debugging#no-bands
+  muestras Embarcación: 800
   muestras Santo Tomé: 800
   muestras Paso de los Libres: 800
   muestras Monte Caseros: 800
   muestras Concordia · Salto: 800
   muestras Colón: 800
   muestras Concepción del Uruguay: 800
-  OpenStreetMap Nairobi: 0 barrios populares
+  Overpass Nairobi: 24 elementos {'way': 24} · Gitathuru, Kangemi, Kiamaiko, Kibera Resettlement Decanting Site, Kibera Soweto East Zone C, Kibera Soweto East Zone D, Korogocho A, Kosovo, Mathare 3A, Mathare 3B, Mathare 3C, Mathare 4A, Mathare North Area1, Mathare North Area2, Mathare North Area3
+  OpenStreetMap Nairobi: 24 barrios populares
+  etiquetas externas Nairobi: 800 puntos
 Modelo final: optico_radar_edificios
-Andresito: None ha, None personas
-Puerto Iguazú · Cataratas: None ha, None personas
-Eldorado: None ha, None personas
-Posadas: None ha, None personas
-Ituzaingó: None ha, None personas
-Corrientes: None ha, None personas
-Bella Vista: None ha, None personas
-Goya: None ha, None personas
-Reconquista: None ha, None personas
-Esquina: None ha, None personas
-La Paz: None ha, None personas
-Santa Fe · Paraná: None ha, None personas
-Diamante: None ha, None personas
-Rosario: None ha, None personas
-San Nicolás: None ha, None personas
-San Pedro: None ha, None personas
-Zárate: None ha, None personas
-Bahía Negra: None ha, None personas
-Concepción: None ha, None personas
-Asunción: None ha, None personas
-Formosa · Alberdi: None ha, None personas
-Pilar: None ha, None personas
-Humaitá: None ha, None personas
-Embarcación: None ha, None personas
-El Colorado: None ha, None personas
-El Soberbio: None ha, None personas
-Alba Posse: None ha, None personas
-Santo Tomé: None ha, None personas
-Paso de los Libres: None ha, None personas
-Monte Caseros: None ha, None personas
-Concordia · Salto: None ha, None personas
-Colón: None ha, None personas
-Concepción del Uruguay: None ha, None personas
-Fray Bentos: None ha, None personas
-Promedio por ciudad dejada afuera: {"optico": {"f1_barrio": 0.625, "exactitud": 0.628}, "optico_radar": {"f1_barrio": 0.676, "exactitud": 0.681}, "optico_radar_edificios": {"f1_barrio": 0.762, "exactitud": 0.769}}
+Andresito: 114.0 ha, 0 personas
+Puerto Iguazú · Cataratas: 12.0 ha, 0 personas
+Eldorado: 410.5 ha, 0 personas
+/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/ee/data.py:335: UserWarning: Your project has exceeded its noncommercial compute quota and is now in restricted mode. Visit https://developers.google.com/earth-engine/guides/noncommercial_tiers#restricted_mode to learn more.
+  warnings.warn(
+Posadas: 1157.8 ha, 0 personas
+Ituzaingó: 193.6 ha, 0 personas
+Corrientes: 2582.7 ha, 0 personas
