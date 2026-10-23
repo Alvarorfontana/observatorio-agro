@@ -66,7 +66,7 @@ def save(path, data):
 
 
 def leer_serie():
-    r = requests.get(FUENTE, timeout=60, headers={'User-Agent': 'DOTS-avisos (+https://observatorio-agro.vercel.app)'})
+    r = requests.get(FUENTE, timeout=60, headers={'User-Agent': 'Mozilla/5.0 (DOTS observatorio; +https://observatorio-agro.vercel.app)', 'Accept': 'application/json'})
     r.raise_for_status()
     d = {x['name']: x['data'] for x in r.json()}
     normal = d['1991-2020']
@@ -87,7 +87,83 @@ def leer_serie():
     dia = date(int(anio), 1, 1) + timedelta(days=ult)
     return {'fecha': dia.isoformat(), 'temp': serie[ult], 'normal': normal[ult], 'anom': anom(serie, ult),
             'hace7': hace7, 'max_previo': maximo, 'max_previo_anio': max_anio,
-            'preliminar': d[anio][ult] is None}
+            'preliminar': d[anio][ult] is None, '_d': d, '_anio': anio, '_serie': serie, '_ult': ult}
+
+
+# ───────────────────────── Gráficos (mismo diseño que la nota del diario y la página /nino-diario) ─────────────────────────
+MES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+INICIO = [0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335]
+EVENTOS = [('1982-83', ['1982', '1983']), ('1997-98', ['1997', '1998']), ('2015-16', ['2015', '2016']), ('2023-24', ['2023', '2024'])]
+FUENTE_TXT = 'Fuente: DOTS, con datos NOAA OISST 2.1 vía Climate Reanalyzer (Univ. de Maine).'
+
+
+def graficos(dato, carpeta):
+    """Genera los tres gráficos en PNG y devuelve sus rutas."""
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    plt.rcParams.update({'font.size': 13, 'axes.spines.top': False, 'axes.spines.right': False, 'axes.edgecolor': '#9a9a92',
+                         'xtick.color': '#5a5a55', 'ytick.color': '#5a5a55', 'axes.labelcolor': '#3a3a36'})
+    RED, INK = '#c8102e', '#141414'
+    d, anio, serie, ult = dato['_d'], dato['_anio'], dato['_serie'], dato['_ult']
+    normal = d['1991-2020']
+    an = lambda arr: [(v - c) if v is not None and c is not None else None for v, c in zip(arr, normal)]
+    os.makedirs(carpeta, exist_ok=True)
+    rutas = []
+    fecha = datetime.fromisoformat(dato['fecha']).strftime('%d/%m/%Y')
+
+    # 1) Evolución diaria
+    fig, ax = plt.subplots(figsize=(12, 6.3), dpi=130)
+    for y, v in d.items():
+        if y.isdigit() and y not in ('1982', '1997', '2015', anio):
+            ax.plot(an(v), color='#cfcfc8', lw=.8, zorder=1)
+    for y, col, lab in [('1982', '#8a8a84', '1982'), ('1997', '#5b6f8c', '1997'), ('2015', '#e08a3c', '2015')]:
+        a = an(d[y]); j = max(i for i, v in enumerate(a) if v is not None)
+        ax.plot(a, color=col, lw=2, zorder=3); ax.text(j + 3, a[j], lab, color=col, fontsize=12, fontweight='bold', va='center')
+    a26 = an(serie)
+    ax.plot(a26, color=RED, lw=3.4, zorder=5); ax.scatter([ult], [a26[ult]], color=RED, s=60, zorder=6)
+    ax.annotate(f'{anio}: {num(a26[ult])} °C\n{fecha}', (ult, a26[ult]), xytext=(-14, 18), textcoords='offset points',
+                ha='right', color=RED, fontsize=14, fontweight='bold', va='bottom')
+    ax.axhline(0, color='#777', lw=1)
+    ax.set_xticks(INICIO); ax.set_xticklabels(MES); ax.set_xlim(0, 410); ax.spines['bottom'].set_bounds(0, 365)
+    ax.set_ylabel('Diferencia con el promedio 1991-2020 (°C)'); ax.grid(axis='y', color='#ebebe6', lw=.8)
+    ax.set_title('El Niño día por día: temperatura del mar en la región Niño 3.4', loc='left', fontsize=17, fontweight='bold', color=INK, pad=26)
+    ax.text(0, 1.02, 'Cada línea gris es un año desde 1981.', transform=ax.transAxes, fontsize=12, color='#555')
+    fig.text(.01, .01, FUENTE_TXT, fontsize=9.5, color='#777'); fig.tight_layout(rect=(0, .03, 1, 1))
+    rutas.append(os.path.join(carpeta, 'nino-evolucion.png')); fig.savefig(rutas[-1]); plt.close(fig)
+
+    # 2) Pico de cada gran El Niño
+    filas = [(lab, max(v for y in ys for v in an(d[y]) if v is not None)) for lab, ys in EVENTOS if all(y in d for y in ys)]
+    filas.append((anio, max(v for v in a26 if v is not None)))
+    fig, ax = plt.subplots(figsize=(10, 5.6), dpi=130)
+    bars = ax.bar([f[0] for f in filas], [f[1] for f in filas], color=['#bdbdb6'] * (len(filas) - 1) + [RED], width=.62)
+    for b, f in zip(bars, filas):
+        ax.text(b.get_x() + b.get_width() / 2, f[1] + .05, num(f[1]) + ' °C', ha='center', fontsize=14, fontweight='bold', color=INK)
+    ax.set_ylim(0, max(f[1] for f in filas) * 1.15); ax.set_yticks([]); ax.spines['left'].set_visible(False)
+    ax.set_title('El pico de cada gran El Niño', loc='left', fontsize=17, fontweight='bold', color=INK, pad=26)
+    ax.text(0, 1.02, 'Mayor diferencia diaria con lo normal en la región Niño 3.4.', transform=ax.transAxes, fontsize=12, color='#555')
+    fig.text(.01, .01, FUENTE_TXT, fontsize=9.5, color='#777'); fig.tight_layout(rect=(0, .03, 1, 1))
+    rutas.append(os.path.join(carpeta, 'nino-picos.png')); fig.savefig(rutas[-1]); plt.close(fig)
+
+    # 3) Mes a mes del año actual
+    meses, vals = [], []
+    for m in range(12):
+        seg = [v for v in a26[INICIO[m]:(INICIO[m + 1] if m < 11 else 366)] if v is not None]
+        if not seg:
+            break
+        meses.append(MES[m]); vals.append(sum(seg) / len(seg))
+    fig, ax = plt.subplots(figsize=(10, 5.4), dpi=130)
+    cols = ['#5b8bd0' if v < 0 else ('#f2b134' if v < 1 else ('#e0662e' if v < 2 else RED)) for v in vals]
+    bars = ax.bar(meses, vals, color=cols, width=.66)
+    for b, v in zip(bars, vals):
+        ax.text(b.get_x() + b.get_width() / 2, v + (.06 if v >= 0 else -.2), num(v), ha='center', fontsize=12.5, fontweight='bold', color=INK)
+    ax.axhline(0, color='#777', lw=1); ax.set_ylim(min(-1, min(vals) - .4), max(vals) * 1.18 + .2)
+    ax.set_yticks([]); ax.spines['left'].set_visible(False); ax.spines['bottom'].set_visible(False)
+    ax.set_title(f'Cómo se calentó el Pacífico en {anio}', loc='left', fontsize=17, fontweight='bold', color=INK, pad=26)
+    ax.text(0, 1.02, 'Diferencia promedio de cada mes con lo normal, en °C. Región Niño 3.4.', transform=ax.transAxes, fontsize=12, color='#555')
+    fig.text(.01, .01, FUENTE_TXT, fontsize=9.5, color='#777'); fig.tight_layout(rect=(0, .03, 1, 1))
+    rutas.append(os.path.join(carpeta, 'nino-mes-a-mes.png')); fig.savefig(rutas[-1]); plt.close(fig)
+    return rutas
 
 
 def evaluar(dato, prev):
@@ -112,13 +188,27 @@ def evaluar(dato, prev):
     return avisos, cat
 
 
-def telegram(texto):
+def telegram(texto, imagenes=()):
     tok, chat = os.environ.get('TELEGRAM_BOT_TOKEN'), os.environ.get('TELEGRAM_CHAT_ID')
     if not (tok and chat):
         return 'sin configurar'
-    r = requests.post(f'https://api.telegram.org/bot{tok}/sendMessage', timeout=30, json={
-        'chat_id': chat, 'text': texto[:4000], 'disable_web_page_preview': False})
-    return 'enviado' if r.ok else f'error {r.status_code}'
+    api = f'https://api.telegram.org/bot{tok}'
+    if imagenes:
+        # álbum con los gráficos; el texto va como pie de la primera imagen (hasta 1024 caracteres) y completo aparte
+        files, media = {}, []
+        for i, ruta in enumerate(imagenes):
+            files[f'g{i}'] = open(ruta, 'rb')
+            media.append({'type': 'photo', 'media': f'attach://g{i}'})
+        media[0]['caption'] = texto[:1024]
+        r = requests.post(f'{api}/sendMediaGroup', timeout=60, data={'chat_id': chat, 'media': json.dumps(media)}, files=files)
+        for fh in files.values():
+            fh.close()
+        if r.ok and len(texto) <= 1024:
+            return 'enviado con gráficos'
+        if not r.ok:
+            print(f'Telegram no aceptó las imágenes ({r.status_code}); se manda sólo el texto.')
+    r = requests.post(f'{api}/sendMessage', timeout=30, json={'chat_id': chat, 'text': texto[:4000], 'disable_web_page_preview': False})
+    return ('enviado' + (' con gráficos' if imagenes else '')) if r.ok else f'error {r.status_code}'
 
 
 def ntfy(titulo, texto):
@@ -161,6 +251,21 @@ def main():
         save(STATE, prev)
         return
     prev = load(STATE, {})
+    forzar = os.environ.get('NINO_FORZAR', '').lower() in ('1', 'si', 'sí', 'true')
+    if forzar:
+        # parte a pedido: manda el estado actual con los gráficos aunque no haya cambios
+        cat = categoria(dato['anom'])
+        fecha = datetime.fromisoformat(dato['fecha']).strftime('%d/%m/%Y')
+        temp = f"{dato['temp']:.1f}".replace('.', ',')
+        txt = (f"DOTS · Parte de El Niño\n\nRegión Niño 3.4, {fecha}: el mar está a {temp} °C, {num(dato['anom'])} °C respecto "
+               f"de lo normal 1991-2020. Categoría: {cat}."
+               + (f" Hace 7 días: {num(dato['hace7'])} °C." if dato['hace7'] is not None else '')
+               + (' Dato preliminar.' if dato['preliminar'] else '') + f"\n\nGráficos interactivos y datos: {PAGINA}")
+        imgs = graficos(dato, os.path.join(HERE, '..', 'data', 'nino_graficos'))
+        print('Parte a pedido. Telegram:', telegram(txt, imgs), '· ntfy:', ntfy(f"DOTS · El Niño: {num(dato['anom'])} °C, {cat}", txt))
+        if prev.get('fecha') != dato['fecha']:
+            prev.update({'fecha': dato['fecha'], 'anom': round(dato['anom'], 3), 'categoria': cat}); save(STATE, prev)
+        return
     if prev.get('fecha') == dato['fecha']:
         print(f"Sin dato nuevo (último: {dato['fecha']})."); return
     avisos, cat = ([], categoria(dato['anom'])) if not prev else evaluar(dato, prev)
@@ -173,7 +278,11 @@ def main():
         print(f"Sin avisos: {dato['fecha']} {num(dato['anom'], 2)} °C, {cat}."); return
     titulo = f"DOTS · El Niño: {num(dato['anom'])} °C, {cat}"
     texto = 'DOTS · Aviso de El Niño\n\n' + '\n\n'.join(avisos) + f'\n\nGráficos interactivos y datos: {PAGINA}'
-    tg, nt, em = telegram(texto), ntfy(titulo, '\n\n'.join(avisos)), email(titulo, avisos)
+    try:
+        imgs = graficos(dato, os.path.join(HERE, '..', 'data', 'nino_graficos'))
+    except Exception as e:  # un gráfico que falla no frena el aviso
+        print(f'No se pudieron generar los gráficos ({type(e).__name__}: {e}).'); imgs = []
+    tg, nt, em = telegram(texto, imgs), ntfy(titulo, '\n\n'.join(avisos)), email(titulo, avisos)
     feed = load(FEED, {'items': []})
     for a in avisos:
         feed['items'].insert(0, {'at': datetime.now(timezone.utc).isoformat(timespec='minutes'), 'fecha': dato['fecha'], 'text': a})

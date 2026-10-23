@@ -1,14 +1,21 @@
-# Avisos automáticos de El Niño: una vez por día lee la temperatura del mar en la región Niño 3.4 y avisa si cambia
-# de categoría, marca un récord o sube rápido (Telegram, ntfy y correo). Ver scripts/avisos_nino.py.
+# Avisos automáticos de El Niño: una vez por día lee la temperatura del mar en la región Niño 3.4 y, si cambia de
+# categoría, marca un récord o sube rápido, avisa por Telegram (con los tres gráficos), ntfy y correo.
+# Para pedir un parte con gráficos a mano: Actions → "Avisos de El Niño" → Run workflow → forzar: si.
+# Ver scripts/avisos_nino.py.
 name: Avisos de El Niño
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      forzar:
+        description: "Mandar ahora un parte con gráficos aunque no haya cambios (si/no)"
+        required: false
+        default: "no"
   schedule:
     - cron: "41 13 * * *"
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: avisos-nino
@@ -23,19 +30,35 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
-      - name: Traer datos de la rama datos
-        run: bash scripts/datos_rama.sh traer
-      - name: Revisar El Niño y avisar
+      # La memoria del aviso (último dato y categoría) se guarda en la caché de Actions, no en el repositorio.
+      - name: Recuperar el último estado
+        uses: actions/cache/restore@v4
+        with:
+          path: data/nino_avisos_estado.json
+          key: nino-estado-${{ github.run_id }}
+          restore-keys: nino-estado-
+      - name: Revisar El Niño, generar gráficos y avisar
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           RESEND_AUDIENCE_ID: ${{ secrets.RESEND_AUDIENCE_ID }}
           AVISOS_FROM: ${{ secrets.AVISOS_FROM }}
+          NINO_FORZAR: ${{ github.event.inputs.forzar }}
         run: |
-          pip install requests
-          python scripts/avisos_nino.py
-      - name: Guardar en la rama datos (no publica la web)
+          pip install requests matplotlib
+          python scripts/avisos_nino.py | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Guardar el estado
         if: always()
-        run: |
-          cp scripts/datos_rama.sh /tmp/datos_rama.sh && bash /tmp/datos_rama.sh guardar "Avisos de El Niño $(date -u +%Y-%m-%d)" data/nino_avisos_estado.json data/nino_avisos.json
+        uses: actions/cache/save@v4
+        with:
+          path: data/nino_avisos_estado.json
+          key: nino-estado-${{ github.run_id }}
+      - name: Guardar los gráficos del día
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: graficos-el-nino
+          path: data/nino_graficos/
+          if-no-files-found: ignore
+          retention-days: 30
