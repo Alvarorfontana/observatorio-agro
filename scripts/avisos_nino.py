@@ -154,8 +154,11 @@ def email(titulo, avisos):
 def main():
     try:
         dato = leer_serie()
-    except Exception as e:  # la fuente no respondió: no se inventa nada
-        print(f'Climate Reanalyzer no respondió ({type(e).__name__}): no se cambia nada.')
+    except Exception as e:  # la fuente no respondió: no se inventa nada, pero queda registrado el intento
+        print(f'Climate Reanalyzer no respondió ({type(e).__name__}: {e}): no se cambia nada.')
+        prev = load(STATE, {})
+        prev['ultimo_error'] = {'at': datetime.now(timezone.utc).isoformat(timespec='minutes'), 'detalle': f'{type(e).__name__}: {e}'[:300]}
+        save(STATE, prev)
         return
     prev = load(STATE, {})
     if prev.get('fecha') == dato['fecha']:
