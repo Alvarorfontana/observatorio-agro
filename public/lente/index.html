@@ -666,7 +666,7 @@ select, .buscar input { font: 13px var(--sans); color: var(--fg); background: va
     $('b-informe').disabled = true; $('b-informe').textContent = 'Analizando…';
     analizarArea().then(function (A) {
       $('informe').hidden = false; document.body.style.overflow = 'hidden';
-      requestAnimationFrame(function () { dibujarArea(A); dibujarPerfil(); });
+      setTimeout(function () { try { dibujarArea(A); dibujarPerfil(); } catch (e) { $('inf-meta').textContent = 'No se pudieron dibujar los gráficos: ' + e.message; } }, 0);
     }, function () { $('info').textContent = 'No se pudo leer el relieve del área visible. Probá alejar un poco el mapa.'; })
       .then(function () { $('b-informe').disabled = false; $('b-informe').textContent = 'Analizar lo que se ve'; });
   }
