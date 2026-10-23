@@ -186,9 +186,12 @@ def informal_settlements():
     """Barrios populares detectados por radar (calculado por la tarea «Barrios populares por radar»)."""
     import datastore
     data=datastore.load('barrios_radar.json')
+    ren=datastore.load('renabap_localidades.json')
+    if data and not any(p.get('informal_ha') is not None for p in data.get('places') or []):
+        data=dict(data,places=[])          # corrida sin mapa (cuota agotada o cortada): se muestra solo la evaluación
     if not data:
-        return jsonify(data=None,error='El modelo todavía no se ejecutó: correr la tarea «Barrios populares por radar» en GitHub Actions.'),200
-    r=jsonify(data=data,image_base='/api/poblacion/barrios/')
+        return jsonify(data=None,renabap=ren,error='El mapa del modelo todavía no está calculado: correr la tarea «Barrios populares por radar» en GitHub Actions.'),200
+    r=jsonify(data=data,renabap=ren,image_base='/api/poblacion/barrios/')
     r.headers['Cache-Control']='public, s-maxage=3600'
     return r
 
