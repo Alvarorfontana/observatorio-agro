@@ -320,6 +320,7 @@ select, .buscar input { font: 13px var(--sans); color: var(--fg); background: va
   map.on('move zoom', sync); map.on('zoomend moveend', sync);
   function ubicarLente() {
     var w = wrap.clientWidth, h = wrap.clientHeight;
+    if (!w || !h) { requestAnimationFrame(ubicarLente); return; } // el mapa todavía no tiene tamaño
     if (S.cx === null) { S.cx = w / 2; S.cy = h / 2; }
     S.cx = Math.max(0, Math.min(w, S.cx)); S.cy = Math.max(0, Math.min(h, S.cy));
     if (S.full) { lensEl.style.clipPath = 'none'; ring.classList.add('full'); return; }
