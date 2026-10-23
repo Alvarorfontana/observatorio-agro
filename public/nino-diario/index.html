@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>El Niño Día por Día · DOTS</title>
+<meta name="description" content="Temperatura diaria del mar en la región Niño 3.4 desde 1981, comparada con cada año y con los grandes El Niño. Se actualiza sola con datos NOAA OISST 2.1.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Página de lectura de una columna ancha: cifras arriba, gráficos interactivos, método al final. */
+:root {
+  --bg: #f3f4f1; --panel: #ffffff; --fg: #1b211c; --muted: #5d665e; --line: #d9ddd6;
+  --accent: #c8102e; --chip: #eceee9; --tibio: #e08a3c; --frio: #4f78b8;
+  --sans: 'IBM Plex Sans', system-ui, sans-serif; --mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #121512; --panel: #1a1e1a; --fg: #e7ebe5; --muted: #9aa49b; --line: #2f362f;
+    --accent: #ff4d5e; --chip: #242a24; --tibio: #f0a35e; --frio: #7fa3dc; color-scheme: dark; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 var(--sans); }
+.wrap { max-width: 1080px; margin: 0 auto; padding-block: 24px 48px;
+  padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right));
+  display: flex; flex-direction: column; gap: 22px; }
+header .eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
+h1 { font-size: clamp(26px, 4vw, 38px); line-height: 1.12; margin: 6px 0 8px; letter-spacing: -0.02em; text-wrap: balance; }
+.lead { color: var(--muted); max-width: 70ch; margin: 0; }
+.cifras { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+.cifra { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+.cifra span { display: block; font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.cifra b { display: block; font-family: var(--mono); font-weight: 500; font-size: 26px; font-variant-numeric: tabular-nums; margin-top: 2px; }
+.cifra small { color: var(--muted); font-size: 12.5px; }
+.cifra.alerta b { color: var(--accent); }
+.graf { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.graf h2 { font-size: 18px; margin: 0; letter-spacing: -0.01em; }
+.graf p { margin: 0; color: var(--muted); font-size: 13.5px; }
+.lienzo { width: 100%; height: 440px; }
+.lienzo.bajo { height: 340px; }
+.controles { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips button, .btn { font: 500 12.5px var(--sans); color: var(--fg); background: var(--chip); border: 1px solid transparent; border-radius: 6px; padding: 6px 10px; cursor: pointer; }
+.chips button[aria-pressed="true"] { border-color: var(--fg); background: transparent; font-weight: 600; }
+.btn.primario { background: var(--fg); color: var(--panel); }
+button:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+select { font: 13px var(--sans); color: var(--fg); background: var(--chip); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; }
+.dos { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+.dos > * { min-width: 0; }
+.rangos { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--panel); }
+.rangos div { display: grid; grid-template-columns: 150px 1fr; gap: 10px; padding: 8px 14px; border-top: 1px solid var(--line); font-size: 14px; }
+.rangos div:first-child { border-top: 0; }
+.rangos b { font-family: var(--mono); font-weight: 500; }
+.metodo { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 18px; }
+.metodo h2 { font-size: 18px; margin: 0 0 8px; }
+.metodo ol { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; max-width: 78ch; }
+.metodo p { max-width: 78ch; }
+.nota { font-size: 13.5px; color: var(--muted); border-left: 3px solid var(--accent); padding-left: 12px; max-width: 78ch; }
+#estado { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+a { color: inherit; }
+@media (max-width: 760px) { .dos { grid-template-columns: 1fr; } .lienzo { height: 360px; } .rangos div { grid-template-columns: 110px 1fr; } }
+@media print { .controles, .btn, #estado { display: none !important; } body { background: #fff; } .graf, .cifra, .metodo, .rangos { break-inside: avoid; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">DOTS · El Niño</div>
+    <h1>El Niño día por día</h1>
+    <p class="lead">Temperatura del mar en la región Niño 3.4 del Pacífico ecuatorial, todos los días desde 1981. Es el termómetro que define El Niño y, con él, buena parte de la lluvia del Litoral y la Cuenca del Plata. Se actualiza sola cada día.</p>
+  </header>
+
+  <div class="cifras" id="cifras" aria-live="polite">
+    <div class="cifra"><span>Cargando</span><b>—</b><small>Buscando el último dato de NOAA…</small></div>
+  </div>
+  <div id="estado"></div>
+
+  <section class="graf">
+    <h2>La evolución diaria, año por año</h2>
+    <p>Diferencia de cada día con el promedio de ese mismo día entre 1991 y 2020. Cada línea gris es un año. Tocá los años para resaltarlos; pasá el mouse para ver cada día.</p>
+    <div class="controles">
+      <div class="chips" id="anios" aria-label="Años resaltados"></div>
+      <select id="medida" aria-label="Qué mostrar">
+        <option value="anom">Diferencia con lo normal (°C)</option>
+        <option value="abs">Temperatura del agua (°C)</option>
+      </select>
+      <button type="button" class="btn" data-guardar="g-evol">Guardar imagen</button>
+    </div>
+    <div class="lienzo" id="g-evol"></div>
+  </section>
+
+  <div class="dos">
+    <section class="graf">
+      <h2>El pico de cada gran El Niño</h2>
+      <p>Máxima diferencia diaria con lo normal en cada evento.</p>
+      <div class="controles"><button type="button" class="btn" data-guardar="g-pico">Guardar imagen</button></div>
+      <div class="lienzo bajo" id="g-pico"></div>
+    </section>
+    <section class="graf">
+      <h2 id="t-mes">Mes a mes este año</h2>
+      <p>Diferencia promedio de cada mes con lo normal.</p>
+      <div class="controles"><button type="button" class="btn" data-guardar="g-mes">Guardar imagen</button></div>
+      <div class="lienzo bajo" id="g-mes"></div>
+    </section>
+  </div>
+
+  <section class="graf">
+    <h2 id="t-rank">Este mismo día en cada año</h2>
+    <p>Cómo se ubica el último dato frente al mismo día del calendario de todos los años desde 1982.</p>
+    <div class="controles"><button type="button" class="btn" data-guardar="g-rank">Guardar imagen</button></div>
+    <div class="lienzo bajo" id="g-rank"></div>
+  </section>
+
+  <section>
+    <h2 style="font-size:18px;margin:0 0 8px">Cómo leerlo</h2>
+    <div class="rangos">
+      <div><b>Menos de −0,5</b><span>Aguas frías: zona de La Niña. En el Litoral suele llover menos.</span></div>
+      <div><b>−0,5 a +0,5</b><span>Neutral.</span></div>
+      <div><b>+0,5 a +1,0</b><span>El Niño débil.</span></div>
+      <div><b>+1,0 a +1,5</b><span>El Niño moderado.</span></div>
+      <div><b>+1,5 a +2,0</b><span>El Niño fuerte: más chances de lluvias por encima de lo normal en el Litoral.</span></div>
+      <div><b>Más de +2,0</b><span>El Niño muy fuerte: los años de las grandes crecidas (1983, 1998, 2016).</span></div>
+    </div>
+    <p class="nota" style="margin-top:10px">Rangos orientativos sobre el dato diario. La clasificación oficial de la NOAA usa promedios de tres meses y un índice relativo que descuenta el calentamiento de todo el trópico, por eso da valores más bajos. Las dos miradas apuntan en la misma dirección.</p>
+  </section>
+
+  <section class="metodo">
+    <h2>Cómo se generan estos gráficos</h2>
+    <ol>
+      <li><strong>El dato.</strong> NOAA mide la temperatura de la superficie del mar con satélites, corregidos con boyas y barcos, y arma la serie diaria OISST 2.1, desde septiembre de 1981. La Universidad de Maine la publica para la región Niño 3.4 en Climate Reanalyzer. Esta página la lee directo de ahí cada vez que se abre.</li>
+      <li><strong>La región.</strong> Niño 3.4 es el rectángulo del Pacífico ecuatorial entre 5° N y 5° S y entre 170° O y 120° O. Es el área de referencia mundial para El Niño.</li>
+      <li><strong>Lo normal.</strong> Para cada día del calendario se usa el promedio de ese día entre 1991 y 2020, que publica la misma fuente.</li>
+      <li><strong>La diferencia.</strong> Se resta el valor del día menos su normal. Ese número, en °C, es lo que muestran las curvas.</li>
+      <li><strong>Los últimos días.</strong> Los datos de las últimas dos semanas son preliminares y pueden corregirse unas décimas. Se muestran con la misma línea y se marcan en el recuadro de arriba.</li>
+      <li><strong>Los picos.</strong> Para cada gran El Niño se busca el día de mayor diferencia en sus dos años (por ejemplo, 1997 y 1998).</li>
+      <li><strong>Para llevar.</strong> Cada gráfico tiene un botón para guardarlo como imagen con su título y fuente, listo para una nota o un informe. Abajo se pueden bajar los datos en CSV.</li>
+    </ol>
+    <div class="controles" style="margin-top:14px">
+      <button type="button" class="btn primario" id="b-csv">Bajar datos en CSV</button>
+      <button type="button" class="btn" onclick="window.print()">Guardar la página en PDF</button>
+    </div>
+    <p class="nota" style="margin-top:14px"><strong>Fuente:</strong> DOTS, con datos NOAA OISST 2.1 vía <a href="https://climatereanalyzer.org/clim/sst_daily/" target="_blank" rel="noopener">Climate Reanalyzer</a> (Climate Change Institute, Universidad de Maine). Si esa fuente no responde, DOTS muestra su última copia guardada y lo avisa arriba.</p>
+  </section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
+<script>
+(function () {
+  'use strict';
+  var FUENTE = 'https://climatereanalyzer.org/clim/sst_daily/json_2clim/oisst2.1_nino3.4_sst_day.json';
+  var RESPALDO = '/nino-diario/nino34-respaldo.json';
+  var EVENTOS = [['1982-83', ['1982','1983']], ['1987-88', ['1987','1988']], ['1991-92', ['1991','1992']], ['1997-98', ['1997','1998']], ['2009-10', ['2009','2010']], ['2015-16', ['2015','2016']], ['2023-24', ['2023','2024']]];
+  var MES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  var INICIO_MES = [0,31,60,91,121,152,182,213,244,274,305,335]; // en el año de 366 días de la fuente
+  function $(id) { return document.getElementById(id); }
+  function col() { var c = getComputedStyle(document.documentElement); var g = function (k) { return c.getPropertyValue(k).trim(); };
+    return { fg: g('--fg'), muted: g('--muted'), line: g('--line'), acc: g('--accent'), tib: g('--tibio'), frio: g('--frio'), panel: g('--panel') }; }
+  function f(n, d) { return n == null || !isFinite(n) ? '—' : n.toLocaleString('es-AR', { minimumFractionDigits: d == null ? 1 : d, maximumFractionDigits: d == null ? 1 : d }); }
+  function s(n, d) { return n == null ? '—' : (n > 0 ? '+' : '') + f(n, d); }
+  function fecha(anio, i) { var d = new Date(Date.UTC(+anio, 0, 1)); d.setUTCDate(d.getUTCDate() + i); return d; }
+  function etiquetaDia(i) { var d = fecha(2024, i); return d.getUTCDate() + ' ' + MES[d.getUTCMonth()].toLowerCase(); }
+  var D = null, NORMAL = null, ANIO = null, SERIE = null, ULT = null, origen = '';
+  var graficos = {}, resaltados = {}, medida = 'anom';
+
+  function cargar() {
+    return fetch(FUENTE, { cache: 'no-store' }).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) { origen = 'en vivo'; return j; })
+      .catch(function () { return fetch(RESPALDO).then(function (r) { return r.json(); }).then(function (j) { origen = 'copia guardada'; return j; }); });
+  }
+
+  function preparar(j) {
+    D = {}; j.forEach(function (x) { D[x.name] = x.data; });
+    NORMAL = D['1991-2020'];
+    var anios = Object.keys(D).filter(function (k) { return /^\d{4}$/.test(k); }).sort();
+    ANIO = anios[anios.length - 1];
+    var pre = D['Preliminary'] || [];
+    SERIE = D[ANIO].map(function (v, i) { return v != null ? v : (pre[i] != null ? pre[i] : null); });
+    for (var i = SERIE.length - 1; i >= 0; i--) if (SERIE[i] != null) { ULT = i; break; }
+    var ultFinal = -1; D[ANIO].forEach(function (v, i) { if (v != null) ultFinal = i; });
+    D.__preliminarDesde = ultFinal + 1;
+    ['1982','1997','2015','2023'].forEach(function (a) { if (D[a]) resaltados[a] = true; });
+  }
+  function anom(arr) { return arr.map(function (v, i) { return v == null || NORMAL[i] == null ? null : +(v - NORMAL[i]).toFixed(3); }); }
+
+  function cifras() {
+    var hoy = SERIE[ULT], nor = NORMAL[ULT], a = hoy - nor, d = fecha(ANIO, ULT);
+    var mismoDia = Object.keys(D).filter(function (k) { return /^\d{4}$/.test(k) && D[k][ULT] != null; }).map(function (k) { return [k, D[k][ULT] - NORMAL[ULT]]; });
+    var actual = mismoDia.find(function (x) { return x[0] === ANIO; }); if (!actual) mismoDia.push([ANIO, a]); else actual[1] = a;
+    mismoDia.sort(function (x, y) { return y[1] - x[1]; });
+    var puesto = mismoDia.findIndex(function (x) { return x[0] === ANIO; }) + 1;
+    var maxHist = -9, maxAnio = '';
+    Object.keys(D).forEach(function (k) { if (!/^\d{4}$/.test(k)) return; var arr = k === ANIO ? SERIE : D[k]; arr.forEach(function (v, i) { if (v != null && NORMAL[i] != null && v - NORMAL[i] > maxHist) { maxHist = v - NORMAL[i]; maxAnio = k; } }); });
+    var hace30 = SERIE[ULT - 30] != null ? (SERIE[ULT - 30] - NORMAL[ULT - 30]) : null;
+    var pre = ULT >= D.__preliminarDesde;
+    $('cifras').innerHTML = [
+      ['Último dato', d.toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }), pre ? 'Preliminar' : 'Dato consolidado', false],
+      ['Temperatura del agua', f(hoy) + ' °C', 'Lo normal: ' + f(nor) + ' °C', false],
+      ['Diferencia con lo normal', s(a) + ' °C', hace30 != null ? 'Hace 30 días: ' + s(hace30) + ' °C' : '', a >= 2],
+      ['Puesto para esta fecha', puesto + '.º de ' + mismoDia.length, 'Entre todos los años desde 1981', puesto === 1],
+      ['Máximo de toda la serie', s(maxHist) + ' °C', 'Año ' + maxAnio, maxAnio === ANIO]
+    ].map(function (c) { return '<div class="cifra' + (c[3] ? ' alerta' : '') + '"><span>' + c[0] + '</span><b>' + c[1] + '</b><small>' + c[2] + '</small></div>'; }).join('');
+    $('estado').textContent = 'Fuente: NOAA OISST 2.1 vía Climate Reanalyzer · ' + (origen === 'en vivo' ? 'leído en vivo' : 'la fuente no respondió: se muestra la última copia guardada por DOTS');
+  }
+
+  function base(titulo, sub) {
+    var c = col();
+    return { animation: false, backgroundColor: 'transparent', textStyle: { fontFamily: 'IBM Plex Sans, system-ui, sans-serif' },
+      title: { text: titulo, subtext: sub, left: 0, top: 0, show: false, textStyle: { color: c.fg, fontSize: 16 }, subtextStyle: { color: c.muted } },
+      toolbox: { show: false, feature: { saveAsImage: { pixelRatio: 2 } } } };
+  }
+  function grafico(id) { if (graficos[id]) graficos[id].dispose(); graficos[id] = echarts.init($(id)); return graficos[id]; }
+
+  function dibujarEvolucion() {
+    var c = col(), dias = NORMAL.map(function (_, i) { return etiquetaDia(i); });
+    var series = [], anios = Object.keys(D).filter(function (k) { return /^\d{4}$/.test(k); });
+    var paleta = ['#5b6f8c', '#e08a3c', '#2e8b74', '#8a5bb0', '#b08a2e', '#3f8fbf', '#9a9a92'], k = 0;
+    anios.forEach(function (a) {
+      var arr = a === ANIO ? SERIE : D[a]; var datos = medida === 'anom' ? anom(arr) : arr;
+      var esActual = a === ANIO, res = !!resaltados[a];
+      series.push({ name: a, type: 'line', data: datos, showSymbol: false, connectNulls: false, z: esActual ? 10 : (res ? 5 : 1),
+        lineStyle: { width: esActual ? 3.2 : (res ? 2 : .8), color: esActual ? c.acc : (res ? paleta[(k++) % paleta.length] : c.line) },
+        emphasis: { disabled: true }, silent: !(esActual || res),
+        endLabel: (esActual || res) ? { show: true, formatter: a, color: esActual ? c.acc : undefined, fontWeight: 600, fontSize: 12 } : undefined });
+    });
+    if (medida === 'abs') series.push({ name: 'Normal 1991-2020', type: 'line', data: NORMAL, showSymbol: false, lineStyle: { width: 2, type: 'dashed', color: c.muted }, z: 4 });
+    var o = base('El Niño día por día', 'Región Niño 3.4');
+    Object.assign(o, {
+      grid: { left: 48, right: 56, top: 16, bottom: 64 },
+      tooltip: { trigger: 'axis', order: 'valueDesc', confine: true,
+        formatter: function (ps) {
+          var vis = ps.filter(function (p) { return p.value != null && (p.seriesName === ANIO || resaltados[p.seriesName] || p.seriesName.indexOf('Normal') === 0); });
+          return '<b>' + ps[0].axisValue + '</b><br>' + vis.map(function (p) { return p.marker + p.seriesName + ': <b>' + (medida === 'anom' ? s(p.value) : f(p.value)) + ' °C</b>'; }).join('<br>');
+        } },
+      xAxis: { type: 'category', data: dias, boundaryGap: false, axisLabel: { color: c.muted, interval: function (i) { return INICIO_MES.indexOf(i) >= 0; }, formatter: function (v, i) { return MES[INICIO_MES.indexOf(i)] || ''; } }, axisLine: { lineStyle: { color: c.line } }, axisTick: { show: false } },
+      yAxis: { type: 'value', scale: medida === 'abs', name: medida === 'anom' ? '°C sobre lo normal' : '°C', nameTextStyle: { color: c.muted }, axisLabel: { color: c.muted }, splitLine: { lineStyle: { color: c.line, opacity: .6 } } },
+      dataZoom: [{ type: 'inside' }, { type: 'slider', height: 18, bottom: 14 }],
+      series: series
+    });
+    if (medida === 'anom') o.series[0].markLine = { silent: true, symbol: 'none', label: { show: false }, lineStyle: { color: c.muted, type: 'solid', width: 1 }, data: [{ yAxis: 0 }] };
+    grafico('g-evol').setOption(o);
+  }
+
+  function dibujarPicos() {
+    var c = col(), filas = [];
+    EVENTOS.forEach(function (e) {
+      var m = -9; e[1].forEach(function (a) { if (D[a]) anom(D[a]).forEach(function (v) { if (v != null && v > m) m = v; }); });
+      if (m > -9) filas.push([e[0], m]);
+    });
+    var mAct = -9; anom(SERIE).forEach(function (v) { if (v != null && v > mAct) mAct = v; });
+    filas.push([ANIO, mAct]);
+    grafico('g-pico').setOption(Object.assign(base('El pico de cada gran El Niño', 'Máxima diferencia diaria con lo normal · región Niño 3.4'), {
+      grid: { left: 8, right: 8, top: 28, bottom: 28, containLabel: true },
+      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, valueFormatter: function (v) { return s(v) + ' °C'; } },
+      xAxis: { type: 'category', data: filas.map(function (x) { return x[0]; }), axisLabel: { color: c.fg }, axisLine: { lineStyle: { color: c.line } }, axisTick: { show: false } },
+      yAxis: { type: 'value', show: false, max: function (v) { return v.max * 1.15; } },
+      series: [{ type: 'bar', barWidth: '62%', data: filas.map(function (x) { return { value: +x[1].toFixed(2), itemStyle: { color: x[0] === ANIO ? c.acc : '#b9bab2' } }; }),
+        label: { show: true, position: 'top', color: c.fg, fontWeight: 600, formatter: function (p) { return s(p.value); } } }]
+    }));
+  }
+
+  function dibujarMeses() {
+    var c = col(), a = anom(SERIE), meses = [], vals = [];
+    for (var m = 0; m < 12; m++) {
+      var seg = a.slice(INICIO_MES[m], m < 11 ? INICIO_MES[m + 1] : 366).filter(function (v) { return v != null; });
+      if (!seg.length) break;
+      meses.push(MES[m]); vals.push(seg.reduce(function (x, y) { return x + y; }, 0) / seg.length);
+    }
+    $('t-mes').textContent = 'Mes a mes en ' + ANIO;
+    grafico('g-mes').setOption(Object.assign(base('Mes a mes en ' + ANIO, 'Diferencia promedio con lo normal'), {
+      grid: { left: 8, right: 8, top: 28, bottom: 28, containLabel: true },
+      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, valueFormatter: function (v) { return s(v, 2) + ' °C'; } },
+      xAxis: { type: 'category', data: meses, axisLabel: { color: c.fg }, axisLine: { lineStyle: { color: c.line } }, axisTick: { show: false } },
+      yAxis: { type: 'value', show: false },
+      series: [{ type: 'bar', barWidth: '64%', data: vals.map(function (v) { return { value: +v.toFixed(2), itemStyle: { color: v < 0 ? c.frio : v < 1 ? '#f2b134' : v < 2 ? c.tib : c.acc } }; }),
+        label: { show: true, position: 'top', color: c.fg, fontWeight: 600, formatter: function (p) { return s(p.value); } } }]
+    }));
+  }
+
+  function dibujarRanking() {
+    var c = col(), filas = Object.keys(D).filter(function (k) { return /^\d{4}$/.test(k); }).map(function (k) {
+      var v = k === ANIO ? SERIE[ULT] : D[k][ULT]; return v == null ? null : [k, v - NORMAL[ULT]];
+    }).filter(Boolean);
+    filas.sort(function (x, y) { return +x[0] - +y[0]; });
+    $('t-rank').textContent = 'El ' + fecha(ANIO, ULT).toLocaleDateString('es-AR', { day: 'numeric', month: 'long', timeZone: 'UTC' }) + ' en cada año';
+    grafico('g-rank').setOption(Object.assign(base('Este mismo día en cada año', 'Diferencia con lo normal · región Niño 3.4'), {
+      grid: { left: 8, right: 8, top: 16, bottom: 28, containLabel: true },
+      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, valueFormatter: function (v) { return s(v, 2) + ' °C'; } },
+      xAxis: { type: 'category', data: filas.map(function (x) { return x[0]; }), axisLabel: { color: c.muted, interval: 3 }, axisLine: { lineStyle: { color: c.line } }, axisTick: { show: false } },
+      yAxis: { type: 'value', axisLabel: { color: c.muted }, splitLine: { lineStyle: { color: c.line, opacity: .6 } } },
+      series: [{ type: 'bar', data: filas.map(function (x) { return { value: +x[1].toFixed(2), itemStyle: { color: x[0] === ANIO ? c.acc : (x[1] >= 1 ? c.tib : x[1] <= -1 ? c.frio : '#b9bab2') } }; }) }]
+    }));
+  }
+
+  function chips() {
+    var cont = $('anios'), anios = Object.keys(D).filter(function (k) { return /^\d{4}$/.test(k) && k !== ANIO; });
+    var destacados = ['1982','1983','1987','1991','1997','1998','2009','2015','2016','2023'];
+    cont.innerHTML = destacados.filter(function (a) { return anios.indexOf(a) >= 0; }).map(function (a) {
+      return '<button type="button" data-a="' + a + '" aria-pressed="' + (resaltados[a] ? 'true' : 'false') + '">' + a + '</button>'; }).join('') +
+      '<select id="otro-anio" aria-label="Resaltar otro año"><option value="">Otro año…</option>' + anios.map(function (a) { return '<option>' + a + '</option>'; }).join('') + '</select>';
+    cont.querySelectorAll('button').forEach(function (b) { b.addEventListener('click', function () {
+      resaltados[b.dataset.a] = !resaltados[b.dataset.a]; b.setAttribute('aria-pressed', resaltados[b.dataset.a] ? 'true' : 'false'); dibujarEvolucion(); }); });
+    $('otro-anio').addEventListener('change', function () { if (this.value) { resaltados[this.value] = true; dibujarEvolucion(); } });
+  }
+
+  function guardar(id) {
+    var g = graficos[id]; if (!g) return;
+    var titulo = { 'g-evol': 'El Niño día por día · región Niño 3.4', 'g-pico': 'El pico de cada gran El Niño', 'g-mes': $('t-mes').textContent, 'g-rank': $('t-rank').textContent }[id];
+    var c = col(), w = g.getWidth(), h = g.getHeight(), escala = 2;
+    var img = new Image(); img.onload = function () {
+      var cv = document.createElement('canvas'), pad = 24, cab = 56, pie = 34; cv.width = (w + pad * 2) * escala; cv.height = (h + cab + pie) * escala;
+      var x = cv.getContext('2d'); x.scale(escala, escala); x.fillStyle = c.panel || '#fff'; x.fillRect(0, 0, w + pad * 2, h + cab + pie);
+      x.fillStyle = c.fg; x.font = '600 18px IBM Plex Sans, sans-serif'; x.fillText(titulo, pad, 30);
+      x.fillStyle = c.muted; x.font = '13px IBM Plex Sans, sans-serif'; x.fillText('Diferencia con el promedio 1991-2020, en °C', pad, 48);
+      x.drawImage(img, pad, cab, w, h);
+      x.font = '11.5px IBM Plex Sans, sans-serif'; x.fillText('Fuente: DOTS, con datos NOAA OISST 2.1 vía Climate Reanalyzer (Univ. de Maine).', pad, cab + h + 22);
+      var a = document.createElement('a'); a.download = id.replace('g-', 'dots-nino-') + '.png'; a.href = cv.toDataURL('image/png'); a.click();
+    };
+    img.src = g.getDataURL({ pixelRatio: escala, backgroundColor: c.panel || '#fff' });
+  }
+  document.querySelectorAll('[data-guardar]').forEach(function (b) { b.addEventListener('click', function () { guardar(b.dataset.guardar); }); });
+
+  $('b-csv').addEventListener('click', function () {
+    if (!D) return;
+    var anios = Object.keys(D).filter(function (k) { return /^\d{4}$/.test(k); }), filas = ['anio,dia_del_anio,fecha,temperatura_c,normal_1991_2020_c,diferencia_c,preliminar'];
+    anios.forEach(function (a) { var arr = a === ANIO ? SERIE : D[a]; arr.forEach(function (v, i) { if (v == null) return; var d = fecha(a, i); if (d.getUTCFullYear() !== +a) return;
+      filas.push([a, i + 1, d.toISOString().slice(0, 10), v.toFixed(3), NORMAL[i].toFixed(3), (v - NORMAL[i]).toFixed(3), (a === ANIO && i >= D.__preliminarDesde) ? 'si' : 'no'].join(',')); }); });
+    var b = new Blob([filas.join('\n')], { type: 'text/csv' }), a = document.createElement('a');
+    a.href = URL.createObjectURL(b); a.download = 'dots-nino34-diario.csv'; a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+  });
+  $('medida').addEventListener('change', function () { medida = this.value; dibujarEvolucion(); });
+
+  function todo() { cifras(); dibujarEvolucion(); dibujarPicos(); dibujarMeses(); dibujarRanking(); }
+  cargar().then(function (j) { preparar(j); chips(); todo(); })
+    .catch(function () { $('cifras').innerHTML = '<div class="cifra"><span>Sin datos</span><b>—</b><small>No respondió la fuente ni la copia guardada. Probá de nuevo en unos minutos.</small></div>'; });
+  window.addEventListener('resize', function () { Object.keys(graficos).forEach(function (k) { graficos[k].resize(); }); });
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () { if (D) todo(); });
+})();
+</script>
+</body>
+</html>

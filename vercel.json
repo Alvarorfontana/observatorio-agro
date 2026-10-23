@@ -51,7 +51,11 @@
       "destination": "/satelital/index.html"
     },
     {
-      "source": "/((?!api/|ftw/|dem/|assets/|poblacion|avisos-widget|campo|radar|agricultura-precision|lente|satelital).*)",
+      "source": "/nino-diario",
+      "destination": "/nino-diario/index.html"
+    },
+    {
+      "source": "/((?!api/|ftw/|dem/|assets/|poblacion|avisos-widget|campo|radar|agricultura-precision|lente|satelital|nino-diario).*)",
       "destination": "/index.html"
     }
   ],
