@@ -32,6 +32,7 @@ def test_renabap_falls_back_to_local_file(monkeypatch, tmp_path):
     f.write_text(json.dumps({"features": [{"geometry": {"type": "Polygon", "coordinates": [
         [[-59.0, -28.5], [-58.99, -28.5], [-58.99, -28.49], [-59.0, -28.5]]]}}]}))
     monkeypatch.setattr(br, "RENABAP_FILE", str(f))
+    monkeypatch.setattr(br, "RENABAP_CACHE", str(tmp_path / "no-existe.geojson"))
     monkeypatch.setattr(br, "_RENABAP_ALL", None)
     monkeypatch.setattr(br.time, "sleep", lambda s: None)
 
@@ -39,7 +40,25 @@ def test_renabap_falls_back_to_local_file(monkeypatch, tmp_path):
         raise br.requests.ConnectionError("sin red")
     monkeypatch.setattr(br.requests, "get", down)
     polys, src = br.renabap(br.circle_bbox(-28.5, -59.0))
-    assert src == "archivo" and len(polys) == 1
+    assert src == "oficial" and len(polys) == 1
+
+
+def test_renabap_downloads_once_and_wfs_gives_up_fast(monkeypatch, tmp_path):
+    pytest.importorskip("shapely")
+    calls = []
+    monkeypatch.setattr(br, "RENABAP_FILE", str(tmp_path / "a.geojson"))
+    monkeypatch.setattr(br, "RENABAP_CACHE", str(tmp_path / "cache" / "renabap.geojson"))
+    monkeypatch.setattr(br, "_RENABAP_ALL", None)
+    monkeypatch.setattr(br, "_WFS_DOWN", False)
+    monkeypatch.setattr(br.time, "sleep", lambda s: None)
+
+    def down(url, *a, **k):
+        calls.append(url)
+        raise br.requests.ConnectionError("sin red")
+    monkeypatch.setattr(br.requests, "get", down)
+    for _ in range(5):
+        assert br.renabap(br.circle_bbox(-28.5, -59.0)) == ([], "sin fuente")
+    assert calls.count(br.RENABAP_URL) == 2 and calls.count(br.RENABAP_WFS) == 1
 
 
 def test_leave_one_city_out_shows_radar_gain():
@@ -72,7 +91,28 @@ def test_barrios_endpoint(monkeypatch):
     assert j["data"] is None and "GitHub Actions" in j["error"]
     monkeypatch.setattr(datastore, "load", lambda name, *a, **k: {"places": [], "model": {}})
     j = app.test_client().get("/api/poblacion/barrios").get_json()
-    assert j["image_base"].startswith("https://raw.githubusercontent.com/")
+    assert j["image_base"] == "/api/poblacion/barrios/"
+    monkeypatch.setattr(datastore, "fetch_bytes", lambda path, *a, **k: b"\x89PNG\r\n\x1a\nxx" if path == "barrios_radar/corrientes.png" else None)
+    c = app.test_client()
+    assert c.get("/api/poblacion/barrios/barrios_radar/corrientes.png").status_code == 200
+    assert c.get("/api/poblacion/barrios/barrios_radar/otra.png").status_code == 404
+    assert c.get("/api/poblacion/barrios/barrios_radar/..%2Fsecreto.png").status_code in (400, 404)
+
+
+def test_datastore_reads_private_repo_with_token(monkeypatch):
+    import datastore
+    calls = []
+    class R:
+        def __init__(self, code, content=b""):
+            self.status_code, self.content = code, content
+    def get(url, **k):
+        calls.append((url, k.get("headers", {}).get("Authorization")))
+        return R(404) if "raw.githubusercontent" in url else R(200, b'{"ok": 1}')
+    monkeypatch.setattr(datastore.c.SESSION, "get", get)
+    monkeypatch.setenv("DOTS_DATA_READ_TOKEN", "tok")
+    monkeypatch.setattr(datastore, "_CACHE", {})
+    assert datastore.load("prueba.json") == {"ok": 1}
+    assert calls[-1][1] == "Bearer tok" and "api.github.com" in calls[-1][0]
 
 
 def test_final_model_prefers_buildings_only_when_better():
@@ -135,3 +175,28 @@ def test_osm_informal_survives_without_network(monkeypatch):
         raise br.requests.ConnectionError("sin red")
     monkeypatch.setattr(br.requests, "post", down)
     assert br.osm_informal(br.OSM_CITIES[0]) == []
+
+
+def test_samples_cache_round_trip(monkeypatch, tmp_path):
+    monkeypatch.setattr(br, "SAMPLES_CACHE", str(tmp_path / "cache" / "m.json"))
+    monkeypatch.delenv("BARRIOS_RESAMPLE", raising=False)
+    br.save_samples_cache({"corrientes": [{"label": 1}]}, {"Nairobi (OpenStreetMap)": [{"label": 0}]})
+    c = br.load_samples_cache()
+    assert c["ciudades"]["corrientes"] == [{"label": 1}] and "Nairobi (OpenStreetMap)" in c["externas"]
+    monkeypatch.setenv("BARRIOS_RESAMPLE", "1")
+    assert br.load_samples_cache() is None
+    monkeypatch.delenv("BARRIOS_RESAMPLE")
+    monkeypatch.setattr(br, "YEAR", 1999)
+    assert br.load_samples_cache() is None            # otro año: no sirve
+
+
+def test_rows_to_fc_balances_classes():
+    class FakeEE:
+        class Feature:
+            def __init__(self, geom, props): self.props = props
+        @staticmethod
+        def FeatureCollection(feats): return feats
+    rows = {"a": [{"label": i % 2, "x": float(i)} for i in range(1000)], "b": [{"label": 1, "x": 1.0}] * 10}
+    fc = br.rows_to_fc(FakeEE, rows, ["x"], n=100)
+    labels = [f.props["label"] for f in fc]
+    assert labels.count(0) == 50 and labels.count(1) == 60

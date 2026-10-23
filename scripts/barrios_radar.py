@@ -36,16 +36,23 @@ POINTS_PER_CLASS = int(os.environ.get("BARRIOS_POINTS", "400"))
 MIN_POLYGONS = 3            # una ciudad entra al entrenamiento si tiene al menos estos barrios RENABAP
 NEG_BUFFER_M = 60
 HAND_BANDS = (1, 2, 3, 5)
+# Muestras ya calculadas: muestrear es lo que más cuota de Earth Engine gasta. Se reutilizan si no cambió el año ni
+# las capas; BARRIOS_RESAMPLE=1 obliga a recalcularlas.
+SAMPLES_CACHE = os.path.join(ROOT, "scripts", "cache", "barrios_muestras.json")
+TRAIN_PER_CITY = 250       # puntos por ciudad que se suben a Earth Engine para entrenar el mapa
 SEED = 7
 # Bosque aleatorio como en el estudio: 500 árboles, profundidad 30, √variables por corte, clases balanceadas
 RF_PARAMS = dict(n_estimators=500, max_depth=30, max_features="sqrt", class_weight="balanced", n_jobs=-1,
                  random_state=SEED)
 
+# Archivo nacional oficial del RENABAP (6.467 barrios, diciembre de 2023). Se baja una sola vez y se guarda en caché.
+RENABAP_URL = os.environ.get("RENABAP_URL", "https://www.argentina.gob.ar/sites/default/files/renabap-2023-12-06.geojson")
+RENABAP_CACHE = os.path.join(ROOT, "scripts", "cache", "renabap.geojson")
 RENABAP_WFS = os.environ.get("RENABAP_WFS", "https://geoportal.obraspublicas.gob.ar/geoserver/ows")
 RENABAP_LAYER = os.environ.get("RENABAP_LAYER", "geonode:renabap2020_smz")
 RENABAP_FILE = os.path.join(ROOT, "data", "renabap.geojson")      # alternativa: archivo descargado a mano
-RENABAP_CREDIT = ("Registro Nacional de Barrios Populares (RENABAP), Ministerio de Desarrollo Social de la Nación, "
-                  "vía geoportal del Ministerio de Obras Públicas")
+RENABAP_CREDIT = ("Registro Nacional de Barrios Populares (RENABAP), Secretaría de Integración Socio-Urbana · "
+                  "versión 2023-12-06 publicada en argentina.gob.ar")
 
 RADAR = ["VV", "VH", "VHVV", "VV_dry", "VV_wet", "VV_season", "VV_tstd",
          "VVt_contrast", "VVt_var", "VVt_ent", "VVt_idm", "VHt_contrast", "VHt_var", "VHt_ent",
@@ -104,28 +111,67 @@ def clean_polygons(geojson, bbox, tolerance=0.00003):
 # ───────────────────────────── RENABAP ─────────────────────────────
 
 _RENABAP_ALL = None
+_WFS_DOWN = False
+
+
+def _national():
+    """Archivo nacional: caché local, si no el archivo oficial, si no un archivo dejado a mano en data/."""
+    global _RENABAP_ALL
+    if _RENABAP_ALL is not None:
+        return _RENABAP_ALL
+    for path in (RENABAP_CACHE, RENABAP_FILE):
+        if os.path.exists(path):
+            try:
+                with open(path, encoding="utf-8") as f:
+                    _RENABAP_ALL = json.load(f)
+                log(f"RENABAP desde {os.path.relpath(path, ROOT)}: {len(_RENABAP_ALL.get('features', []))} barrios")
+                return _RENABAP_ALL
+            except (OSError, ValueError):
+                pass
+    for attempt in range(2):
+        try:
+            r = requests.get(RENABAP_URL, timeout=300, headers={"User-Agent": "DOTS observatorio (datos abiertos)"})
+            if r.ok:
+                data = r.json()
+                if data.get("features"):
+                    os.makedirs(os.path.dirname(RENABAP_CACHE), exist_ok=True)
+                    with open(RENABAP_CACHE, "w", encoding="utf-8") as f:
+                        json.dump(data, f)
+                    _RENABAP_ALL = data
+                    log(f"RENABAP descargado: {len(data['features'])} barrios")
+                    return data
+            log(f"RENABAP oficial respondió HTTP {r.status_code}")
+        except (requests.RequestException, ValueError) as exc:
+            log(f"RENABAP oficial no respondió: {type(exc).__name__}")
+        time.sleep(10)
+    _RENABAP_ALL = {}
+    return _RENABAP_ALL
 
 
 def renabap(bbox):
-    """Barrios RENABAP dentro del recuadro: primero el WFS oficial, si no un archivo local."""
-    global _RENABAP_ALL
-    params = {"service": "WFS", "version": "1.0.0", "request": "GetFeature", "typeName": RENABAP_LAYER,
-              "outputFormat": "application/json", "srsName": "EPSG:4326",
-              "bbox": "%f,%f,%f,%f,EPSG:4326" % bbox}
-    for attempt in range(3):
+    """Barrios RENABAP dentro del recuadro: archivo nacional oficial; el WFS queda como último recurso."""
+    global _WFS_DOWN
+    data = _national()
+    if data.get("features"):
+        return clean_polygons(data, bbox), "oficial"
+    if not _WFS_DOWN:
+        params = {"service": "WFS", "version": "1.0.0", "request": "GetFeature", "typeName": RENABAP_LAYER,
+                  "outputFormat": "application/json", "srsName": "EPSG:4326",
+                  "bbox": "%f,%f,%f,%f,EPSG:4326" % bbox}
         try:
-            r = requests.get(RENABAP_WFS, params=params, timeout=90)
+            r = requests.get(RENABAP_WFS, params=params, timeout=45)
             if r.ok and r.headers.get("content-type", "").startswith(("application/json", "application/geo+json")):
                 return clean_polygons(r.json(), bbox), "wfs"
         except (requests.RequestException, ValueError):
             pass
-        time.sleep(3 * (attempt + 1))
-    if _RENABAP_ALL is None and os.path.exists(RENABAP_FILE):
-        with open(RENABAP_FILE, encoding="utf-8") as f:
-            _RENABAP_ALL = json.load(f)
-    if _RENABAP_ALL:
-        return clean_polygons(_RENABAP_ALL, bbox), "archivo"
+        _WFS_DOWN = True          # si no responde una vez, no se insiste en cada localidad
+        log("El WFS del RENABAP tampoco responde: se sigue sin él")
     return [], "sin fuente"
+
+
+def log(msg, error=False):
+    """Mensaje al registro de la tarea; los errores además quedan como anotación visible en GitHub."""
+    print(("::error::" if error else "") + msg, flush=True)
 
 
 # ───────────────────────────── Earth Engine ─────────────────────────────
@@ -141,7 +187,8 @@ def ee_init():
 def stack(ee, region):
     """Capas por píxel: radar en tres escalones + óptico. 10 m."""
     start, end = f"{YEAR}-01-01", f"{YEAR + 1}-01-01"
-    s1 = (ee.ImageCollection("COPERNICUS/S1_GRD").filterBounds(region).filterDate(start, end)
+    # radar: tres años centrados en YEAR. Desde la falla de Sentinel-1B hay zonas sin pasadas VV+VH en un solo año.
+    s1 = (ee.ImageCollection("COPERNICUS/S1_GRD").filterBounds(region).filterDate(f"{YEAR - 1}-01-01", f"{YEAR + 2}-01-01")
           .filter(ee.Filter.eq("instrumentMode", "IW"))
           .filter(ee.Filter.listContains("transmitterReceiverPolarisation", "VV"))
           .filter(ee.Filter.listContains("transmitterReceiverPolarisation", "VH"))
@@ -240,6 +287,10 @@ def overpass_query(bbox, names):
   relation["informal"="yes"]["landuse"]({bb});
   way["place"~"^(neighbourhood|suburb|quarter)$"]["name"~"^({pattern})",i]({bb});
   relation["place"~"^(neighbourhood|suburb|quarter)$"]["name"~"^({pattern})",i]({bb});
+  way["landuse"="residential"]["name"~"^({pattern})",i]({bb});
+  relation["landuse"="residential"]["name"~"^({pattern})",i]({bb});
+  way["residential"="informal"]({bb});
+  relation["residential"="informal"]({bb});
 );
 out geom;"""
 
@@ -269,11 +320,19 @@ def osm_informal(city):
     bbox = circle_bbox(city["lat"], city["lon"], city["radius_m"])
     for attempt in range(3):
         try:
-            r = requests.post(OVERPASS, data={"data": overpass_query(bbox, city["nombres"])}, timeout=200)
+            r = requests.post(OVERPASS, data={"data": overpass_query(bbox, city["nombres"])}, timeout=200,
+                              headers={"User-Agent": "DOTS observatorio (datos abiertos)"})
             if r.ok:
-                return clean_polygons({"features": [{"geometry": g} for g in osm_polygons(r.json().get("elements", []))]}, bbox)
-        except (requests.RequestException, ValueError):
-            pass
+                els = r.json().get("elements", [])
+                kinds = {}
+                for el in els:
+                    kinds[el.get("type")] = kinds.get(el.get("type"), 0) + 1
+                names = sorted({(el.get("tags") or {}).get("name", "") for el in els} - {""})[:15]
+                log(f"  Overpass {city['ciudad']}: {len(els)} elementos {kinds} · {', '.join(names)}")
+                return clean_polygons({"features": [{"geometry": g} for g in osm_polygons(els)]}, bbox)
+            log(f"  Overpass respondió HTTP {r.status_code}")
+        except (requests.RequestException, ValueError) as exc:
+            log(f"  Overpass no respondió: {type(exc).__name__}")
         time.sleep(10 * (attempt + 1))
     return []
 
@@ -376,9 +435,10 @@ def map_place(ee, clf, st, polys, feats):
     img, built = stack(ee, region)
     informal = img.select(feats).classify(clf).eq(1).And(built).selfMask().rename("informal")
     area = ee.Image.pixelArea()
-    pop = (ee.ImageCollection("WorldPop/GP/100m/pop").filter(ee.Filter.eq("year", 2020)).mosaic()
-           .select("population"))
-    popd = pop.divide(ee.Image.pixelArea().reproject(pop.projection()))          # personas por m²
+    popcoll = ee.ImageCollection("WorldPop/GP/100m/pop").filter(ee.Filter.eq("year", 2020))
+    proj = popcoll.first().projection()   # el mosaico pierde la grilla de 100 m: se la devuelvo
+    pop = popcoll.mosaic().select("population").setDefaultProjection(proj)
+    popd = pop.divide(ee.Image.pixelArea().reproject(proj))                       # personas por m²
     hand = ee.Image("MERIT/Hydro/v1_0_1").select("hnd")
     bands = [area.updateMask(informal).rename("informal_m2"),
              popd.multiply(area).updateMask(informal).rename("pop_informal")]
@@ -393,12 +453,12 @@ def map_place(ee, clf, st, polys, feats):
                   area.updateMask(built).updateMask(ren).rename("renabap_built_m2"),
                   area.updateMask(built).updateMask(ren).updateMask(informal).rename("renabap_detected_m2")]
     stats, err = None, "sin respuesta"
-    for scale in (10, 20):
+    for scale in (20, 30):                 # superficies y personas no necesitan 10 m: 20 m es 4 veces más rápido
         try:
             stats = ee.Image.cat(bands).reduceRegion(ee.Reducer.sum(), region, scale=scale, maxPixels=1e10,
                                                       tileScale=8).getInfo()
             break
-        except Exception as exc:  # cómputo muy grande: se reintenta a 20 m
+        except Exception as exc:  # cómputo muy grande: se reintenta a 30 m
             err = str(exc)[:200]
     if stats is None:
         return {"error": err}
@@ -428,6 +488,39 @@ def map_place(ee, clf, st, polys, feats):
     return out
 
 
+def rows_to_fc(ee, rows_by_city, feats, n=TRAIN_PER_CITY):
+    """Colección de entrenamiento armada con las muestras guardadas (equilibrada por clase y ciudad)."""
+    import random
+    rnd = random.Random(SEED)
+    feats_out = []
+    for rows in rows_by_city.values():
+        for label in (0, 1):
+            pool = [r for r in rows if r.get("label") == label and all(isinstance(r.get(f), (int, float)) for f in feats)]
+            for r in rnd.sample(pool, min(len(pool), n // 2)):
+                feats_out.append(ee.Feature(None, {**{f: r[f] for f in feats}, "label": label}))
+    return ee.FeatureCollection(feats_out)
+
+
+def load_samples_cache():
+    if os.environ.get("BARRIOS_RESAMPLE") == "1" or not os.path.exists(SAMPLES_CACHE):
+        return None
+    try:
+        with open(SAMPLES_CACHE, encoding="utf-8") as f:
+            c = json.load(f)
+    except (OSError, ValueError):
+        return None
+    if c.get("year") != YEAR or c.get("capas") != sorted(set(OPTICAL + RADAR + BUILDINGS)):
+        return None
+    return c
+
+
+def save_samples_cache(samples, external):
+    os.makedirs(os.path.dirname(SAMPLES_CACHE), exist_ok=True)
+    with open(SAMPLES_CACHE, "w", encoding="utf-8") as f:
+        json.dump({"year": YEAR, "capas": sorted(set(OPTICAL + RADAR + BUILDINGS)),
+                   "ciudades": samples, "externas": external}, f)
+
+
 def main(out_path):
     import cuenca
     ee = ee_init()
@@ -439,26 +532,34 @@ def main(out_path):
         print(f"{st['place']}: {len(polys)} barrios RENABAP ({src})", flush=True)
     train = [st for st in stations if len(polys_by[st["id"]]) >= MIN_POLYGONS]
     if len(train) < 3:
-        raise SystemExit("Muy pocas localidades con barrios RENABAP: revisá la fuente (RENABAP_WFS o data/renabap.geojson).")
+        log(f"Solo {len(train)} localidades con barrios RENABAP: no alcanza para entrenar. Revisá la fuente.", error=True)
+        raise SystemExit(1)
+    cache = load_samples_cache()
+    if cache:
+        log(f"Reutilizo las muestras guardadas de {len(cache['ciudades'])} ciudades (no se vuelve a muestrear)")
+        samples = {k: v for k, v in cache["ciudades"].items() if k in {st["id"] for st in train}}
     fcs = []
-    for st in train:
+    for st in ([] if cache else train):
         fc = sample_city(ee, st["lat"], st["lon"], polys_by[st["id"]])
-        fcs.append(fc)
         try:
             samples[st["id"]] = [f["properties"] for f in fc.getInfo()["features"]]
+            fcs.append(fc)          # solo las ciudades que muestrearon bien: una con error arruina el entrenamiento
             print(f"  muestras {st['place']}: {len(samples[st['id']])}", flush=True)
         except Exception as exc:
             print(f"  sin muestras en {st['place']}: {str(exc)[:160]}", flush=True)
     ext_fcs, ext_rows, ext_cities = [], [], []
-    for city, groups in load_external().items():
+    ext_by = dict((cache or {}).get("externas") or {})
+    for city, rows in ext_by.items():
+        ext_rows += rows; ext_cities.append(city)
+    for city, groups in ({} if cache else load_external()).items():
         try:
             fc = sample_external(ee, groups)
             rows = [f["properties"] for f in fc.getInfo()["features"]]
-            ext_fcs.append(fc); ext_rows += rows; ext_cities.append(city)
+            ext_fcs.append(fc); ext_rows += rows; ext_cities.append(city); ext_by[city] = rows
             print(f"  etiquetas externas {city}: {len(rows)} puntos", flush=True)
         except Exception as exc:
             print(f"  sin muestras externas en {city}: {str(exc)[:160]}", flush=True)
-    for city in OSM_CITIES:
+    for city in ([] if cache else OSM_CITIES):
         polys = osm_informal(city)
         print(f"  OpenStreetMap {city['ciudad']}: {len(polys)} barrios populares", flush=True)
         if len(polys) < MIN_POLYGONS:
@@ -466,20 +567,40 @@ def main(out_path):
         try:
             fc = sample_city(ee, city["lat"], city["lon"], polys, city["radius_m"], EXTERNAL_NEG_BUFFER_M)
             rows = [f["properties"] for f in fc.getInfo()["features"]]
-            ext_fcs.append(fc); ext_rows += rows; ext_cities.append(city["ciudad"] + " (OpenStreetMap)")
+            name = city["ciudad"] + " (OpenStreetMap)"
+            ext_fcs.append(fc); ext_rows += rows; ext_cities.append(name); ext_by[name] = rows
             print(f"  etiquetas externas {city['ciudad']}: {len(rows)} puntos", flush=True)
         except Exception as exc:
             print(f"  sin muestras en {city['ciudad']}: {str(exc)[:160]}", flush=True)
+    if not cache:
+        save_samples_cache(samples, ext_by)
     per_city, summary, importance = leave_one_city_out(samples, ext_rows)
     final = choose_final(summary)
-    print("Modelo final:", final, flush=True)
-    training = ee.FeatureCollection(fcs + (ext_fcs if final == "optico_radar_externas" else [])).flatten()
-    clf = ee.Classifier.smileRandomForest(numberOfTrees=500, seed=SEED).train(
+    log("Promedio por variante: " + json.dumps(summary, ensure_ascii=False))
+    log(f"Modelo final: {final}")
+    train_rows = dict(samples)
+    if final == "optico_radar_externas":
+        train_rows.update({"ext:" + k: v for k, v in ext_by.items()})
+    training = rows_to_fc(ee, train_rows, feats_for(final))
+    # para mapear alcanzan 200 árboles (la evaluación usa 500): el mapa sale mucho más rápido
+    clf = ee.Classifier.smileRandomForest(numberOfTrees=200, seed=SEED).train(
         training, "label", feats_for(final))
     places = []
+
+    def write(d):
+        """Guarda lo que haya: si la tarea se corta por tiempo, queda lo ya calculado."""
+        with open(out_path, "w", encoding="utf-8") as f:
+            json.dump(d, f, ensure_ascii=False, indent=1)
+
+    base = {"updated": datetime.now(timezone.utc).strftime("%Y-%m-%d"), "year": YEAR,
+            "model": {"promedio": summary, "modelo_final": final, "capas_mas_utiles": importance,
+                      "ciudades_entrenamiento": [st["place"] for st in train], "ciudades_externas": ext_cities,
+                      "evaluacion_por_ciudad": [dict(r, city=next(s["place"] for s in stations if s["id"] == r["city"]))
+                                                for r in per_city]}}
+    write(dict(base, places=[], parcial=True))
     img_dir = os.path.join(os.path.dirname(out_path), "barrios_radar")
     os.makedirs(img_dir, exist_ok=True)
-    for st in stations:
+    def one(st):
         res = map_place(ee, clf, st, polys_by[st["id"]], feats_for(final))
         png = res.pop("_png", None)
         if png and png.startswith(b"\x89PNG"):
@@ -488,8 +609,17 @@ def main(out_path):
             res["imagen"] = f"barrios_radar/{st['id']}.png"
         res.update(id=st["id"], place=st["place"], river=st["river"], entrenamiento=st in train,
                    fuente_renabap=sources[st["id"]])
-        places.append(res)
-        print(f"{st['place']}: {res.get('informal_ha')} ha, {res.get('pop_informal')} personas", flush=True)
+        log(f"{st['place']}: {res.get('informal_ha')} ha, {res.get('pop_informal')} personas"
+            + (f" · {res['error'][:120]}" if res.get("error") else ""))
+        return res
+
+    from concurrent.futures import ThreadPoolExecutor
+    order = {st["id"]: i for i, st in enumerate(stations)}
+    with ThreadPoolExecutor(max_workers=4) as pool:   # Earth Engine procesa varias localidades a la vez
+        for res in pool.map(one, stations):
+            places.append(res)
+            places.sort(key=lambda p: order[p["id"]])
+            write(dict(base, places=places, parcial=len(places) < len(stations)))
     data = {
         "updated": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
         "year": YEAR,
@@ -518,4 +648,12 @@ def main(out_path):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, "data", "barrios_radar.json"))
+    try:
+        main(sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, "data", "barrios_radar.json"))
+    except SystemExit:
+        raise
+    except Exception as exc:  # que el motivo quede visible como anotación
+        import traceback
+        log(f"Falló: {type(exc).__name__}: {str(exc)[:300]}", error=True)
+        traceback.print_exc()
+        raise SystemExit(1)

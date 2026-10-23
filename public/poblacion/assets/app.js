@@ -231,10 +231,10 @@ $('health-country').addEventListener('change',drawHealth);$('health-sort').addEv
 
 // Barrios populares por radar (modelo entrenado con RENABAP; se recalcula en GitHub Actions)
 let barriosData=null;
-const barriosLoad=jsonFetch('/api/poblacion/barrios').then(j=>{barriosData=j.data?j:null;drawBarriosModel(j);return barriosData;}).catch(e=>{$('barrios-model').replaceChildren(make('p','No se pudo consultar el modelo: '+e.message));return null;});
+const barriosLoad=jsonFetch('/api/poblacion/barrios').then(j=>{barriosData=j;drawBarriosModel(j);return j;}).catch(e=>{$('barrios-model').replaceChildren(make('p','No se pudo consultar el modelo: '+e.message));return null;});
 function pct(v){return v==null?'Sin dato':number(100*v,0)+' %';}
 function drawBarriosModel(j){const box=$('barrios-model');box.replaceChildren();
-  if(!j||!j.data){const p=make('p',(j&&j.error)||'Todavía no hay resultados del modelo.');p.className='hint';box.append(p);return;}
+  if(!j||!j.data){const p=make('p',(j&&j.error)||'Todavía no hay resultados del modelo.');p.className='hint';box.append(p);drawRenabapTable(j&&j.renabap,box);return;}
   const m=j.data.model||{},avg=m.promedio||{},o=avg.optico||{},r=avg.optico_radar||{};
   const grid=make('div','');grid.className='flood-grid';
   const card=(label,val,sub,cls)=>{const a=make('article','');if(cls)a.className=cls;a.append(make('span',label),make('strong',val),make('span',sub));return a;};
@@ -257,9 +257,26 @@ function drawBarriosModel(j){const box=$('barrios-model');box.replaceChildren();
     for(const x of rows){const tr=make('tr','');tr.append(make('td',x.city),make('td',x.optico?number(x.optico.f1_barrio,2):'—'),make('td',x.optico_radar?number(x.optico_radar.f1_barrio,2):'—'),make('td',x.optico_radar?pct(x.optico_radar.exactitud):'—'),make('td',x.optico_radar_edificios?number(x.optico_radar_edificios.f1_barrio,2):'—'));t.append(tr);}
     d.append(t);box.append(d);}
   if((m.capas_mas_utiles||[]).length){const p=make('p','Capas que más pesan en el modelo: '+m.capas_mas_utiles.slice(0,6).map(c=>c.capa).join(', ')+'.');p.className='hint';box.append(p);}
-  const src=make('p','Fuentes: '+(j.data.sources||[]).join(' · '));src.className='hint';box.append(src);}
-async function renderBarrios(id,box){const j=barriosData||await barriosLoad;if(!j||!j.data)return;
-  const p=(j.data.places||[]).find(x=>x.id===id);if(!p)return;
+  const src=make('p','Fuentes: '+(j.data.sources||[]).join(' · '));src.className='hint';box.append(src);
+  if(!(j.data.places||[]).length){const p=make('p','El mapa por localidad todavía no está calculado. Mientras tanto, estos son los barrios que registra el RENABAP:');p.className='hint';box.append(p);drawRenabapTable(j.renabap,box);}}
+function drawRenabapTable(r,box){if(!r||!(r.places||[]).length)return;
+  const rows=r.places.filter(p=>p.barrios>0).sort((a,b)=>(b.familias||0)-(a.familias||0));
+  const d=make('details','');d.open=true;d.append(make('summary',`Barrios populares registrados por localidad (RENABAP, ${r.radius_km} km a la redonda)`));
+  const t=make('table','');const hr=make('tr','');for(const h of ['Localidad','Barrios','Familias','Superficie'])hr.append(make('th',h));t.append(hr);
+  for(const p of rows){const tr=make('tr','');tr.append(make('td',p.place),make('td',number(p.barrios)),make('td',number(p.familias)),make('td',number(p.superficie_ha)+' ha'));t.append(tr);}
+  d.append(t);const n=make('p',(r.nota||'')+' Fuente: '+(r.source||'RENABAP')+'.');n.className='hint';d.append(n);box.append(d);}
+function renderRenabap(id,box,j){const r=j&&j.renabap&&(j.renabap.places||[]).find(x=>x.id===id);if(!r)return;
+  const sec=make('div','');sec.style.cssText='margin-top:22px';sec.append(make('h3','Barrios populares registrados · '+r.place));
+  if(!r.barrios){const q=make('p','El RENABAP no registra barrios populares a '+j.renabap.radius_km+' km de esta localidad'+(/Asunción|Concepción|Pilar|Humaitá|Bahía Negra|Fray Bentos/.test(r.place)?' (está fuera de Argentina: el registro no la cubre).':'.'));q.className='hint';sec.append(q);box.append(sec);return;}
+  const grid=make('div','');grid.className='flood-grid';
+  const card=(label,val,sub,cls)=>{const a=make('article','');if(cls)a.className=cls;a.append(make('span',label),make('strong',val),make('span',sub));return a;};
+  grid.append(card('Barrios registrados',number(r.barrios),j.renabap.radius_km+' km a la redonda'),card('Familias',number(r.familias),'según estima el registro','warn'),card('Superficie',number(r.superficie_ha)+' ha','de los barrios registrados'));
+  sec.append(grid);
+  if((r.mayores||[]).length){const q=make('p','Los más grandes: '+r.mayores.map(m=>`${m.nombre} (${number(m.familias)} familias)`).join(', ')+'.');q.className='hint';sec.append(q);}
+  const q=make('p','Dato oficial del RENABAP (2023). El mapa con radar y la cantidad de personas cerca del río se suman cuando se ejecute el modelo.');q.className='hint';sec.append(q);
+  box.append(sec);}
+async function renderBarrios(id,box){const j=barriosData||await barriosLoad;if(!j)return;
+  const p=j.data&&(j.data.places||[]).find(x=>x.id===id);if(!p||p.informal_ha==null){renderRenabap(id,box,j);return;}
   const sec=make('div','');sec.style.cssText='margin-top:22px';sec.append(make('h3','Barrios populares · '+p.place));
   if(p.error){sec.append(make('p','No se pudo calcular esta localidad: '+p.error));box.append(sec);return;}
   const grid=make('div','');grid.className='flood-grid';

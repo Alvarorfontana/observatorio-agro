@@ -1,0 +1,35 @@
+# Barrios populares registrados (RENABAP) alrededor de las localidades ribereñas. Sin Earth Engine.
+# A pedido y una vez por mes. Guarda en la rama datos: no publica la web.
+name: RENABAP por localidad
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "41 9 2 * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: renabap-localidades
+  cancel-in-progress: false
+
+jobs:
+  renabap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Traer datos de la rama datos
+        run: bash scripts/datos_rama.sh traer
+      - name: Contar barrios por localidad
+        run: |
+          pip install -r requirements.txt shapely
+          python -u scripts/renabap_localidades.py data/renabap_localidades.json
+      - name: Guardar en la rama datos (no publica la web)
+        if: success()
+        run: |
+          cp scripts/datos_rama.sh /tmp/datos_rama.sh && bash /tmp/datos_rama.sh guardar "RENABAP por localidad $(date -u +%Y-%m-%d)" data/renabap_localidades.json
