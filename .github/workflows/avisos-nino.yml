@@ -1,0 +1,41 @@
+# Avisos automáticos de El Niño: una vez por día lee la temperatura del mar en la región Niño 3.4 y avisa si cambia
+# de categoría, marca un récord o sube rápido (Telegram, ntfy y correo). Ver scripts/avisos_nino.py.
+name: Avisos de El Niño
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "41 13 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: avisos-nino
+  cancel-in-progress: false
+
+jobs:
+  avisos-nino:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Traer datos de la rama datos
+        run: bash scripts/datos_rama.sh traer
+      - name: Revisar El Niño y avisar
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RESEND_AUDIENCE_ID: ${{ secrets.RESEND_AUDIENCE_ID }}
+          AVISOS_FROM: ${{ secrets.AVISOS_FROM }}
+        run: |
+          pip install requests
+          python scripts/avisos_nino.py
+      - name: Guardar en la rama datos (no publica la web)
+        if: always()
+        run: |
+          cp scripts/datos_rama.sh /tmp/datos_rama.sh && bash /tmp/datos_rama.sh guardar "Avisos de El Niño $(date -u +%Y-%m-%d)" data/nino_avisos_estado.json data/nino_avisos.json
