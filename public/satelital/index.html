@@ -30,7 +30,7 @@ body { background: var(--bg); color: var(--fg); font: 14px/1.45 var(--sans); }
 #map { position: absolute; inset: 0; }
 h1 { font-size: 17px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
 .sub { color: var(--muted); font-size: 12.5px; margin: 2px 0 0; }
-.tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; background: var(--chip); padding: 4px; border-radius: 8px; }
+.tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; background: var(--chip); padding: 4px; border-radius: 8px; }
 .tabs button { font: 600 13px var(--sans); color: var(--muted); background: transparent; border: 0; border-radius: 6px; padding: 8px 4px; cursor: pointer; }
 .tabs button[aria-selected="true"] { background: var(--panel); color: var(--fg); box-shadow: 0 1px 2px rgba(0,0,0,.12); }
 .grupo { display: flex; flex-direction: column; gap: 8px; }
@@ -58,6 +58,14 @@ label.fila input { grid-column: 1 / -1; width: 100%; accent-color: var(--accent)
 .nota strong { color: var(--fg); font-weight: 600; }
 #estado { font-size: 12px; color: var(--muted); font-family: var(--mono); }
 #toggle { display: none; }
+.reproductor { display: flex; align-items: center; gap: 8px; }
+.reproductor button { font: 600 13px var(--sans); background: var(--fg); color: var(--panel); border: 0; border-radius: 6px; padding: 8px 12px; cursor: pointer; min-width: 84px; }
+.reproductor input { flex: 1; min-width: 0; accent-color: var(--accent); }
+.hora { font-family: var(--mono); font-size: 20px; font-variant-numeric: tabular-nums; }
+.hora small { font-size: 12px; color: var(--muted); margin-left: 6px; }
+.rampa-ir { height: 12px; border-radius: 3px; background: linear-gradient(90deg, #303030, #9a9a9a, #00d5ff, #00b050, #ffe600, #ff1a00, #000); }
+.cuenta { font-size: 12.5px; color: var(--muted); }
+.cuenta b { color: var(--fg); font-family: var(--mono); font-weight: 500; }
 .leaflet-container { background: var(--bg); font-family: var(--sans); }
 @media (max-width: 760px) {
   #app { flex-direction: column-reverse; }
@@ -86,6 +94,7 @@ label.fila input { grid-column: 1 / -1; width: 100%; accent-color: var(--accent)
       <button role="tab" data-mod="aire" aria-selected="true">Aire</button>
       <button role="tab" data-mod="nieve" aria-selected="false">Nieve</button>
       <button role="tab" data-mod="desmontes" aria-selected="false">Desmontes</button>
+      <button role="tab" data-mod="tormentas" aria-selected="false">Tormentas</button>
     </div>
 
     <!-- ============ AIRE ============ -->
@@ -202,6 +211,45 @@ label.fila input { grid-column: 1 / -1; width: 100%; accent-color: var(--accent)
       </div>
     </section>
 
+    <!-- ============ TORMENTAS ============ -->
+    <section class="modulo plegable" data-mod="tormentas" hidden>
+      <div class="grupo">
+        <span class="rotulo">Nubes GOES-19 · banda 13 + rayos GLM · últimas 3 horas</span>
+        <div class="hora" id="t-hora">—</div>
+        <div class="reproductor">
+          <button type="button" id="t-play">Reproducir</button>
+          <input type="range" id="t-cuadro" min="0" max="17" value="17" aria-label="Momento de la animación">
+        </div>
+        <label class="fila">Velocidad <span class="val" id="v-vel">normal</span>
+          <input type="range" id="t-vel" min="1" max="3" value="2"></label>
+        <label class="check" style="display:flex;gap:8px;align-items:center;font-size:13px"><input type="checkbox" id="t-rayos" checked> Mostrar rayos</label>
+        <p class="cuenta" id="t-cuenta"></p>
+        <div class="chips" data-lugares>
+          <button data-ll="-29.5,-59.5,6">Litoral</button>
+          <button data-ll="-34.5,-61.5,6">Región pampeana</button>
+          <button data-ll="-26,-65,6">NOA</button>
+          <button data-ll="-33,-64,5">Centro del país</button>
+          <button data-ll="-30,-60,4">Sudamérica sur</button>
+        </div>
+      </div>
+      <div class="grupo">
+        <span class="rotulo">Cómo leerlo</span>
+        <div class="rampa-ir" aria-hidden="true"></div>
+        <div class="rampa-et"><span>tibio</span><span>muy frío</span></div>
+        <div class="rangos">
+          <div><b>Grises</b><span>Suelo o nubes bajas, más de 0 °C</span></div>
+          <div><b>Celeste – verde</b><span>Nubes medias, 0 a −30 °C</span></div>
+          <div><b>Amarillo – rojo</b><span>Nubes altas, −30 a −60 °C: posible lluvia fuerte</span></div>
+          <div><b>Negro – blanco</b><span>Menos de −60 °C: tormenta severa, granizo posible</span></div>
+          <div><b>Punto amarillo</b><span>Rayos en esa zona en la media hora del cuadro; más grande, más rayos</span></div>
+        </div>
+      </div>
+      <div class="texto">
+        <p><strong>Qué mide.</strong> El satélite mide la temperatura del tope de las nubes cada 10 minutos. Cuanto más fría, más alto llegó la nube y más fuerte suele ser la tormenta. El GLM, en el mismo satélite, detecta cada rayo de día y de noche.</p>
+        <p class="nota"><strong>Límites.</strong> Ve la nube desde arriba, no la lluvia que cae: una nube fría puede no estar lloviendo justo debajo. Para la lluvia en el suelo, los radares meteorológicos del SMN y el INTA son la referencia. Los rayos se agrupan en celdas de unos 10 km y se actualizan cada media hora.</p>
+      </div>
+    </section>
+
     <div id="estado" class="plegable"></div>
   </aside>
   <div id="mapwrap"><div id="map"></div></div>
@@ -295,6 +343,8 @@ label.fila input { grid-column: 1 / -1; width: 100%; accent-color: var(--accent)
   }
   function actualizar() {
     estado('');
+    if (modulo === 'tormentas') { if (T.listo) mostrarTormentas(); else prepararTormentas(); return; }
+    ocultarTormentas();
     if (modulo === 'aire') {
       poner(gibs('TROPOMI_L2_Nitrogen_Dioxide_Tropospheric_Column', $('f-aire').value, 6, .8));
       estado('Sentinel-5P · ' + $('f-aire').value.split('-').reverse().join('/') + ' · zonas vacías = nubes o sin pasada');
@@ -358,6 +408,95 @@ label.fila input { grid-column: 1 / -1; width: 100%; accent-color: var(--accent)
   $('toggle').addEventListener('click', function () { $('panel').classList.toggle('cerrado'); setTimeout(function () { map.invalidateSize(); }, 50); });
   if (window.matchMedia('(max-width: 760px)').matches) $('panel').classList.add('cerrado');
   window.addEventListener('resize', function () { map.invalidateSize(); });
+
+  // ================== TORMENTAS: animación GOES + rayos ==================
+  var T = { cuadros: [], capas: [], i: 0, play: null, rayos: null, capaRayos: L.layerGroup(), listo: false, cargando: false };
+  var VEL = { 1: [900, 'lenta'], 2: [550, 'normal'], 3: [280, 'rápida'] };
+  function horaLocal(d) { return d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Argentina/Buenos_Aires' }); }
+  function isoMin(d) { return d.toISOString().slice(0, 16) + ':00Z'; }
+  function urlGoes(t) { return 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/GOES-East_ABI_Band13_Clean_Infrared/default/' + t + '/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png'; }
+  function probar(d) {
+    return new Promise(function (ok) {
+      var im = new Image(); im.onload = function () { ok(true); }; im.onerror = function () { ok(false); };
+      im.src = urlGoes(isoMin(d)).replace('{z}/{y}/{x}', '3/4/2');
+    });
+  }
+  function ultimoCuadro() {
+    // NASA publica con unos 20 a 60 minutos de demora: se busca hacia atrás el último cuadro que existe
+    var d = new Date(Math.floor(Date.now() / 600000) * 600000 - 1200000), intentos = 0;
+    function paso() {
+      return probar(d).then(function (ok) {
+        if (ok || ++intentos > 9) return ok ? d : null;
+        d = new Date(d.getTime() - 600000); return paso();
+      });
+    }
+    return paso();
+  }
+  function cargarRayos() {
+    function norm(j) { return j && j.data && j.data.cells ? j.data : j; }
+    return fetch('/api/fuentes/rayos').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(norm)
+      .catch(function () { return fetch('https://raw.githubusercontent.com/Alvarorfontana/observatorio-agro/rayos/data/rayos.json').then(function (r) { return r.json(); }); })
+      .catch(function () { return null; });
+  }
+  function prepararTormentas() {
+    if (T.listo || T.cargando) return; T.cargando = true;
+    estado('Buscando las últimas imágenes del GOES-19…');
+    Promise.all([ultimoCuadro(), cargarRayos()]).then(function (r) {
+      T.cargando = false;
+      var ultimo = r[0]; T.rayos = r[1];
+      if (!ultimo) { estado('NASA no publicó imágenes recientes del GOES-19. Probá en unos minutos.'); return; }
+      T.cuadros = []; for (var k = 17; k >= 0; k--) T.cuadros.push(new Date(ultimo.getTime() - k * 600000));
+      T.capas = T.cuadros.map(function (d) { return L.tileLayer(urlGoes(isoMin(d)), { maxNativeZoom: 6, maxZoom: 18, opacity: 0, attribution: 'NOAA GOES-19 vía NASA GIBS' }); });
+      T.listo = true; T.i = T.cuadros.length - 1;
+      if (modulo === 'tormentas') mostrarTormentas();
+    });
+  }
+  function mostrarTormentas() {
+    if (capa) { map.removeLayer(capa); capa = null; }
+    T.capas.forEach(function (c) { if (!map.hasLayer(c)) c.addTo(map); });
+    T.capaRayos.addTo(map); etiquetas.addTo(map); etiquetas.bringToFront();
+    cuadro(T.i);
+    estado('GOES-19 cada 10 minutos · ' + horaLocal(T.cuadros[0]) + ' a ' + horaLocal(T.cuadros[T.cuadros.length - 1]) + ' (hora argentina)');
+  }
+  function ocultarTormentas() {
+    pausar(); T.capas.forEach(function (c) { if (map.hasLayer(c)) map.removeLayer(c); });
+    if (map.hasLayer(T.capaRayos)) map.removeLayer(T.capaRayos);
+  }
+  function cuadro(i) {
+    if (!T.listo) return;
+    T.i = i; $('t-cuadro').value = i;
+    T.capas.forEach(function (c, k) { c.setOpacity(k === i ? .82 : 0); });
+    var d = T.cuadros[i];
+    $('t-hora').innerHTML = horaLocal(d) + '<small>' + d.toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' }) + '</small>';
+    dibujarRayos(d);
+  }
+  function dibujarRayos(d) {
+    T.capaRayos.clearLayers();
+    if (!$('t-rayos').checked || !T.rayos || !T.rayos.cells) { $('t-cuenta').textContent = T.rayos ? '' : 'No se pudieron cargar los rayos.'; return; }
+    // Las celdas vienen en tramos de media hora (hora UTC): se muestra el tramo que contiene el cuadro
+    var tramo = new Date(Math.floor(d.getTime() / 1800000) * 1800000).toISOString().slice(0, 16);
+    var total = 0, b = map.getBounds().pad(.2), enVista = 0;
+    T.rayos.cells.forEach(function (c) {
+      if (c[2] !== tramo) return;
+      total += c[3];
+      if (!b.contains([c[0], c[1]])) return;
+      enVista += c[3];
+      L.circleMarker([c[0], c[1]], { radius: Math.min(9, 2 + Math.sqrt(c[3]) * .9), stroke: false, fillColor: c[3] > 40 ? '#ffffff' : '#ffe14d', fillOpacity: .9, interactive: false }).addTo(T.capaRayos);
+    });
+    var hayTramo = T.rayos.cells.some(function (c) { return c[2] === tramo; });
+    $('t-cuenta').innerHTML = hayTramo ? 'Rayos en esta media hora: <b>' + enVista.toLocaleString('es-AR') + '</b> en la zona visible · <b>' + total.toLocaleString('es-AR') + '</b> en toda la región'
+      : 'Todavía no hay rayos procesados para este horario (se actualizan cada 30 minutos).';
+  }
+  function pausar() { if (T.play) { clearInterval(T.play); T.play = null; } $('t-play').textContent = 'Reproducir'; }
+  function reproducir() {
+    pausar(); $('t-play').textContent = 'Pausa';
+    T.play = setInterval(function () { cuadro((T.i + 1) % T.cuadros.length); }, VEL[$('t-vel').value][0]);
+  }
+  $('t-play').addEventListener('click', function () { if (!T.listo) return; if (T.play) pausar(); else reproducir(); });
+  $('t-cuadro').addEventListener('input', function () { pausar(); cuadro(+this.value); });
+  $('t-vel').addEventListener('input', function () { $('v-vel').textContent = VEL[this.value][1]; if (T.play) reproducir(); });
+  $('t-rayos').addEventListener('change', function () { if (T.listo) dibujarRayos(T.cuadros[T.i]); });
+  map.on('moveend', function () { if (modulo === 'tormentas' && T.listo) dibujarRayos(T.cuadros[T.i]); });
 
   // Abre el módulo pedido en la dirección (#aire, #nieve, #desmontes)
   var pedido = (location.hash || '').slice(1);
