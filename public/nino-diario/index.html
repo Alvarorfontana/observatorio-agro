@@ -208,6 +208,7 @@ a { color: inherit; }
       title: { text: titulo, subtext: sub, left: 0, top: 0, show: false, textStyle: { color: c.fg, fontSize: 16 }, subtextStyle: { color: c.muted } },
       toolbox: { show: false, feature: { saveAsImage: { pixelRatio: 2 } } } };
   }
+  function angosto(id) { return ($(id).clientWidth || 800) < 560; }
   function grafico(id) { if (graficos[id]) graficos[id].dispose(); graficos[id] = echarts.init($(id)); return graficos[id]; }
 
   function dibujarEvolucion() {
@@ -217,10 +218,12 @@ a { color: inherit; }
     anios.forEach(function (a) {
       var arr = a === ANIO ? SERIE : D[a]; var datos = medida === 'anom' ? anom(arr) : arr;
       var esActual = a === ANIO, res = !!resaltados[a];
+      var lc = esActual ? c.acc : (res ? paleta[(k++) % paleta.length] : c.line);
       series.push({ name: a, type: 'line', data: datos, showSymbol: false, connectNulls: false, z: esActual ? 10 : (res ? 5 : 1),
-        lineStyle: { width: esActual ? 3.2 : (res ? 2 : .8), color: esActual ? c.acc : (res ? paleta[(k++) % paleta.length] : c.line) },
+        lineStyle: { width: esActual ? 3.2 : (res ? 2 : .8), color: lc }, itemStyle: { color: lc },
         emphasis: { disabled: true }, silent: !(esActual || res),
-        endLabel: (esActual || res) ? { show: true, formatter: a, color: esActual ? c.acc : undefined, fontWeight: 600, fontSize: 12 } : undefined });
+        endLabel: (esActual || res) ? { show: true, formatter: a, color: lc, fontWeight: 600, fontSize: 12 } : undefined,
+        labelLayout: { moveOverlap: 'shiftY' } });
     });
     if (medida === 'abs') series.push({ name: 'Normal 1991-2020', type: 'line', data: NORMAL, showSymbol: false, lineStyle: { width: 2, type: 'dashed', color: c.muted }, z: 4 });
     var o = base('El Niño día por día', 'Región Niño 3.4');
@@ -231,7 +234,7 @@ a { color: inherit; }
           var vis = ps.filter(function (p) { return p.value != null && (p.seriesName === ANIO || resaltados[p.seriesName] || p.seriesName.indexOf('Normal') === 0); });
           return '<b>' + ps[0].axisValue + '</b><br>' + vis.map(function (p) { return p.marker + p.seriesName + ': <b>' + (medida === 'anom' ? s(p.value) : f(p.value)) + ' °C</b>'; }).join('<br>');
         } },
-      xAxis: { type: 'category', data: dias, boundaryGap: false, axisLabel: { color: c.muted, interval: function (i) { return INICIO_MES.indexOf(i) >= 0; }, formatter: function (v, i) { return MES[INICIO_MES.indexOf(i)] || ''; } }, axisLine: { lineStyle: { color: c.line } }, axisTick: { show: false } },
+      xAxis: { type: 'category', data: dias, boundaryGap: false, axisLabel: { color: c.muted, interval: function (i) { var m = INICIO_MES.indexOf(i); return m >= 0 && (!angosto('g-evol') || m % 3 === 0); }, formatter: function (v, i) { return MES[INICIO_MES.indexOf(i)] || ''; } }, axisLine: { lineStyle: { color: c.line } }, axisTick: { show: false } },
       yAxis: { type: 'value', scale: medida === 'abs', name: medida === 'anom' ? '°C sobre lo normal' : '°C', nameTextStyle: { color: c.muted }, axisLabel: { color: c.muted }, splitLine: { lineStyle: { color: c.line, opacity: .6 } } },
       dataZoom: [{ type: 'inside' }, { type: 'slider', height: 18, bottom: 14 }],
       series: series
@@ -251,7 +254,7 @@ a { color: inherit; }
     grafico('g-pico').setOption(Object.assign(base('El pico de cada gran El Niño', 'Máxima diferencia diaria con lo normal · región Niño 3.4'), {
       grid: { left: 8, right: 8, top: 28, bottom: 28, containLabel: true },
       tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, valueFormatter: function (v) { return s(v) + ' °C'; } },
-      xAxis: { type: 'category', data: filas.map(function (x) { return x[0]; }), axisLabel: { color: c.fg }, axisLine: { lineStyle: { color: c.line } }, axisTick: { show: false } },
+      xAxis: { type: 'category', data: filas.map(function (x) { return x[0]; }), axisLabel: { color: c.fg, interval: 0, rotate: angosto('g-pico') ? 40 : 0, fontSize: 11.5 }, axisLine: { lineStyle: { color: c.line } }, axisTick: { show: false } },
       yAxis: { type: 'value', show: false, max: function (v) { return v.max * 1.15; } },
       series: [{ type: 'bar', barWidth: '62%', data: filas.map(function (x) { return { value: +x[1].toFixed(2), itemStyle: { color: x[0] === ANIO ? c.acc : '#b9bab2' } }; }),
         label: { show: true, position: 'top', color: c.fg, fontWeight: 600, formatter: function (p) { return s(p.value); } } }]
@@ -285,7 +288,7 @@ a { color: inherit; }
     grafico('g-rank').setOption(Object.assign(base('Este mismo día en cada año', 'Diferencia con lo normal · región Niño 3.4'), {
       grid: { left: 8, right: 8, top: 16, bottom: 28, containLabel: true },
       tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, valueFormatter: function (v) { return s(v, 2) + ' °C'; } },
-      xAxis: { type: 'category', data: filas.map(function (x) { return x[0]; }), axisLabel: { color: c.muted, interval: 3 }, axisLine: { lineStyle: { color: c.line } }, axisTick: { show: false } },
+      xAxis: { type: 'category', data: filas.map(function (x) { return x[0]; }), axisLabel: { color: c.muted, interval: angosto('g-rank') ? 9 : 3 }, axisLine: { lineStyle: { color: c.line } }, axisTick: { show: false } },
       yAxis: { type: 'value', axisLabel: { color: c.muted }, splitLine: { lineStyle: { color: c.line, opacity: .6 } } },
       series: [{ type: 'bar', data: filas.map(function (x) { return { value: +x[1].toFixed(2), itemStyle: { color: x[0] === ANIO ? c.acc : (x[1] >= 1 ? c.tib : x[1] <= -1 ? c.frio : '#b9bab2') } }; }) }]
     }));
@@ -332,7 +335,8 @@ a { color: inherit; }
   function todo() { cifras(); dibujarEvolucion(); dibujarPicos(); dibujarMeses(); dibujarRanking(); }
   cargar().then(function (j) { preparar(j); chips(); todo(); })
     .catch(function () { $('cifras').innerHTML = '<div class="cifra"><span>Sin datos</span><b>—</b><small>No respondió la fuente ni la copia guardada. Probá de nuevo en unos minutos.</small></div>'; });
-  window.addEventListener('resize', function () { Object.keys(graficos).forEach(function (k) { graficos[k].resize(); }); });
+  var tr = null;
+  window.addEventListener('resize', function () { Object.keys(graficos).forEach(function (k) { graficos[k].resize(); }); clearTimeout(tr); tr = setTimeout(function () { if (D) todo(); }, 250); });
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () { if (D) todo(); });
 })();
 </script>
