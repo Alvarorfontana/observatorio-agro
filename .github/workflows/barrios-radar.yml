@@ -24,7 +24,7 @@ concurrency:
 jobs:
   barrios:
     runs-on: ubuntu-latest
-    timeout-minutes: 240
+    timeout-minutes: 340
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6

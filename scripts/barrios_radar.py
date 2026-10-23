@@ -448,12 +448,12 @@ def map_place(ee, clf, st, polys, feats):
                   area.updateMask(built).updateMask(ren).rename("renabap_built_m2"),
                   area.updateMask(built).updateMask(ren).updateMask(informal).rename("renabap_detected_m2")]
     stats, err = None, "sin respuesta"
-    for scale in (10, 20):
+    for scale in (20, 30):                 # superficies y personas no necesitan 10 m: 20 m es 4 veces más rápido
         try:
             stats = ee.Image.cat(bands).reduceRegion(ee.Reducer.sum(), region, scale=scale, maxPixels=1e10,
                                                       tileScale=8).getInfo()
             break
-        except Exception as exc:  # cómputo muy grande: se reintenta a 20 m
+        except Exception as exc:  # cómputo muy grande: se reintenta a 30 m
             err = str(exc)[:200]
     if stats is None:
         return {"error": err}
@@ -530,12 +530,25 @@ def main(out_path):
     final = choose_final(summary)
     print("Modelo final:", final, flush=True)
     training = ee.FeatureCollection(fcs + (ext_fcs if final == "optico_radar_externas" else [])).flatten()
-    clf = ee.Classifier.smileRandomForest(numberOfTrees=500, seed=SEED).train(
+    # para mapear alcanzan 200 árboles (la evaluación usa 500): el mapa sale mucho más rápido
+    clf = ee.Classifier.smileRandomForest(numberOfTrees=200, seed=SEED).train(
         training, "label", feats_for(final))
     places = []
+
+    def write(d):
+        """Guarda lo que haya: si la tarea se corta por tiempo, queda lo ya calculado."""
+        with open(out_path, "w", encoding="utf-8") as f:
+            json.dump(d, f, ensure_ascii=False, indent=1)
+
+    base = {"updated": datetime.now(timezone.utc).strftime("%Y-%m-%d"), "year": YEAR,
+            "model": {"promedio": summary, "modelo_final": final, "capas_mas_utiles": importance,
+                      "ciudades_entrenamiento": [st["place"] for st in train], "ciudades_externas": ext_cities,
+                      "evaluacion_por_ciudad": [dict(r, city=next(s["place"] for s in stations if s["id"] == r["city"]))
+                                                for r in per_city]}}
+    write(dict(base, places=[], parcial=True))
     img_dir = os.path.join(os.path.dirname(out_path), "barrios_radar")
     os.makedirs(img_dir, exist_ok=True)
-    for st in stations:
+    def one(st):
         res = map_place(ee, clf, st, polys_by[st["id"]], feats_for(final))
         png = res.pop("_png", None)
         if png and png.startswith(b"\x89PNG"):
@@ -544,8 +557,17 @@ def main(out_path):
             res["imagen"] = f"barrios_radar/{st['id']}.png"
         res.update(id=st["id"], place=st["place"], river=st["river"], entrenamiento=st in train,
                    fuente_renabap=sources[st["id"]])
-        places.append(res)
-        print(f"{st['place']}: {res.get('informal_ha')} ha, {res.get('pop_informal')} personas", flush=True)
+        log(f"{st['place']}: {res.get('informal_ha')} ha, {res.get('pop_informal')} personas"
+            + (f" · {res['error'][:120]}" if res.get("error") else ""))
+        return res
+
+    from concurrent.futures import ThreadPoolExecutor
+    order = {st["id"]: i for i, st in enumerate(stations)}
+    with ThreadPoolExecutor(max_workers=4) as pool:   # Earth Engine procesa varias localidades a la vez
+        for res in pool.map(one, stations):
+            places.append(res)
+            places.sort(key=lambda p: order[p["id"]])
+            write(dict(base, places=places, parcial=len(places) < len(stations)))
     data = {
         "updated": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
         "year": YEAR,
