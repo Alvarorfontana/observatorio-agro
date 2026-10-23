@@ -21,6 +21,7 @@ from datetime import date, datetime, timedelta, timezone
 import requests
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)  # nino_graficos vive al lado
 STATE = os.path.join(HERE, '..', 'data', 'nino_avisos_estado.json')
 FEED = os.path.join(HERE, '..', 'data', 'nino_avisos.json')
 SITE = os.environ.get('DOTS_SITE', 'https://observatorio-agro.vercel.app')
