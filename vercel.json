@@ -43,7 +43,11 @@
       "destination": "/campo/index.html"
     },
     {
-      "source": "/((?!api/|ftw/|dem/|assets/|poblacion|avisos-widget|campo|radar|agricultura-precision).*)",
+      "source": "/lente",
+      "destination": "/lente/index.html"
+    },
+    {
+      "source": "/((?!api/|ftw/|dem/|assets/|poblacion|avisos-widget|campo|radar|agricultura-precision|lente).*)",
       "destination": "/index.html"
     }
   ],

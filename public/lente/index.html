@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lente de Relieve Argentina</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Mapa a pantalla completa; panel de instrumentos a la izquierda (abajo en el celular). */
+:root {
+  --bg: #f3f4f1; --panel: #ffffff; --fg: #1b211c; --muted: #5d665e;
+  --line: #d9ddd6; --accent: #b4532a; --chip: #eceee9;
+  --sans: 'IBM Plex Sans', system-ui, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #121512; --panel: #1a1e1a; --fg: #e7ebe5; --muted: #9aa49b;
+    --line: #2f362f; --accent: #e07a4b; --chip: #242a24; color-scheme: dark; }
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--fg); font: 14px/1.45 var(--sans); }
+#app { display: flex; height: 100%; }
+#panel { width: 320px; flex: none; background: var(--panel); border-right: 1px solid var(--line);
+  overflow-y: auto; padding: 16px; padding-top: max(16px, env(safe-area-inset-top));
+  display: flex; flex-direction: column; gap: 16px; z-index: 1000; }
+#mapwrap { position: relative; flex: 1; min-width: 0; }
+#map, #lensmap { position: absolute; inset: 0; }
+#lensmap { pointer-events: none; z-index: 400; }
+#ring { position: absolute; z-index: 450; border-radius: 50%; border: 2px solid #fff;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.45), 0 2px 10px rgba(0,0,0,.35); cursor: grab; touch-action: none; }
+#ring.full { display: none; }
+#ring::after { content: ""; position: absolute; right: 8%; bottom: 8%; width: 14px; height: 14px;
+  border-radius: 50%; background: #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.4); }
+h1 { font-size: 17px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
+.sub { color: var(--muted); font-size: 12.5px; margin: 2px 0 0; }
+.grupo { display: flex; flex-direction: column; gap: 8px; }
+.rotulo { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips button { font: 500 12.5px var(--sans); color: var(--fg); background: var(--chip);
+  border: 1px solid transparent; border-radius: 6px; padding: 6px 9px; cursor: pointer; }
+.chips button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); background: transparent; }
+.chips button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+label.fila { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; font-size: 13px; }
+label.fila input { grid-column: 1 / -1; width: 100%; accent-color: var(--accent); }
+.val { font-family: var(--mono); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+select, .buscar input { font: 13px var(--sans); color: var(--fg); background: var(--chip);
+  border: 1px solid var(--line); border-radius: 6px; padding: 7px 8px; width: 100%; }
+.buscar { display: flex; gap: 6px; }
+.buscar button { font: 500 13px var(--sans); background: var(--fg); color: var(--panel); border: 0; border-radius: 6px; padding: 0 12px; cursor: pointer; }
+#info { font-family: var(--mono); font-size: 12px; background: var(--chip); border-radius: 6px; padding: 10px; min-height: 64px; white-space: pre-line; }
+.nota { font-size: 12.5px; color: var(--muted); border-left: 3px solid var(--accent); padding-left: 10px; }
+.nota strong { color: var(--fg); font-weight: 600; }
+.check { display: flex; gap: 8px; align-items: center; font-size: 13px; }
+#toggle { display: none; }
+.leaflet-container { background: var(--bg); font-family: var(--sans); }
+@media (max-width: 760px) {
+  #app { flex-direction: column-reverse; }
+  #panel { width: 100%; height: 42%; border-right: 0; border-top: 1px solid var(--line);
+    padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right));
+    padding-bottom: max(16px, env(safe-area-inset-bottom)); padding-top: 12px; }
+  #panel.cerrado { height: auto; }
+  #panel.cerrado .plegable { display: none; }
+  #toggle { display: block; font: 500 12.5px var(--sans); background: var(--chip); color: var(--fg); border: 0; border-radius: 6px; padding: 6px 10px; }
+  .cabeza { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="panel">
+    <div class="cabeza">
+      <div>
+        <h1>Lente de Relieve</h1>
+        <p class="sub">Arrastrá el círculo sobre el mapa. Tocá el mapa para medir.</p>
+      </div>
+      <button id="toggle" type="button">Opciones</button>
+    </div>
+
+    <div class="grupo plegable">
+      <span class="rotulo">Qué muestra la lente</span>
+      <div class="chips" id="modos">
+        <button data-modo="sombra" aria-pressed="true">Sombreado</button>
+        <button data-modo="multi">Multidireccional</button>
+        <button data-modo="pendiente">Pendiente</button>
+        <button data-modo="local">Relieve local</button>
+        <button data-modo="orientacion">Orientación</button>
+        <button data-modo="rojo">Relieve rojo</button>
+        <button data-modo="verdor">Verdor (Sentinel-2)</button>
+      </div>
+    </div>
+
+    <div class="grupo plegable" id="ctl-luz">
+      <label class="fila">Dirección de la luz <span class="val" id="v-az">315°</span>
+        <input type="range" id="az" min="0" max="359" value="315"></label>
+      <label class="fila">Altura del sol <span class="val" id="v-alt">35°</span>
+        <input type="range" id="alt" min="5" max="85" value="35"></label>
+    </div>
+    <div class="grupo plegable">
+      <label class="fila">Exageración vertical <span class="val" id="v-ex">×3</span>
+        <input type="range" id="ex" min="1" max="20" value="3"></label>
+      <label class="fila">Tamaño de la lente <span class="val" id="v-r">150 px</span>
+        <input type="range" id="r" min="60" max="420" value="150"></label>
+      <label class="check"><input type="checkbox" id="full"> Lente en toda la pantalla</label>
+    </div>
+
+    <div class="grupo plegable">
+      <span class="rotulo">Mapa de fondo</span>
+      <select id="fondo">
+        <option value="esri">Foto satelital (Esri)</option>
+        <option value="s2">Sentinel-2 sin nubes 2023 (EOX)</option>
+        <option value="topo">Topográfico (OpenTopoMap)</option>
+        <option value="osm">Calles (OpenStreetMap)</option>
+      </select>
+    </div>
+
+    <div class="grupo plegable">
+      <span class="rotulo">Ir a</span>
+      <form class="buscar" id="buscar"><input id="q" type="search" placeholder="Lugar en Argentina"><button type="submit">Buscar</button></form>
+      <div class="chips" id="lugares">
+        <button data-ll="-28.55,-57.18,12">Esteros del Iberá</button>
+        <button data-ll="-27.47,-58.83,13">Corrientes</button>
+        <button data-ll="-25.42,-67.08,11">Salar del Hombre Muerto</button>
+        <button data-ll="-32.65,-70.01,12">Aconcagua</button>
+        <button data-ll="-41.13,-71.31,12">Bariloche</button>
+      </div>
+    </div>
+
+    <div class="grupo plegable">
+      <span class="rotulo">Punto medido</span>
+      <div id="info">Tocá el mapa para ver altura, pendiente y orientación del terreno.</div>
+    </div>
+
+    <p class="nota plegable"><strong>Datos.</strong> El relieve sale del modelo de elevación global Terrarium (en Argentina, sobre todo SRTM de unos 30 m). Alcanza para lomas, cauces, terrazas y estructuras regionales. No es LiDAR de 1 m: un túmulo o una zanja chica no se ven.</p>
+    <p class="nota plegable"><strong>Ojo con la vegetación.</strong> Un estudio en bosques franceses comparó Sentinel-2 con láser aerotransportado y encontró que el satélite solo "ve" los 6 a 10 m de arriba del dosel, y que el procesamiento estándar está calibrado para cultivos. En monte alto o irregular, el verdor satelital subestima la masa foliar. El modo Verdor de acá es un índice visible (VARI) sobre el mosaico sin nubes: sirve para comparar zonas, no para medir carbono.</p>
+  </aside>
+
+  <div id="mapwrap">
+    <div id="map"></div>
+    <div id="lensmap"></div>
+    <div id="ring" title="Arrastrá la lente"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+(function () {
+  'use strict';
+  var S = { modo: 'sombra', az: 315, alt: 35, ex: 3, r: 150, full: false, cx: null, cy: null };
+
+  var FONDOS = {
+    esri: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Imágenes © Esri' }],
+    s2: ['https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2023_3857/default/g/{z}/{y}/{x}.jpg', { maxZoom: 15, attribution: 'Sentinel-2 cloudless 2023 © EOX (contiene datos Copernicus)' }],
+    topo: ['https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { maxZoom: 17, attribution: '© OpenTopoMap (CC-BY-SA), © OpenStreetMap' }],
+    osm: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }]
+  };
+  var TERRARIUM = 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png';
+  var S2 = FONDOS.s2[0];
+
+  var map = L.map('map', { zoomControl: true, attributionControl: true }).setView([-28.55, -57.18], 12);
+  var fondo = L.tileLayer(FONDOS.esri[0], FONDOS.esri[1]).addTo(map);
+  L.control.scale({ imperial: false }).addTo(map);
+  map.attributionControl.addAttribution('Relieve: Terrarium (Mapzen/AWS)');
+
+  var lensMap = L.map('lensmap', { zoomControl: false, attributionControl: false, dragging: false,
+    scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false, keyboard: false, touchZoom: false,
+    zoomAnimation: false, fadeAnimation: false, inertia: false });
+
+  // ---------- Decodificación y caché de teselas ----------
+  var cache = {};
+  function cargarImg(url) {
+    return new Promise(function (ok, mal) {
+      var im = new Image(); im.crossOrigin = 'anonymous';
+      im.onload = function () { ok(im); }; im.onerror = mal; im.src = url;
+    });
+  }
+  function urlDe(tpl, c) { return tpl.replace('{z}', c.z).replace('{x}', c.x).replace('{y}', c.y); }
+  function pixeles(im) {
+    var cv = document.createElement('canvas'); cv.width = cv.height = 256;
+    var cx = cv.getContext('2d'); cx.drawImage(im, 0, 0, 256, 256);
+    return cx.getImageData(0, 0, 256, 256).data;
+  }
+  function elevaciones(c) {
+    var k = 'e' + c.z + '/' + c.x + '/' + c.y;
+    if (!cache[k]) cache[k] = cargarImg(urlDe(TERRARIUM, c)).then(function (im) {
+      var d = pixeles(im), e = new Float32Array(65536);
+      for (var i = 0; i < 65536; i++) e[i] = d[i*4] * 256 + d[i*4+1] + d[i*4+2] / 256 - 32768;
+      return e;
+    });
+    return cache[k];
+  }
+  function rgbS2(c) {
+    var k = 's' + c.z + '/' + c.x + '/' + c.y;
+    if (!cache[k]) cache[k] = cargarImg(urlDe(S2, c)).then(pixeles);
+    return cache[k];
+  }
+  function metrosPorPixel(c) {
+    var n = Math.PI - 2 * Math.PI * (c.y + 0.5) / Math.pow(2, c.z);
+    var lat = Math.atan(Math.sinh(n));
+    return 156543.034 * Math.cos(lat) / Math.pow(2, c.z);
+  }
+
+  // ---------- Render ----------
+  var RAD = Math.PI / 180;
+  function gradientes(e, res, ex) {
+    var gx = new Float32Array(65536), gy = new Float32Array(65536);
+    for (var y = 0; y < 256; y++) for (var x = 0; x < 256; x++) {
+      var xl = x > 0 ? x - 1 : x, xr = x < 255 ? x + 1 : x;
+      var yu = y > 0 ? y - 1 : y, yd = y < 255 ? y + 1 : y;
+      var i = y * 256 + x;
+      gx[i] = ex * (e[y*256+xr] - e[y*256+xl]) / ((xr - xl) * res);
+      gy[i] = ex * (e[yd*256+x] - e[yu*256+x]) / ((yd - yu) * res);
+    }
+    return [gx, gy];
+  }
+  function sombra(gx, gy, az, alt) {
+    // az en grados desde el norte, sentido horario; y crece hacia el sur
+    var zen = (90 - alt) * RAD, a = az * RAD;
+    var lx = Math.sin(a) * Math.sin(zen), ly = -Math.cos(a) * Math.sin(zen), lz = Math.cos(zen);
+    var o = new Float32Array(65536);
+    for (var i = 0; i < 65536; i++) {
+      var nx = -gx[i], ny = -gy[i], nz = 1, l = Math.sqrt(nx*nx + ny*ny + 1);
+      o[i] = Math.max(0, (nx*lx + ny*ly + nz*lz) / l);
+    }
+    return o;
+  }
+  function mediaLocal(e, rad) {
+    var I = new Float64Array(257 * 257);
+    for (var y = 0; y < 256; y++) { var s = 0; for (var x = 0; x < 256; x++) { s += e[y*256+x]; I[(y+1)*257+x+1] = I[y*257+x+1] + s; } }
+    var m = new Float32Array(65536);
+    for (var y2 = 0; y2 < 256; y2++) for (var x2 = 0; x2 < 256; x2++) {
+      var x0 = Math.max(0, x2-rad), x1 = Math.min(256, x2+rad+1), y0 = Math.max(0, y2-rad), y1 = Math.min(256, y2+rad+1);
+      m[y2*256+x2] = (I[y1*257+x1] - I[y0*257+x1] - I[y1*257+x0] + I[y0*257+x0]) / ((x1-x0)*(y1-y0));
+    }
+    return m;
+  }
+  function hsl(h, s, l) {
+    var f = function (n) { var k = (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
+      return 255 * (l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1))); };
+    return [f(0), f(8), f(4)];
+  }
+  function pintar(canvas, c) {
+    var cx = canvas.getContext('2d'), img = cx.createImageData(256, 256), d = img.data, modo = S.modo;
+    var fin = function () { cx.putImageData(img, 0, 0); };
+    if (modo === 'verdor') {
+      return rgbS2(c).then(function (p) {
+        for (var i = 0; i < 65536; i++) {
+          var r = p[i*4], g = p[i*4+1], b = p[i*4+2], den = g + r - b;
+          var v = den === 0 ? 0 : (g - r) / den;
+          var t = Math.max(0, Math.min(1, (v + 0.15) / 0.5));
+          // marrón seco → amarillo → verde intenso
+          d[i*4] = t < .5 ? 150 + 70*t*2 : 220 - 190*(t-.5)*2;
+          d[i*4+1] = t < .5 ? 100 + 90*t*2 : 190 - 40*(t-.5)*2;
+          d[i*4+2] = t < .5 ? 60 - 20*t*2 : 40 + 20*(t-.5)*2;
+          d[i*4+3] = 255;
+        }
+        fin();
+      });
+    }
+    return elevaciones(c).then(function (e) {
+      var res = metrosPorPixel(c), g = gradientes(e, res, S.ex), gx = g[0], gy = g[1], i, v;
+      var put = function (i, r, gg, b) { d[i*4] = r; d[i*4+1] = gg; d[i*4+2] = b; d[i*4+3] = 255; };
+      if (modo === 'sombra') {
+        var h = sombra(gx, gy, S.az, S.alt);
+        for (i = 0; i < 65536; i++) { v = 255 * h[i]; put(i, v, v, v); }
+      } else if (modo === 'multi') {
+        var acc = new Float32Array(65536), dirs = [225, 270, 315, 360, 45, 90];
+        dirs.forEach(function (az) { var hh = sombra(gx, gy, az, S.alt); for (var j = 0; j < 65536; j++) acc[j] += hh[j] / dirs.length; });
+        for (i = 0; i < 65536; i++) { v = 255 * Math.min(1, acc[i] * 1.15); put(i, v, v, v); }
+      } else if (modo === 'pendiente') {
+        for (i = 0; i < 65536; i++) {
+          var sl = Math.atan(Math.hypot(gx[i], gy[i])) / RAD;
+          v = 255 * (1 - Math.min(1, sl / 45)); put(i, v, v, v);
+        }
+      } else if (modo === 'local') {
+        var m = mediaLocal(e, 12), k = 255 / Math.max(2, 30 / S.ex);
+        for (i = 0; i < 65536; i++) { v = 128 + (e[i] - m[i]) * k; v = Math.max(0, Math.min(255, v)); put(i, v, v, v); }
+      } else if (modo === 'orientacion') {
+        for (i = 0; i < 65536; i++) {
+          var asp = (Math.atan2(gx[i], -gy[i]) / RAD + 360) % 360; // hacia dónde mira la ladera
+          var s2 = Math.min(1, Math.atan(Math.hypot(gx[i], gy[i])) / RAD / 20);
+          var col = hsl(asp, s2 * 0.85, 0.55 - 0.1 * s2); put(i, col[0], col[1], col[2]);
+        }
+      } else if (modo === 'rojo') {
+        var m2 = mediaLocal(e, 10), k2 = 1 / Math.max(2, 25 / S.ex);
+        for (i = 0; i < 65536; i++) {
+          var gris = Math.max(0, Math.min(1, 0.55 + (e[i] - m2[i]) * k2));
+          var sat = Math.min(1, Math.atan(Math.hypot(gx[i], gy[i])) / RAD / 35);
+          put(i, 255 * gris, 255 * gris * (1 - sat), 255 * gris * (1 - sat));
+        }
+      }
+      fin();
+    });
+  }
+
+  var Analisis = L.GridLayer.extend({
+    createTile: function (c, done) {
+      var t = document.createElement('canvas'); t.width = t.height = 256; t._c = c;
+      pintar(t, c).then(function () { done(null, t); }, function (err) { done(err, t); });
+      return t;
+    },
+    repintar: function () {
+      for (var k in this._tiles) { var t = this._tiles[k].el; if (t._c) pintar(t, t._c); }
+    }
+  });
+  var capa = new Analisis({ maxNativeZoom: 14, maxZoom: 19, tileSize: 256 }).addTo(lensMap);
+  function ajustarZoomNativo() {
+    capa.options.maxNativeZoom = S.modo === 'verdor' ? 15 : 14;
+    cache = {}; // libera memoria al cambiar de fuente
+    capa.redraw();
+  }
+
+  // ---------- Sincronización y lente ----------
+  var wrap = document.getElementById('mapwrap'), lensEl = document.getElementById('lensmap'), ring = document.getElementById('ring');
+  function sync() { lensMap.setView(map.getCenter(), map.getZoom(), { animate: false }); }
+  map.on('move zoom', sync); map.on('zoomend moveend', sync);
+  function ubicarLente() {
+    var w = wrap.clientWidth, h = wrap.clientHeight;
+    if (S.cx === null) { S.cx = w / 2; S.cy = h / 2; }
+    S.cx = Math.max(0, Math.min(w, S.cx)); S.cy = Math.max(0, Math.min(h, S.cy));
+    if (S.full) { lensEl.style.clipPath = 'none'; ring.classList.add('full'); return; }
+    ring.classList.remove('full');
+    lensEl.style.clipPath = 'circle(' + S.r + 'px at ' + S.cx + 'px ' + S.cy + 'px)';
+    ring.style.width = ring.style.height = (S.r * 2) + 'px';
+    ring.style.left = (S.cx - S.r) + 'px'; ring.style.top = (S.cy - S.r) + 'px';
+  }
+  var arrastre = null;
+  ring.addEventListener('pointerdown', function (ev) {
+    arrastre = { x: ev.clientX - S.cx, y: ev.clientY - S.cy }; ring.setPointerCapture(ev.pointerId); ring.style.cursor = 'grabbing';
+  });
+  ring.addEventListener('pointermove', function (ev) {
+    if (!arrastre) return; S.cx = ev.clientX - arrastre.x; S.cy = ev.clientY - arrastre.y; ubicarLente();
+  });
+  var soltar = function () { arrastre = null; ring.style.cursor = 'grab'; };
+  ring.addEventListener('pointerup', soltar); ring.addEventListener('pointercancel', soltar);
+  // Un toque dentro de la lente sin arrastrar también mide
+  ring.addEventListener('click', function (ev) {
+    var b = wrap.getBoundingClientRect(); medir(map.containerPointToLatLng([ev.clientX - b.left, ev.clientY - b.top]));
+  });
+
+  // ---------- Medición ----------
+  var marca = null;
+  function medir(ll) {
+    var z = 13, n = Math.pow(2, z);
+    var fx = (ll.lng + 180) / 360 * n;
+    var latR = ll.lat * RAD, fy = (1 - Math.log(Math.tan(latR) + 1 / Math.cos(latR)) / Math.PI) / 2 * n;
+    var c = { z: z, x: Math.floor(fx), y: Math.floor(fy) };
+    var px = Math.min(254, Math.max(1, Math.floor((fx - c.x) * 256))), py = Math.min(254, Math.max(1, Math.floor((fy - c.y) * 256)));
+    if (marca) marca.remove();
+    marca = L.circleMarker(ll, { radius: 5, color: '#fff', weight: 2, fillColor: '#b4532a', fillOpacity: 1 }).addTo(map);
+    document.getElementById('info').textContent = 'Midiendo…';
+    elevaciones(c).then(function (e) {
+      var res = metrosPorPixel(c), i = py * 256 + px;
+      var dx = (e[i+1] - e[i-1]) / (2 * res), dy = (e[i+256] - e[i-256]) / (2 * res);
+      var sl = Math.atan(Math.hypot(dx, dy)) / RAD;
+      var asp = (Math.atan2(dx, -dy) / RAD + 360) % 360;
+      var rumbos = ['N','NE','E','SE','S','SO','O','NO'];
+      var m = mediaLocal(e, 12);
+      document.getElementById('info').textContent =
+        'Lat ' + ll.lat.toFixed(5) + '  Lon ' + ll.lng.toFixed(5) +
+        '\nAltura      ' + Math.round(e[i]) + ' m' +
+        '\nPendiente   ' + sl.toFixed(1) + '°' +
+        '\nMira hacia  ' + (sl < 0.3 ? 'plano' : rumbos[Math.round(asp / 45) % 8] + ' (' + Math.round(asp) + '°)') +
+        '\nVs. entorno ' + ((e[i] - m[i]) >= 0 ? '+' : '') + (e[i] - m[i]).toFixed(1) + ' m (radio ≈ ' + Math.round(12 * res) + ' m)';
+    }, function () { document.getElementById('info').textContent = 'No se pudo leer el relieve en este punto. Probá de nuevo.'; });
+  }
+  map.on('click', function (ev) { medir(ev.latlng); });
+
+  // ---------- Controles ----------
+  function $(id) { return document.getElementById(id); }
+  document.querySelectorAll('#modos button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var antes = S.modo; S.modo = b.dataset.modo;
+      document.querySelectorAll('#modos button').forEach(function (o) { o.setAttribute('aria-pressed', o === b ? 'true' : 'false'); });
+      $('ctl-luz').hidden = !(S.modo === 'sombra' || S.modo === 'multi');
+      if ((antes === 'verdor') !== (S.modo === 'verdor')) ajustarZoomNativo(); else capa.repintar();
+    });
+  });
+  var tRep = null;
+  function repDiferido() { clearTimeout(tRep); tRep = setTimeout(function () { capa.repintar(); }, 60); }
+  $('az').addEventListener('input', function () { S.az = +this.value; $('v-az').textContent = S.az + '°'; repDiferido(); });
+  $('alt').addEventListener('input', function () { S.alt = +this.value; $('v-alt').textContent = S.alt + '°'; repDiferido(); });
+  $('ex').addEventListener('input', function () { S.ex = +this.value; $('v-ex').textContent = '×' + S.ex; repDiferido(); });
+  $('r').addEventListener('input', function () { S.r = +this.value; $('v-r').textContent = S.r + ' px'; ubicarLente(); });
+  $('full').addEventListener('change', function () { S.full = this.checked; ubicarLente(); });
+  $('fondo').addEventListener('change', function () {
+    var f = FONDOS[this.value]; map.removeLayer(fondo); fondo = L.tileLayer(f[0], f[1]).addTo(map); fondo.bringToBack();
+  });
+  document.querySelectorAll('#lugares button').forEach(function (b) {
+    b.addEventListener('click', function () { var p = b.dataset.ll.split(',').map(Number); map.setView([p[0], p[1]], p[2]); });
+  });
+  $('buscar').addEventListener('submit', function (ev) {
+    ev.preventDefault(); var q = $('q').value.trim(); if (!q) return;
+    fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ar&q=' + encodeURIComponent(q))
+      .then(function (r) { return r.json(); })
+      .then(function (j) { if (j && j[0]) map.setView([+j[0].lat, +j[0].lon], 13); else $('info').textContent = 'No encontré "' + q + '". Probá con otro nombre.'; })
+      .catch(function () { $('info').textContent = 'La búsqueda no respondió. Revisá la conexión.'; });
+  });
+  $('toggle').addEventListener('click', function () {
+    $('panel').classList.toggle('cerrado');
+    setTimeout(function () { map.invalidateSize(); lensMap.invalidateSize(); sync(); ubicarLente(); }, 50);
+  });
+  if (window.matchMedia('(max-width: 760px)').matches) { $('panel').classList.add('cerrado'); S.r = 110; $('r').value = 110; $('v-r').textContent = '110 px'; }
+
+  window.addEventListener('resize', function () { map.invalidateSize(); lensMap.invalidateSize(); sync(); ubicarLente(); });
+  setTimeout(function () { map.invalidateSize(); lensMap.invalidateSize(); sync(); ubicarLente(); }, 0);
+})();
+</script>
+</body>
+</html>
