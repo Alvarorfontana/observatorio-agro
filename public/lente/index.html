@@ -33,6 +33,14 @@ body { background: var(--bg); color: var(--fg); font: 14px/1.45 var(--sans); }
 #ring { position: absolute; z-index: 450; border-radius: 50%; border: 2px solid #fff;
   box-shadow: 0 0 0 1px rgba(0,0,0,.45), 0 2px 10px rgba(0,0,0,.35); cursor: grab; touch-action: none; }
 #ring.full { display: none; }
+#mapwrap.lado #map { right: 50%; }
+#mapwrap.lado #lensmap { left: 50%; clip-path: none !important; border-left: 2px solid #fff; }
+#mapwrap.lado #ring { display: none; }
+.cruz { position: absolute; z-index: 460; width: 22px; height: 22px; margin: -11px 0 0 -11px; pointer-events: none; display: none; }
+.cruz::before, .cruz::after { content: ""; position: absolute; background: #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.5); }
+.cruz::before { left: 10px; top: 0; width: 2px; height: 22px; }
+.cruz::after { top: 10px; left: 0; height: 2px; width: 22px; }
+#mapwrap.lado .cruz.ver { display: block; }
 #ring::after { content: ""; position: absolute; right: 8%; bottom: 8%; width: 14px; height: 14px;
   border-radius: 50%; background: #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.4); }
 h1 { font-size: 17px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
@@ -106,6 +114,7 @@ select, .buscar input { font: 13px var(--sans); color: var(--fg); background: va
       <label class="fila">Tamaño de la lente <span class="val" id="v-r">150 px</span>
         <input type="range" id="r" min="60" max="420" value="150"></label>
       <label class="check"><input type="checkbox" id="full"> Lente en toda la pantalla</label>
+      <label class="check"><input type="checkbox" id="lado"> Lado a lado: foto a la izquierda, relieve a la derecha</label>
     </div>
 
     <div class="grupo plegable">
@@ -143,6 +152,7 @@ select, .buscar input { font: 13px var(--sans); color: var(--fg); background: va
     <div id="map"></div>
     <div id="lensmap"></div>
     <div id="ring" title="Arrastrá la lente"></div>
+    <div class="cruz" id="cruz"></div>
   </div>
 </div>
 
@@ -316,6 +326,7 @@ select, .buscar input { font: 13px var(--sans); color: var(--fg); background: va
 
   // ---------- Sincronización y lente ----------
   var wrap = document.getElementById('mapwrap'), lensEl = document.getElementById('lensmap'), ring = document.getElementById('ring');
+  var lado = false;
   function sync() { lensMap.setView(map.getCenter(), map.getZoom(), { animate: false }); }
   map.on('move zoom', sync); map.on('zoomend moveend', sync);
   function ubicarLente() {
@@ -388,6 +399,18 @@ select, .buscar input { font: 13px var(--sans); color: var(--fg); background: va
   $('ex').addEventListener('input', function () { S.ex = +this.value; $('v-ex').textContent = '×' + S.ex; repDiferido(); });
   $('r').addEventListener('input', function () { S.r = +this.value; $('v-r').textContent = S.r + ' px'; ubicarLente(); });
   $('full').addEventListener('change', function () { S.full = this.checked; ubicarLente(); });
+  $('lado').addEventListener('change', function () {
+    lado = this.checked; wrap.classList.toggle('lado', lado);
+    setTimeout(function () { map.invalidateSize(); lensMap.invalidateSize(); sync(); ubicarLente(); }, 30);
+  });
+  // Cruz espejo: marca en el relieve el mismo punto que señalás en la foto
+  var cruz = $('cruz');
+  map.on('mousemove', function (ev) {
+    if (!lado) return;
+    var p = lensMap.latLngToContainerPoint(ev.latlng);
+    cruz.style.left = (wrap.clientWidth / 2 + p.x) + 'px'; cruz.style.top = p.y + 'px'; cruz.classList.add('ver');
+  });
+  map.on('mouseout', function () { cruz.classList.remove('ver'); });
   $('fondo').addEventListener('change', function () {
     var f = FONDOS[this.value]; map.removeLayer(fondo); fondo = L.tileLayer(f[0], f[1]).addTo(map); fondo.bringToBack();
   });
