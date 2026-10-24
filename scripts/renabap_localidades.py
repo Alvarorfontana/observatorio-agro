@@ -96,6 +96,41 @@ def summarize(data, stations):
     return places
 
 
+def export_barrios(data, path):
+    """Todos los barrios del país, simplificados (≈5 m), para consultarlos dentro de un área dibujada en el mapa."""
+    from shapely.geometry import shape, mapping
+    feats = []
+    for f in data.get("features", []):
+        geom, props = f.get("geometry"), f.get("properties") or {}
+        if not geom:
+            continue
+        try:
+            g = shape(geom)
+            if not g.is_valid:
+                g = g.buffer(0)
+            s = g.simplify(0.00005, preserve_topology=True)
+            c = g.representative_point()
+            b = g.bounds
+        except Exception:
+            continue
+        fam = pick(props, "famil", numeric=True)
+        geo = mapping(s)
+        def rnd(o):
+            return [rnd(x) for x in o] if isinstance(o, (list, tuple)) and o and isinstance(o[0], (list, tuple)) \
+                else ([round(o[0], 5), round(o[1], 5)] if isinstance(o, (list, tuple)) else o)
+        feats.append({"type": "Feature", "geometry": {"type": geo["type"], "coordinates": rnd(geo["coordinates"])},
+                      "properties": {"nombre": str(pick(props, "nombre", "barrio") or "Sin nombre")[:80],
+                                     "familias": round(fam) if fam is not None else None,
+                                     "ha": round(area_ha(geom), 2),
+                                     "provincia": str(pick(props, "provincia") or "")[:40],
+                                     "localidad": str(pick(props, "localidad", "municipio", "departamento") or "")[:60],
+                                     "lat": round(c.y, 5), "lon": round(c.x, 5),
+                                     "bbox": [round(v, 5) for v in b]}})
+    with open(path, "w", encoding="utf-8") as fh:
+        json.dump({"type": "FeatureCollection", "source": CREDIT, "features": feats}, fh, ensure_ascii=False, separators=(",", ":"))
+    print(f"Barrios exportados para el mapa: {len(feats)} · {os.path.getsize(path) / 1e6:.1f} MB", flush=True)
+
+
 def main(out_path):
     import cuenca
     data = download()
@@ -111,6 +146,7 @@ def main(out_path):
            "places": places}
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(out, f, ensure_ascii=False, indent=1)
+    export_barrios(data, os.path.join(os.path.dirname(out_path), "renabap_barrios.geojson"))
 
 
 if __name__ == "__main__":

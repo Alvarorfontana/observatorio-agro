@@ -32,4 +32,4 @@ jobs:
       - name: Guardar en la rama datos (no publica la web)
         if: success()
         run: |
-          cp scripts/datos_rama.sh /tmp/datos_rama.sh && bash /tmp/datos_rama.sh guardar "RENABAP por localidad $(date -u +%Y-%m-%d)" data/renabap_localidades.json
+          cp scripts/datos_rama.sh /tmp/datos_rama.sh && bash /tmp/datos_rama.sh guardar "RENABAP por localidad $(date -u +%Y-%m-%d)" data/renabap_localidades.json data/renabap_barrios.geojson
