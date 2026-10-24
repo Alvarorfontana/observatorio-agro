@@ -163,7 +163,7 @@ def flood_report_pdf():
 @bp.get('/api/poblacion/localidades')
 def riverside_places():
     import cuenca as cc
-    r=jsonify(places=[{'id':s['id'],'place':s['place'],'river':s['river']} for s in cc.STATIONS])
+    r=jsonify(places=[{'id':s['id'],'place':s['place'],'river':s['river'],'lat':s.get('lat'),'lon':s.get('lon')} for s in cc.STATIONS])
     r.headers['Cache-Control']='public, s-maxage=86400'
     return r
 

@@ -28,6 +28,7 @@ RULES = [
     ('/api/fuentes/ganado', 20, 300),
     ('/api/poblacion/informe', 6, 300),          # PDF de población
     ('/api/poblacion/crecida', 10, 300),         # Earth Engine
+    ('/api/poblacion/barrios/informe', 8, 300),  # PDF de barrios populares (por localidad y regional)
     ('/api/fuentes/tile', 600, 60),          # teselas del mapa base
     ('/api/fuentes/ndvi-imagen', 60, 60),
     ('/api/poblacion/', 40, 300),            # WorldPop: cálculo y consultas de resultado

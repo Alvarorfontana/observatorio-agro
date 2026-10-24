@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Informes DOTS</title>
+<meta name="description" content="Generá informes PDF de DOTS: barrios populares, alertas de crecida, población en zona baja, estado de la Cuenca del Plata y El Niño.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Mesa de informes: catálogo a la izquierda, armado y vista previa a la derecha, historial abajo. */
+:root {
+  --bg: #f2f5f5; --panel: #ffffff; --ink: #0b2b33; --fg: #1d2b30; --muted: #526a73; --line: #d4dfe2;
+  --teal: #0f9fa6; --teal-soft: #e3f3f4; --amber: #b54708; --red: #b42318; --chip: #eaf0f1;
+  --sans: 'IBM Plex Sans', system-ui, sans-serif; --mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #0b1619; --panel: #122127; --ink: #e6f2f4; --fg: #d6e4e7; --muted: #92a9b0; --line: #26393f;
+    --teal: #3cc3c9; --teal-soft: #15343a; --amber: #f0a35e; --red: #ff6b5e; --chip: #1a2c32; color-scheme: dark; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 var(--sans); }
+a { color: var(--teal); }
+.top { background: #0b2b33; color: #fff; }
+.top .in { max-width: 1240px; margin: 0 auto; padding-block: 12px; padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right));
+  display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.top strong { letter-spacing: .04em; font-size: 14px; }
+.top strong span { color: #7fd7dc; font-weight: 500; }
+.top a { color: #bfe9ec; font-size: 13.5px; text-decoration: none; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-block: 24px 48px;
+  padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); display: flex; flex-direction: column; gap: 22px; }
+.eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--teal); }
+h1 { font-size: clamp(26px, 3.6vw, 36px); line-height: 1.12; margin: 4px 0 6px; color: var(--ink); letter-spacing: -.015em; text-wrap: balance; }
+.lead { margin: 0; color: var(--muted); max-width: 72ch; }
+.mesa { display: grid; grid-template-columns: minmax(0, 380px) minmax(0, 1fr); gap: 22px; align-items: start; }
+.mesa > * { min-width: 0; }
+.catalogo { display: flex; flex-direction: column; gap: 8px; }
+.grupo-t { font-size: 11.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 10px 0 2px; }
+.tipo { text-align: left; font: inherit; color: inherit; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; cursor: pointer;
+  display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; }
+.tipo b { color: var(--ink); font-size: 15px; }
+.tipo small { grid-column: 1 / -1; color: var(--muted); font-size: 13px; line-height: 1.4; }
+.tipo .alc { font-size: 11px; font-weight: 600; color: var(--teal); background: var(--teal-soft); border-radius: 4px; padding: 2px 6px; align-self: start; white-space: nowrap; }
+.tipo[aria-pressed="true"] { border-color: var(--teal); box-shadow: inset 3px 0 0 var(--teal); }
+.tipo:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+.panel h2 { margin: 0; font-size: 20px; color: var(--ink); }
+.panel .desc { margin: 0; color: var(--muted); font-size: 14px; max-width: 70ch; }
+.incluye { margin: 0; padding-left: 18px; font-size: 13.5px; color: var(--fg); columns: 2; column-gap: 28px; }
+.incluye li { break-inside: avoid; margin-bottom: 3px; }
+.campos { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
+.campo { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); min-width: 220px; flex: 1; }
+select, input[type="text"] { font: 14px var(--sans); color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 9px 10px; width: 100%; }
+.acciones { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn { font: 600 14px var(--sans); border-radius: 7px; padding: 10px 16px; cursor: pointer; border: 1px solid var(--line); background: var(--chip); color: var(--fg); text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+.btn.primario { background: var(--ink); border-color: var(--ink); color: var(--panel); }
+.btn[disabled] { opacity: .55; cursor: wait; }
+#estado { font-size: 13.5px; color: var(--muted); min-height: 1.4em; margin: 0; }
+#estado.error { color: var(--red); }
+.vista { border: 1px solid var(--line); border-radius: 8px; background: var(--bg); height: 72vh; min-height: 420px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.vista iframe { width: 100%; height: 100%; border: 0; background: #fff; }
+.vista .vacia { color: var(--muted); font-size: 14px; text-align: center; padding: 20px; max-width: 46ch; }
+.nota { font-size: 13px; color: var(--muted); border-left: 3px solid var(--teal); padding-left: 10px; margin: 0; }
+.historial { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 18px; }
+.historial h2 { margin: 0 0 4px; font-size: 18px; color: var(--ink); }
+.tabla { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 9px 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+th { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
+td .mini { font: 600 12.5px var(--sans); border: 1px solid var(--line); background: var(--chip); color: var(--fg); border-radius: 6px; padding: 5px 9px; cursor: pointer; margin-right: 4px; }
+td.fecha { font-family: var(--mono); font-size: 12.5px; color: var(--muted); white-space: nowrap; }
+@media (max-width: 900px) { .mesa { grid-template-columns: 1fr; } .incluye { columns: 1; } .vista { height: 60vh; } }
+@media print { .top, .catalogo, .acciones, .historial { display: none !important; } }
+</style>
+</head>
+<body>
+<div class="top"><div class="in"><strong>DOTS <span>/ INFORMES</span></strong><a href="/">← Volver a DOTS</a></div></div>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Mesa de informes</div>
+    <h1>Informes DOTS</h1>
+    <p class="lead">Elegí el tipo de informe y la localidad, miralo en pantalla y bajalo en PDF. Cada informe se arma en el momento con los últimos datos y dice de dónde sale cada número. Los que generes quedan en tu historial, con un link para volver a sacarlos o compartirlos.</p>
+  </header>
+
+  <div class="mesa">
+    <nav class="catalogo" id="catalogo" aria-label="Tipos de informe"></nav>
+
+    <section class="panel" aria-live="polite">
+      <div>
+        <div class="eyebrow" id="p-grupo">Informe</div>
+        <h2 id="p-titulo">Elegí un informe</h2>
+      </div>
+      <p class="desc" id="p-desc"></p>
+      <ul class="incluye" id="p-incluye"></ul>
+      <div class="campos" id="p-campos"></div>
+      <div class="acciones">
+        <button type="button" class="btn primario" id="b-generar">Generar informe</button>
+        <button type="button" class="btn" id="b-bajar" hidden>Descargar PDF</button>
+        <button type="button" class="btn" id="b-link">Copiar link del informe</button>
+      </div>
+      <p id="estado"></p>
+      <div class="vista" id="vista"><p class="vacia">La vista previa del informe aparece acá. Algunos tardan hasta un minuto, porque calculan con satélites en el momento.</p></div>
+      <p class="nota" id="p-nota"></p>
+    </section>
+  </div>
+
+  <section class="historial">
+    <h2>Tus informes</h2>
+    <p class="nota" style="border:0;padding:0;margin:0 0 10px">Se guardan en este navegador. "Volver a sacar" lo arma de nuevo con los datos del día.</p>
+    <div class="tabla"><table><thead><tr><th>Informe</th><th>Lugar</th><th>Generado</th><th></th></tr></thead><tbody id="hist"></tbody></table></div>
+  </section>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  function $(id) { return document.getElementById(id); }
+  function el(tag, txt, cls) { var e = document.createElement(tag); if (txt != null) e.textContent = txt; if (cls) e.className = cls; return e; }
+
+  // Catálogo: cada informe usa un endpoint que DOTS ya tiene.
+  var TIPOS = [
+    { id: 'barrios', grupo: 'Barrios populares', titulo: 'Barrios populares · localidad', alcance: 'Localidad',
+      desc: 'Los barrios populares de una localidad ribereña y cuánto los expone el río.',
+      incluye: ['Barrios, familias y superficie (RENABAP)', 'Los barrios más grandes', 'Estado del río hoy (INA)', 'Personas por altura sobre el río', 'Detección por radar y zonas a verificar'],
+      campos: ['localidad'], nota: 'Fuentes: RENABAP 2023, INA, WorldPop, MERIT Hydro y Sentinel-1/2. No identifica viviendas ni personas.',
+      url: function (v) { return '/api/poblacion/barrios/informe?id=' + encodeURIComponent(v.localidad); } },
+    { id: 'barrios-regional', grupo: 'Barrios populares', titulo: 'Barrios populares · Cuenca del Plata', alcance: 'Región',
+      desc: 'Las 34 localidades ribereñas comparadas: dónde viven más familias en barrios populares y dónde está alto el río.',
+      incluye: ['Totales de barrios y familias', 'Ranking por familias', 'Localidades con el río en atención o más', 'Tabla completa'],
+      campos: [], nota: 'Fuente: RENABAP 2023 e INA.',
+      url: function () { return '/api/poblacion/barrios/informe-regional'; } },
+    { id: 'alerta', grupo: 'Crecidas', titulo: 'Alerta de crecida · localidad', alcance: 'Localidad',
+      desc: 'El estado del río en una localidad: altura, niveles oficiales, tendencia y pronóstico.',
+      incluye: ['Altura y niveles de alerta y evacuación', 'Tendencia y días hasta la alerta', 'Pronóstico del INA', 'Cuencas de aporte'],
+      campos: ['localidad'], nota: 'Fuente: INA y escalas de Prefectura Naval. Ante una evacuación manda Defensa Civil.',
+      url: function (v) { return '/api/fuentes/localidad-informe?id=' + encodeURIComponent(v.localidad); } },
+    { id: 'cuenca', grupo: 'Crecidas', titulo: 'Cuenca del Plata · estado de los ríos', alcance: 'Región',
+      desc: 'El Paraná, el Uruguay, el Paraguay y el Iguazú en un solo informe.',
+      incluye: ['Todas las estaciones con su nivel', 'Las que están en atención, alerta o evacuación', 'Tendencias'],
+      campos: [], nota: 'Fuente: INA y escalas de Prefectura Naval.',
+      url: function () { return '/api/fuentes/cuenca-informe'; } },
+    { id: 'zona-baja', grupo: 'Población', titulo: 'Población en zona baja · localidad', alcance: 'Localidad',
+      desc: 'Cuántas personas viven a pocos metros por encima del río, con chicos y mayores.',
+      incluye: ['Personas a 1, 2, 3, 5 y 10 m sobre el río', 'Menores de 5 y mayores de 65', 'Escenarios de alerta y evacuación'],
+      campos: ['localidad'], nota: 'Fuente: WorldPop 2020 y MERIT Hydro vía Google Earth Engine. Es exposición, no un modelo de inundación.',
+      dos_pasos: true },
+    { id: 'nino', grupo: 'Clima', titulo: 'El Niño en una localidad', alcance: 'Localidad',
+      desc: 'Qué está haciendo El Niño y qué suele traer en ese lugar: lluvia histórica en años Niño y la cadena que lo explica.',
+      incluye: ['Estado del Pacífico (NOAA)', 'Lluvia de la zona en años Niño', 'Pronóstico estacional', 'Lectura para el campo'],
+      campos: ['localidad'], nota: 'Fuentes: NOAA CPC, PSL y PMEL, ERA5, IRI (Columbia) y SMN.',
+      url: function (v, loc) { return '/api/fuentes/enso-informe?lat=' + loc.lat + '&lon=' + loc.lon + '&nombre=' + encodeURIComponent(loc.place); } },
+    { id: 'campo', grupo: 'Campo', titulo: 'Informe de un campo o lote', alcance: 'Lote',
+      desc: 'Vegetación, agua en el suelo, relieve, suelos, clima e historia de un lote. Necesita dibujar el campo en el mapa.',
+      incluye: ['Vegetación y agua en el suelo', 'Relieve y suelos', 'Clima y El Niño', 'Historia del uso del suelo'],
+      campos: [], nota: 'Se arma en el Observatorio: dibujás el lote y elegís los temas.',
+      enlace: '/observatorio' }
+  ];
+
+  var LOCS = [], actual = null, ultimoPdf = null, ultimoNombre = '';
+
+  function porId(id) { return TIPOS.filter(function (t) { return t.id === id; })[0]; }
+  function loc(id) { return LOCS.filter(function (l) { return l.id === id; })[0]; }
+
+  // ---------- catálogo ----------
+  var grupoPrevio = '';
+  TIPOS.forEach(function (t) {
+    if (t.grupo !== grupoPrevio) { $('catalogo').append(el('div', t.grupo, 'grupo-t')); grupoPrevio = t.grupo; }
+    var b = el('button', null, 'tipo'); b.type = 'button'; b.dataset.id = t.id; b.setAttribute('aria-pressed', 'false');
+    b.append(el('b', t.titulo), el('span', t.alcance, 'alc'), el('small', t.desc));
+    b.addEventListener('click', function () { elegir(t.id); });
+    $('catalogo').append(b);
+  });
+
+  function elegir(id, valores) {
+    actual = porId(id) || TIPOS[0];
+    document.querySelectorAll('.tipo').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.id === actual.id ? 'true' : 'false'); });
+    $('p-grupo').textContent = actual.grupo; $('p-titulo').textContent = actual.titulo; $('p-desc').textContent = actual.desc;
+    $('p-incluye').replaceChildren.apply($('p-incluye'), actual.incluye.map(function (x) { return el('li', x); }));
+    $('p-nota').textContent = actual.nota;
+    var campos = $('p-campos'); campos.replaceChildren();
+    if (actual.campos.indexOf('localidad') >= 0) {
+      var lab = el('label', null, 'campo'); lab.append(el('span', 'Localidad'));
+      var sel = el('select'); sel.id = 'f-localidad';
+      LOCS.forEach(function (l) { var o = el('option', l.place + ' · río ' + l.river); o.value = l.id; sel.append(o); });
+      if (valores && valores.localidad) sel.value = valores.localidad;
+      lab.append(sel); campos.append(lab);
+    }
+    $('b-generar').textContent = actual.enlace ? 'Ir al Observatorio' : 'Generar informe';
+    $('b-link').hidden = !!actual.enlace;
+    estado('');
+  }
+
+  function valores() { var v = {}; var s = $('f-localidad'); if (s) v.localidad = s.value; return v; }
+  function estado(t, err) { $('estado').textContent = t; $('estado').className = err ? 'error' : ''; }
+  function linkDe(id, v) { var q = new URLSearchParams({ tipo: id }); if (v.localidad) q.set('localidad', v.localidad); return location.origin + '/informes?' + q.toString(); }
+
+  // ---------- generar ----------
+  function pedirPdf(t, v) {
+    var l = v.localidad ? loc(v.localidad) : null;
+    if (t.dos_pasos) {
+      return fetch('/api/poblacion/crecida?id=' + encodeURIComponent(v.localidad), { signal: AbortSignal.timeout(90000) })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (!j || !j.data) throw new Error(j && j.error ? j.error : 'Earth Engine no devolvió la población de esta localidad');
+          return fetch('/api/poblacion/crecida/informe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(j.data), signal: AbortSignal.timeout(90000) });
+        });
+    }
+    return fetch(t.url(v, l), { signal: AbortSignal.timeout(110000) });
+  }
+
+  function generar() {
+    if (!actual) return;
+    if (actual.enlace) { location.href = actual.enlace; return; }
+    var t = actual, v = valores(), l = v.localidad ? loc(v.localidad) : null;
+    var lugar = l ? l.place : 'Cuenca del Plata';
+    $('b-generar').disabled = true; $('b-bajar').hidden = true;
+    estado('Armando el informe con los datos de hoy… puede tardar hasta un minuto.');
+    $('vista').replaceChildren(el('p', 'Generando ' + t.titulo.toLowerCase() + (l ? ' · ' + l.place : '') + '…', 'vacia'));
+    pedirPdf(t, v).then(function (r) {
+      if (!r.ok) return r.json().catch(function () { return {}; }).then(function (j) { throw new Error(j.error || ('el servidor respondió ' + r.status)); });
+      return r.blob();
+    }).then(function (b) {
+      if (!b.size || b.type.indexOf('pdf') < 0) throw new Error('el servidor no devolvió un PDF');
+      if (ultimoPdf) URL.revokeObjectURL(ultimoPdf);
+      ultimoPdf = URL.createObjectURL(b);
+      ultimoNombre = 'DOTS-' + t.id + '-' + (l ? l.id : 'region') + '-' + new Date().toISOString().slice(0, 10) + '.pdf';
+      var f = el('iframe'); f.title = 'Vista previa: ' + t.titulo; f.src = ultimoPdf; $('vista').replaceChildren(f);
+      $('b-bajar').hidden = false;
+      estado('Informe listo. Si la vista previa no se ve en tu celular, usá "Descargar PDF".');
+      guardarHistorial({ tipo: t.id, titulo: t.titulo, localidad: v.localidad || '', lugar: lugar, at: new Date().toISOString() });
+    }).catch(function (e) {
+      $('vista').replaceChildren(el('p', 'No se generó el informe.', 'vacia'));
+      estado('No se pudo generar el informe: ' + e.message + '. Probá de nuevo en un rato.', true);
+    }).then(function () { $('b-generar').disabled = false; });
+  }
+  $('b-generar').addEventListener('click', generar);
+  $('b-bajar').addEventListener('click', function () {
+    if (!ultimoPdf) return; var a = el('a'); a.href = ultimoPdf; a.download = ultimoNombre; document.body.append(a); a.click(); a.remove();
+  });
+  $('b-link').addEventListener('click', function () {
+    if (!actual) return; var u = linkDe(actual.id, valores());
+    var ok = function () { estado('Link copiado: ' + u); };
+    if (navigator.clipboard) navigator.clipboard.writeText(u).then(ok, function () { estado('Link: ' + u); }); else estado('Link: ' + u);
+  });
+
+  // ---------- historial (en este navegador) ----------
+  var KEY = 'dots-informes-historial';
+  function leerHist() { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { return []; } }
+  function guardarHistorial(item) { var h = leerHist(); h.unshift(item); h = h.slice(0, 40); try { localStorage.setItem(KEY, JSON.stringify(h)); } catch (e) {} pintarHist(); }
+  function pintarHist() {
+    var h = leerHist(), tb = $('hist'); tb.replaceChildren();
+    if (!h.length) { var tr = el('tr'); var td = el('td', 'Todavía no generaste informes en este navegador.'); td.colSpan = 4; td.style.color = 'var(--muted)'; tr.append(td); tb.append(tr); return; }
+    h.forEach(function (x, i) {
+      var tr = el('tr'), d = new Date(x.at);
+      var acc = el('td');
+      var b1 = el('button', 'Volver a sacar', 'mini'); b1.type = 'button';
+      b1.addEventListener('click', function () { elegir(x.tipo, { localidad: x.localidad }); window.scrollTo({ top: 0, behavior: 'smooth' }); generar(); });
+      var b2 = el('button', 'Copiar link', 'mini'); b2.type = 'button';
+      b2.addEventListener('click', function () { var u = linkDe(x.tipo, { localidad: x.localidad }); if (navigator.clipboard) navigator.clipboard.writeText(u).catch(function () {}); b2.textContent = 'Copiado'; setTimeout(function () { b2.textContent = 'Copiar link'; }, 1500); });
+      var b3 = el('button', 'Quitar', 'mini'); b3.type = 'button';
+      b3.addEventListener('click', function () { var hh = leerHist(); hh.splice(i, 1); try { localStorage.setItem(KEY, JSON.stringify(hh)); } catch (e) {} pintarHist(); });
+      acc.append(b1, b2, b3);
+      tr.append(el('td', x.titulo), el('td', x.lugar), el('td', d.toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }), 'fecha'), acc);
+      tb.append(tr);
+    });
+  }
+
+  // ---------- arranque ----------
+  fetch('/api/poblacion/localidades').then(function (r) { return r.json(); }).then(function (j) {
+    LOCS = (j.places || []).slice().sort(function (a, b) { return a.place.localeCompare(b.place, 'es'); });
+  }).catch(function () {
+    estado('No se pudo cargar la lista de localidades. Recargá la página.', true);
+  }).then(function () {
+    var q = new URLSearchParams(location.search);
+    var tipo = q.get('tipo');
+    elegir(porId(tipo) ? tipo : TIPOS[0].id, { localidad: q.get('localidad') });
+    if (porId(tipo) && !porId(tipo).enlace) generar();   // link compartido: arma el informe solo
+  });
+  pintarHist();
+})();
+</script>
+</body>
+</html>
