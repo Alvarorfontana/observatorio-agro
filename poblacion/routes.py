@@ -237,6 +237,40 @@ def informal_settlements_regional_report():
         return jsonify(error='No se pudo generar el informe regional.'), 500
 
 
+@bp.post('/api/poblacion/barrios/en-area')
+def informal_settlements_in_area():
+    """Barrios del RENABAP dentro del área dibujada en el mapa."""
+    from . import barrios_area
+    payload = request.get_json(silent=True) or {}
+    try:
+        return jsonify(barrios_area.en_area(payload.get('area')))
+    except (InputError, ValueError) as exc:
+        return jsonify(error=str(exc)), 400
+    except LookupError as exc:
+        return jsonify(error=str(exc)), 503
+    except Exception:
+        current_app.logger.exception('Error al cruzar barrios con el área')
+        return jsonify(error='No se pudieron consultar los barrios del área.'), 500
+
+
+@bp.post('/api/poblacion/barrios/informe-area')
+def informal_settlements_area_report():
+    """Informe PDF de los barrios populares dentro del área dibujada."""
+    from . import barrios_area
+    payload = request.get_json(silent=True) or {}
+    try:
+        res = barrios_area.en_area(payload.get('area'))
+        pob = payload.get('poblacion') if isinstance(payload.get('poblacion'), dict) else None
+        return _pdf_response(barrios_area.pdf(res, pob), f"DOTS-barrios-populares-area-{datetime.now(timezone.utc):%Y-%m-%d}.pdf")
+    except (InputError, ValueError) as exc:
+        return jsonify(error=str(exc)), 400
+    except LookupError as exc:
+        return jsonify(error=str(exc)), 503
+    except Exception:
+        current_app.logger.exception('Error al generar el informe de barrios del área')
+        return jsonify(error='No se pudo generar el informe de barrios del área.'), 500
+
+
 @bp.get('/api/poblacion/barrios/barrios_radar/<name>')
 def informal_settlements_image(name):
     """Imagen de una localidad, leída de la rama de datos (sirve aunque el repositorio sea privado)."""

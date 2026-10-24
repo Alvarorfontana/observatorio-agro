@@ -130,6 +130,11 @@ td.fecha { font-family: var(--mono); font-size: 12.5px; color: var(--muted); whi
       incluye: ['Totales de barrios y familias', 'Ranking por familias', 'Localidades con el río en atención o más', 'Tabla completa'],
       campos: [], nota: 'Fuente: RENABAP 2023 e INA.',
       url: function () { return '/api/poblacion/barrios/informe-regional'; } },
+    { id: 'barrios-area', grupo: 'Barrios populares', titulo: 'Barrios populares · zona dibujada', alcance: 'Área',
+      desc: 'Dibujás una zona en el mapa y ves los barrios del RENABAP que quedan adentro, con familias y superficie.',
+      incluye: ['Barrios dentro de la zona, en el mapa', 'Familias y superficie', 'Población WorldPop de la zona', 'Tabla de barrios'],
+      campos: [], nota: 'Se arma en la página de Población: dibujás la zona y aparece el botón del informe.',
+      enlace: '/poblacion' },
     { id: 'alerta', grupo: 'Crecidas', titulo: 'Alerta de crecida · localidad', alcance: 'Localidad',
       desc: 'El estado del río en una localidad: altura, niveles oficiales, tendencia y pronóstico.',
       incluye: ['Altura y niveles de alerta y evacuación', 'Tendencia y días hasta la alerta', 'Pronóstico del INA', 'Cuencas de aporte'],
@@ -186,7 +191,7 @@ td.fecha { font-family: var(--mono); font-size: 12.5px; color: var(--muted); whi
       if (valores && valores.localidad) sel.value = valores.localidad;
       lab.append(sel); campos.append(lab);
     }
-    $('b-generar').textContent = actual.enlace ? 'Ir al Observatorio' : 'Generar informe';
+    $('b-generar').textContent = actual.enlace ? (actual.enlace === '/poblacion' ? 'Ir al mapa de Población' : 'Ir al Observatorio') : 'Generar informe';
     $('b-link').hidden = !!actual.enlace;
     estado('');
   }

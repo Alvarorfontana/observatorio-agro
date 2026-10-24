@@ -16,8 +16,48 @@ function clearResult(){last=null;token=null;generation++;$('resume').hidden=true
 function geometry(id,optional){const raw=$(id).value.trim();if(!raw){if(optional)return null;throw new Error(id==='area'?'Falta dibujar la zona de estudio (azul).':'Falta dibujar el área de amenaza (naranja).');}let value;try{value=JSON.parse(raw);}catch{throw new Error('El GeoJSON pegado no es válido.');}return value.type==='Feature'?value.geometry:value;}
 function setShape(id,value){
   if(!['Polygon','MultiPolygon'].includes(value?.type))throw new Error('Se requiere Polygon o MultiPolygon.');
+  const changed=$(id).value!==JSON.stringify(value,null,2);
   $(id).value=JSON.stringify(value,null,2);
   if(map){if(layers[id])map.removeLayer(layers[id]);layers[id]=L.geoJSON(value,{interactive:false,style:{color:colors[id],weight:2,fillOpacity:.13}}).addTo(map);}
+  if(id==='area'&&changed)barriosEnArea(value);
+}
+// ---- Barrios populares dentro de la zona dibujada (RENABAP) ----
+let barriosArea=null,barriosAreaReq=0;
+async function barriosEnArea(area){
+  const box=$('area-barrios');if(!box)return;const req=++barriosAreaReq;box.hidden=false;
+  box.replaceChildren(make('h3','Barrios populares en la zona dibujada'),make('p','Buscando los barrios del RENABAP dentro de la zona…'));
+  if(map&&layers.barrios){map.removeLayer(layers.barrios);delete layers.barrios;}
+  try{const d=await jsonFetch('/api/poblacion/barrios/en-area',{area});if(req!==barriosAreaReq)return;barriosArea={area,data:d};drawBarriosArea(d);}
+  catch(e){if(req!==barriosAreaReq)return;barriosArea=null;box.replaceChildren(make('h3','Barrios populares en la zona dibujada'),make('p','No se pudieron consultar: '+e.message));}
+}
+function drawBarriosArea(d){
+  const box=$('area-barrios');box.replaceChildren(make('h3','Barrios populares en la zona dibujada'));
+  if(map){if(layers.barrios)map.removeLayer(layers.barrios);
+    const fam=d.lista.map(b=>b.familias||0),mx=Math.max(1,...fam);
+    layers.barrios=L.geoJSON({type:'FeatureCollection',features:d.lista.map(b=>({type:'Feature',geometry:b.geometry,properties:b}))},{
+      style:f=>({color:'#8a3fb5',weight:1.5,fillColor:'#8a3fb5',fillOpacity:.18+.5*Math.sqrt((f.properties.familias||0)/mx)}),
+      onEachFeature:(f,l)=>{const p=f.properties;l.bindPopup(`<b>${(p.nombre||'Sin nombre').replace(/[<>&]/g,'')}</b><br>${p.localidad?String(p.localidad).replace(/[<>&]/g,'')+'<br>':''}Familias: ${p.familias==null?'sin dato':number(p.familias)}<br>Superficie: ${number(p.ha,1)} ha${p.parte_en_area<.99?'<br>En la zona: '+number(100*p.parte_en_area)+' %':''}`);}}).addTo(map);}
+  const grid=make('div','');grid.className='flood-grid';
+  const card=(label,val,sub,cls)=>{const a=make('article','');if(cls)a.className=cls;a.append(make('span',label),make('strong',val),make('span',sub));return a;};
+  grid.append(card('Barrios del RENABAP',number(d.barrios),d.completos+' enteros, el resto cortado por el borde'),
+    card('Familias en la zona',number(d.familias),'estimación del registro','warn'),
+    card('Superficie de barrios',number(d.superficie_ha,1)+' ha','dentro de la zona de '+number(d.area_km2,1)+' km²'));
+  box.append(grid);
+  if(!d.barrios){box.append(make('p','El RENABAP no registra barrios populares dentro de la zona dibujada.'));}
+  else{const t=make('table','');t.className='var-tabla';const hr=make('tr','');for(const h of ['Barrio','Localidad','Familias','En la zona'])hr.append(make('th',h));t.append(hr);
+    for(const b of d.lista.slice(0,15)){const tr=make('tr','');tr.append(make('td',b.nombre||'Sin nombre'),make('td',b.localidad||''),make('td',b.familias==null?'—':number(b.familias)),make('td',number(100*b.parte_en_area)+' %'));
+      tr.style.cursor='pointer';tr.addEventListener('click',()=>{if(map&&b.lat!=null)map.setView([b.lat,b.lon],15);});t.append(tr);}
+    const w=make('div','');w.style.cssText='overflow-x:auto';w.append(t);box.append(w);
+    if(d.lista.length>15){const q=make('p',`Se muestran los 15 con más familias de ${number(d.barrios)}. Todos están dibujados en el mapa en violeta: tocalos para ver su nombre.`);q.className='hint';box.append(q);}}
+  const n=make('p',d.nota+' Fuente: '+d.fuente+'.');n.className='hint';box.append(n);
+  const row=make('div','');row.className='exports';row.style.padding='0';
+  const b=make('button','Descargar informe de barrios de esta zona (PDF)');b.type='button';b.className='primary';
+  b.addEventListener('click',async()=>{const t=b.textContent;b.disabled=true;b.textContent='Generando informe PDF…';
+    try{const r=await fetch('/api/poblacion/barrios/informe-area',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({area:barriosArea.area,poblacion:last||null}),signal:AbortSignal.timeout(90000)});
+      if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.error||'Error HTTP '+r.status);}
+      const pdf=await r.blob();const u=URL.createObjectURL(pdf),a=make('a','');a.href=u;a.download='DOTS-barrios-populares-zona.pdf';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),5000);}
+    catch(e){status('No se pudo generar el informe de barrios: '+e.message);}finally{b.disabled=false;b.textContent=t;}});
+  row.append(b);box.append(row);
 }
 function fit(){if(!map)return;const available=Object.values(layers).filter(Boolean);if(available.length)map.fitBounds(L.featureGroup(available).getBounds(),{padding:[30,30],maxZoom:14});}
 function initialiseMap(){
