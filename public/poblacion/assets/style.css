@@ -27,3 +27,9 @@
 .health-table small{color:var(--muted)}td.hot{color:#b42318;font-weight:600}
 .hlv{font-size:11.5px;font-weight:700;border-radius:999px;padding:2px 8px;background:#f2f4f7;color:#475467}
 .h-low{background:#e7f6ee;color:#05603a}.h-mod{background:#fff3d6;color:#93370d}.h-high{background:#ffe2cc;color:#b42318}.h-vhigh{background:#b42318;color:#fff}
+
+.variables summary{font-size:14px;font-weight:600}.var-tabla{width:100%;border-collapse:collapse;font-size:13px;margin:8px 0}
+.var-tabla th{text-align:left;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:8px;border-bottom:1px solid var(--line)}
+.var-tabla td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top}.var-tabla code{font-size:11px;color:var(--muted)}
+.var-tabla .var-grupo{background:#eef4f4;font-weight:700;font-size:12px;color:var(--navy)}
+.var-peso{width:180px;min-width:140px}.var-bar{display:block;height:8px;border-radius:4px;background:#246fa6;margin-bottom:3px}.var-peso small{font-size:11px;color:var(--muted)}

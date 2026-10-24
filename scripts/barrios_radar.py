@@ -414,7 +414,7 @@ def leave_one_city_out(samples, external=None):
     if len(set(ally)) == 2:
         rf = RandomForestClassifier(**RF_PARAMS).fit(allX, ally)
         pairs = sorted(zip(feats_best, rf.feature_importances_), key=lambda p: -p[1])
-        importance = [{"capa": k, "peso": round(float(v), 3)} for k, v in pairs[:10]]
+        importance = [{"capa": k, "peso": round(float(v), 3)} for k, v in pairs]
     return per_city, summary, importance
 
 

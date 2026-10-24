@@ -245,10 +245,32 @@ function barriosPdfButton(label,url,fname){const wrap=make('div','');wrap.classN
   wrap.append(b,msg);return wrap;}
 function barriosLocalPdf(id,place){return barriosPdfButton('Descargar informe de barrios populares · '+place,'/api/poblacion/barrios/informe?id='+encodeURIComponent(id),'DOTS-barrios-populares-'+id+'.pdf');}
 const barriosLoad=jsonFetch('/api/poblacion/barrios').then(j=>{barriosData=j;drawBarriosModel(j);return j;}).catch(e=>{$('barrios-model').replaceChildren(make('p','No se pudo consultar el modelo: '+e.message));return null;});
+// Las 30 variables de entrada del modelo y lo que calcula, con su peso
+function drawVariables(v,box){if(!v||!(v.entradas||[]).length)return;
+  const d=make('details','');d.className='variables';d.open=true;
+  d.append(make('summary','Las '+v.entradas.length+' variables que analiza el modelo y lo que calcula'));
+  const intro=make('p','Para cada píxel de 10 m el modelo mira estas variables y decide si tiene la firma de un barrio popular. La barra muestra cuánto pesa cada una en la decisión.');intro.className='hint';d.append(intro);
+  const maxw=Math.max(...v.entradas.map(x=>x.peso||0),0.001);
+  let grupo='';const t=make('table','');t.className='var-tabla';
+  const hr=make('tr','');for(const h of ['Variable','Qué mide','Peso'])hr.append(make('th',h));t.append(hr);
+  for(const x of v.entradas){
+    if(x.grupo!==grupo){grupo=x.grupo;const g=make('tr','');const td=make('td',grupo);td.colSpan=3;td.className='var-grupo';g.append(td);t.append(g);}
+    const tr=make('tr','');const n=make('td','');n.append(make('strong',x.nombre),make('br'),make('code',x.codigo));
+    const w=make('td','');w.className='var-peso';
+    if(x.peso!=null){const bar=make('span','');bar.className='var-bar';bar.style.width=Math.max(4,100*x.peso/maxw)+'%';w.append(bar,make('small',number(100*x.peso,1)+' %'));}else w.append(make('small','—'));
+    tr.append(n,make('td',x.mide),w);t.append(tr);}
+  const wrap=make('div','');wrap.style.cssText='overflow-x:auto';wrap.append(t);d.append(wrap);
+  if(v.entradas.some(x=>x.peso==null)){const q=make('p','Por ahora se conoce el peso de las 10 variables principales; el resto aparece en la próxima corrida del modelo.');q.className='hint';d.append(q);}
+  d.append(make('h3','Lo que calcula en cada localidad'));
+  const t2=make('table','');t2.className='var-tabla';const h2=make('tr','');for(const h of ['Resultado','Unidad','Qué es'])h2.append(make('th',h));t2.append(h2);
+  for(const x of v.salidas||[]){const tr=make('tr','');tr.append(make('td',x.nombre),make('td',x.unidad),make('td',x.mide));t2.append(tr);}
+  const w2=make('div','');w2.style.cssText='overflow-x:auto';w2.append(t2);d.append(w2);
+  const no=make('p','No mide: agua, cloacas o luz; materiales de cada casa; cuántas personas hay en cada vivienda; ni si un barrio está inundado hoy.');no.className='hint';d.append(no);
+  box.append(d);}
 function pct(v){return v==null?'Sin dato':number(100*v,0)+' %';}
 function drawBarriosModel(j){const box=$('barrios-model');box.replaceChildren();
   box.append(barriosPdfButton('Descargar informe regional · todas las localidades (PDF)','/api/poblacion/barrios/informe-regional','DOTS-barrios-populares-Cuenca-del-Plata.pdf'));
-  if(!j||!j.data){const p=make('p',(j&&j.error)||'Todavía no hay resultados del modelo.');p.className='hint';box.append(p);drawRenabapTable(j&&j.renabap,box);return;}
+  if(!j||!j.data){const p=make('p',(j&&j.error)||'Todavía no hay resultados del modelo.');p.className='hint';box.append(p);drawVariables(j&&j.variables,box);drawRenabapTable(j&&j.renabap,box);return;}
   const m=j.data.model||{},avg=m.promedio||{},o=avg.optico||{},r=avg.optico_radar||{};
   const grid=make('div','');grid.className='flood-grid';
   const card=(label,val,sub,cls)=>{const a=make('article','');if(cls)a.className=cls;a.append(make('span',label),make('strong',val),make('span',sub));return a;};
@@ -270,7 +292,7 @@ function drawBarriosModel(j){const box=$('barrios-model');box.replaceChildren();
   if(rows.length){const d=make('details','');d.append(make('summary','Ver resultado por ciudad'));const t=make('table','');const hr=make('tr','');for(const h of ['Ciudad dejada afuera','Solo color (F1)','Color + radar (F1)','Exactitud color + radar','Con edificios (F1)'])hr.append(make('th',h));t.append(hr);
     for(const x of rows){const tr=make('tr','');tr.append(make('td',x.city),make('td',x.optico?number(x.optico.f1_barrio,2):'—'),make('td',x.optico_radar?number(x.optico_radar.f1_barrio,2):'—'),make('td',x.optico_radar?pct(x.optico_radar.exactitud):'—'),make('td',x.optico_radar_edificios?number(x.optico_radar_edificios.f1_barrio,2):'—'));t.append(tr);}
     d.append(t);box.append(d);}
-  if((m.capas_mas_utiles||[]).length){const p=make('p','Capas que más pesan en el modelo: '+m.capas_mas_utiles.slice(0,6).map(c=>c.capa).join(', ')+'.');p.className='hint';box.append(p);}
+  drawVariables(j.variables,box);
   const src=make('p','Fuentes: '+(j.data.sources||[]).join(' · '));src.className='hint';box.append(src);
   if(!(j.data.places||[]).length){const p=make('p','El mapa por localidad todavía no está calculado. Mientras tanto, estos son los barrios que registra el RENABAP:');p.className='hint';box.append(p);drawRenabapTable(j.renabap,box);}}
 function drawRenabapTable(r,box){if(!r||!(r.places||[]).length)return;
@@ -300,6 +322,9 @@ async function renderBarrios(id,box){const j=barriosData||await barriosLoad;if(!
     card('Personas en esas zonas',number(p.pop_informal),'estimación WorldPop 2020','warn'));
   const h2=(p.pop_informal_hand||[]).find(b=>b.hasta_m===2);
   if(h2)grid.append(card('Y a 2 m o menos sobre el río',number(h2.personas),'personas en barrios populares de la zona más baja','risk'));
+  if(p.in_renabap_ha!=null)grid.append(card('Dentro del RENABAP',number(p.in_renabap_ha)+' ha','de lo detectado cae en barrios registrados'));
+  if(p.a_verificar_ha!=null)grid.append(card('Zonas a verificar',number(p.a_verificar_ha)+' ha','misma firma, fuera del registro','warn'));
+  if(p.renabap_detectado!=null)grid.append(card('RENABAP reconocido',pct(p.renabap_detectado),'de lo construido en barrios registrados'));
   sec.append(grid);
   const lines=[];
   if(p.renabap_barrios!=null){lines.push(`El RENABAP registra ${number(p.renabap_barrios)} barrios en la zona; el modelo reconoce ${pct(p.renabap_detectado)} de su superficie construida.`);

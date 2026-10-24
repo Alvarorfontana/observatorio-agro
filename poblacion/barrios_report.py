@@ -298,6 +298,29 @@ def local_pdf(sid):
         story.append(Paragraph('El modelo de radar todavía no calculó esta localidad. Cuando lo haga, este informe va a '
                                'sumar el mapa y las zonas a verificar fuera del registro.', sty['B']))
 
+    # variables del modelo
+    from . import barrios_variables as bv
+    from reportlab.platypus import PageBreak
+    pesos = (rad.get('model') or {}).get('capas_mas_utiles')
+    story += [PageBreak(), Paragraph('Variables que analiza el modelo', sty['H']),
+              Paragraph('Para cada píxel de 10 m el modelo mira estas 30 variables y decide si tiene la firma de un barrio '
+                        'popular. El peso indica cuánto influye cada una en la decisión.', sty['B'])]
+    filas, grupo = [['Variable', 'Qué mide', 'Peso']], ''
+    estilos_g = []
+    for v in bv.lista(pesos):
+        if v['grupo'] != grupo:
+            grupo = v['grupo']; filas.append([grupo, '', '']); estilos_g.append(len(filas) - 1)
+        filas.append([Paragraph(f"<b>{_safe(v['nombre'])}</b>", sty['Nota']), Paragraph(_safe(v['mide']), sty['Nota']),
+                      (_n(100 * v['peso'], 1) + ' %') if v['peso'] is not None else '—'])
+    t = _tabla(filas, [W * .30, W * .56, W * .14], alinear_der=(2,))
+    from reportlab.platypus import TableStyle
+    t.setStyle(TableStyle([st for i in estilos_g for st in (
+        ('SPAN', (0, i), (-1, i)), ('BACKGROUND', (0, i), (-1, i), colors.HexColor('#e3f3f4')),
+        ('FONTNAME', (0, i), (-1, i), 'Helvetica-Bold'), ('TEXTCOLOR', (0, i), (-1, i), colors.HexColor(INK)))]))
+    story.append(t)
+    story.append(Paragraph('Resultados que calcula por localidad: ' + '; '.join(
+        f"{x['nombre'].lower()} ({x['unidad']})" for x in bv.salidas()) + '.', sty['Nota']))
+
     # uso y método
     story.append(Paragraph('Para qué sirve y qué no dice', sty['H']))
     for t in ['Sirve para planificar con anticipación: refugios, agua potable, traslado de personas mayores y chicos, y '

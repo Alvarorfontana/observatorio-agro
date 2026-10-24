@@ -189,9 +189,11 @@ def informal_settlements():
     ren=datastore.load('renabap_localidades.json')
     if data and not any(p.get('informal_ha') is not None for p in data.get('places') or []):
         data=dict(data,places=[])          # corrida sin mapa (cuota agotada o cortada): se muestra solo la evaluación
+    from . import barrios_variables as bv
+    variables={'entradas':bv.lista(((data or {}).get('model') or {}).get('capas_mas_utiles')),'salidas':bv.salidas()}
     if not data:
-        return jsonify(data=None,renabap=ren,error='El mapa del modelo todavía no está calculado: correr la tarea «Barrios populares por radar» en GitHub Actions.'),200
-    r=jsonify(data=data,renabap=ren,image_base='/api/poblacion/barrios/')
+        return jsonify(data=None,renabap=ren,variables=variables,error='El mapa del modelo todavía no está calculado: correr la tarea «Barrios populares por radar» en GitHub Actions.'),200
+    r=jsonify(data=data,renabap=ren,variables=variables,image_base='/api/poblacion/barrios/')
     r.headers['Cache-Control']='public, s-maxage=3600'
     return r
 
