@@ -1,0 +1,76 @@
+# Desmontes recientes por resta de NDVI (Sentinel-2) en el Gran Chaco y el NEA, con evaluación de gravedad.
+#   · cada mes: los últimos 120 días contra los mismos días del año anterior («reciente»)
+#   · cada 20 de abril: el verano que terminó contra el anterior («verano»)
+# Guarda en la rama datos: no publica la web. La página /satelital#desmontes lo lee desde ahí.
+# Requiere los secretos GOOGLE_CLOUD_PROJECT y GOOGLE_APPLICATION_CREDENTIALS_JSON (los mismos que en Vercel).
+name: Desmontes por resta de NDVI
+
+on:
+  workflow_dispatch:
+    inputs:
+      ventana:
+        description: "verano o reciente"
+        required: false
+        default: "verano"
+      anio:
+        description: "Verano a analizar (año en que termina). Vacío = el último"
+        required: false
+        default: ""
+      provincias:
+        description: "Provincias separadas por coma. Vacío = Gran Chaco y NEA"
+        required: false
+        default: ""
+  schedule:
+    - cron: "41 9 3 * *"     # día 3 de cada mes: reciente
+    - cron: "17 9 20 4 *"    # 20 de abril: verano
+
+permissions:
+  contents: write
+
+concurrency:
+  group: desmonte-ndvi
+  cancel-in-progress: false
+
+jobs:
+  desmonte:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Traer datos de la rama datos (incluye data/otbn.geojson si se cargó)
+        run: bash scripts/datos_rama.sh traer
+      - name: Elegir ventana
+        id: v
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "ventana=${{ github.event.inputs.ventana || 'verano' }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event.schedule }}" = "17 9 20 4 *" ]; then
+            echo "ventana=verano" >> "$GITHUB_OUTPUT"
+          else
+            echo "ventana=reciente" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Restar NDVI y evaluar
+        timeout-minutes: 300
+        env:
+          GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT }}
+          GOOGLE_APPLICATION_CREDENTIALS_JSON: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}
+          DESMONTE_VENTANA: ${{ steps.v.outputs.ventana }}
+          DESMONTE_ANIO: ${{ github.event.inputs.anio || '' }}
+          DESMONTE_PROVINCIAS_IN: ${{ github.event.inputs.provincias || '' }}
+        run: |
+          if [ -z "$GOOGLE_CLOUD_PROJECT" ] || [ -z "$GOOGLE_APPLICATION_CREDENTIALS_JSON" ]; then
+            echo "Faltan los secretos GOOGLE_CLOUD_PROJECT y GOOGLE_APPLICATION_CREDENTIALS_JSON en GitHub." && exit 1
+          fi
+          [ -n "$DESMONTE_PROVINCIAS_IN" ] && export DESMONTE_PROVINCIAS="$DESMONTE_PROVINCIAS_IN"
+          pip install earthengine-api shapely requests
+          set -o pipefail
+          python -u scripts/desmonte_ndvi.py 2>&1 | tee "data/desmonte_ndvi_${DESMONTE_VENTANA}.log"
+      - name: Guardar en la rama datos (no publica la web)
+        if: always()
+        run: |
+          V="${{ steps.v.outputs.ventana }}"
+          cp scripts/datos_rama.sh /tmp/datos_rama.sh && bash /tmp/datos_rama.sh guardar "Desmontes NDVI ($V) $(date -u +%Y-%m-%d)" \
+            "data/desmonte_ndvi_${V}.json" data/desmonte_ndvi "data/desmonte_ndvi_${V}.log"
