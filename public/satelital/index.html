@@ -66,6 +66,31 @@ label.fila input { grid-column: 1 / -1; width: 100%; accent-color: var(--accent)
 .rampa-ir { height: 12px; border-radius: 3px; background: linear-gradient(90deg, #303030, #9a9a9a, #00d5ff, #00b050, #ffe600, #ff1a00, #000); }
 .cuenta { font-size: 12.5px; color: var(--muted); }
 .cuenta b { color: var(--fg); font-family: var(--mono); font-weight: 500; }
+/* Desmontes recientes: leyenda en barras (superficie por gravedad) y lista de parches */
+.barras { display: flex; flex-direction: column; gap: 7px; }
+.barra { display: grid; grid-template-columns: 12px 64px 1fr auto; align-items: center; gap: 8px; font-size: 12.5px; }
+.barra i { width: 12px; height: 12px; border-radius: 2px; }
+.barra .pista { height: 8px; background: var(--chip); border-radius: 4px; overflow: hidden; }
+.barra .pista span { display: block; height: 100%; border-radius: 4px; }
+.barra .num { font-family: var(--mono); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; min-width: 92px; }
+.lista { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: 6px; max-height: 300px; overflow-y: auto; }
+.lista li + li { border-top: 1px solid var(--line); }
+.lista button { display: grid; grid-template-columns: 10px 1fr auto; gap: 8px; align-items: center; width: 100%; text-align: left;
+  background: transparent; border: 0; padding: 8px 10px; font: 13px var(--sans); color: var(--fg); cursor: pointer; }
+.lista button:hover { background: var(--chip); }
+.lista i { width: 10px; height: 10px; border-radius: 50%; }
+.lista small { display: block; color: var(--muted); font-size: 11.5px; }
+.lista .ha { font-family: var(--mono); font-size: 12px; font-variant-numeric: tabular-nums; }
+.vacio { font-size: 12.5px; color: var(--muted); }
+.pop { font: 13px/1.4 var(--sans); max-width: 300px; }
+.pop h3 { font-size: 14px; margin: 0 0 2px; }
+.pop .lugar { color: #5d665e; margin: 0 0 8px; }
+.pop ul { margin: 6px 0; padding-left: 16px; }
+.pop li { margin-bottom: 3px; }
+.pop .fotos { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin: 8px 0 4px; }
+.pop .fotos img { width: 100%; border-radius: 3px; display: block; }
+.pop .fotos span { font-size: 11px; color: #5d665e; }
+.pop .mono { font-family: var(--mono); font-size: 12px; }
 .leaflet-container { background: var(--bg); font-family: var(--sans); }
 @media (max-width: 760px) {
   #app { flex-direction: column-reverse; }
@@ -175,6 +200,65 @@ label.fila input { grid-column: 1 / -1; width: 100%; accent-color: var(--accent)
 
     <!-- ============ DESMONTES ============ -->
     <section class="modulo plegable" data-mod="desmontes" hidden>
+      <div class="chips" id="des-modo" style="display:grid;grid-template-columns:1fr 1fr;margin-bottom:16px">
+        <button data-modo="recientes" aria-pressed="true">Recientes · NDVI</button>
+        <button data-modo="anual" aria-pressed="false">Anual · Hansen</button>
+      </div>
+
+      <div id="des-recientes" style="display:flex;flex-direction:column;gap:16px">
+        <div class="grupo">
+          <span class="rotulo">Desmontes recientes · Sentinel-2</span>
+          <div class="chips" id="des-ventana">
+            <button data-v="verano" aria-pressed="true">Último verano</button>
+            <button data-v="reciente" aria-pressed="false">Últimos 120 días</button>
+          </div>
+          <p class="cuenta" id="des-periodo">Cargando…</p>
+          <div class="chips" data-lugares>
+            <button data-ll="-26.5,-61.5,6">Toda la región</button>
+            <button data-ll="-24.3,-63.6,8">Chaco salteño</button>
+            <button data-ll="-26.2,-63.2,8">Santiago norte</button>
+            <button data-ll="-25.4,-61.0,8">Impenetrable</button>
+            <button data-ll="-28.6,-57.8,7">Corrientes</button>
+          </div>
+        </div>
+        <div class="grupo">
+          <span class="rotulo">Superficie por gravedad</span>
+          <div class="barras" id="des-barras"></div>
+          <p class="sub" id="des-total"></p>
+        </div>
+        <div class="grupo">
+          <span class="rotulo">Los más grandes</span>
+          <div class="chips" id="des-filtro">
+            <button data-f="todos" aria-pressed="true">Todos</button>
+            <button data-f="alto" aria-pressed="false">Alta</button>
+            <button data-f="medio" aria-pressed="false">Media</button>
+            <button data-f="bajo" aria-pressed="false">Baja</button>
+          </div>
+          <ol class="lista" id="des-lista"></ol>
+        </div>
+        <div class="grupo">
+          <span class="rotulo">Cómo leerlo</span>
+          <div class="rangos">
+            <div><b>0 a −0,15</b><span>Sin cambio o variación normal entre años</span></div>
+            <div><b>−0,15 a −0,25</b><span>Caída leve: sequía, pastoreo fuerte</span></div>
+            <div><b>−0,25 a −0,45</b><span>Pérdida fuerte: raleo, desmonte parcial, quema</span></div>
+            <div><b>Menos de −0,45</b><span>Corte total: queda suelo pelado</span></div>
+          </div>
+          <p class="sub">Diferencia de NDVI (verdor) entre las dos ventanas. Antes de restar, monte denso ronda 0,6 a 0,9; pastizal 0,4 a 0,6; suelo desnudo menos de 0,3.</p>
+          <div class="rangos">
+            <div><b style="color:#c0392b">Alta</b><span>Bosque en 2020, zona roja o amarilla de la Ley de Bosques, gran tamaño, pendiente o costa de río: varias señales juntas</span></div>
+            <div><b style="color:#d9771a">Media</b><span>Una o dos señales; o un parche grande que pudo ser incendio</span></div>
+            <div><b style="color:#b89a12">Baja</b><span>Cambio fuerte de verdor sin señales de riesgo: puede ser manejo del campo</span></div>
+          </div>
+        </div>
+        <div class="texto">
+          <p><strong>Cómo se calcula.</strong> No se busca un campo: se resta el verdor de toda la región entre dos ventanas de la misma época del año y los desmontes más grandes aparecen solos. Es el método con el que se ubicó, sin coordenadas, la tala de un centro de datos en Finlandia.</p>
+          <p><strong>Por qué un rango.</strong> Un desmonte no tiene un borde limpio. Caminos, suelo pelado y pilas de rolos se leen distinto que el monte cortado, así que la superficie cambia según el umbral: se informa de mínima a máxima.</p>
+          <p class="nota"><strong>Límites.</strong> Es una señal para revisar, no una prueba de desmonte ilegal. Una sequía extrema, una pastura degradada o un incendio también bajan el NDVI. Se descartan agua, cultivos y ciudades, pero conviene mirar las fotos de antes y después de cada parche. La Ley de Bosques solo se evalúa si DOTS tiene cargado el mapa provincial.</p>
+        </div>
+      </div>
+
+      <div id="des-anual" style="display:none;flex-direction:column;gap:16px">
       <div class="grupo">
         <span class="rotulo">Pérdida de cobertura arbórea · Global Forest Watch</span>
         <label class="fila">Desde <span class="val" id="v-desde">2001</span>
@@ -208,6 +292,7 @@ label.fila input { grid-column: 1 / -1; width: 100%; accent-color: var(--accent)
       <div class="texto">
         <p><strong>Qué mide.</strong> Dónde y en qué año desapareció la cobertura de árboles, a partir de imágenes Landsat (Universidad de Maryland, Hansen et al.). En el Chaco seco casi toda la pérdida es desmonte para agricultura y ganadería.</p>
         <p class="nota"><strong>Límites.</strong> Pérdida no es lo mismo que desmonte ilegal: también entran incendios, cosecha de plantaciones y tormentas. No cruza las categorías de la Ley de Bosques. Para un campo puntual y la debida diligencia ante la UE, usá el módulo de Europa de DOTS, que suma MapBiomas y el mapa oficial de bosques de la UE.</p>
+      </div>
       </div>
     </section>
 
@@ -313,6 +398,110 @@ label.fila input { grid-column: 1 / -1; width: 100%; accent-color: var(--accent)
   }
   var capaPerdida = new Perdida({ maxNativeZoom: 12, maxZoom: 18, attribution: 'Hansen/UMD/Google/USGS/NASA · Global Forest Watch' });
 
+  // ---------- Desmontes recientes: resta de NDVI de Sentinel-2 (calculada por la tarea mensual, rama datos) ----------
+  var D = { modo: 'recientes', ventana: 'verano', filtro: 'todos', datos: {}, capa: L.featureGroup(), formas: {} };
+  var COLOR = { alto: '#c0392b', medio: '#d9771a', bajo: '#e3c440' };
+  var NIVEL = { alto: 'Alta', medio: 'Media', bajo: 'Baja' };
+  var RAW = 'https://raw.githubusercontent.com/Alvarorfontana/observatorio-agro/datos/data/';
+  function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function num(x, d) { return Number(x).toLocaleString('es-AR', { maximumFractionDigits: d || 0, minimumFractionDigits: d || 0 }); }
+  function fechaCorta(t) { return new Date(t).toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' }); }
+  function rangoHa(a) {
+    var lo = a.estricto > 0 ? a.estricto : a.medio > 0 ? a.medio : a.amplio;
+    return lo < a.amplio ? num(lo) + ' – ' + num(a.amplio) + ' ha' : num(a.amplio) + ' ha';
+  }
+  function lugarDe(p) { return [p.departamento, p.provincia].filter(Boolean).map(esc).join(', ') || 'Sin ubicación'; }
+  function cargarDesmontes(v) {
+    if (v in D.datos) return Promise.resolve(D.datos[v]);
+    return fetch(RAW + 'desmonte_ndvi_' + v + '.json', { cache: 'no-cache' })
+      .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+      .catch(function () { return null; })
+      .then(function (j) { D.datos[v] = j; return j; });
+  }
+  function popup(p, j) {
+    var h = '<div class="pop"><h3 style="color:' + COLOR[p.nivel] + '">Gravedad ' + NIVEL[p.nivel].toLowerCase() + '</h3>' +
+      '<p class="lugar">' + esc(p.tipo.charAt(0).toUpperCase() + p.tipo.slice(1)) + ' · ' + lugarDe(p) + '</p>' +
+      '<div><b>' + rangoHa(p.area_ha) + '</b> según el umbral</div>' +
+      '<div class="mono">NDVI ' + num(p.ndvi_antes, 2) + ' → ' + num(p.ndvi_despues, 2) + ' (Δ ' + num(p.dndvi, 2) + ')</div>';
+    if (p.senales && p.senales.length) h += '<ul>' + p.senales.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul>';
+    if (p.fotos) {
+      var base = RAW + 'desmonte_ndvi/' + encodeURIComponent(j.ventana) + '_' + encodeURIComponent(p.id);
+      h += '<div class="fotos"><div><img loading="lazy" src="' + base + '_a.png" alt="Color natural antes"><span>Antes · ' + esc(j.antes.rotulo) + '</span></div>' +
+        '<div><img loading="lazy" src="' + base + '_d.png" alt="Color natural después"><span>Después · ' + esc(j.despues.rotulo) + '</span></div></div>';
+    }
+    h += '<div class="mono">' + num(p.lat, 5) + ', ' + num(p.lon, 5) + '</div>' +
+      '<a href="https://www.google.com/maps/@' + p.lat + ',' + p.lon + ',2000m/data=!3m1!1e3" target="_blank" rel="noopener">Ver en Google Maps</a></div>';
+    return h;
+  }
+  function pintarDesmontes(j) {
+    D.capa.clearLayers(); D.formas = {};
+    var lista = $('des-lista'), barras = $('des-barras');
+    lista.innerHTML = ''; barras.innerHTML = ''; $('des-total').textContent = '';
+    if (!j || !j.parches) {
+      $('des-periodo').textContent = 'Todavía no hay resultados de esta ventana. Se calculan una vez por mes; mientras tanto podés mirar la pérdida anual.';
+      lista.innerHTML = '<li class="vacio" style="padding:10px">Sin parches para mostrar.</li>';
+      estado('Desmontes recientes · sin datos todavía');
+      return;
+    }
+    var aviso = (j.cobertura && (j.cobertura.fallidas || j.cobertura.sin_tiempo)) ? ' Faltaron ' + (j.cobertura.fallidas + j.cobertura.sin_tiempo) + ' de ' + j.cobertura.celdas + ' celdas: no cubre toda la región.' : '';
+    $('des-periodo').innerHTML = 'Antes <b>' + esc(j.antes.rotulo) + '</b> · después <b>' + esc(j.despues.rotulo) + '</b><br>Calculado el ' + fechaCorta(j.generado) + ' · parches desde ' + num(j.metodo.min_ha) + ' ha' + esc(aviso);
+
+    // Leyenda en barras: superficie máxima (umbral amplio) por nivel de gravedad
+    var tot = { alto: 0, medio: 0, bajo: 0 }, cant = { alto: 0, medio: 0, bajo: 0 }, suma = 0;
+    j.parches.forEach(function (p) { tot[p.nivel] += p.area_ha.amplio; cant[p.nivel]++; suma += p.area_ha.amplio; });
+    ['alto', 'medio', 'bajo'].forEach(function (n) {
+      var pct = suma ? tot[n] / suma * 100 : 0;
+      barras.insertAdjacentHTML('beforeend', '<div class="barra"><i style="background:' + COLOR[n] + '"></i><span>' + NIVEL[n] + ' · ' + cant[n] + '</span>' +
+        '<div class="pista"><span style="width:' + pct.toFixed(1) + '%;background:' + COLOR[n] + '"></span></div>' +
+        '<span class="num">' + num(tot[n]) + ' ha · ' + num(pct) + ' %</span></div>');
+    });
+    var r = j.resumen && j.resumen.ha_total;
+    if (r) $('des-total').textContent = j.parches.length + ' parches más grandes: entre ' + num(r.estricto) + ' y ' + num(r.amplio) + ' ha según el umbral.';
+
+    j.parches.forEach(function (p, i) {
+      if (D.filtro !== 'todos' && p.nivel !== D.filtro) return;
+      var c = COLOR[p.nivel], html = popup(p, j);
+      var forma = p.geom ? L.geoJSON(p.geom, { style: { color: c, weight: 2, fillColor: c, fillOpacity: .25 } }).bindPopup(html, { maxWidth: 320 }) : null;
+      var punto = L.circleMarker([p.lat, p.lon], { radius: Math.min(14, 4 + Math.sqrt(p.area_ha.amplio) / 3), color: '#fff', weight: 1.5, fillColor: c, fillOpacity: .9 })
+        .bindPopup(html, { maxWidth: 320 });
+      if (forma) forma.addTo(D.capa);
+      punto.addTo(D.capa);
+      D.formas[p.id] = { forma: forma, punto: punto };
+      var li = document.createElement('li');
+      li.innerHTML = '<button type="button"><i style="background:' + c + '"></i><span>' + (i + 1) + '. ' + lugarDe(p) +
+        '<small>' + NIVEL[p.nivel] + ' · ' + esc(p.tipo) + '</small></span><span class="ha">' + rangoHa(p.area_ha) + '</span></button>';
+      li.firstChild.addEventListener('click', function () {
+        var f = D.formas[p.id];
+        if (f.forma) map.fitBounds(f.forma.getBounds(), { maxZoom: 14, padding: [30, 30] }); else map.setView([p.lat, p.lon], 13);
+        f.punto.openPopup();
+        if (window.matchMedia('(max-width: 760px)').matches) $('panel').classList.add('cerrado');
+      });
+      lista.appendChild(li);
+    });
+    if (!lista.children.length) lista.innerHTML = '<li class="vacio" style="padding:10px">No hay parches con esa gravedad.</li>';
+    estado('Desmontes recientes · Sentinel-2 · ' + j.parches.length + ' parches');
+  }
+  function mostrarDesmontes() {
+    poner(D.capa);
+    var v = D.ventana;
+    cargarDesmontes(v).then(function (j) { if (modulo === 'desmontes' && D.modo === 'recientes' && D.ventana === v) pintarDesmontes(j); });
+  }
+  function elegir(grupo, b) { grupo.querySelectorAll('button').forEach(function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); }); }
+  document.querySelectorAll('#des-modo button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      D.modo = b.dataset.modo; elegir($('des-modo'), b);
+      $('des-recientes').style.display = D.modo === 'recientes' ? 'flex' : 'none';
+      $('des-anual').style.display = D.modo === 'anual' ? 'flex' : 'none';
+      actualizar();
+    });
+  });
+  document.querySelectorAll('#des-ventana button').forEach(function (b) {
+    b.addEventListener('click', function () { D.ventana = b.dataset.v; elegir($('des-ventana'), b); actualizar(); });
+  });
+  document.querySelectorAll('#des-filtro button').forEach(function (b) {
+    b.addEventListener('click', function () { D.filtro = b.dataset.f; elegir($('des-filtro'), b); if (D.datos[D.ventana] !== undefined) pintarDesmontes(D.datos[D.ventana]); });
+  });
+
   // ---------- Estado de cada módulo ----------
   var modulo = 'aire', capa = null;
   var fechas = { aire: new Date(hoy.getTime() - 86400000), nieve: new Date(hoy.getTime() - 86400000) };
@@ -351,9 +540,11 @@ label.fila input { grid-column: 1 / -1; width: 100%; accent-color: var(--accent)
     } else if (modulo === 'nieve') {
       if (nieveModo === 'mes') { poner(gibs('MODIS_Terra_L3_Snow_Cover_Monthly_Average_Pct', $('m-nieve').value, 6, .85)); estado('MODIS Terra · promedio de ' + $('m-nieve').selectedOptions[0].textContent); }
       else { poner(gibs('MODIS_Terra_NDSI_Snow_Cover', $('f-nieve').value, 8, .9)); estado('MODIS Terra · ' + $('f-nieve').value.split('-').reverse().join('/') + ' · zonas vacías = nubes'); }
-    } else {
+    } else if (D.modo === 'anual') {
       poner(capaPerdida); capaPerdida.repintar();
       estado('Pérdida de árboles ' + rango.desde + '–' + rango.hasta + ' · Hansen/UMD v1.12');
+    } else {
+      mostrarDesmontes();
     }
   }
 
@@ -397,7 +588,7 @@ label.fila input { grid-column: 1 / -1; width: 100%; accent-color: var(--accent)
     $('desde').value = rango.desde; $('hasta').value = rango.hasta;
     $('v-desde').textContent = rango.desde; $('v-hasta').textContent = rango.hasta;
     $('r-ini').textContent = rango.desde; $('r-fin').textContent = rango.hasta;
-    if (modulo === 'desmontes') { capaPerdida.repintar(); estado('Pérdida de árboles ' + rango.desde + '–' + rango.hasta + ' · Hansen/UMD v1.12'); }
+    if (modulo === 'desmontes' && D.modo === 'anual') { capaPerdida.repintar(); estado('Pérdida de árboles ' + rango.desde + '–' + rango.hasta + ' · Hansen/UMD v1.12'); }
   }
   var tr = null;
   function rangoDiferido() { clearTimeout(tr); tr = setTimeout(function () { setRango(+$('desde').value, +$('hasta').value); }, 80); }
