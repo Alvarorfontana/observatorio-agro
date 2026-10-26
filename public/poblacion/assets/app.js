@@ -3,6 +3,7 @@ const number=(v,digits=0)=>v==null?'Sin dato':new Intl.NumberFormat('es-AR',{max
 const make=(tag,text)=>{const e=document.createElement(tag);e.textContent=text;return e;};
 const colors={area:'#246fa6',hazard:'#b76d27',intersection:'#bc3647'};
 let map=null,layers={},draw=null,rectMode=false,vertices=[],draft=null,last=null,token=null,busy=false,generation=0;
+let worldpopReady=null,localPopulationAvailable=false;
 let floodMap=null,floodRequest=0;
 const today=new Date();$('event-date').value=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
 function status(text){$('status').textContent=text;}
@@ -87,7 +88,10 @@ for(const id of ['area','hazard','year','dataset','kind','category','event-date'
 
 async function jsonFetch(path,payload){const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),50000);
   try{const r=await fetch(path,{method:payload?'POST':'GET',headers:payload?{'Content-Type':'application/json'}:{},body:payload?JSON.stringify(payload):undefined,signal:controller.signal});
-    const data=await r.json();if(!r.ok)throw new Error(data.error||'La consulta no pudo completarse.');return data;
+    const contentType=r.headers.get('content-type')||'';
+    if(!contentType.toLowerCase().includes('json'))throw new Error(`El servidor respondió ${contentType||'sin tipo de contenido'} en lugar de JSON${r.redirected?' (posible redirección a inicio de sesión)':''}. Revisá el acceso al API o la protección de Vercel.`);
+    let data;try{data=await r.json();}catch{throw new Error(`La respuesta del servidor no es JSON válido (HTTP ${r.status}).`);}
+    if(!r.ok)throw new Error(data.error||`La consulta no pudo completarse (HTTP ${r.status}).`);return data;
   }finally{clearTimeout(timer);}}
 async function poll(startGeneration,note){
   for(let i=0;i<30;i++){
@@ -100,7 +104,16 @@ async function poll(startGeneration,note){
   }
   status('El cálculo sigue pendiente en WorldPop. Podés continuar la consulta sin iniciar otro trabajo.');$('resume').hidden=false;
 }
-function setBusy(value){busy=value;$('calculate').disabled=value;$('resume').disabled=value;}
+function updatePopulationAvailability(){
+  const localSelected=$('dataset').value!=='worldpop-api';
+  const unavailable=worldpopReady===false&&!localSelected;
+  $('calculate').disabled=busy||unavailable;
+  const note=$('population-availability');
+  if(unavailable)note.textContent='No se puede calcular con WorldPop: falta configurar la clave de firma en el servidor. Contactá al administrador; no se iniciaron consultas.';
+  else if(worldpopReady===false&&localPopulationAvailable)note.textContent=localSelected?'Fuente local seleccionada; los cálculos usan solo el dataset indicado.':'WorldPop no está configurado. Elegí una fuente local para habilitar el cálculo.';
+  else if(worldpopReady===true)note.textContent='Servicio de población disponible. El cálculo consulta WorldPop al enviar el análisis.';
+}
+function setBusy(value){busy=value;$('resume').disabled=value;updatePopulationAvailability();}
 async function run(year,current,note){
   const hz=geometry('hazard',true);
   const payload={area:geometry('area'),...(hz?{hazard:hz}:{}),year,dataset:$('dataset').value,
@@ -114,11 +127,6 @@ $('analysis').addEventListener('submit',async e=>{
   try{await run(year,current);}
   catch(error){
     if(generation!==current)return;
-    // Si WorldPop no tiene el año pedido para esta zona, se usa 2025 (último año con datos confirmados) y se avisa.
-    if(year!==2025&&!/Falta dibujar|GeoJSON|geometr|vértices|Reducí/i.test(error.message)&&error.name!=='AbortError'){
-      try{token=null;await run(2025,current,`WorldPop no devolvió datos para ${year}; se calculó con 2025.`);return;}
-      catch(e2){error=e2;}
-    }
     status(error.name==='AbortError'?'El servidor excedió el tiempo de respuesta.':'No se pudo completar: '+error.message);if(token)$('resume').hidden=false;}
   finally{setBusy(false);}
 });
@@ -168,7 +176,29 @@ window.dotsPopulation={setStudyArea(value){clearResult();setShape('area',value.t
     for(const [key,id]of Object.entries({kind:'kind',category:'category',source:'event-source',date:'event-date',enso:'enso'}))if(event[key])$(id).value=event[key];fit();}};
 document.addEventListener('dots:population-area',e=>window.dotsPopulation.setStudyArea(e.detail));
 document.addEventListener('dots:population-hazard',e=>window.dotsPopulation.setHazard(e.detail.geometry,e.detail.event));
-jsonFetch('/api/poblacion/datasets').then(data=>{for(const d of data.datasets.filter(x=>x.id!=='worldpop-api')){const o=make('option',`${d.provider} · ${d.group} · ${d.year}`);o.value=d.id;$('dataset').append(o);}}).catch(e=>status('Registro de fuentes: '+e.message));
+async function loadPopulationAvailability(){
+  try{
+    const state=await jsonFetch('/api/poblacion/estado');
+    worldpopReady=state.worldpop==='ready';
+  }catch(error){
+    worldpopReady=null;
+    $('population-availability').textContent='No se pudo verificar la disponibilidad de población: '+error.message+'. El botón permitirá intentar la consulta y mostrará el error del servidor si persiste.';
+  }
+  try{
+    const data=await jsonFetch('/api/poblacion/datasets');
+    for(const d of data.datasets.filter(x=>x.id!=='worldpop-api')){
+      const o=make('option',`${d.provider} · ${d.group} · ${d.year}`);
+      o.value=d.id;
+      $('dataset').append(o);
+      localPopulationAvailable=true;
+    }
+  }catch(error){
+    $('population-availability').textContent='No se pudo cargar el catálogo de fuentes: '+error.message;
+  }
+  updatePopulationAvailability();
+}
+$('dataset').addEventListener('change',updatePopulationAvailability);
+void loadPopulationAvailability();
 
 $('pdf').addEventListener('click',async()=>{if(!last)return;const b=$('pdf');b.disabled=true;const t=b.textContent;b.textContent='Generando PDF…';
   try{const r=await fetch('/api/poblacion/informe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(last)});

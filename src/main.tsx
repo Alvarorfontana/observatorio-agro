@@ -59,7 +59,7 @@ import { CasoBellaVista } from "./site/CasoBellaVista";
 import { Focos } from "./site/Focos";
 const NdviExtra = lazy(() => import("./site/NdviExtra").then(m => ({ default: m.NdviExtra })));
 const NinoCrecidas = lazy(() => import("./site/NinoCrecidas").then(m => ({ default: m.NinoCrecidas })));
-import { readLotFile, lotsToGeoJSON, lotsToKML } from "./dashboard/lotFiles";
+import { readLotFile, lotsToGeoJSON, lotsToKML, type DxfCrs, type DxfUnits } from "./dashboard/lotFiles";
 type Data = Record<string, any>;
 type Point = [number, number];
 type Source = {
@@ -471,6 +471,9 @@ function Observatory({onHome}:{onHome:()=>void}) {
     [fieldMarkers,setFieldMarkers] = useState<Data[]>([]),
     [markerType,setMarkerType] = useState("observación"),
     [placingMarker,setPlacingMarker] = useState(false),
+    [pendingDxf,setPendingDxf] = useState<File|null>(null),
+    [dxfCrs,setDxfCrs] = useState<DxfCrs|"">(""),
+    [dxfUnits,setDxfUnits] = useState<DxfUnits|"">(""),
     [lots,setLots] = useState<Array<{id:string;name:string;vertices:Point[];center:Point;areaHa:number;perimeterKm:number;compactness?:number|null;ftw?:any}>>([]),
     [selectedLotId,setSelectedLotId] = useState<string | null>(null),
     [reportSections,setReportSections] = useState<string[]>(() => { try { const v = JSON.parse(localStorage.getItem("dots-report-secciones") || "[]"); return Array.isArray(v) ? v : []; } catch { return []; } }),
@@ -1128,10 +1131,11 @@ function Observatory({onHome}:{onHome:()=>void}) {
   };
   finishRef.current = () => finish();
 
-  const importLots = async (file?: File | null) => {
+  const importLots = async (file?: File | null, dxf?: { crs: DxfCrs; units: DxfUnits }) => {
     if (!file || !mapRef.current) return;
     try {
-      const found = await readLotFile(file);
+      const result = await readLotFile(file, dxf);
+      const found = result.lots;
       let ok = 0, bad = 0;
       const bounds = L.latLngBounds([]);
       for (const f of found) {
@@ -1140,7 +1144,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
         f.polygon.forEach(p => bounds.extend(p)); ok++;
       }
       if (ok) mapRef.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
-      notify(`${ok} lote${ok === 1 ? "" : "s"} importado${ok === 1 ? "" : "s"} de ${file.name}${bad ? ` · ${bad} con lados cruzados no se cargaron` : ""}.`);
+      notify(`${ok} lote${ok === 1 ? "" : "s"} importado${ok === 1 ? "" : "s"} de ${file.name}${bad ? ` · ${bad} con lados cruzados no se cargaron` : ""}.${result.warnings.length ? ` Avisos: ${result.warnings.join(" ")}` : ""}`);
     } catch (e) { notify((e as Error).message || "No se pudo leer el archivo."); }
   };
   const selectLot = (id: string) => {
@@ -2133,7 +2137,36 @@ function Observatory({onHome}:{onHome:()=>void}) {
               </>}
             </div>})()}
             <div className="lot-io">
-              <label className="data-button" title="KML de Google Earth o GeoJSON">Importar lotes (KML / GeoJSON)<input type="file" accept=".kml,.kmz,.geojson,.json,application/vnd.google-earth.kml+xml,application/geo+json" onChange={e=>{void importLots(e.target.files?.[0]);e.target.value=""}}/></label>
+              <label className="data-button" title="KML de Google Earth, GeoJSON o DXF ASCII"><span>Importar lotes (KML / GeoJSON / DXF)</span><span className="new-feature-badge">Nuevo · DXF</span><input type="file" accept=".kml,.kmz,.geojson,.json,.dxf,application/vnd.google-earth.kml+xml,application/geo+json" onChange={e=>{const f=e.target.files?.[0];if(f&&/\.dxf$/i.test(f.name)){setPendingDxf(f);setDxfCrs("");setDxfUnits("");}else void importLots(f);e.target.value=""}}/></label>
+              {pendingDxf&&<div className="dxf-import-options">
+                <strong>Ubicación de {pendingDxf.name}</strong>
+                <p>Elegí el CRS y las unidades indicados por quien creó el archivo. Un DXF puede tener coordenadas locales y no estar georreferenciado.</p>
+                <label>CRS
+                  <select value={dxfCrs} onChange={e=>setDxfCrs(e.target.value as DxfCrs|"")}>
+                    <option value="">Seleccioná el CRS…</option>
+                    <option value="EPSG:4326">EPSG:4326 · lon/lat geográficas</option>
+                    <option value="EPSG:3857">EPSG:3857 · Web Mercator</option>
+                    <option value="EPSG:32720">EPSG:32720 · UTM 20S</option>
+                    <option value="EPSG:32721">EPSG:32721 · UTM 21S</option>
+                    <option value="EPSG:32722">EPSG:32722 · UTM 22S</option>
+                  </select>
+                </label>
+                <label>Unidades de coordenadas
+                  <select value={dxfUnits} onChange={e=>setDxfUnits(e.target.value as DxfUnits|"")}>
+                    <option value="">Seleccioná las unidades…</option>
+                    <option value="degrees">Grados</option>
+                    <option value="meters">Metros</option>
+                    <option value="international-feet">Pies internacionales</option>
+                    <option value="us-survey-feet">Pies US survey</option>
+                  </select>
+                </label>
+                <small>DXF ASCII únicamente. Se importan polilíneas 2D cerradas; las curvas, entidades 3D y líneas abiertas se omiten. El nombre de cada lote se toma de su capa DXF. Límite: 25 MB, 50.000 entidades, 60 lotes y 20.000 vértices.</small>
+                <div className="dxf-import-actions">
+                  <button disabled={!dxfCrs||!dxfUnits||(dxfCrs==="EPSG:4326")!==(dxfUnits==="degrees")} onClick={()=>{void importLots(pendingDxf,{crs:dxfCrs as DxfCrs,units:dxfUnits as DxfUnits});setPendingDxf(null)}}>Importar DXF</button>
+                  <button onClick={()=>setPendingDxf(null)}>Cancelar</button>
+                </div>
+                {dxfCrs&&dxfUnits&&(dxfCrs==="EPSG:4326")!==(dxfUnits==="degrees")&&<small role="alert">EPSG:4326 requiere grados; los CRS proyectados requieren metros o pies.</small>}
+              </div>}
               {lots.length>0 && <><button onClick={()=>exportLots("kml")}>Descargar KML</button><button onClick={()=>exportLots("geojson")}>Descargar GeoJSON</button></>}
             </div>
             {cloudOn !== null && <div className="cloud-box">

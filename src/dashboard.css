@@ -910,6 +910,12 @@
 .ta-shell .lot-io { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 .ta-shell .lot-io > * { flex: 1 1 auto; font-size: 12px; text-align: center; cursor: pointer; }
 .ta-shell .lot-io input[type=file] { display: none; }
+.ta-shell .lot-io .new-feature-badge { display: inline-block; margin-left: 5px; padding: 2px 6px; border-radius: 999px; background: var(--ta-brand-soft); color: var(--ta-brand); font-size: 10px; font-weight: 700; }
+.ta-shell .dxf-import-options { flex-basis: 100%; padding: 10px; border: 1px solid var(--ta-border); border-radius: 8px; text-align: left; }
+.ta-shell .dxf-import-options p,.ta-shell .dxf-import-options small { display: block; margin: 6px 0; line-height: 1.5; }
+.ta-shell .dxf-import-options label { display: block; margin: 8px 0; }
+.ta-shell .dxf-import-actions { display: flex; gap: 6px; margin-top: 8px; }
+.ta-shell .dxf-import-actions button { flex: 1; }
 .footnote.warn-note{color:#b54708;background:#fffaeb;border:1px solid #fedf89;border-radius:8px;padding:6px 10px}
 .cost-form{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .cost-form label{font-size:11px;color:var(--muted,#667085);display:flex;flex-direction:column;gap:3px}
