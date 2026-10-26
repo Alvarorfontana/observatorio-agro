@@ -39,6 +39,7 @@ import { MARKER_KINDS, markerIcon, kindOf, MarkerLegend } from "./dashboard/mark
 import { fieldAt, fieldsAround, compactness, FTW_ATTRIBUTION, FTW_RELIABLE } from "./dashboard/fields";
 import { terrainForLot, terrainImage, DEM_ATTRIBUTION, DEM_SOURCE_URL, type TerrainAnalysis, type TerrainMode } from "./dashboard/terrain";
 import { RISK_COLORS, DRAIN_COLOR } from "./dashboard/terrainCore";
+import { TerrainSheet } from "./dashboard/TerrainSheet";
 import { VariablesPanel } from "./dashboard/VariablesPanel";
 import { EnvironmentalLab } from "./site/EnvironmentalLab";
 import { CopernicusModule } from "./site/CopernicusModule";
@@ -63,6 +64,7 @@ import { readLotFile, lotsToGeoJSON, lotsToKML, type DxfCrs, type DxfUnits } fro
 type Data = Record<string, any>;
 type Point = [number, number];
 type Source = {
+  scopeKey?: string;
   status: "consultando" | "recibido" | "sin dato";
   payload?: Data;
   error?: string;
@@ -450,6 +452,8 @@ function Observatory({onHome}:{onHome:()=>void}) {
     ),
     [layer, setLayer] = useState("base"),
     [gibsLayer, setGibsLayer] = useState(""),
+    [gibsOpacity, setGibsOpacity] = useState(0.7),
+    [mapLayersOpen, setMapLayersOpen] = useState(false),
     [simulatorDate, setSimulatorDate] = useState(""),
     [openBase, setOpenBase] = useState<string>(() => { try { return localStorage.getItem("dots-open-base") || ""; } catch { return ""; } }),
     [openOver, setOpenOver] = useState<string>(() => { try { return localStorage.getItem("dots-open-over") || ""; } catch { return ""; } }),
@@ -478,6 +482,8 @@ function Observatory({onHome}:{onHome:()=>void}) {
     [selectedLotId,setSelectedLotId] = useState<string | null>(null),
     [reportSections,setReportSections] = useState<string[]>(() => { try { const v = JSON.parse(localStorage.getItem("dots-report-secciones") || "[]"); return Array.isArray(v) ? v : []; } catch { return []; } }),
     [reportCatalog,setReportCatalog] = useState<Array<{id:string;title:string;group:string;desc?:string}>>([]);
+  const sheetScopeRef = useRef("");
+  sheetScopeRef.current = JSON.stringify([point, vertices]);
   const mapEl = useRef<HTMLDivElement>(null),
     mapRef = useRef<L.Map | null>(null),
     marker = useRef<L.CircleMarker | null>(null),
@@ -517,6 +523,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
     const controller = new AbortController();
     controllers.current[key] = controller;
     const currentGeneration = generation.current;
+    const scopeKey = JSON.stringify([p, vertices]);
     setSources((prev) => ({ ...prev, [key]: { status: "consultando" } }));
     const timer = setTimeout(() => controller.abort(), 60000);
     try {
@@ -543,7 +550,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
       )
         setSources((prev) => ({
           ...prev,
-          [key]: { status: "recibido", payload },
+          [key]: { status: payload.status === "sin dato" ? "sin dato" : "recibido", payload, scopeKey },
         }));
     } catch (e) {
       if (
@@ -684,15 +691,15 @@ function Observatory({onHome}:{onHome:()=>void}) {
     const cfg = GIBS_LAYERS.find(([k])=>k===gibsLayer);
     const isWC = gibsLayer === WORLDCOVER;
     const wms = L.tileLayer.wms(cfg?.[3] || GIBS_WMS, {
-      layers: gibsLayer, format: "image/png", transparent: true, opacity: isWC ? .6 : gibsLayer.includes("Flood") ? .85 : .7,
-      ...(!isWC && simulatorDate ? {time: simulatorDate} : {}),
+      layers: gibsLayer, format: "image/png", transparent: true, opacity: gibsOpacity,
+      ...(!isWC ? {time: simulatorDate || date} : {}),
       ...(cfg?.[3] === GIBS_WMS_4326 ? { crs: L.CRS.EPSG4326 } : {}),
       attribution: isWC ? "ESA WorldCover 2021 / VITO Terrascope (CC-BY 4.0)" : "NASA GIBS / EOSDIS",
     } as L.WMSOptions).addTo(mapRef.current);
     let warned = false;
     wms.on("tileerror", () => { if (!warned) { warned = true; notify(gibsLayer===WORLDCOVER?"Terrascope no devolvió la capa WorldCover. Probá más tarde.":"NASA GIBS no devolvió esta capa ahora. Probá más tarde u otra capa."); } });
     return () => { wms.remove(); };
-  }, [gibsLayer, simulatorDate]);
+  }, [gibsLayer, simulatorDate, date, gibsOpacity]);
   useEffect(() => {
     const d = (sources.lluvia?.payload as any)?.data;
     if (!d?.job || d.status !== "en proceso") return;
@@ -860,7 +867,17 @@ function Observatory({onHome}:{onHome:()=>void}) {
   const [sideTab, setSideTab] = useState<"lote" | "datos" | "asistente">("lote");
   const [srcQuery, setSrcQuery] = useState("");
   const [mainView, setMainView] = useState<"mapa" | "tablero">(() => { try { return localStorage.getItem("dots-vista") === "mapa" ? "mapa" : "tablero"; } catch { return "tablero"; } });
-  useEffect(() => { try { localStorage.setItem("dots-vista", mainView); } catch {} if (mainView === "mapa") setTimeout(() => mapRef.current?.invalidateSize(), 50); }, [mainView]);
+  useEffect(() => {
+    try { localStorage.setItem("dots-vista", mainView); } catch {}
+    if (mainView !== "mapa") return;
+    const timer = setTimeout(() => {
+      const map = mapRef.current;
+      if (!map) return;
+      map.invalidateSize();
+      if (poly.current) map.fitBounds(poly.current.getBounds(), { padding: [45, 45], maxZoom: 16 });
+    }, 80);
+    return () => clearTimeout(timer);
+  }, [mainView]);
   const [theme, setTheme] = useState<"oscuro" | "claro">(() => { try { return localStorage.getItem("dots-theme") === "claro" ? "claro" : "oscuro"; } catch { return "oscuro"; } });
   useEffect(() => { try { localStorage.setItem("dots-theme", theme); } catch {} }, [theme]);
   const ndviOverlay = useRef<L.ImageOverlay | null>(null);
@@ -942,6 +959,9 @@ function Observatory({onHome}:{onHome:()=>void}) {
     if (key === "satelite-lote") { if (vertices.length >= 3) ["ndvi-anomalia", "etr-lote", "heladas-satelite"].forEach(k => void load(k)); else notify("Dibujá o elegí el lote: la anomalía, el consumo de agua y las heladas se calculan sobre el polígono."); return; }
     if (key === "alertas") { void loadAlerts(); } else if (key === "forraje") { void loadForage(); } else if (key === "relieve") { void loadTerrain(); } else if (key === "costos") { void loadCosts(); } else if (key === "ganado") { if ((herdAll[herdKey] || []).some(r => Number(r.heads) > 0)) void loadHerd(); } else void load(key);
     requestAnimationFrame(() => { const el = document.getElementById("dots-detail"); const side = el?.closest(".sidebar") as HTMLElement | null; if (el && side) side.scrollTo({ top: Math.max(0, el.offsetTop - side.offsetTop - 16), behavior: "smooth" }); });
+  };
+  const chooseThematicLayer = (key: string) => {
+    setMapLayersOpen(true); setGibsLayer(key); setShowNdvi(false); setTerrainMode("off"); setCoverYear(null); setOpenOver("");
   };
   const addFieldMarker = (type = markerType) => {
     if (!mapRef.current) return;
@@ -1456,6 +1476,12 @@ function Observatory({onHome}:{onHome:()=>void}) {
             </div>
           </section>;
         })()}
+        <TerrainSheet lots={lots} selectedId={selectedLotId} sources={sources} onSelect={selectLot}
+          onResult={(scopeKey, key, result) => { if (sheetScopeRef.current === scopeKey) setSources(prev => ({ ...prev, [key]: { ...result, status: result.status === "recibido" ? "recibido" : "sin dato", scopeKey } })); }}
+          onPdf={() => void agentPdf()} onLayer={key => {
+            if (key === "sustentabilidad") { setMainView("mapa"); chooseThematicLayer(WORLDCOVER); }
+            else { if (key === "ndvi") { setMainView("mapa"); setShowNdvi(true); setOverlayMode("ndvi"); setCoverYear(null); setGibsLayer(""); setOpenOver(""); } changeView(key); }
+          }}/>
         {(()=>{
           const nl:any = (sources.ndvi?.payload as any)?.data?.latest;
           const rain = (daily.precipitation_sum||[]).reduce((a:number,b:number)=>a+(Number(b)||0),0);
@@ -2233,7 +2259,15 @@ function Observatory({onHome}:{onHome:()=>void}) {
         </aside>
         <section className="ta-map-card">
         <div id="map" ref={mapEl} />
-        <div className="panel toolbar">
+        <details className="panel toolbar map-layer-controls" open={mapLayersOpen} onToggle={e => setMapLayersOpen(e.currentTarget.open)}>
+          <summary>Capas del mapa <small>{gibsLayer ? GIBS_LAYERS.find(([k]) => k === gibsLayer)?.[1] : "Elegir capa y ajustar visualización"}</small></summary>
+          <div className="map-controls-body">
+          <div className="ts-quick-layers" role="group" aria-label="Capas principales">
+            <button aria-pressed={gibsLayer === WORLDCOVER} onClick={() => { chooseThematicLayer(gibsLayer === WORLDCOVER ? "" : WORLDCOVER); }}>Cobertura WorldCover · 2021</button>
+            <button aria-pressed={gibsLayer === "SMAP_L4_Analyzed_Surface_Soil_Moisture"} onClick={() => chooseThematicLayer(gibsLayer === "SMAP_L4_Analyzed_Surface_Soil_Moisture" ? "" : "SMAP_L4_Analyzed_Surface_Soil_Moisture")}>Humedad regional SMAP</button>
+            <button aria-pressed={gibsLayer === "MODIS_Combined_Flood_3-Day"} onClick={() => chooseThematicLayer(gibsLayer === "MODIS_Combined_Flood_3-Day" ? "" : "MODIS_Combined_Flood_3-Day")}>Agua y crecidas MODIS</button>
+            <button onClick={() => { setGibsLayer(""); setOpenOver(""); setLayer("base"); setShowNdvi(false); setTerrainMode("off"); setCoverYear(null); }}>Ocultar capas temáticas</button>
+          </div>
           <button
             className={layer === "base" ? "active" : ""}
             onClick={() => setLayer("base")}
@@ -2242,7 +2276,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
             Mapa satelital
           </button>
           <button className={layer === "modis" ? "active" : ""} onClick={() => setLayer("modis")} aria-pressed={layer === "modis"}>MODIS · imagen</button>
-          <select value={gibsLayer} onChange={e=>{setGibsLayer(e.target.value); const d=GIBS_LAYERS.find(([k])=>k===e.target.value)?.[2]; if(d) notify(d);}} aria-label="Capas de NASA y cobertura del suelo">{GIBS_LAYERS.map(([k,l])=><option key={k} value={k}>{l}</option>)}</select>
+          <select value={gibsLayer} onChange={e=>{chooseThematicLayer(e.target.value); const d=GIBS_LAYERS.find(([k])=>k===e.target.value)?.[2]; if(d) notify(d);}} aria-label="Capas de NASA y cobertura del suelo">{GIBS_LAYERS.map(([k,l])=><option key={k} value={k}>{l}</option>)}</select>
           <select value={openBase} onChange={e=>setOpenBase(e.target.value)} aria-label="Mapa base" title="Mapa base (catálogo abierto)">
             <option value="">Mapa base · Esri satelital (DOTS)</option>
             {LAYER_GROUPS.map(g=><optgroup key={g} label={g}>{OPEN_LAYERS.filter(l=>l.group===g&&!l.overlay).map(l=><option key={l.id} value={l.id}>{l.name}</option>)}</optgroup>)}
@@ -2251,7 +2285,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
             <option value="">Capa superpuesta · ninguna</option>
             {LAYER_GROUPS.map(g=><optgroup key={g} label={g}>{OPEN_LAYERS.filter(l=>l.group===g&&l.overlay).map(l=><option key={l.id} value={l.id}>{l.name}</option>)}</optgroup>)}
           </select>
-          {openOver && <label className="small" style={{display:"inline-flex",alignItems:"center",gap:6}}>Transparencia<input type="range" min={0.2} max={1} step={0.05} value={openOpacity} onChange={e=>setOpenOpacity(Number(e.target.value))}/></label>}
+          {openOver && <label className="small" style={{display:"inline-flex",alignItems:"center",gap:6}}>Opacidad de capa abierta<input aria-label="Opacidad de capa abierta" type="range" min={0.2} max={1} step={0.05} value={openOpacity} onChange={e=>setOpenOpacity(Number(e.target.value))}/></label>}
           <button onClick={()=>changeView("firms")}>FIRMS · focos térmicos</button>
           <button onClick={()=>changeView("nasa-power-30")}>NASA POWER · clima</button>
           <button onClick={()=>changeView("enso")}>ENSO · multifuente</button>
@@ -2264,7 +2298,16 @@ function Observatory({onHome}:{onHome:()=>void}) {
             aria-label="Fecha de imagen MODIS"
             max={new Date().toISOString().slice(0, 10)}
           />
+          </div>
+        <div className="ts-layer-info" aria-live="polite">
+          <strong>Capa temática: {GIBS_LAYERS.find(([k]) => k === gibsLayer)?.[1] || "ninguna"}</strong>
+          <p>{GIBS_LAYERS.find(([k]) => k === gibsLayer)?.[2] || "Elegí una capa para ver su significado. Las capas son independientes de las consultas de la ficha."}</p>
+          {gibsLayer && <><p>{gibsLayer === WORLDCOVER ? "Referencia fija: 2021 · resolución 10 m. El selector de fecha no modifica WorldCover." : `Fecha solicitada: ${simulatorDate || date}. La disponibilidad depende del producto y de sus pasadas.`}</p>
+          <label>Opacidad: {Math.round(gibsOpacity * 100)} %<input aria-label="Opacidad de capa temática" type="range" min="0" max="1" step="0.05" value={gibsOpacity} onChange={e => setGibsOpacity(Number(e.target.value))}/></label></>}
+          {openOver && <p>Capa abierta adicional: {OPEN_LAYERS.find(l => l.id === openOver)?.name} · {Math.round(openOpacity * 100)} % de opacidad.</p>}
+          <p>SoilGrids se consulta como perfil de un punto; sus valores no colorean todo el lote.</p>
         </div>
+        </details>
         <div className="map-meta">
           {layer === "base"
             ? "ESRI WORLD IMAGERY · MOSAICO BASE · FECHA DE CADA ESCENA NO HOMOGÉNEA"
