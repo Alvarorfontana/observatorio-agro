@@ -1,6 +1,7 @@
 import os
 from unittest.mock import patch
 
+import pytest
 from poblacion.geometry import prepare, InputError, polygon, area_km2
 from poblacion import worldpop
 
@@ -101,3 +102,23 @@ def test_zone_only_without_hazard():
     d = req(); d.pop('hazard')
     r = prepare(d)
     assert r['hazard_given'] is False and r['intersection'] is None and r['hazard'] is None
+
+
+def test_exposure_reports_missing_signing_key_without_starting_worldpop_tasks(monkeypatch):
+    from flask import Flask
+    from poblacion import routes
+
+    app = Flask(__name__)
+    app.register_blueprint(routes.bp)
+    monkeypatch.setattr(routes, '_signing_key', lambda: None)
+    monkeypatch.setenv('DOTS_POPULATION_SIGNING_KEY', '')
+    monkeypatch.setenv('GOOGLE_APPLICATION_CREDENTIALS_JSON', '')
+    monkeypatch.setenv('CDSE_CLIENT_SECRET', '')
+    monkeypatch.setenv('SENTINEL_HUB_CLIENT_SECRET', '')
+    monkeypatch.setenv('DMC_TOKEN', '')
+    monkeypatch.setenv('WHISP_API_KEY', '')
+    monkeypatch.setattr(worldpop, 'submit', lambda *args, **kwargs: pytest.fail('No debe iniciar tareas sin firma'))
+
+    response = app.test_client().post('/api/poblacion/exposicion', json=req())
+    assert response.status_code == 503
+    assert 'firma' in response.get_json()['error']

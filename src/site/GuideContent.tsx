@@ -110,8 +110,9 @@ export function GuideContent({ onDemo }: { onDemo: () => void }) {
         <div className="guide-three">
           <article><b>Dibujarlo</b><p>Marcás las esquinas en el mapa: triángulo, rectángulo o polígono libre.</p></article>
           <article><b>Automático</b><p>Tocás dentro de un lote y DOTS toma el contorno de un mapa mundial de lotes detectados por satélite. Verde: contorno confiable. Ámbar: revisá el borde.</p></article>
-          <article><b>Importarlo</b><p>Subís el archivo KML de Google Earth o un GeoJSON y se cargan todos tus potreros con su nombre.</p></article>
+          <article><b>Importarlo</b><p>Subís KML, GeoJSON o DXF ASCII. El DXF requiere que indiques el CRS y las unidades correctas; los lotes se nombran con su capa.</p></article>
         </div>
+        <p className="guide-note">En DXF solo se aceptan polilíneas 2D cerradas y rectas (EPSG:4326, EPSG:3857 o UTM 20S/21S/22S). Las curvas, objetos 3D y líneas abiertas se omiten. Un DXF puede tener coordenadas locales sin georreferenciar: verificá su CRS y unidades —incluido el tipo de pie— con quien lo creó; DOTS no los adivina. Límite: 25 MB, 60 lotes y 20.000 vértices. No se admite DWG.</p>
         <p className="guide-note">Por ahora los lotes viven en tu navegador mientras usás la página. Para no perderlos, descargalos con “Descargar KML” y volvé a importarlos cuando quieras.</p>
       </section>
 
