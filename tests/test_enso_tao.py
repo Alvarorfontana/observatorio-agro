@@ -50,3 +50,15 @@ def test_build_with_fake_server(monkeypatch, tmp_path):
     b = data["boyas"][2]
     assert b["isoterma20_m"] > b["isoterma20_normal_m"]          # termoclina más profunda en el este: El Niño
     assert os.path.exists(tmp_path / "clima.json")
+
+
+def test_tao_endpoint(monkeypatch):
+    from flask import Flask
+    import datastore
+    import enso_forecast_api as api
+    app = Flask(__name__)
+    app.register_blueprint(api.enso_forecast_api)
+    monkeypatch.setattr(datastore, "load", lambda name, *a, **k: None)
+    assert app.test_client().get("/api/enso/tao").status_code == 503
+    monkeypatch.setattr(datastore, "load", lambda name, *a, **k: {"boyas": [1]} if name == "enso_tao.json" else None)
+    assert app.test_client().get("/api/enso/tao").get_json()["boyas"] == [1]

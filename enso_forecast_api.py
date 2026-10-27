@@ -61,3 +61,14 @@ def iri_catalog():
         "limitaciones": ["Los pronósticos multimodelo no son observaciones.",
                          "Las probabilidades se toman tal cual las publica la fuente; DOTS no las recalcula."],
     })
+
+
+@enso_forecast_api.get("/api/enso/tao")
+def tao_section():
+    """Corte del Pacífico ecuatorial con las boyas TAO (tarea «El Niño: boyas TAO»)."""
+    data = _load("enso_tao.json")
+    if not data:
+        return jsonify(estado="sin dato", error="El corte de las boyas todavía no se calculó: correr la tarea «El Niño: boyas TAO»."), 503
+    r = jsonify(data)
+    r.headers["Cache-Control"] = "public, s-maxage=3600"
+    return r

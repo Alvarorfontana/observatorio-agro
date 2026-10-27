@@ -48,6 +48,7 @@ import { OPEN_LAYERS, LAYER_GROUPS } from "./dashboard/openLayers";
 import { PacificSection, SAImpactMap } from "./site/NinoIllustrations";
 import { NinoNowSA } from "./site/NinoNow";
 import { EnsoForecast } from "./site/EnsoForecast";
+import { EnsoTao } from "./site/EnsoTao";
 import { AvisosBox } from "./site/AvisosBox";
 import { HerdPanel, HERD_CATS, type HerdRow, type Movement } from "./dashboard/Herd";
 import { GuideContent } from "./site/GuideContent";
@@ -3278,6 +3279,7 @@ function ElNinoPage({onDemo}:{onDemo:()=>void}){
       {sup && <ul><li><b>{sup.value!=null?(sup.value>0?"+":"")+fmt(sup.value,1):"—"} °C</b>Niño 3.4 · {sup.date}</li><li><b>{sup.oni!=null?(sup.oni>0?"+":"")+fmt(sup.oni,2):"—"}</b>ONI · NOAA ahora clasifica con el RONI</li><li><b>{sup.nino12!=null?(sup.nino12>0?"+":"")+fmt(sup.nino12,1):"—"} °C</b>Niño 1+2 · costa de Perú</li></ul>}
     </section>
     <EnsoForecast/>
+    <EnsoTao/>
     <section className="nino-explain">
       <div><span className="section-tag">CÓMO FUNCIONA</span><h2>El Pacífico cambia de lado su agua caliente</h2>
         <p>En un año normal, los vientos alisios soplan de este a oeste sobre el Pacífico ecuatorial y amontonan el agua más caliente del planeta junto a Indonesia y Australia. Allí se forman las grandes tormentas. Frente a Perú, en cambio, sube agua fría del fondo.</p>
