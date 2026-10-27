@@ -11,13 +11,25 @@
   "nombre_barrio",
   "provincia"
  ],
+ "con_servicios": 4253,
  "ejemplo": {
   "id_renabap": "1",
   "nombre_barrio": "Monterrey I",
   "provincia": "Buenos Aires",
   "departamento": "Pilar",
   "localidad": "Presidente Derqui",
-  "familias_aproximadas": "44"
+  "familias_aproximadas": "44",
+  "ano_de_cre": "1990",
+  "Electricid": "Conexi�n irregular a la red p�blica",
+  "Cloaca": "Desag�e s�lo a pozo negro/ciego u hoyo",
+  "Agua": "Conexi�n irregular a la red p�blica de agua corriente",
+  "creacion": "1990",
+  "clasif_bar": "Asentamiento",
+  "sit_domini": "La mayor�a de los vecinos no tiene t�tulo de propiedad, ni boleto de compra-vent",
+  "electric_1": "Conexi�n irregular a la red p�blica",
+  "cloaca_2": "Desag�e s�lo a pozo negro/ciego u hoyo",
+  "agua_2": "Conexi�n irregular a la red p�blica de agua corriente",
+  "cocina": "Gas en garrafa"
  },
  "places": [
   {
