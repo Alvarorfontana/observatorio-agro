@@ -1,0 +1,37 @@
+# El Niño bajo el mar: corte del Pacífico ecuatorial con las boyas TAO/TRITON (NOAA PMEL).
+# Dos veces por semana y a pedido. Guarda en la rama datos (no publica la web); la web lo lee en /api/enso/tao.
+name: "El Niño: boyas TAO"
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [feat/enso-tao]
+    paths: [scripts/enso_tao.py, .github/workflows/enso-tao.yml]
+  schedule:
+    - cron: "17 12 * * 1,4"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: enso-tao
+  cancel-in-progress: false
+
+jobs:
+  tao:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Traer datos de la rama datos
+        run: bash scripts/datos_rama.sh traer
+      - name: Armar el corte
+        run: |
+          pip install requests
+          python -u scripts/enso_tao.py data/enso_tao.json
+      - name: Guardar en la rama datos (no publica la web)
+        run: |
+          cp scripts/datos_rama.sh /tmp/datos_rama.sh && bash /tmp/datos_rama.sh guardar "Boyas TAO $(date -u +%Y-%m-%d)" data/enso_tao.json scripts/cache/tao_clima.json
