@@ -68,3 +68,9 @@ def test_services_2020_reads_latin1(monkeypatch):
         headers = {"content-type": "application/json"}
     monkeypatch.setattr(rl.requests, "get", lambda *a, **k: R())
     assert rl.services_2020()["7"]["agua_2"] == "Conexión irregular"
+
+
+def test_repair_broken_accents():
+    assert rl.repair("Conexi�n irregular a la red p�blica") == "Conexión irregular a la red pública"
+    assert rl.repair("Desag�e s�lo a pozo") == "Desagüe sólo a pozo"
+    assert rl.repair("Rar�simo") == "Rarsimo" and rl.repair("bien") == "bien" and rl.repair(None) is None

@@ -160,8 +160,29 @@ def merge_services(data, extra):
     return n
 
 
+# El geoportal 2020 entrega los acentos ya dañados («Conexi\ufffdn»). El vocabulario es corto: se reparan por palabra.
+_FIX = {"conexi\ufffdn": "conexión", "p\ufffdblica": "pública", "desag\ufffde": "desagüe", "s\ufffdlo": "sólo",
+        "c\ufffdmara": "cámara", "s\ufffdptica": "séptica", "el\ufffdctrica": "eléctrica", "cami\ufffdn": "camión",
+        "energ\ufffda": "energía", "le\ufffda": "leña", "pl\ufffdstico": "plástico", "garraf\ufffdn": "garrafón",
+        "el\ufffdctrico": "eléctrico", "el\ufffdctricos": "eléctricos", "t\ufffdtulo": "título", "pr\ufffdstamo": "préstamo",
+        "situaci\ufffdn": "situación", "posesi\ufffdn": "posesión", "tambi\ufffdn": "también", "red\ufffdes": "redes"}
+
+
+def repair(text):
+    import re
+    if not text or "\ufffd" not in text:
+        return text
+    def one(m):
+        w = m.group(0)
+        fixed = _FIX.get(w.lower())
+        if not fixed:
+            return w.replace("\ufffd", "")
+        return fixed[0].upper() + fixed[1:] if w[0].isupper() else fixed
+    return re.sub(r"\w*\ufffd\w*", one, text)
+
+
 def services(props):
-    out = {k: (str(pick(props, *needles) or "")[:60] or None) for k, needles in SERVICE_FIELDS.items()}
+    out = {k: (repair(str(pick(props, *needles) or ""))[:60] or None) for k, needles in SERVICE_FIELDS.items()}
     year = pick(props, "creacion", "ano_de_cre", "anio", "año", numeric=True)
     out["creacion"] = int(year) if year and 1900 < year < 2100 else None
     return out
