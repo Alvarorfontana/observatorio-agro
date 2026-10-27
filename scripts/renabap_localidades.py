@@ -99,13 +99,61 @@ def summarize(data, stations):
 # Servicios y situación del barrio según el RENABAP. Los nombres de los campos cambian entre versiones del registro,
 # así que se buscan por palabra clave.
 SERVICE_FIELDS = {
-    "agua": ("agua",),
-    "cloaca": ("cloaca", "efluente"),
-    "electricidad": ("electric", "energia_el"),
+    "agua": ("agua_2", "agua"),
+    "cloaca": ("cloaca_2", "cloaca", "efluente"),
+    "electricidad": ("electric_1", "electric", "energia_el"),
     "cocina": ("cocina",),
     "tenencia": ("dominio", "tenencia", "situa_dom", "tipo_tierra"),
     "clasificacion": ("clasif", "clas_bar"),
 }
+
+
+GEOPORTAL_WFS = os.environ.get("RENABAP_WFS", "https://geoportal.obraspublicas.gob.ar/geoserver/ows")
+GEOPORTAL_LAYER = "geonode:renabap2020_smz"
+
+
+def services_2020():
+    """Servicios por barrio de la versión 2020 (geoportal de Obras Públicas), sin geometría, por id_renabap.
+
+    El archivo oficial 2023 no trae servicios. Si el geoportal no responde, se sigue sin ellos."""
+    params = {"service": "WFS", "version": "1.0.0", "request": "GetFeature", "typeName": GEOPORTAL_LAYER,
+              "outputFormat": "application/json", "propertyName": "id_renabap,agua_2,cloaca_2,electric_1,cocina,"
+              "sit_domini,clasif_bar,creacion,Agua,Cloaca,Electricid,ano_de_cre"}
+    for attempt in range(2):
+        try:
+            r = requests.get(GEOPORTAL_WFS, params=params, timeout=240,
+                             headers={"User-Agent": "DOTS observatorio (datos abiertos)"})
+            if r.ok and "json" in r.headers.get("content-type", ""):
+                out = {}
+                for f in r.json().get("features", []):
+                    p = f.get("properties") or {}
+                    rid = p.get("id_renabap")
+                    if rid not in (None, ""):
+                        out[str(int(float(rid)))] = p
+                print(f"Servicios 2020 del geoportal: {len(out)} barrios", flush=True)
+                return out
+            print(f"Geoportal respondió HTTP {r.status_code} ({r.headers.get('content-type', '')[:40]})", flush=True)
+        except (requests.RequestException, ValueError) as exc:
+            print(f"Geoportal no respondió: {type(exc).__name__}", flush=True)
+        time.sleep(20)
+    return {}
+
+
+def merge_services(data, extra):
+    """Suma los servicios 2020 a cada barrio 2023 con el mismo id_renabap."""
+    n = 0
+    for f in data.get("features", []):
+        p = f.get("properties") or {}
+        rid = p.get("id_renabap")
+        try:
+            key = str(int(float(rid)))
+        except (TypeError, ValueError):
+            continue
+        if key in extra:
+            for k, v in extra[key].items():
+                p.setdefault(k, v)
+            n += 1
+    return n
 
 
 def services(props):
@@ -155,6 +203,8 @@ def main(out_path):
     import cuenca
     data = download()
     keys = sorted((data.get("features") or [{}])[0].get("properties", {}).keys())
+    con_servicios = merge_services(data, services_2020())
+    print(f"Barrios 2023 con servicios de 2020: {con_servicios}", flush=True)
     print(f"RENABAP: {len(data.get('features', []))} barrios · atributos: {', '.join(keys)}", flush=True)
     from collections import Counter
     for k, needles in SERVICE_FIELDS.items():
@@ -168,6 +218,7 @@ def main(out_path):
                     "registro; los barrios posteriores a su último relevamiento no figuran. Fuera de Argentina no hay "
                     "RENABAP."),
            "atributos": keys,
+           "con_servicios": con_servicios,
            "ejemplo": {k: str(v)[:80] for k, v in ((data.get("features") or [{}])[0].get("properties") or {}).items()},
            "places": places}
     with open(out_path, "w", encoding="utf-8") as f:

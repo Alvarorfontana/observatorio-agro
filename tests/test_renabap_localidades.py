@@ -41,3 +41,20 @@ def test_services_reads_renamed_fields():
     assert out["agua"].startswith("Conexión irregular") and out["cloaca"] == "Desagüe a pozo"
     assert out["electricidad"] == "Conexión irregular" and out["tenencia"] == "Sin título" and out["creacion"] == 1998
     assert rl.services({})["agua"] is None and rl.services({})["creacion"] is None
+
+
+def test_merge_services_by_id():
+    data = {"features": [{"properties": {"id_renabap": "12", "nombre_barrio": "A"}},
+                         {"properties": {"id_renabap": 13.0}}, {"properties": {}}]}
+    extra = {"12": {"agua_2": "Conexión irregular a la red pública", "cloaca_2": "Desagüe sólo a pozo negro", "electric_1": "Conexión formal"}}
+    assert rl.merge_services(data, extra) == 1
+    s = rl.services(data["features"][0]["properties"])
+    assert s["agua"].startswith("Conexión irregular") and s["cloaca"].startswith("Desagüe") and s["electricidad"] == "Conexión formal"
+
+
+def test_services_2020_survives_without_network(monkeypatch):
+    monkeypatch.setattr(rl.time, "sleep", lambda s: None)
+    def down(*a, **k):
+        raise rl.requests.ConnectionError("sin red")
+    monkeypatch.setattr(rl.requests, "get", down)
+    assert rl.services_2020() == {}
