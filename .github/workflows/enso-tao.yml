@@ -1,3 +1,4 @@
+# Reintento: los servidores ERDDAP de NOAA a veces no responden.
 # El Niño bajo el mar: corte del Pacífico ecuatorial con las boyas TAO/TRITON (NOAA PMEL).
 # Dos veces por semana y a pedido. Guarda en la rama datos (no publica la web); la web lo lee en /api/enso/tao.
 name: "El Niño: boyas TAO"
