@@ -20,3 +20,4 @@ jobs:
       - run: python scripts/chequeo_vivo.py https://observatorio-agro.vercel.app
         env:
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+          DOTS_ACCESO: ${{ secrets.DOTS_ACCESO }}

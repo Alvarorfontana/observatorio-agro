@@ -33,6 +33,7 @@ jobs:
           RESEND_AUDIENCE_ID: ${{ secrets.RESEND_AUDIENCE_ID }}
           AVISOS_FROM: ${{ secrets.AVISOS_FROM }}
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+          DOTS_ACCESO: ${{ secrets.DOTS_ACCESO }}
         run: |
           pip install requests
           python scripts/avisos.py

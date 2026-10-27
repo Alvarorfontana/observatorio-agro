@@ -5,6 +5,8 @@
   la página de login como newsletter). Ahora se corta con un mensaje claro.
 - Si se carga el secreto VERCEL_AUTOMATION_BYPASS_SECRET (Vercel → Settings → Deployment Protection →
   Protection Bypass for Automation, gratuito), se envía en cada pedido y la protección deja pasar.
+- Si DOTS está en modo vitrina, el secreto DOTS_ACCESO (una de las claves de DOTS_ACCESO_CLAVES) se
+  manda en el encabezado X-DOTS-Acceso para que las tareas automáticas sigan funcionando.
 """
 import os
 from urllib.parse import urlparse
@@ -13,6 +15,7 @@ import requests
 
 SITE = os.environ.get('DOTS_SITE', 'https://observatorio-agro.vercel.app').rstrip('/')
 BYPASS = os.environ.get('VERCEL_AUTOMATION_BYPASS_SECRET', '').strip()
+ACCESO = os.environ.get('DOTS_ACCESO', '').strip()   # clave del modo vitrina para las tareas automáticas
 
 
 class SitioProtegido(RuntimeError):
@@ -24,6 +27,8 @@ def session():
     s.headers['User-Agent'] = 'DOTS-tareas/1.0'
     if BYPASS:
         s.headers['x-vercel-protection-bypass'] = BYPASS
+    if ACCESO:
+        s.headers['X-DOTS-Acceso'] = ACCESO
     return s
 
 

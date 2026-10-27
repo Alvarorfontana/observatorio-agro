@@ -15,6 +15,7 @@ try:
 except ImportError:   # el módulo de población necesita pyclipper
     population_bp = None
 import security
+import vitrina
 from copernicus_routes import copernicus_api
 
 app = Flask(__name__)
@@ -27,6 +28,7 @@ app.register_blueprint(copernicus_api)
 if population_bp is not None:
     app.register_blueprint(population_bp)
 security.install(app)
+vitrina.install(app)   # modo vitrina (DOTS_VITRINA=1): se ve, pero las consultas son por invitación
 
 
 @app.get('/api/health')
