@@ -167,6 +167,8 @@ def main(out_path):
            "nota": ("Barrios cuyo centro está a 15 km o menos de la localidad. Las familias son las que estima el "
                     "registro; los barrios posteriores a su último relevamiento no figuran. Fuera de Argentina no hay "
                     "RENABAP."),
+           "atributos": keys,
+           "ejemplo": {k: str(v)[:80] for k, v in ((data.get("features") or [{}])[0].get("properties") or {}).items()},
            "places": places}
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(out, f, ensure_ascii=False, indent=1)
