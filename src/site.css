@@ -1346,3 +1346,37 @@ html, body { overflow-x: hidden; }
 .public-site .bv-block .nn-warn{display:flex;flex-wrap:wrap;align-items:center;gap:10px;min-height:54px;line-height:1.5;color:#754600;background:#fff8e9;border-color:#f1cf89}
 .public-site .bv-block .nn-warn button{appearance:none;background:#113846!important;color:#fff!important;border:1px solid #113846!important;border-radius:7px;padding:9px 13px;font:700 12px "IBM Plex Sans",sans-serif;line-height:1.3;cursor:pointer;opacity:1!important;min-height:38px}
 .public-site .bv-block .nn-warn button:hover,.public-site .bv-block .nn-warn button:focus-visible{background:#075a66!important;border-color:#075a66!important;outline:2px solid #075a66;outline-offset:2px}
+/* El Niño · pronóstico */
+.enso-fc{max-width:1200px;margin:0 auto 28px;padding:0 24px;box-sizing:border-box}
+.enso-fc-head h2{margin:6px 0 8px}
+.enso-fc-syn{max-width:860px;color:#3b4a50}
+.enso-fc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin:12px 0}
+.enso-fc-card{background:#fff;border:1px solid #e4e7ec;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.enso-fc-card.wide{grid-column:span 2}
+.enso-fc-card h3{margin:0;font-size:16px}
+.enso-fc-card small{color:#5f6e73}
+.enso-fc-card img{width:100%;border-radius:8px;border:1px solid #eef1f3;background:#fafbfb}
+.enso-fc-big{font-size:42px;line-height:1.1;color:#c0392b}
+.enso-fc-bars{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.enso-fc-row{display:grid;grid-template-columns:72px 1fr 48px;gap:10px;align-items:center;font-size:13px}
+.enso-fc-row b{text-align:right}
+.enso-fc-bar{display:flex;height:16px;border-radius:4px;overflow:hidden;background:#eef1f3}
+.enso-fc-bar i,.enso-fc-legend i{display:block;height:100%}
+.enso-fc-bar i.nino,.enso-fc-legend i.nino{background:#d9534f}.enso-fc-bar i.neutral,.enso-fc-legend i.neutral{background:#b9c3c7}.enso-fc-bar i.nina,.enso-fc-legend i.nina{background:#3d7cc9}
+.enso-fc-legend{display:flex;gap:14px;font-size:12px;color:#5f6e73;margin-top:4px}
+.enso-fc-legend span{display:inline-flex;align-items:center;gap:5px}.enso-fc-legend i{width:12px;height:12px;border-radius:3px}
+.enso-fc-note{font-size:12px;color:#5f6e73;margin:4px 0 0}
+.enso-fc-local-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;align-items:flex-end}
+.enso-fc-local-head label{display:flex;flex-direction:column;gap:4px;font-size:13px;min-width:0}
+.enso-fc-local-head select{max-width:100%;padding:8px;border-radius:6px;border:1px solid #cbd5da;background:#fff;color:#10222b}
+.enso-fc-orig{font-size:13px;color:#3b4a50;max-width:860px}.enso-fc-orig summary{cursor:pointer;color:#5f6e73}
+.enso-fc-months{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:8px;margin-top:8px}
+.enso-fc-months div{border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:2px;color:#10222b}
+.enso-fc-months div.dark,.enso-fc-table td.dark{color:#fff}
+.enso-fc-months span{font-size:12px;text-transform:capitalize}.enso-fc-months b{font-size:18px}
+.enso-fc-read{font-weight:600;margin:8px 0 0}
+.enso-fc-table{overflow-x:auto;margin-top:8px}
+.enso-fc-table table{border-collapse:collapse;font-size:13px;width:100%}
+.enso-fc-table th,.enso-fc-table td{padding:5px 8px;border-bottom:1px solid #eef1f3;text-align:right;white-space:nowrap}
+.enso-fc-table th:first-child,.enso-fc-table td:first-child{text-align:left}
+@media (max-width:700px){.enso-fc{padding:0 16px}.enso-fc-card.wide{grid-column:auto}.enso-fc-row{grid-template-columns:62px 1fr 42px}}

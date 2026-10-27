@@ -186,11 +186,16 @@ def seasonal_point(lat, lon, plan=None):
     """Anomalías estacionales para un punto. Devuelve (plan usado, datos)."""
     last = None
     for agg, vars_ in ([plan] if plan else SEASONAL_CANDIDATES):
-        try:
-            r = requests.get(SEASONAL, params={"latitude": lat, "longitude": lon, agg: ",".join(vars_),
-                                               "timezone": "America/Argentina/Buenos_Aires"}, timeout=40, headers=UA)
-        except requests.RequestException as exc:
-            last = type(exc).__name__
+        r = None
+        for attempt in range(3):            # el servicio a veces tarda: hasta tres intentos por punto
+            try:
+                r = requests.get(SEASONAL, params={"latitude": lat, "longitude": lon, agg: ",".join(vars_),
+                                                   "timezone": "America/Argentina/Buenos_Aires"}, timeout=90, headers=UA)
+                break
+            except requests.RequestException as exc:
+                last = type(exc).__name__
+                time.sleep(5 * (attempt + 1))
+        if r is None:
             continue
         if r.status_code != 200:
             try:
@@ -217,11 +222,15 @@ def seasonal():
         pvar = next(k for k in d if k.startswith("precipitation"))
         tvar = next((k for k in d if k.startswith("temperature")), None)
         months = []
-        for i, t in enumerate(d["time"][:7]):
+        this_month = datetime.now(timezone.utc).strftime("%Y-%m")
+        for i, t in enumerate(d["time"]):
+            if t[:7] < this_month or len(months) >= 6:      # la serie trae el mes de emisión del modelo, ya pasado
+                continue
             months.append({"mes": t[:7], "lluvia_anomalia_mm": d[pvar][i],
                            "temp_anomalia_c": d[tvar][i] if tvar else None})
+        time.sleep(1)
         places.append({"id": st["id"], "place": st["place"], "river": st["river"], "meses": months,
-                       "unidad_lluvia": "mm (anomalía del mes respecto del clima del modelo)"})
+                       "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"})
     out = {"estado": "recibido" if places else "sin dato", "fuente": "ECMWF SEAS5 vía Open-Meteo",
            "url": SEASONAL, "parametros": {"agregado": plan[0], "variables": plan[1]} if plan else None,
            "localidades": places,

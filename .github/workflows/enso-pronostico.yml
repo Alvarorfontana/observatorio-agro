@@ -4,9 +4,6 @@ name: "El Niño: pronósticos"
 
 on:
   workflow_dispatch: {}
-  push:
-    branches: [fix/enso-tareas]
-    paths: [scripts/enso_fuentes.py, .github/workflows/enso-pronostico.yml]
   schedule:
     - cron: "37 11 * * *"
 
