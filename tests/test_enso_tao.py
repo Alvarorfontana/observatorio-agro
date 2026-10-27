@@ -37,17 +37,18 @@ def test_isotherm_and_labels():
 
 def test_build_with_fake_server(monkeypatch, tmp_path):
     monkeypatch.setattr(et, "CLIMA_CACHE", str(tmp_path / "clima.json"))
-    lons = (147.0, 165.0, 220.0, 250.0)
+    lons = (147.0, 165.0, 220.0, 250.0, 337.0)
     def fake(query, timeout=300):
         if "orderByMean" in query:
             return [{"longitude": l, "depth": d, "T_20": t} for l in lons for d, t in ((1.0, 27.0), (100.0, 21.0), (140.0, 17.0))]
-        return [{"station": "x", "longitude": l, "time": "2026-09-21T12:00:00Z", "depth": d, "T_20": t + (2 if l > 200 else -1)}
+        return [{"station": "x", "longitude": l, "time": "2026-09-21T12:00:00Z", "depth": d, "T_20": t + (2 if 230 < l < 300 else -1)}
                 for l in lons for d, t in ((1.0, 27.0), (100.0, 21.0), (140.0, 17.0))]
     monkeypatch.setattr(et, "fetch_csv", fake)
     data = et.build()
     assert [b["nombre"] for b in data["boyas"]] == ["147° E", "165° E", "140° O", "110° O"]
     assert data["resumen"]["anom_este_0_150m"] == 2.0 and data["resumen"]["anom_oeste_80_200m"] == -1.0
-    b = data["boyas"][2]
+    assert all(b["longitud"] != 337.0 for b in data["boyas"])   # la boya del Atlántico queda afuera
+    b = data["boyas"][3]
     assert b["isoterma20_m"] > b["isoterma20_normal_m"]          # termoclina más profunda en el este: El Niño
     assert os.path.exists(tmp_path / "clima.json")
 

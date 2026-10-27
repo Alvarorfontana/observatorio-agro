@@ -8,7 +8,7 @@ el este, anuncia el final de El Niño meses antes de que se note en la superfici
   - Ahora: promedio de los últimos 5 días con datos de cada boya (dentro de los últimos 45 días).
   - Normal: promedio de 1993–2020 de cada boya y profundidad (se calcula una vez y se guarda).
   - Sólo datos de calidad 1 a 3 (alta, estándar o menor), como recomienda PMEL.
-Fuente: GTMBA Project Office de NOAA/PMEL, vía el ERDDAP de NOAA OSMC. Datos de uso libre.
+Fuente: GTMBA Project Office de NOAA/PMEL, vía los servidores ERDDAP de NOAA. Datos de uso libre.
 
 Salida: data/enso_tao.json (rama datos); climatología en scripts/cache/tao_clima.json.
 """
@@ -33,7 +33,7 @@ SERVERS = [u for u in os.environ.get("TAO_ERDDAP", "").split(",") if u] or [
 _GOOD = []
 CLIMA_CACHE = os.path.join(ROOT, "scripts", "cache", "tao_clima.json")
 DEPTHS = (1, 10, 20, 40, 60, 80, 100, 120, 140, 180, 300, 500)      # profundidades estándar de TAO
-CREDIT = "GTMBA Project Office de NOAA/PMEL (boyas TAO/TRITON) vía ERDDAP de NOAA OSMC"
+CREDIT = "GTMBA Project Office de NOAA/PMEL (boyas TAO/TRITON) vía ERDDAP de NOAA"
 UA = {"User-Agent": "DOTS observatorio (datos abiertos)"}
 
 
@@ -147,6 +147,8 @@ def build():
     clima = climatology()["profiles"]
     buoys = []
     for lon in sorted(now):                       # 0–360: de oeste (137° E) a este (95° O)
+        if not 130 <= lon <= 270:                 # sólo el Pacífico (el mismo conjunto trae boyas del Atlántico e Índico)
+            continue
         p = now[lon]["perfil"]
         cp = {float(d): t for d, t in (clima.get(str(lon)) or {}).items()}
         anom = {d: round(t - cp[d], 2) for d, t in p.items() if d in cp}
@@ -156,8 +158,8 @@ def build():
                       "isoterma20_m": isotherm_depth(p), "isoterma20_normal_m": isotherm_depth(cp) if cp else None})
     if len(buoys) < 3:
         raise RuntimeError(f"sólo {len(buoys)} boyas con datos en la línea del ecuador")
-    east = [b for b in buoys if b["lon"] < -120]
-    west = [b for b in buoys if b["lon"] > 150 or b["lon"] < -170]
+    east = [b for b in buoys if -135 <= b["lon"] <= -80]            # 125° O a 95° O, frente a Sudamérica
+    west = [b for b in buoys if b["lon"] >= 130 or b["lon"] <= -175]  # 137° E a 180°
     def mean_anom(bs, lo, hi):
         v = [x["anom"] for b in bs for x in b["perfil"] if x["anom"] is not None and lo <= x["prof"] <= hi]
         return round(sum(v) / len(v), 2) if v else None

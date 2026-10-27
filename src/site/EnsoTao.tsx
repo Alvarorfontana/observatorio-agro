@@ -10,9 +10,11 @@ type Buoy = { longitud: number; lon: number; nombre: string; desde: string; hast
 type Data = { actualizado?: string; fuente?: string; url?: string; normal?: string; nota?: string; boyas?: Buoy[];
   resumen?: { anom_este_0_150m: number | null; anom_oeste_80_200m: number | null; ultimo_dato: string }; error?: string };
 
-const W = 760, H = 330, L = 46, R = 14, T = 14, B = 40, MAXD = 300, LON0 = 130, LON1 = 270;
+const W = 760, H = 330, L = 46, R = 14, T = 14, B = 40, MAXD = 300;
+let LON0 = 130, LON1 = 270;
 const x = (lon360: number) => L + (lon360 - LON0) / (LON1 - LON0) * (W - L - R);
 const y = (d: number) => T + Math.min(d, MAXD) / MAXD * (H - T - B);
+const num = (v: number, d = 1) => new Intl.NumberFormat("es-AR", { maximumFractionDigits: d, minimumFractionDigits: d }).format(v);
 const fmt = (v: number | null | undefined, d = 1) => v == null ? "—" : (v > 0 ? "+" : "") + new Intl.NumberFormat("es-AR", { maximumFractionDigits: d, minimumFractionDigits: d }).format(v);
 const STEPS: [number, string][] = [[-4, "#5e2a84"], [-3, "#2c3e94"], [-2, "#3d6fc4"], [-1, "#8fb7e3"], [-0.5, "#d6e6f5"], [0.5, "#f6f6f2"], [1, "#fbd9b3"], [2, "#f7a35c"], [3, "#e8603c"], [4, "#c0392b"], [99, "#7a1f1a"]];
 const color = (a: number | null) => a == null ? "#e9edef" : (STEPS.find(([hi]) => a < hi) || STEPS[STEPS.length - 1])[1];
@@ -30,15 +32,16 @@ function at(p: Pt[], d: number): number | null {
 function reading(d: Data) {
   const r = d.resumen; if (!r) return "";
   const out: string[] = [];
-  if (r.anom_este_0_150m != null) out.push(r.anom_este_0_150m >= 1 ? `En el Pacífico este, de 0 a 150 m, el agua está ${fmt(r.anom_este_0_150m)} °C más caliente que lo normal: es el calor de El Niño acumulado frente a Sudamérica.` : r.anom_este_0_150m <= -1 ? `En el Pacífico este el agua está ${fmt(r.anom_este_0_150m)} °C más fría que lo normal, típico de La Niña.` : "En el Pacífico este, la temperatura bajo la superficie está cerca de lo normal.");
-  if (r.anom_oeste_80_200m != null && r.anom_oeste_80_200m <= -1) out.push(`En el oeste, entre 80 y 200 m, ya hay agua ${fmt(-r.anom_oeste_80_200m)} °C más fría que lo normal. Si esa agua fría avanza hacia el este por debajo, anuncia que El Niño empezará a debilitarse en los próximos meses.`);
+  if (r.anom_este_0_150m != null) out.push(r.anom_este_0_150m >= 1 ? `En el Pacífico este, de 0 a 150 m, el agua está ${fmt(r.anom_este_0_150m)} °C más caliente que lo normal: es el calor de El Niño acumulado frente a Sudamérica.` : r.anom_este_0_150m <= -1 ? `En el Pacífico este el agua está ${num(-r.anom_este_0_150m)} °C más fría que lo normal, típico de La Niña.` : "En el Pacífico este, la temperatura bajo la superficie está cerca de lo normal.");
+  if (r.anom_oeste_80_200m != null && r.anom_oeste_80_200m <= -1) out.push(`En el oeste, entre 80 y 200 m, ya hay agua ${num(-r.anom_oeste_80_200m)} °C más fría que lo normal. Si esa agua fría avanza hacia el este por debajo, anuncia que El Niño empezará a debilitarse en los próximos meses.`);
   return out.join(" ");
 }
 
 export function EnsoTao() {
   const [d, setD] = useState<Data | null>(null);
   useEffect(() => { let live = true; fetch("/api/enso/tao").then(r => r.json()).then(j => live && setD(j)).catch(() => live && setD({ error: "No se pudo consultar las boyas." })); return () => { live = false; }; }, []);
-  const buoys = useMemo(() => (d?.boyas || []).filter(b => b.longitud >= LON0 && b.longitud <= LON1).sort((a, b) => a.longitud - b.longitud), [d]);
+  const buoys = useMemo(() => (d?.boyas || []).filter(b => b.longitud >= 130 && b.longitud <= 270).sort((a, b) => a.longitud - b.longitud), [d]);
+  if (buoys.length) { LON0 = buoys[0].longitud - 7; LON1 = buoys[buoys.length - 1].longitud + 7; }
   if (!d) return null;
   if (!buoys.length) return <section className="enso-tao"><span className="section-tag">BAJO EL MAR</span><h2>El Pacífico por dentro</h2><p>{d.error || "Sin datos de las boyas por ahora."}</p></section>;
   const edges = buoys.map((b, i) => [i ? (b.longitud + buoys[i - 1].longitud) / 2 : b.longitud - 6, i < buoys.length - 1 ? (b.longitud + buoys[i + 1].longitud) / 2 : b.longitud + 6]);
@@ -59,7 +62,7 @@ export function EnsoTao() {
       </svg>
     </div>
     <div className="enso-tao-legend">
-      {STEPS.slice(0, -1).map(([hi, c], i) => <span key={hi}><i style={{ background: c }} />{i === 0 ? `< ${hi}` : `${fmt(STEPS[i - 1][0], hi % 1 ? 1 : 0)} a ${fmt(hi, hi % 1 ? 1 : 0)}`}</span>)}
+      {STEPS.slice(0, -1).map(([hi, c], i) => <span key={hi}><i style={{ background: c }} />{i === 0 ? `< ${fmt(hi, 0)}` : `${fmt(STEPS[i - 1][0], STEPS[i - 1][0] % 1 ? 1 : 0)} a ${fmt(hi, hi % 1 ? 1 : 0)}`}</span>)}
       <span><i style={{ background: STEPS[STEPS.length - 1][1] }} />&gt; +4 °C</span>
       <span><b className="ln" />isoterma de 20 °C hoy</span><span><b className="ln dash" />normal</span>
     </div>
