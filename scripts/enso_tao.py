@@ -23,7 +23,14 @@ from datetime import datetime, timedelta, timezone
 import requests
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-ERDDAP = os.environ.get("TAO_ERDDAP", "https://osmc.noaa.gov/erddap/tabledap/pmelTaoDyT.csv")
+# El mismo conjunto (pmelTaoDyT) se publica en varios servidores ERDDAP de NOAA; se usa el primero que responda.
+SERVERS = [u for u in os.environ.get("TAO_ERDDAP", "").split(",") if u] or [
+    "https://coastwatch.pfeg.noaa.gov/erddap/tabledap/pmelTaoDyT.csv",
+    "https://data.pmel.noaa.gov/generic/erddap/tabledap/pmelTaoDyT.csv",
+    "https://data.pmel.noaa.gov/pmel/erddap/tabledap/pmelTaoDyT.csv",
+    "https://osmc.noaa.gov/erddap/tabledap/pmelTaoDyT.csv",
+]
+_GOOD = []
 CLIMA_CACHE = os.path.join(ROOT, "scripts", "cache", "tao_clima.json")
 DEPTHS = (1, 10, 20, 40, 60, 80, 100, 120, 140, 180, 300, 500)      # profundidades estándar de TAO
 CREDIT = "GTMBA Project Office de NOAA/PMEL (boyas TAO/TRITON) vía ERDDAP de NOAA OSMC"
@@ -31,17 +38,26 @@ UA = {"User-Agent": "DOTS observatorio (datos abiertos)"}
 
 
 def fetch_csv(query, timeout=300):
-    last = None
-    for attempt in range(3):
-        try:
-            r = requests.get(ERDDAP + "?" + query, timeout=timeout, headers=UA)
+    errors = []
+    for base in _GOOD + [u for u in SERVERS if u not in _GOOD]:
+        for attempt in range(2):
+            try:
+                r = requests.get(base + "?" + query, timeout=timeout, headers=UA)
+            except requests.RequestException as exc:
+                errors.append(f"{base.split('/')[2]}: {type(exc).__name__}")
+                time.sleep(8)
+                continue
             if r.status_code == 200:
+                if base not in _GOOD:
+                    _GOOD.insert(0, base)
+                    print(f"Servidor de las boyas: {base.split('/')[2]}", flush=True)
                 return parse_csv(r.text)
-            last = f"HTTP {r.status_code}: {' '.join(r.text.split())[:300]} · consulta: {query[:200]}"
-        except requests.RequestException as exc:
-            last = type(exc).__name__
-        time.sleep(10 * (attempt + 1))
-    raise RuntimeError(last or "sin respuesta")
+            msg = " ".join(r.text.split())[:160]
+            errors.append(f"{base.split('/')[2]}: HTTP {r.status_code} {msg}")
+            if r.status_code in (400, 404):      # el servidor no tiene el conjunto o no acepta la consulta: el siguiente
+                break
+            time.sleep(8)
+    raise RuntimeError(" | ".join(errors)[:900] + f" · consulta: {query[:160]}")
 
 
 def parse_csv(text):
