@@ -1,0 +1,449 @@
+Ventana reciente: antes 2025-06-24→2025-10-22 · después 2026-06-24→2026-10-22
+/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/google/api_core/_python_version_support.py:254: FutureWarning: You are using a Python version (3.11.17) which Google will stop supporting in new releases of google.api_core once it reaches its end of life (2027-10-24). Please upgrade to the latest Python version, or at least Python 3.12, to continue receiving updates for google.api_core past that date.
+  warnings.warn(message, FutureWarning)
+/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/ee/data.py:335: UserWarning: Your project has exceeded its noncommercial compute quota and is now in restricted mode. Visit https://developers.google.com/earth-engine/guides/noncommercial_tiers#restricted_mode to learn more.
+  warnings.warn(
+/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/ee/deprecation.py:215: DeprecationWarning: 
+
+Attention required for FAO/GAUL/2015/level1! You are using a deprecated asset.
+To make sure your code keeps working, please update it.
+This dataset has been superseded by FAO/GAUL/2025/level1
+
+Learn more: https://developers.google.com/earth-engine/datasets/catalog/FAO_GAUL_2015_level1
+
+  warnings.warn(warning, category=DeprecationWarning)
+/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/ee/data.py:335: UserWarning: Your project has exceeded its noncommercial compute quota and is now in restricted mode. Visit https://developers.google.com/earth-engine/guides/noncommercial_tiers#restricted_mode to learn more.
+  warnings.warn(
+10 provincias · 513 celdas de 0.5°
+/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/ee/deprecation.py:215: DeprecationWarning: 
+
+Attention required for JRC/GFC2020/V2! You are using a deprecated asset.
+To make sure your code keeps working, please update it.
+This dataset has been superseded by JRC/GFC2020/V4
+
+Learn more: https://developers.google.com/earth-engine/datasets/catalog/JRC_GFC2020_V2
+
+  warnings.warn(warning, category=DeprecationWarning)
+[1/513] (-69.0, -24.5, -68.5, -24.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[2/513] (-69.0, -25.5, -68.5, -25.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[4/513] (-69.0, -26.5, -68.5, -26.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[6/513] (-69.0, -23.0, -68.5, -22.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[7/513] (-69.0, -25.0, -68.5, -24.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[8/513] (-69.0, -22.5, -68.5, -22.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[10/513] (-68.5, -25.0, -68.0, -24.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[13/513] (-68.5, -26.0, -68.0, -25.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[17/513] (-68.5, -23.5, -68.0, -23.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[20/513] (-68.5, -22.5, -68.0, -22.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[21/513] (-68.0, -25.5, -67.5, -25.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[23/513] (-68.0, -23.5, -67.5, -23.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[25/513] (-68.0, -24.0, -67.5, -23.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[28/513] (-67.5, -26.5, -67.0, -26.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[32/513] (-67.5, -25.0, -67.0, -24.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[33/513] (-67.5, -25.5, -67.0, -25.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[36/513] (-67.5, -23.0, -67.0, -22.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[37/513] (-67.5, -22.5, -67.0, -22.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[42/513] (-67.0, -24.5, -66.5, -24.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[44/513] (-67.0, -23.0, -66.5, -22.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[49/513] (-67.0, -22.5, -66.5, -22.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[50/513] (-66.5, -27.0, -66.0, -26.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[51/513] (-66.5, -28.5, -66.0, -28.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[53/513] (-66.5, -26.0, -66.0, -25.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[54/513] (-66.5, -26.5, -66.0, -26.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[56/513] (-66.5, -25.0, -66.0, -24.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[58/513] (-66.5, -24.5, -66.0, -24.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[59/513] (-66.5, -24.0, -66.0, -23.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[60/513] (-66.5, -25.5, -66.0, -25.0): 1 parches
+[61/513] (-66.5, -23.0, -66.0, -22.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[62/513] (-66.0, -28.0, -65.5, -27.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[64/513] (-66.0, -27.0, -65.5, -26.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[65/513] (-66.0, -27.5, -65.5, -27.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[68/513] (-66.0, -25.5, -65.5, -25.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[69/513] (-66.0, -26.0, -65.5, -25.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[72/513] (-66.0, -24.0, -65.5, -23.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[74/513] (-66.0, -23.5, -65.5, -23.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[75/513] (-66.0, -22.0, -65.5, -21.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[79/513] (-65.5, -29.5, -65.0, -29.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[81/513] (-65.5, -28.0, -65.0, -27.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[83/513] (-65.5, -29.0, -65.0, -28.5): 1 parches
+[84/513] (-65.5, -28.5, -65.0, -28.0): 1 parches
+[85/513] (-65.5, -26.0, -65.0, -25.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[86/513] (-65.5, -26.5, -65.0, -26.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[87/513] (-65.5, -27.0, -65.0, -26.5): 10 parches
+[88/513] (-65.5, -27.5, -65.0, -27.0): 3 parches
+[89/513] (-65.5, -24.5, -65.0, -24.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[90/513] (-65.5, -23.5, -65.0, -23.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[91/513] (-65.5, -22.5, -65.0, -22.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[92/513] (-65.5, -22.0, -65.0, -21.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[93/513] (-65.0, -30.0, -64.5, -29.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[96/513] (-65.0, -30.5, -64.5, -30.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[98/513] (-65.0, -29.5, -64.5, -29.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[99/513] (-65.0, -29.0, -64.5, -28.5): 5 parches
+[102/513] (-65.0, -27.5, -64.5, -27.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[103/513] (-65.0, -25.5, -64.5, -25.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[104/513] (-65.0, -25.0, -64.5, -24.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[106/513] (-65.0, -26.5, -64.5, -26.0): 3 parches
+[108/513] (-65.0, -26.0, -64.5, -25.5): 4 parches
+[109/513] (-65.0, -24.5, -64.5, -24.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[110/513] (-65.0, -23.5, -64.5, -23.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[112/513] (-64.5, -30.5, -64.0, -30.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[114/513] (-64.5, -30.0, -64.0, -29.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[115/513] (-65.0, -24.0, -64.5, -23.5): 5 parches
+[118/513] (-64.5, -29.0, -64.0, -28.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[120/513] (-64.5, -28.0, -64.0, -27.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[121/513] (-64.5, -25.0, -64.0, -24.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[122/513] (-64.5, -27.0, -64.0, -26.5): 1 parches
+[123/513] (-64.5, -25.5, -64.0, -25.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[124/513] (-64.5, -26.5, -64.0, -26.0): 3 parches
+[125/513] (-64.5, -24.5, -64.0, -24.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[126/513] (-64.5, -26.0, -64.0, -25.5): 3 parches
+[128/513] (-64.5, -23.5, -64.0, -23.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[129/513] (-64.5, -23.0, -64.0, -22.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[130/513] (-64.5, -24.0, -64.0, -23.5): 4 parches
+[132/513] (-64.0, -30.0, -63.5, -29.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[133/513] (-64.0, -28.5, -63.5, -28.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[135/513] (-64.0, -28.0, -63.5, -27.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[137/513] (-64.0, -27.0, -63.5, -26.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[138/513] (-64.0, -26.5, -63.5, -26.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[141/513] (-64.0, -26.0, -63.5, -25.5): 2 parches
+[142/513] (-64.0, -27.5, -63.5, -27.0): 3 parches
+[143/513] (-64.0, -25.5, -63.5, -25.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[144/513] (-64.0, -25.0, -63.5, -24.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[146/513] (-64.0, -22.5, -63.5, -22.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[147/513] (-64.0, -24.5, -63.5, -24.0): 18 parches
+[148/513] (-64.0, -23.5, -63.5, -23.0): 14 parches
+[149/513] (-64.0, -22.0, -63.5, -21.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[151/513] (-64.0, -23.0, -63.5, -22.5): 16 parches
+[152/513] (-63.5, -29.5, -63.0, -29.0): 1 parches
+[153/513] (-63.5, -30.0, -63.0, -29.5): 11 parches
+[154/513] (-63.5, -27.5, -63.0, -27.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[155/513] (-63.5, -28.0, -63.0, -27.5): 18 parches
+[156/513] (-63.5, -27.0, -63.0, -26.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[157/513] (-63.5, -29.0, -63.0, -28.5): 3 parches
+[158/513] (-63.5, -26.0, -63.0, -25.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[159/513] (-63.5, -28.5, -63.0, -28.0): 2 parches
+[160/513] (-63.5, -24.5, -63.0, -24.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[162/513] (-63.5, -25.5, -63.0, -25.0): 4 parches
+[163/513] (-63.5, -25.0, -63.0, -24.5): 2 parches
+[164/513] (-63.5, -24.0, -63.0, -23.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[165/513] (-63.5, -23.5, -63.0, -23.0): 1 parches
+[166/513] (-63.5, -23.0, -63.0, -22.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[167/513] (-63.0, -33.5, -62.5, -33.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[168/513] (-63.5, -22.5, -63.0, -22.0): 55 parches
+[169/513] (-63.0, -32.5, -62.5, -32.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[171/513] (-63.0, -33.0, -62.5, -32.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[172/513] (-63.0, -31.5, -62.5, -31.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[174/513] (-63.0, -30.5, -62.5, -30.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[175/513] (-63.0, -34.0, -62.5, -33.5): 1 parches
+[177/513] (-63.0, -34.5, -62.5, -34.0): 9 parches
+[178/513] (-63.0, -28.5, -62.5, -28.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[179/513] (-63.0, -30.0, -62.5, -29.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[180/513] (-63.0, -26.5, -62.5, -26.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[181/513] (-63.0, -27.0, -62.5, -26.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[182/513] (-63.0, -29.0, -62.5, -28.5): 10 parches
+[183/513] (-63.0, -29.5, -62.5, -29.0): 1 parches
+[184/513] (-63.0, -28.0, -62.5, -27.5): 9 parches
+[185/513] (-63.0, -27.5, -62.5, -27.0): 10 parches
+[186/513] (-63.0, -24.0, -62.5, -23.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[187/513] (-63.0, -24.5, -62.5, -24.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[188/513] (-63.0, -23.0, -62.5, -22.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[189/513] (-63.0, -22.5, -62.5, -22.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[192/513] (-63.0, -22.0, -62.5, -21.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[193/513] (-63.0, -25.0, -62.5, -24.5): 7 parches
+[194/513] (-63.0, -26.0, -62.5, -25.5): 4 parches
+[195/513] (-62.5, -34.5, -62.0, -34.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[196/513] (-62.5, -33.0, -62.0, -32.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[198/513] (-62.5, -34.0, -62.0, -33.5): 6 parches
+[199/513] (-62.5, -32.0, -62.0, -31.5): 3 parches
+[200/513] (-62.5, -31.0, -62.0, -30.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[201/513] (-62.5, -31.5, -62.0, -31.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[203/513] (-62.5, -30.5, -62.0, -30.0): 4 parches
+[204/513] (-62.5, -29.5, -62.0, -29.0): 3 parches
+[205/513] (-62.5, -29.0, -62.0, -28.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[206/513] (-62.5, -30.0, -62.0, -29.5): 2 parches
+[207/513] (-62.5, -28.0, -62.0, -27.5): 7 parches
+[208/513] (-62.5, -28.5, -62.0, -28.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[209/513] (-62.5, -27.5, -62.0, -27.0): 13 parches
+[210/513] (-62.5, -26.5, -62.0, -26.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[211/513] (-62.5, -27.0, -62.0, -26.5): 33 parches
+[212/513] (-62.5, -26.0, -62.0, -25.5): 3 parches
+[213/513] (-62.5, -25.0, -62.0, -24.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[215/513] (-62.5, -24.5, -62.0, -24.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[216/513] (-62.5, -22.0, -62.0, -21.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[218/513] (-62.5, -24.0, -62.0, -23.5): 3 parches
+[219/513] (-62.0, -34.5, -61.5, -34.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[220/513] (-62.5, -23.0, -62.0, -22.5): 37 parches
+[221/513] (-62.5, -22.5, -62.0, -22.0): 13 parches
+[222/513] (-62.0, -32.5, -61.5, -32.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[223/513] (-62.0, -34.0, -61.5, -33.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[224/513] (-62.0, -33.5, -61.5, -33.0): 6 parches
+[225/513] (-62.0, -30.5, -61.5, -30.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[226/513] (-62.0, -31.0, -61.5, -30.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[227/513] (-62.0, -33.0, -61.5, -32.5): 4 parches
+[228/513] (-62.0, -29.5, -61.5, -29.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[229/513] (-62.0, -29.0, -61.5, -28.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[230/513] (-62.0, -30.0, -61.5, -29.5): 9 parches
+[231/513] (-62.0, -31.5, -61.5, -31.0): 1 parches
+[232/513] (-62.0, -32.0, -61.5, -31.5): 4 parches
+[233/513] (-62.0, -27.5, -61.5, -27.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[235/513] (-62.0, -25.0, -61.5, -24.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[236/513] (-62.0, -26.5, -61.5, -26.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[237/513] (-62.0, -27.0, -61.5, -26.5): 71 parches
+[238/513] (-62.0, -26.0, -61.5, -25.5): 21 parches
+[239/513] (-62.0, -25.5, -61.5, -25.0): 1 parches
+[240/513] (-62.0, -28.0, -61.5, -27.5): 28 parches
+[241/513] (-62.0, -24.5, -61.5, -24.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[242/513] (-62.0, -23.5, -61.5, -23.0): 18 parches
+[243/513] (-62.0, -24.0, -61.5, -23.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[245/513] (-61.5, -34.0, -61.0, -33.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[248/513] (-61.5, -33.5, -61.0, -33.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[249/513] (-61.5, -32.5, -61.0, -32.0): 4 parches
+[250/513] (-61.5, -33.0, -61.0, -32.5): 1 parches
+[251/513] (-61.5, -32.0, -61.0, -31.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[252/513] (-61.5, -31.0, -61.0, -30.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[253/513] (-61.5, -31.5, -61.0, -31.0): 10 parches
+[254/513] (-61.5, -30.5, -61.0, -30.0): 1 parches
+[255/513] (-61.5, -29.0, -61.0, -28.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[256/513] (-61.5, -28.0, -61.0, -27.5): 45 parches
+[257/513] (-61.5, -28.5, -61.0, -28.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[258/513] (-61.5, -29.5, -61.0, -29.0): 3 parches
+[259/513] (-61.5, -30.0, -61.0, -29.5): 1 parches
+[260/513] (-61.5, -27.0, -61.0, -26.5): 65 parches
+[261/513] (-61.5, -25.5, -61.0, -25.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[262/513] (-61.5, -26.5, -61.0, -26.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[263/513] (-61.5, -26.0, -61.0, -25.5): 31 parches
+[264/513] (-61.5, -27.5, -61.0, -27.0): 77 parches
+[265/513] (-61.5, -24.0, -61.0, -23.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[266/513] (-61.5, -25.0, -61.0, -24.5): 1 parches
+[267/513] (-61.5, -23.5, -61.0, -23.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[268/513] (-61.5, -24.5, -61.0, -24.0): 16 parches
+[271/513] (-61.0, -33.5, -60.5, -33.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[272/513] (-61.0, -34.5, -60.5, -34.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[274/513] (-61.0, -32.5, -60.5, -32.0): 11 parches
+[275/513] (-61.0, -33.0, -60.5, -32.5): 15 parches
+[276/513] (-61.0, -31.0, -60.5, -30.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[277/513] (-61.0, -31.5, -60.5, -31.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[278/513] (-61.0, -32.0, -60.5, -31.5): 3 parches
+[279/513] (-61.0, -30.5, -60.5, -30.0): 2 parches
+[280/513] (-61.0, -28.5, -60.5, -28.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[281/513] (-61.0, -29.5, -60.5, -29.0): 1 parches
+[282/513] (-61.0, -29.0, -60.5, -28.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[284/513] (-61.0, -27.0, -60.5, -26.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[285/513] (-61.0, -25.5, -60.5, -25.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[286/513] (-61.0, -28.0, -60.5, -27.5): 25 parches
+[287/513] (-61.0, -25.0, -60.5, -24.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[288/513] (-61.0, -24.5, -60.5, -24.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[289/513] (-61.0, -26.0, -60.5, -25.5): 25 parches
+[290/513] (-61.0, -26.5, -60.5, -26.0): 79 parches
+[291/513] (-61.0, -27.5, -60.5, -27.0): 55 parches
+[292/513] (-61.0, -23.5, -60.5, -23.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[293/513] (-61.0, -23.0, -60.5, -22.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[295/513] (-61.0, -24.0, -60.5, -23.5): 6 parches
+[296/513] (-60.5, -33.0, -60.0, -32.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[297/513] (-60.5, -32.5, -60.0, -32.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[298/513] (-60.5, -31.5, -60.0, -31.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[300/513] (-60.5, -32.0, -60.0, -31.5): 22 parches
+[301/513] (-60.5, -31.0, -60.0, -30.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[302/513] (-60.5, -30.0, -60.0, -29.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[303/513] (-60.5, -33.5, -60.0, -33.0): 41 parches
+[304/513] (-60.5, -30.5, -60.0, -30.0): 10 parches
+[305/513] (-60.5, -29.5, -60.0, -29.0): 4 parches
+[307/513] (-60.5, -28.0, -60.0, -27.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[308/513] (-60.5, -28.5, -60.0, -28.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[309/513] (-60.5, -29.0, -60.0, -28.5): 2 parches
+[310/513] (-60.5, -25.5, -60.0, -25.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[311/513] (-60.5, -27.5, -60.0, -27.0): 8 parches
+[312/513] (-60.5, -27.0, -60.0, -26.5): 29 parches
+[313/513] (-60.5, -24.5, -60.0, -24.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[314/513] (-60.5, -26.0, -60.0, -25.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[315/513] (-60.5, -23.0, -60.0, -22.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[316/513] (-60.5, -25.0, -60.0, -24.5): 18 parches
+[317/513] (-60.5, -26.5, -60.0, -26.0): 31 parches
+[320/513] (-60.0, -34.5, -59.5, -34.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[321/513] (-60.0, -33.0, -59.5, -32.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[322/513] (-60.0, -32.0, -59.5, -31.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[324/513] (-60.0, -31.5, -59.5, -31.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[325/513] (-60.0, -34.0, -59.5, -33.5): 27 parches
+[326/513] (-60.0, -31.0, -59.5, -30.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[327/513] (-60.0, -30.0, -59.5, -29.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[328/513] (-60.0, -29.0, -59.5, -28.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[329/513] (-60.0, -28.5, -59.5, -28.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[330/513] (-60.0, -33.5, -59.5, -33.0): 108 parches
+[331/513] (-60.0, -29.5, -59.5, -29.0): 14 parches
+[332/513] (-60.0, -30.5, -59.5, -30.0): 6 parches
+[333/513] (-60.0, -32.5, -59.5, -32.0): 61 parches
+[334/513] (-60.0, -28.0, -59.5, -27.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[335/513] (-60.0, -27.5, -59.5, -27.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[336/513] (-60.0, -27.0, -59.5, -26.5): 6 parches
+[337/513] (-60.0, -26.5, -59.5, -26.0): 16 parches
+[338/513] (-60.0, -24.5, -59.5, -24.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[339/513] (-60.0, -24.0, -59.5, -23.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[340/513] (-60.0, -23.0, -59.5, -22.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[341/513] (-60.0, -26.0, -59.5, -25.5): 27 parches
+[342/513] (-60.0, -25.0, -59.5, -24.5): 4 parches
+[343/513] (-59.5, -34.5, -59.0, -34.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[344/513] (-60.0, -22.5, -59.5, -22.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[345/513] (-59.5, -32.5, -59.0, -32.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[347/513] (-60.0, -25.5, -59.5, -25.0): 7 parches
+[348/513] (-59.5, -32.0, -59.0, -31.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[349/513] (-59.5, -33.0, -59.0, -32.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[350/513] (-59.5, -33.5, -59.0, -33.0): 62 parches
+[351/513] (-59.5, -34.0, -59.0, -33.5): 192 parches
+[352/513] (-59.5, -30.0, -59.0, -29.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[353/513] (-59.5, -30.5, -59.0, -30.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[354/513] (-59.5, -28.5, -59.0, -28.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[355/513] (-59.5, -29.5, -59.0, -29.0): 5 parches
+[356/513] (-59.5, -27.5, -59.0, -27.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[357/513] (-59.5, -28.0, -59.0, -27.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[358/513] (-59.5, -31.5, -59.0, -31.0): 53 parches
+[359/513] (-59.5, -29.0, -59.0, -28.5): 18 parches
+[360/513] (-59.5, -26.5, -59.0, -26.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[361/513] (-59.5, -27.0, -59.0, -26.5): 4 parches
+[362/513] (-59.5, -31.0, -59.0, -30.5): 39 parches
+[363/513] (-59.5, -26.0, -59.0, -25.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[364/513] (-59.5, -24.5, -59.0, -24.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[365/513] (-59.5, -22.5, -59.0, -22.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[366/513] (-59.5, -25.0, -59.0, -24.5): 18 parches
+[367/513] (-59.5, -23.0, -59.0, -22.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[368/513] (-59.5, -25.5, -59.0, -25.0): 4 parches
+[370/513] (-59.0, -34.5, -58.5, -34.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[372/513] (-59.0, -32.5, -58.5, -32.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[373/513] (-59.0, -34.0, -58.5, -33.5): 285 parches
+[374/513] (-59.0, -33.5, -58.5, -33.0): 52 parches
+[375/513] (-59.0, -32.0, -58.5, -31.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[376/513] (-59.0, -31.0, -58.5, -30.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[377/513] (-59.0, -29.5, -58.5, -29.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[378/513] (-59.0, -31.5, -58.5, -31.0): 73 parches
+[379/513] (-59.0, -33.0, -58.5, -32.5): 99 parches
+[380/513] (-59.0, -28.5, -58.5, -28.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[381/513] (-59.0, -28.0, -58.5, -27.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[382/513] (-59.0, -27.0, -58.5, -26.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[383/513] (-59.0, -27.5, -58.5, -27.0): 4 parches
+[384/513] (-59.0, -26.0, -58.5, -25.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[385/513] (-59.0, -30.0, -58.5, -29.5): 8 parches
+[386/513] (-59.0, -30.5, -58.5, -30.0): 29 parches
+[387/513] (-59.0, -26.5, -58.5, -26.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[388/513] (-59.0, -29.0, -58.5, -28.5): 21 parches
+[389/513] (-59.0, -25.5, -58.5, -25.0): 4 parches
+[390/513] (-59.0, -25.0, -58.5, -24.5): 2 parches
+[391/513] (-59.0, -23.5, -58.5, -23.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[393/513] (-59.0, -23.0, -58.5, -22.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[397/513] (-58.5, -34.0, -58.0, -33.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[398/513] (-58.5, -32.0, -58.0, -31.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[399/513] (-58.5, -31.0, -58.0, -30.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[400/513] (-58.5, -33.0, -58.0, -32.5): 38 parches
+[401/513] (-58.5, -33.5, -58.0, -33.0): 19 parches
+[402/513] (-58.5, -31.5, -58.0, -31.0): 79 parches
+[403/513] (-58.5, -32.5, -58.0, -32.0): 43 parches
+[404/513] (-58.5, -30.5, -58.0, -30.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[405/513] (-58.5, -30.0, -58.0, -29.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[406/513] (-58.5, -29.5, -58.0, -29.0): 4 parches
+[407/513] (-58.5, -27.0, -58.0, -26.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[408/513] (-58.5, -28.5, -58.0, -28.0): 21 parches
+[409/513] (-58.5, -27.5, -58.0, -27.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[410/513] (-58.5, -26.0, -58.0, -25.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[411/513] (-58.5, -29.0, -58.0, -28.5): 16 parches
+[413/513] (-58.5, -24.5, -58.0, -24.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[414/513] (-58.5, -25.0, -58.0, -24.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[415/513] (-58.5, -28.0, -58.0, -27.5): 4 parches
+[416/513] (-58.5, -25.5, -58.0, -25.0): 7 parches
+[417/513] (-58.0, -34.0, -57.5, -33.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[418/513] (-58.5, -22.5, -58.0, -22.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[421/513] (-58.0, -33.0, -57.5, -32.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[423/513] (-58.0, -33.5, -57.5, -33.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[427/513] (-58.0, -31.5, -57.5, -31.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[428/513] (-58.0, -29.5, -57.5, -29.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[429/513] (-58.0, -31.0, -57.5, -30.5): 5 parches
+[430/513] (-58.0, -28.0, -57.5, -27.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[431/513] (-58.0, -30.0, -57.5, -29.5): 18 parches
+[432/513] (-58.0, -28.5, -57.5, -28.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[433/513] (-58.0, -30.5, -57.5, -30.0): 22 parches
+[434/513] (-58.0, -27.0, -57.5, -26.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[435/513] (-58.0, -29.0, -57.5, -28.5): 12 parches
+[436/513] (-58.0, -26.0, -57.5, -25.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[437/513] (-58.0, -25.0, -57.5, -24.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[439/513] (-58.0, -23.5, -57.5, -23.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[440/513] (-58.0, -27.5, -57.5, -27.0): 7 parches
+[441/513] (-58.0, -24.5, -57.5, -24.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[442/513] (-58.0, -25.5, -57.5, -25.0): 1 parches
+[445/513] (-57.5, -30.5, -57.0, -30.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[447/513] (-58.0, -22.5, -57.5, -22.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[448/513] (-57.5, -29.5, -57.0, -29.0): 9 parches
+[449/513] (-57.5, -28.0, -57.0, -27.5): 7 parches
+[450/513] (-57.5, -29.0, -57.0, -28.5): 1 parches
+[451/513] (-57.5, -28.5, -57.0, -28.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[452/513] (-57.5, -30.0, -57.0, -29.5): 26 parches
+[453/513] (-57.5, -27.5, -57.0, -27.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[454/513] (-57.0, -29.5, -56.5, -29.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[456/513] (-57.0, -30.0, -56.5, -29.5): 2 parches
+[457/513] (-57.0, -29.0, -56.5, -28.5): 7 parches
+[458/513] (-57.0, -28.0, -56.5, -27.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[459/513] (-57.0, -28.5, -56.5, -28.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[462/513] (-56.5, -29.5, -56.0, -29.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[464/513] (-56.5, -30.0, -56.0, -29.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[466/513] (-56.5, -28.5, -56.0, -28.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[467/513] (-56.5, -27.5, -56.0, -27.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[469/513] (-56.5, -28.0, -56.0, -27.5): 41 parches
+[471/513] (-56.5, -29.0, -56.0, -28.5): 15 parches
+[472/513] (-56.5, -26.0, -56.0, -25.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[473/513] (-56.0, -31.0, -55.5, -30.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[476/513] (-56.0, -29.0, -55.5, -28.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[479/513] (-56.0, -28.5, -55.5, -28.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[480/513] (-56.0, -27.0, -55.5, -26.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[481/513] (-56.0, -25.5, -55.5, -25.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[482/513] (-56.0, -28.0, -55.5, -27.5): 36 parches
+[483/513] (-55.5, -28.5, -55.0, -28.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[484/513] (-56.0, -27.5, -55.5, -27.0): 7 parches
+[485/513] (-55.5, -28.0, -55.0, -27.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[488/513] (-55.5, -27.0, -55.0, -26.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[489/513] (-55.5, -27.5, -55.0, -27.0): 33 parches
+[490/513] (-55.5, -26.0, -55.0, -25.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[491/513] (-55.0, -27.0, -54.5, -26.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[492/513] (-55.0, -28.0, -54.5, -27.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[494/513] (-55.0, -26.0, -54.5, -25.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[497/513] (-54.5, -28.0, -54.0, -27.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[498/513] (-55.0, -26.5, -54.5, -26.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[499/513] (-55.5, -25.5, -55.0, -25.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[501/513] (-54.5, -27.5, -54.0, -27.0): 1 parches
+[502/513] (-54.5, -26.5, -54.0, -26.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[504/513] (-54.5, -26.0, -54.0, -25.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[505/513] (-54.5, -27.0, -54.0, -26.5): 13 parches
+[507/513] (-54.0, -28.0, -53.5, -27.5): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[509/513] (-54.0, -27.0, -53.5, -26.5): 2 parches
+[510/513] (-54.0, -27.5, -53.5, -27.0): error Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/
+[511/513] (-54.0, -26.5, -53.5, -26.0): 2 parches
+/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/ee/deprecation.py:215: DeprecationWarning: 
+
+Attention required for FAO/GAUL/2015/level2! You are using a deprecated asset.
+To make sure your code keeps working, please update it.
+This dataset has been superseded by FAO/GAUL/2025/level2
+
+Learn more: https://developers.google.com/earth-engine/datasets/catalog/FAO_GAUL_2015_level2
+
+  warnings.warn(warning, category=DeprecationWarning)
+/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/ee/data.py:335: UserWarning: Your project has exceeded its noncommercial compute quota and is now in restricted mode. Visit https://developers.google.com/earth-engine/guides/noncommercial_tiers#restricted_mode to learn more.
+  warnings.warn(
+foto 516dd887: Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist
+foto bd83314f: Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist
+foto a4cc58cd: Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist
+foto 510bc50f: Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist
+foto 168b4318: Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist
+foto 8c29225e: Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist
+foto 4efffdef: Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist
+foto 9cb332cd: Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist
+foto e4656191: Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist
+foto cfc60a12: Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist
+foto 0af21aa8: Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist
+foto 0b76eb34: Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist
+foto ed9b3494: Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist
+foto c67f9bfa: Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist
+foto 1c3537ca: Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist
+foto 2d849f80: Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist
+foto 39cba9a7: Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist
+foto eda35519: Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist
+foto cbd131fc: Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist
+foto 7fe8eee9: Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist
+foto 5f044065: Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist
+foto 285f7c31: Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist
+foto 98e50172: Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist
+foto 49b27acd: Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist
+Listo en 68 min: 2777 parches ≥ 10 ha, 80 guardados, 0 con fotos, 240 celdas con error, 0 sin tiempo.
