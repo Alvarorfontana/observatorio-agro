@@ -478,7 +478,12 @@ label.fila input { grid-column: 1 / -1; width: 100%; accent-color: var(--accent)
       });
       lista.appendChild(li);
     });
-    if (!lista.children.length) lista.innerHTML = '<li class="vacio" style="padding:10px">No hay parches con esa gravedad.</li>';
+    if (!j.parches.length) {
+      var cob = j.cobertura || {};
+      lista.innerHTML = '<li class="vacio" style="padding:10px">' + (cob.celdas && (cob.fallidas || 0) + (cob.sin_tiempo || 0) >= cob.celdas
+        ? 'El cálculo no pudo cubrir la región: no hay resultados válidos para esta ventana.'
+        : 'No se detectaron desmontes de ' + num(j.metodo.min_ha) + ' ha o más en esta ventana.') + '</li>';
+    } else if (!lista.children.length) lista.innerHTML = '<li class="vacio" style="padding:10px">No hay parches con esa gravedad.</li>';
     estado('Desmontes recientes · Sentinel-2 · ' + j.parches.length + ' parches');
   }
   function mostrarDesmontes() {
