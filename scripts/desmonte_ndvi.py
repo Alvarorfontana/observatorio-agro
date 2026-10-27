@@ -490,13 +490,15 @@ def main():
                             otbn=otbn_en(f["properties"]["lat"], f["properties"]["lon"]))
                for f, u in zip(elegidos, ubic)]
 
-    fotos = 0
+    os.makedirs(OUT_DIR, exist_ok=True)
+    fotos, error_foto = 0, None
     for p in parches[:MAX_FOTOS]:
         try:
             foto(ee, p, antes, os.path.join(OUT_DIR, f"{VENTANA}_{p['id']}_a.png"))
             foto(ee, p, despues, os.path.join(OUT_DIR, f"{VENTANA}_{p['id']}_d.png"))
             p["fotos"] = True; fotos += 1
         except Exception as ex:
+            error_foto = error_foto or str(ex)[:200]
             print(f"foto {p['id']}: {str(ex)[:120]}")
 
     salida = {
@@ -509,7 +511,9 @@ def main():
                    "escala_m": SCALE, "min_ha": MIN_HA, "bosque_2020": fuente_bosque,
                    "otbn": os.path.exists(OTBN_FILE)},
         "cobertura": {"celdas": len(celdas), "fallidas": len(fallidas), "sin_tiempo": sin_tiempo,
-                      "parches_detectados": len(crudos)},
+                      "parches_detectados": len(crudos),
+                      "fotos": fotos, "error_foto": error_foto,
+                      "errores": [str(c) for c in fallidas[:10]]},
         "resumen": resumen(parches),
         "parches": parches,
         "creditos": CREDITOS,
