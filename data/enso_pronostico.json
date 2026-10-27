@@ -1,5 +1,5 @@
 {
- "actualizado": "2026-10-27T18:00Z",
+ "actualizado": "2026-10-27T18:31Z",
  "cpc": {
   "estado": "recibido",
   "fuente": "NOAA Climate Prediction Center",
@@ -363,11 +363,6 @@
     "river": "Iguazú",
     "meses": [
      {
-      "mes": "2026-09",
-      "lluvia_anomalia_mm": 192.0,
-      "temp_anomalia_c": -0.1
-     },
-     {
       "mes": "2026-10",
       "lluvia_anomalia_mm": 198.6,
       "temp_anomalia_c": 0.7
@@ -393,18 +388,13 @@
       "temp_anomalia_c": 1.0
      }
     ],
-    "unidad_lluvia": "mm (anomalía del mes respecto del clima del modelo)"
+    "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
    },
    {
     "id": "iguazu-cataratas",
     "place": "Puerto Iguazú · Cataratas",
     "river": "Iguazú",
     "meses": [
-     {
-      "mes": "2026-09",
-      "lluvia_anomalia_mm": 195.3,
-      "temp_anomalia_c": -0.2
-     },
      {
       "mes": "2026-10",
       "lluvia_anomalia_mm": 198.2,
@@ -431,18 +421,13 @@
       "temp_anomalia_c": 1.0
      }
     ],
-    "unidad_lluvia": "mm (anomalía del mes respecto del clima del modelo)"
+    "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
    },
    {
     "id": "parana-eldorado",
     "place": "Eldorado",
     "river": "Paraná",
     "meses": [
-     {
-      "mes": "2026-09",
-      "lluvia_anomalia_mm": 162.2,
-      "temp_anomalia_c": -0.2
-     },
      {
       "mes": "2026-10",
       "lluvia_anomalia_mm": 199.4,
@@ -469,18 +454,13 @@
       "temp_anomalia_c": 0.9
      }
     ],
-    "unidad_lluvia": "mm (anomalía del mes respecto del clima del modelo)"
+    "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
    },
    {
     "id": "parana-posadas",
     "place": "Posadas",
     "river": "Paraná",
     "meses": [
-     {
-      "mes": "2026-09",
-      "lluvia_anomalia_mm": 136.3,
-      "temp_anomalia_c": -0.5
-     },
      {
       "mes": "2026-10",
       "lluvia_anomalia_mm": 189.7,
@@ -507,18 +487,13 @@
       "temp_anomalia_c": 0.6
      }
     ],
-    "unidad_lluvia": "mm (anomalía del mes respecto del clima del modelo)"
+    "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
    },
    {
     "id": "parana-ituzaingo",
     "place": "Ituzaingó",
     "river": "Paraná",
     "meses": [
-     {
-      "mes": "2026-09",
-      "lluvia_anomalia_mm": 96.1,
-      "temp_anomalia_c": -0.8
-     },
      {
       "mes": "2026-10",
       "lluvia_anomalia_mm": 136.0,
@@ -545,18 +520,13 @@
       "temp_anomalia_c": 0.3
      }
     ],
-    "unidad_lluvia": "mm (anomalía del mes respecto del clima del modelo)"
+    "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
    },
    {
     "id": "parana-corrientes",
     "place": "Corrientes",
     "river": "Paraná",
     "meses": [
-     {
-      "mes": "2026-09",
-      "lluvia_anomalia_mm": 60.7,
-      "temp_anomalia_c": -0.9
-     },
      {
       "mes": "2026-10",
       "lluvia_anomalia_mm": 78.9,
@@ -583,18 +553,13 @@
       "temp_anomalia_c": 0.1
      }
     ],
-    "unidad_lluvia": "mm (anomalía del mes respecto del clima del modelo)"
+    "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
    },
    {
     "id": "parana-bellavista",
     "place": "Bella Vista",
     "river": "Paraná",
     "meses": [
-     {
-      "mes": "2026-09",
-      "lluvia_anomalia_mm": 0.4,
-      "temp_anomalia_c": -0.9
-     },
      {
       "mes": "2026-10",
       "lluvia_anomalia_mm": 25.3,
@@ -621,18 +586,13 @@
       "temp_anomalia_c": -0.1
      }
     ],
-    "unidad_lluvia": "mm (anomalía del mes respecto del clima del modelo)"
+    "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
    },
    {
     "id": "parana-goya",
     "place": "Goya",
     "river": "Paraná",
     "meses": [
-     {
-      "mes": "2026-09",
-      "lluvia_anomalia_mm": -17.9,
-      "temp_anomalia_c": -0.9
-     },
      {
       "mes": "2026-10",
       "lluvia_anomalia_mm": 11.4,
@@ -659,18 +619,13 @@
       "temp_anomalia_c": -0.2
      }
     ],
-    "unidad_lluvia": "mm (anomalía del mes respecto del clima del modelo)"
+    "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
    },
    {
     "id": "parana-reconquista",
     "place": "Reconquista",
     "river": "Paraná",
     "meses": [
-     {
-      "mes": "2026-09",
-      "lluvia_anomalia_mm": -27.1,
-      "temp_anomalia_c": -0.8
-     },
      {
       "mes": "2026-10",
       "lluvia_anomalia_mm": 0.1,
@@ -697,18 +652,13 @@
       "temp_anomalia_c": -0.2
      }
     ],
-    "unidad_lluvia": "mm (anomalía del mes respecto del clima del modelo)"
+    "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
    },
    {
     "id": "parana-esquina",
     "place": "Esquina",
     "river": "Paraná",
     "meses": [
-     {
-      "mes": "2026-09",
-      "lluvia_anomalia_mm": -21.9,
-      "temp_anomalia_c": -1.0
-     },
      {
       "mes": "2026-10",
       "lluvia_anomalia_mm": -4.7,
@@ -735,18 +685,13 @@
       "temp_anomalia_c": -0.2
      }
     ],
-    "unidad_lluvia": "mm (anomalía del mes respecto del clima del modelo)"
+    "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
    },
    {
     "id": "parana-lapaz",
     "place": "La Paz",
     "river": "Paraná",
     "meses": [
-     {
-      "mes": "2026-09",
-      "lluvia_anomalia_mm": -25.6,
-      "temp_anomalia_c": -1.0
-     },
      {
       "mes": "2026-10",
       "lluvia_anomalia_mm": -9.7,
@@ -773,18 +718,13 @@
       "temp_anomalia_c": -0.2
      }
     ],
-    "unidad_lluvia": "mm (anomalía del mes respecto del clima del modelo)"
+    "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
    },
    {
     "id": "parana-santafe",
     "place": "Santa Fe · Paraná",
     "river": "Paraná",
     "meses": [
-     {
-      "mes": "2026-09",
-      "lluvia_anomalia_mm": -33.1,
-      "temp_anomalia_c": -0.9
-     },
      {
       "mes": "2026-10",
       "lluvia_anomalia_mm": -8.7,
@@ -811,18 +751,13 @@
       "temp_anomalia_c": -0.1
      }
     ],
-    "unidad_lluvia": "mm (anomalía del mes respecto del clima del modelo)"
+    "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
    },
    {
     "id": "parana-diamante",
     "place": "Diamante",
     "river": "Paraná",
     "meses": [
-     {
-      "mes": "2026-09",
-      "lluvia_anomalia_mm": -30.7,
-      "temp_anomalia_c": -0.9
-     },
      {
       "mes": "2026-10",
       "lluvia_anomalia_mm": -9.6,
@@ -849,18 +784,13 @@
       "temp_anomalia_c": -0.1
      }
     ],
-    "unidad_lluvia": "mm (anomalía del mes respecto del clima del modelo)"
+    "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
    },
    {
     "id": "parana-rosario",
     "place": "Rosario",
     "river": "Paraná",
     "meses": [
-     {
-      "mes": "2026-09",
-      "lluvia_anomalia_mm": -11.9,
-      "temp_anomalia_c": -1.0
-     },
      {
       "mes": "2026-10",
       "lluvia_anomalia_mm": -3.2,
@@ -887,18 +817,112 @@
       "temp_anomalia_c": 0.1
      }
     ],
-    "unidad_lluvia": "mm (anomalía del mes respecto del clima del modelo)"
+    "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
+   },
+   {
+    "id": "parana-sannicolas",
+    "place": "San Nicolás",
+    "river": "Paraná",
+    "meses": [
+     {
+      "mes": "2026-10",
+      "lluvia_anomalia_mm": -2.6,
+      "temp_anomalia_c": -0.2
+     },
+     {
+      "mes": "2026-11",
+      "lluvia_anomalia_mm": 22.7,
+      "temp_anomalia_c": 0.0
+     },
+     {
+      "mes": "2026-12",
+      "lluvia_anomalia_mm": 34.5,
+      "temp_anomalia_c": 0.0
+     },
+     {
+      "mes": "2027-01",
+      "lluvia_anomalia_mm": 38.9,
+      "temp_anomalia_c": -0.2
+     },
+     {
+      "mes": "2027-02",
+      "lluvia_anomalia_mm": 28.1,
+      "temp_anomalia_c": 0.1
+     }
+    ],
+    "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
+   },
+   {
+    "id": "parana-sanpedro",
+    "place": "San Pedro",
+    "river": "Paraná",
+    "meses": [
+     {
+      "mes": "2026-10",
+      "lluvia_anomalia_mm": -4.2,
+      "temp_anomalia_c": -0.2
+     },
+     {
+      "mes": "2026-11",
+      "lluvia_anomalia_mm": 19.3,
+      "temp_anomalia_c": 0.2
+     },
+     {
+      "mes": "2026-12",
+      "lluvia_anomalia_mm": 20.8,
+      "temp_anomalia_c": 0.2
+     },
+     {
+      "mes": "2027-01",
+      "lluvia_anomalia_mm": 32.0,
+      "temp_anomalia_c": -0.2
+     },
+     {
+      "mes": "2027-02",
+      "lluvia_anomalia_mm": 26.0,
+      "temp_anomalia_c": 0.1
+     }
+    ],
+    "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
+   },
+   {
+    "id": "parana-zarate",
+    "place": "Zárate",
+    "river": "Paraná",
+    "meses": [
+     {
+      "mes": "2026-10",
+      "lluvia_anomalia_mm": -0.7,
+      "temp_anomalia_c": -0.2
+     },
+     {
+      "mes": "2026-11",
+      "lluvia_anomalia_mm": 24.1,
+      "temp_anomalia_c": 0.0
+     },
+     {
+      "mes": "2026-12",
+      "lluvia_anomalia_mm": 17.2,
+      "temp_anomalia_c": 0.0
+     },
+     {
+      "mes": "2027-01",
+      "lluvia_anomalia_mm": 23.8,
+      "temp_anomalia_c": -0.2
+     },
+     {
+      "mes": "2027-02",
+      "lluvia_anomalia_mm": 33.0,
+      "temp_anomalia_c": 0.0
+     }
+    ],
+    "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
    },
    {
     "id": "paraguay-bahianegra",
     "place": "Bahía Negra",
     "river": "Paraguay",
     "meses": [
-     {
-      "mes": "2026-09",
-      "lluvia_anomalia_mm": 113.8,
-      "temp_anomalia_c": -0.6
-     },
      {
       "mes": "2026-10",
       "lluvia_anomalia_mm": 31.7,
@@ -925,18 +949,13 @@
       "temp_anomalia_c": 1.4
      }
     ],
-    "unidad_lluvia": "mm (anomalía del mes respecto del clima del modelo)"
+    "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
    },
    {
     "id": "paraguay-concepcion",
     "place": "Concepción",
     "river": "Paraguay",
     "meses": [
-     {
-      "mes": "2026-09",
-      "lluvia_anomalia_mm": 164.7,
-      "temp_anomalia_c": -0.8
-     },
      {
       "mes": "2026-10",
       "lluvia_anomalia_mm": 128.3,
@@ -963,18 +982,13 @@
       "temp_anomalia_c": 0.7
      }
     ],
-    "unidad_lluvia": "mm (anomalía del mes respecto del clima del modelo)"
+    "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
    },
    {
     "id": "paraguay-asuncion",
     "place": "Asunción",
     "river": "Paraguay",
     "meses": [
-     {
-      "mes": "2026-09",
-      "lluvia_anomalia_mm": 166.5,
-      "temp_anomalia_c": -0.8
-     },
      {
       "mes": "2026-10",
       "lluvia_anomalia_mm": 159.9,
@@ -1001,18 +1015,13 @@
       "temp_anomalia_c": 0.4
      }
     ],
-    "unidad_lluvia": "mm (anomalía del mes respecto del clima del modelo)"
+    "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
    },
    {
     "id": "paraguay-formosa",
     "place": "Formosa · Alberdi",
     "river": "Paraguay",
     "meses": [
-     {
-      "mes": "2026-09",
-      "lluvia_anomalia_mm": 149.1,
-      "temp_anomalia_c": -1.0
-     },
      {
       "mes": "2026-10",
       "lluvia_anomalia_mm": 141.3,
@@ -1039,18 +1048,13 @@
       "temp_anomalia_c": 0.2
      }
     ],
-    "unidad_lluvia": "mm (anomalía del mes respecto del clima del modelo)"
+    "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
    },
    {
     "id": "paraguay-pilar",
     "place": "Pilar",
     "river": "Paraguay",
     "meses": [
-     {
-      "mes": "2026-09",
-      "lluvia_anomalia_mm": 119.8,
-      "temp_anomalia_c": -0.9
-     },
      {
       "mes": "2026-10",
       "lluvia_anomalia_mm": 121.3,
@@ -1077,18 +1081,13 @@
       "temp_anomalia_c": 0.1
      }
     ],
-    "unidad_lluvia": "mm (anomalía del mes respecto del clima del modelo)"
+    "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
    },
    {
     "id": "paraguay-humaita",
     "place": "Humaitá",
     "river": "Paraguay",
     "meses": [
-     {
-      "mes": "2026-09",
-      "lluvia_anomalia_mm": 88.8,
-      "temp_anomalia_c": -0.9
-     },
      {
       "mes": "2026-10",
       "lluvia_anomalia_mm": 95.0,
@@ -1115,18 +1114,13 @@
       "temp_anomalia_c": 0.1
      }
     ],
-    "unidad_lluvia": "mm (anomalía del mes respecto del clima del modelo)"
+    "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
    },
    {
     "id": "bermejo-embarcacion",
     "place": "Embarcación",
     "river": "Bermejo",
     "meses": [
-     {
-      "mes": "2026-09",
-      "lluvia_anomalia_mm": 54.7,
-      "temp_anomalia_c": -1.6
-     },
      {
       "mes": "2026-10",
       "lluvia_anomalia_mm": 7.3,
@@ -1153,18 +1147,13 @@
       "temp_anomalia_c": 0.6
      }
     ],
-    "unidad_lluvia": "mm (anomalía del mes respecto del clima del modelo)"
+    "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
    },
    {
     "id": "bermejo-elcolorado",
     "place": "El Colorado",
     "river": "Bermejo",
     "meses": [
-     {
-      "mes": "2026-09",
-      "lluvia_anomalia_mm": 85.7,
-      "temp_anomalia_c": -1.3
-     },
      {
       "mes": "2026-10",
       "lluvia_anomalia_mm": 75.6,
@@ -1191,18 +1180,13 @@
       "temp_anomalia_c": -0.2
      }
     ],
-    "unidad_lluvia": "mm (anomalía del mes respecto del clima del modelo)"
+    "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
    },
    {
     "id": "uruguay-soberbio",
     "place": "El Soberbio",
     "river": "Uruguay",
     "meses": [
-     {
-      "mes": "2026-09",
-      "lluvia_anomalia_mm": 146.2,
-      "temp_anomalia_c": -0.3
-     },
      {
       "mes": "2026-10",
       "lluvia_anomalia_mm": 180.7,
@@ -1229,18 +1213,13 @@
       "temp_anomalia_c": 0.8
      }
     ],
-    "unidad_lluvia": "mm (anomalía del mes respecto del clima del modelo)"
+    "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
    },
    {
     "id": "uruguay-albaposse",
     "place": "Alba Posse",
     "river": "Uruguay",
     "meses": [
-     {
-      "mes": "2026-09",
-      "lluvia_anomalia_mm": 132.2,
-      "temp_anomalia_c": -0.4
-     },
      {
       "mes": "2026-10",
       "lluvia_anomalia_mm": 182.8,
@@ -1267,18 +1246,13 @@
       "temp_anomalia_c": 0.6
      }
     ],
-    "unidad_lluvia": "mm (anomalía del mes respecto del clima del modelo)"
+    "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
    },
    {
     "id": "uruguay-santotome",
     "place": "Santo Tomé",
     "river": "Uruguay",
     "meses": [
-     {
-      "mes": "2026-09",
-      "lluvia_anomalia_mm": 65.3,
-      "temp_anomalia_c": -0.8
-     },
      {
       "mes": "2026-10",
       "lluvia_anomalia_mm": 122.7,
@@ -1305,18 +1279,13 @@
       "temp_anomalia_c": 0.3
      }
     ],
-    "unidad_lluvia": "mm (anomalía del mes respecto del clima del modelo)"
+    "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
    },
    {
     "id": "uruguay-libres",
     "place": "Paso de los Libres",
     "river": "Uruguay",
     "meses": [
-     {
-      "mes": "2026-09",
-      "lluvia_anomalia_mm": -8.1,
-      "temp_anomalia_c": -1.0
-     },
      {
       "mes": "2026-10",
       "lluvia_anomalia_mm": 50.0,
@@ -1343,18 +1312,13 @@
       "temp_anomalia_c": 0.1
      }
     ],
-    "unidad_lluvia": "mm (anomalía del mes respecto del clima del modelo)"
+    "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
    },
    {
     "id": "uruguay-montecaseros",
     "place": "Monte Caseros",
     "river": "Uruguay",
     "meses": [
-     {
-      "mes": "2026-09",
-      "lluvia_anomalia_mm": -24.8,
-      "temp_anomalia_c": -1.0
-     },
      {
       "mes": "2026-10",
       "lluvia_anomalia_mm": 25.0,
@@ -1381,18 +1345,13 @@
       "temp_anomalia_c": -0.1
      }
     ],
-    "unidad_lluvia": "mm (anomalía del mes respecto del clima del modelo)"
+    "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
    },
    {
     "id": "uruguay-concordia",
     "place": "Concordia · Salto",
     "river": "Uruguay",
     "meses": [
-     {
-      "mes": "2026-09",
-      "lluvia_anomalia_mm": -32.8,
-      "temp_anomalia_c": -1.0
-     },
      {
       "mes": "2026-10",
       "lluvia_anomalia_mm": 10.8,
@@ -1419,17 +1378,108 @@
       "temp_anomalia_c": -0.1
      }
     ],
-    "unidad_lluvia": "mm (anomalía del mes respecto del clima del modelo)"
+    "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
+   },
+   {
+    "id": "uruguay-colon",
+    "place": "Colón",
+    "river": "Uruguay",
+    "meses": [
+     {
+      "mes": "2026-10",
+      "lluvia_anomalia_mm": -6.6,
+      "temp_anomalia_c": 0.3
+     },
+     {
+      "mes": "2026-11",
+      "lluvia_anomalia_mm": 49.8,
+      "temp_anomalia_c": 0.3
+     },
+     {
+      "mes": "2026-12",
+      "lluvia_anomalia_mm": 57.6,
+      "temp_anomalia_c": 0.0
+     },
+     {
+      "mes": "2027-01",
+      "lluvia_anomalia_mm": 54.5,
+      "temp_anomalia_c": -0.3
+     },
+     {
+      "mes": "2027-02",
+      "lluvia_anomalia_mm": 53.5,
+      "temp_anomalia_c": 0.0
+     }
+    ],
+    "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
+   },
+   {
+    "id": "uruguay-cdeluruguay",
+    "place": "Concepción del Uruguay",
+    "river": "Uruguay",
+    "meses": [
+     {
+      "mes": "2026-10",
+      "lluvia_anomalia_mm": -11.3,
+      "temp_anomalia_c": 0.2
+     },
+     {
+      "mes": "2026-11",
+      "lluvia_anomalia_mm": 38.8,
+      "temp_anomalia_c": 0.2
+     },
+     {
+      "mes": "2026-12",
+      "lluvia_anomalia_mm": 50.8,
+      "temp_anomalia_c": 0.0
+     },
+     {
+      "mes": "2027-01",
+      "lluvia_anomalia_mm": 50.4,
+      "temp_anomalia_c": -0.2
+     },
+     {
+      "mes": "2027-02",
+      "lluvia_anomalia_mm": 46.0,
+      "temp_anomalia_c": 0.1
+     }
+    ],
+    "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
+   },
+   {
+    "id": "uruguay-fraybentos",
+    "place": "Fray Bentos",
+    "river": "Uruguay",
+    "meses": [
+     {
+      "mes": "2026-10",
+      "lluvia_anomalia_mm": -6.5,
+      "temp_anomalia_c": -0.1
+     },
+     {
+      "mes": "2026-11",
+      "lluvia_anomalia_mm": 26.7,
+      "temp_anomalia_c": 0.2
+     },
+     {
+      "mes": "2026-12",
+      "lluvia_anomalia_mm": 34.6,
+      "temp_anomalia_c": 0.1
+     },
+     {
+      "mes": "2027-01",
+      "lluvia_anomalia_mm": 43.1,
+      "temp_anomalia_c": -0.2
+     },
+     {
+      "mes": "2027-02",
+      "lluvia_anomalia_mm": 25.3,
+      "temp_anomalia_c": 0.1
+     }
+    ],
+    "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
    }
   ],
-  "nota": "Pronóstico estacional: anomalía de lluvia y temperatura de cada mes frente a lo normal del modelo. Es una tendencia probable para la zona, no un pronóstico del tiempo de un día.",
-  "errores": {
-   "San Nicolás": "ReadTimeout",
-   "San Pedro": "ReadTimeout",
-   "Zárate": "ReadTimeout",
-   "Colón": "ReadTimeout",
-   "Concepción del Uruguay": "ReadTimeout",
-   "Fray Bentos": "ReadTimeout"
-  }
+  "nota": "Pronóstico estacional: anomalía de lluvia y temperatura de cada mes frente a lo normal del modelo. Es una tendencia probable para la zona, no un pronóstico del tiempo de un día."
  }
 }
