@@ -150,6 +150,8 @@ a { color: inherit; }
   'use strict';
   var FUENTE = 'https://climatereanalyzer.org/clim/sst_daily/json_2clim/oisst2.1_nino3.4_sst_day.json';
   var RESPALDO = '/nino-diario/nino34-respaldo.json';
+  // Copia diaria que guarda la tarea «El Niño día por día» en la rama datos (si la fuente en vivo no responde)
+  var COPIA = 'https://raw.githubusercontent.com/Alvarorfontana/observatorio-agro/datos/data/nino34_diario.json';
   var EVENTOS = [['1982-83', ['1982','1983']], ['1987-88', ['1987','1988']], ['1991-92', ['1991','1992']], ['1997-98', ['1997','1998']], ['2009-10', ['2009','2010']], ['2015-16', ['2015','2016']], ['2023-24', ['2023','2024']]];
   var MES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
   var INICIO_MES = [0,31,60,91,121,152,182,213,244,274,305,335]; // en el año de 366 días de la fuente
@@ -165,6 +167,7 @@ a { color: inherit; }
 
   function cargar() {
     return fetch(FUENTE, { cache: 'no-store' }).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) { origen = 'en vivo'; return j; })
+      .catch(function () { return fetch(COPIA, { cache: 'no-cache' }).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) { origen = 'copia diaria'; return j; }); })
       .catch(function () { return fetch(RESPALDO).then(function (r) { return r.json(); }).then(function (j) { origen = 'copia guardada'; return j; }); });
   }
 
@@ -191,15 +194,24 @@ a { color: inherit; }
     var maxHist = -9, maxAnio = '';
     Object.keys(D).forEach(function (k) { if (!/^\d{4}$/.test(k)) return; var arr = k === ANIO ? SERIE : D[k]; arr.forEach(function (v, i) { if (v != null && NORMAL[i] != null && v - NORMAL[i] > maxHist) { maxHist = v - NORMAL[i]; maxAnio = k; } }); });
     var hace30 = SERIE[ULT - 30] != null ? (SERIE[ULT - 30] - NORMAL[ULT - 30]) : null;
+    // Racha: días seguidos, hasta el último dato, en que este año fue el más caliente de la serie para esa fecha
+    var otros = Object.keys(D).filter(function (k) { return /^\d{4}$/.test(k) && k !== ANIO; });
+    var racha = 0;
+    for (var r = ULT; r >= 0; r--) {
+      var v = SERIE[r]; if (v == null) break;
+      var gana = otros.every(function (k) { return D[k][r] == null || D[k][r] < v; });
+      if (!gana) break; racha++;
+    }
     var pre = ULT >= D.__preliminarDesde;
     $('cifras').innerHTML = [
       ['Último dato', d.toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }), pre ? 'Preliminar' : 'Dato consolidado', false],
       ['Temperatura del agua', f(hoy) + ' °C', 'Lo normal: ' + f(nor) + ' °C', false],
       ['Diferencia con lo normal', s(a) + ' °C', hace30 != null ? 'Hace 30 días: ' + s(hace30) + ' °C' : '', a >= 2],
       ['Puesto para esta fecha', puesto + '.º de ' + mismoDia.length, 'Entre todos los años desde 1981', puesto === 1],
+      ['Racha de récords', racha ? racha + (racha === 1 ? ' día' : ' días') : 'Sin racha', racha ? 'Seguidos como el más caliente para la fecha desde 1981' : 'Hoy no es el récord para la fecha', racha >= 30],
       ['Máximo de toda la serie', s(maxHist) + ' °C', 'Año ' + maxAnio, maxAnio === ANIO]
     ].map(function (c, i) { return '<div class="cifra' + (c[3] ? ' alerta' : '') + (i === 0 ? ' texto' : '') + '"><span>' + c[0] + '</span><b>' + c[1] + '</b><small>' + c[2] + '</small></div>'; }).join('');
-    $('estado').textContent = 'Fuente: NOAA OISST 2.1 vía Climate Reanalyzer · ' + (origen === 'en vivo' ? 'leído en vivo' : 'la fuente no respondió: se muestra la última copia guardada por DOTS');
+    $('estado').textContent = 'Fuente: NOAA OISST 2.1 vía Climate Reanalyzer · ' + (origen === 'en vivo' ? 'leído en vivo' : origen === 'copia diaria' ? 'la fuente no respondió: se muestra la copia diaria de DOTS' : 'la fuente no respondió: se muestra la última copia guardada por DOTS');
   }
 
   function base(titulo, sub) {

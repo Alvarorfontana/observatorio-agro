@@ -3326,6 +3326,10 @@ function ElNinoPage({onDemo}:{onDemo:()=>void}){
         <p className="footnote">Cada El Niño es distinto: la fuerza, el momento y otros factores (el Atlántico, el Modo Anular del Sur) cambian el resultado. Por eso DOTS muestra probabilidades y antecedentes, no certezas.</p>
       </div></section>
     </section>
+    <section className="about-block"><div className="about-side"><span className="module-num">DÍA POR DÍA</span><h2>El termómetro del Pacífico, todos los días</h2></div><div className="about-text">
+      <p>La temperatura del mar en la región Niño 3.4 desde 1981, con el dato de ayer, cada año comparado con los grandes El Niño y cuántos días seguidos lleva este año como el más caliente para la fecha. Se actualiza sola con datos NOAA OISST 2.1.</p>
+      <p><a className="module-action-link" href="/nino-diario">Ver El Niño día por día →</a></p>
+    </div></section>
     <h2 className="layer-section-title">Dónde y cuándo impacta en Sudamérica</h2>
     <section className="nino-mapwrap"><SAImpactMap/></section>
     <section className="nino-regions">{NINO_REGIONS.map(([t,r,e,d])=><article key={r} className={t}><span>{e}</span><h3>{r}</h3><p>{d}</p></article>)}</section>

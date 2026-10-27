@@ -1,0 +1,31 @@
+# Copia diaria de la temperatura del mar en la región Niño 3.4 (NOAA OISST 2.1 vía Climate Reanalyzer).
+# La página /nino-diario la lee en vivo; esta copia en la rama datos se usa si la fuente no responde.
+name: El Niño día por día
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "23 13 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nino34-diario
+  cancel-in-progress: false
+
+jobs:
+  copia:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - name: Bajar y verificar
+        run: |
+          mkdir -p data
+          curl -fsSL --retry 3 --max-time 120 \
+            https://climatereanalyzer.org/clim/sst_daily/json_2clim/oisst2.1_nino3.4_sst_day.json -o /tmp/nino34.json
+          python3 scripts/nino34_verificar.py /tmp/nino34.json data/nino34_diario.json
+      - name: Guardar en la rama datos (no publica la web)
+        run: |
+          cp scripts/datos_rama.sh /tmp/datos_rama.sh && bash /tmp/datos_rama.sh guardar "El Niño día por día $(date -u +%Y-%m-%d)" data/nino34_diario.json
