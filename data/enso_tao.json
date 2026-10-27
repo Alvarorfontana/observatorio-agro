@@ -1,6 +1,6 @@
 {
- "actualizado": "2026-10-27T18:38Z",
- "fuente": "GTMBA Project Office de NOAA/PMEL (boyas TAO/TRITON) vía ERDDAP de NOAA OSMC",
+ "actualizado": "2026-10-27T18:41Z",
+ "fuente": "GTMBA Project Office de NOAA/PMEL (boyas TAO/TRITON) vía ERDDAP de NOAA",
  "url": "https://www.pmel.noaa.gov/gtmba/",
  "normal": "promedio 1993–2020 de cada boya y profundidad",
  "boyas": [
@@ -791,149 +791,12 @@
    ],
    "isoterma20_m": 127.8,
    "isoterma20_normal_m": 34.4
-  },
-  {
-   "longitud": 337.0,
-   "lon": -23.0,
-   "nombre": "23° O",
-   "desde": "2026-09-24",
-   "hasta": "2026-09-28",
-   "perfil": [
-    {
-     "prof": 5.0,
-     "temp": 26.31,
-     "anom": -0.4
-    },
-    {
-     "prof": 10.0,
-     "temp": 26.29,
-     "anom": -0.31
-    },
-    {
-     "prof": 20.0,
-     "temp": 26.26,
-     "anom": -0.25
-    },
-    {
-     "prof": 40.0,
-     "temp": 26.23,
-     "anom": 0.56
-    },
-    {
-     "prof": 60.0,
-     "temp": 24.94,
-     "anom": 1.4
-    },
-    {
-     "prof": 80.0,
-     "temp": 22.42,
-     "anom": 1.86
-    },
-    {
-     "prof": 120.0,
-     "temp": 16.39,
-     "anom": 0.57
-    },
-    {
-     "prof": 140.0,
-     "temp": 15.25,
-     "anom": 0.44
-    },
-    {
-     "prof": 180.0,
-     "temp": 14.34,
-     "anom": 0.44
-    },
-    {
-     "prof": 500.0,
-     "temp": 7.65,
-     "anom": 0.44
-    }
-   ],
-   "isoterma20_m": 96.1,
-   "isoterma20_normal_m": 83.8
-  },
-  {
-   "longitud": 357.0,
-   "lon": -3.0,
-   "nombre": "3° O",
-   "desde": "2026-09-24",
-   "hasta": "2026-09-28",
-   "perfil": [
-    {
-     "prof": 1.0,
-     "temp": 26.24,
-     "anom": null
-    },
-    {
-     "prof": 5.0,
-     "temp": 26.39,
-     "anom": null
-    },
-    {
-     "prof": 10.0,
-     "temp": 26.33,
-     "anom": null
-    },
-    {
-     "prof": 20.0,
-     "temp": 25.7,
-     "anom": null
-    },
-    {
-     "prof": 40.0,
-     "temp": 23.33,
-     "anom": null
-    },
-    {
-     "prof": 60.0,
-     "temp": 19.62,
-     "anom": null
-    },
-    {
-     "prof": 80.0,
-     "temp": 17.45,
-     "anom": null
-    },
-    {
-     "prof": 100.0,
-     "temp": 16.67,
-     "anom": null
-    },
-    {
-     "prof": 120.0,
-     "temp": 16.13,
-     "anom": null
-    },
-    {
-     "prof": 140.0,
-     "temp": 15.69,
-     "anom": null
-    },
-    {
-     "prof": 180.0,
-     "temp": 15.01,
-     "anom": null
-    },
-    {
-     "prof": 300.0,
-     "temp": 11.2,
-     "anom": null
-    },
-    {
-     "prof": 500.0,
-     "temp": 7.37,
-     "anom": null
-    }
-   ],
-   "isoterma20_m": 58.0,
-   "isoterma20_normal_m": null
   }
  ],
  "resumen": {
-  "anom_este_0_150m": 4.75,
+  "anom_este_0_150m": 6.26,
   "anom_oeste_80_200m": -1.64,
-  "ultimo_dato": "2026-09-28"
+  "ultimo_dato": "2026-09-27"
  },
  "nota": "Corte de la línea del ecuador con las boyas TAO. Rojo: agua más caliente que lo normal; azul: más fría. La línea es la isoterma de 20 °C, que marca la termoclina. Los datos de las boyas llegan con algunas semanas de demora y algunas boyas pueden estar sin datos por mantenimiento."
 }
