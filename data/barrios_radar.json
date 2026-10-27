@@ -1,5 +1,5 @@
 {
- "updated": "2026-10-23",
+ "updated": "2026-10-27",
  "year": 2024,
  "model": {
   "method": "Idea (Sapienza / Pavía): las imágenes en color confunden un barrio popular con un barrio denso común; el radar\nSentinel-1 responde a la forma y al desorden de las construcciones, y casi no cambia entre estaciones.\n\nQué hace, en GitHub Actions y con Google Earth Engine:\n  1. Baja los polígonos del Registro Nacional de Barrios Populares (RENABAP) alrededor de cada localidad.\n  2. Arma, para cada píxel construido (ESA WorldCover), tres escalones de radar —brillo (VV, VH, VH−VV),\n     textura (GLCM: contraste, varianza, entropía, homogeneidad) e índice de dispersión (coeficiente de variación\n     local y temporal, y diferencia entre estación seca y húmeda)—, las bandas ópticas de Sentinel-2 y la\n     morfología de las construcciones (Google Open Buildings temporal: cantidad, altura y su variación).\n  3. Etiquetas: dentro de un polígono RENABAP = barrio popular; construido a más de 60 m de cualquiera = barrio común.\n  4. Entrena bosques aleatorios (solo óptico / óptico + radar / + edificios / + etiquetas de otras ciudades, como\n     los barrios populares de Nairobi mapeados en OpenStreetMap o data/etiquetas_externas.geojson) y los evalúa dejando afuera una ciudad\n     argentina por vez: así se mide cómo anda en una ciudad que el modelo nunca vio.\n  5. Aplica el mejor de los dos con radar a las 34 localidades (también Paraguay y Uruguay, donde no hay RENABAP),\n     y cruza con WorldPop 2020 y la altura sobre el río (MERIT Hydro HAND).\n\nSalida: data/barrios_radar.json y data/barrios_radar/<id>.png (rama datos).\nRequiere los secretos GOOGLE_CLOUD_PROJECT y GOOGLE_APPLICATION_CREDENTIALS_JSON (los mismos de Vercel).",
@@ -646,6 +646,86 @@
    {
     "capa": "VHt_var",
     "peso": 0.028
+   },
+   {
+    "capa": "NDBI",
+    "peso": 0.027
+   },
+   {
+    "capa": "NDVI",
+    "peso": 0.027
+   },
+   {
+    "capa": "VV_tstd",
+    "peso": 0.027
+   },
+   {
+    "capa": "B11",
+    "peso": 0.026
+   },
+   {
+    "capa": "B12",
+    "peso": 0.025
+   },
+   {
+    "capa": "VV_lmean",
+    "peso": 0.025
+   },
+   {
+    "capa": "B2",
+    "peso": 0.023
+   },
+   {
+    "capa": "VHVV",
+    "peso": 0.023
+   },
+   {
+    "capa": "VV_season",
+    "peso": 0.023
+   },
+   {
+    "capa": "VV",
+    "peso": 0.022
+   },
+   {
+    "capa": "VV_wet",
+    "peso": 0.022
+   },
+   {
+    "capa": "VV_dry",
+    "peso": 0.022
+   },
+   {
+    "capa": "VVt_contrast",
+    "peso": 0.022
+   },
+   {
+    "capa": "B3",
+    "peso": 0.022
+   },
+   {
+    "capa": "B4",
+    "peso": 0.021
+   },
+   {
+    "capa": "VV_cv3",
+    "peso": 0.021
+   },
+   {
+    "capa": "VVt_idm",
+    "peso": 0.021
+   },
+   {
+    "capa": "VVt_var",
+    "peso": 0.02
+   },
+   {
+    "capa": "VHt_ent",
+    "peso": 0.016
+   },
+   {
+    "capa": "VVt_ent",
+    "peso": 0.014
    }
   ],
   "nota": "Evaluado dejando afuera una ciudad por vez, con puntos balanceados entre barrio popular y barrio común construido. No es la misma métrica del estudio de Nairobi, aunque mide lo mismo: cuánto mejora al sumar el radar."
@@ -744,7 +824,7 @@
    "fuente_renabap": "oficial"
   },
   {
-   "informal_ha": 1793.2,
+   "informal_ha": 894.3,
    "pop_informal": null,
    "pop_informal_hand": [
     {
@@ -765,9 +845,9 @@
     }
    ],
    "renabap_barrios": 107,
-   "in_renabap_ha": 246.9,
-   "a_verificar_ha": 1569.2,
-   "renabap_detectado": 0.612,
+   "in_renabap_ha": 134.9,
+   "a_verificar_ha": 777.6,
+   "renabap_detectado": 0.339,
    "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
    "id": "parana-posadas",
    "place": "Posadas",
@@ -1272,7 +1352,7 @@
    "in_renabap_ha": 100.9,
    "a_verificar_ha": 3736.6,
    "renabap_detectado": 0.837,
-   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
+   "imagen_error": "Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/",
    "id": "paraguay-asuncion",
    "place": "Asunción",
    "river": "Paraguay",
@@ -1372,7 +1452,7 @@
    "fuente_renabap": "oficial"
   },
   {
-   "informal_ha": 244.8,
+   "informal_ha": 165.0,
    "pop_informal": 2807,
    "pop_informal_hand": [
     {
@@ -1393,10 +1473,10 @@
     }
    ],
    "renabap_barrios": 33,
-   "in_renabap_ha": 62.8,
-   "a_verificar_ha": 177.6,
-   "renabap_detectado": 0.947,
-   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
+   "in_renabap_ha": 51.0,
+   "a_verificar_ha": 116.1,
+   "renabap_detectado": 0.761,
+   "imagen_error": "Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/",
    "id": "bermejo-embarcacion",
    "place": "Embarcación",
    "river": "Bermejo",
@@ -1428,7 +1508,7 @@
    "in_renabap_ha": 14.9,
    "a_verificar_ha": 345.0,
    "renabap_detectado": 0.889,
-   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
+   "imagen_error": "Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/",
    "id": "bermejo-elcolorado",
    "place": "El Colorado",
    "river": "Bermejo",
@@ -1436,31 +1516,7 @@
    "fuente_renabap": "oficial"
   },
   {
-   "informal_ha": 94.4,
-   "pop_informal": 708,
-   "pop_informal_hand": [
-    {
-     "hasta_m": 1,
-     "personas": 50
-    },
-    {
-     "hasta_m": 2,
-     "personas": 73
-    },
-    {
-     "hasta_m": 3,
-     "personas": 73
-    },
-    {
-     "hasta_m": 5,
-     "personas": 106
-    }
-   ],
-   "renabap_barrios": 2,
-   "in_renabap_ha": 3.5,
-   "a_verificar_ha": 90.4,
-   "renabap_detectado": 0.556,
-   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
+   "error": "Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/noncommercial_tiers#restricted_mode",
    "id": "uruguay-soberbio",
    "place": "El Soberbio",
    "river": "Uruguay",
@@ -1469,30 +1525,30 @@
   },
   {
    "informal_ha": 134.6,
-   "pop_informal": 571,
+   "pop_informal": null,
    "pop_informal_hand": [
     {
      "hasta_m": 1,
-     "personas": 5
+     "personas": null
     },
     {
      "hasta_m": 2,
-     "personas": 5
+     "personas": null
     },
     {
      "hasta_m": 3,
-     "personas": 5
+     "personas": null
     },
     {
      "hasta_m": 5,
-     "personas": 10
+     "personas": null
     }
    ],
    "renabap_barrios": 1,
    "in_renabap_ha": 0.1,
    "a_verificar_ha": 134.5,
    "renabap_detectado": 0.5,
-   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
+   "imagen_error": "Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/",
    "id": "uruguay-albaposse",
    "place": "Alba Posse",
    "river": "Uruguay",
@@ -1500,31 +1556,7 @@
    "fuente_renabap": "oficial"
   },
   {
-   "informal_ha": 487.9,
-   "pop_informal": null,
-   "pop_informal_hand": [
-    {
-     "hasta_m": 1,
-     "personas": null
-    },
-    {
-     "hasta_m": 2,
-     "personas": null
-    },
-    {
-     "hasta_m": 3,
-     "personas": null
-    },
-    {
-     "hasta_m": 5,
-     "personas": null
-    }
-   ],
-   "renabap_barrios": 4,
-   "in_renabap_ha": 11.8,
-   "a_verificar_ha": 479.3,
-   "renabap_detectado": 0.835,
-   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
+   "error": "Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/noncommercial_tiers#restricted_mode",
    "id": "uruguay-santotome",
    "place": "Santo Tomé",
    "river": "Uruguay",
@@ -1532,31 +1564,7 @@
    "fuente_renabap": "oficial"
   },
   {
-   "informal_ha": 887.9,
-   "pop_informal": null,
-   "pop_informal_hand": [
-    {
-     "hasta_m": 1,
-     "personas": null
-    },
-    {
-     "hasta_m": 2,
-     "personas": null
-    },
-    {
-     "hasta_m": 3,
-     "personas": null
-    },
-    {
-     "hasta_m": 5,
-     "personas": null
-    }
-   ],
-   "renabap_barrios": 15,
-   "in_renabap_ha": 35.8,
-   "a_verificar_ha": 832.4,
-   "renabap_detectado": 0.867,
-   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
+   "error": "Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/noncommercial_tiers#restricted_mode",
    "id": "uruguay-libres",
    "place": "Paso de los Libres",
    "river": "Uruguay",
@@ -1564,31 +1572,7 @@
    "fuente_renabap": "oficial"
   },
   {
-   "informal_ha": 387.1,
-   "pop_informal": 8690,
-   "pop_informal_hand": [
-    {
-     "hasta_m": 1,
-     "personas": 277
-    },
-    {
-     "hasta_m": 2,
-     "personas": 561
-    },
-    {
-     "hasta_m": 3,
-     "personas": 1119
-    },
-    {
-     "hasta_m": 5,
-     "personas": 2473
-    }
-   ],
-   "renabap_barrios": 9,
-   "in_renabap_ha": 18.4,
-   "a_verificar_ha": 363.7,
-   "renabap_detectado": 0.86,
-   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
+   "error": "Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/noncommercial_tiers#restricted_mode",
    "id": "uruguay-montecaseros",
    "place": "Monte Caseros",
    "river": "Uruguay",
@@ -1596,31 +1580,7 @@
    "fuente_renabap": "oficial"
   },
   {
-   "informal_ha": 1681.4,
-   "pop_informal": 54625,
-   "pop_informal_hand": [
-    {
-     "hasta_m": 1,
-     "personas": 2714
-    },
-    {
-     "hasta_m": 2,
-     "personas": 4131
-    },
-    {
-     "hasta_m": 3,
-     "personas": 5880
-    },
-    {
-     "hasta_m": 5,
-     "personas": 10332
-    }
-   ],
-   "renabap_barrios": 59,
-   "in_renabap_ha": 175.2,
-   "a_verificar_ha": 1427.8,
-   "renabap_detectado": 0.851,
-   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
+   "error": "Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/noncommercial_tiers#restricted_mode",
    "id": "uruguay-concordia",
    "place": "Concordia · Salto",
    "river": "Uruguay",
@@ -1628,7 +1588,7 @@
    "fuente_renabap": "oficial"
   },
   {
-   "informal_ha": 1081.6,
+   "informal_ha": 714.9,
    "pop_informal": 30347,
    "pop_informal_hand": [
     {
@@ -1649,10 +1609,10 @@
     }
    ],
    "renabap_barrios": 4,
-   "in_renabap_ha": 11.8,
-   "a_verificar_ha": 1060.9,
-   "renabap_detectado": 0.865,
-   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
+   "in_renabap_ha": 8.0,
+   "a_verificar_ha": 701.4,
+   "renabap_detectado": 0.587,
+   "imagen_error": "Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/",
    "id": "uruguay-colon",
    "place": "Colón",
    "river": "Uruguay",
@@ -1660,31 +1620,7 @@
    "fuente_renabap": "oficial"
   },
   {
-   "informal_ha": 440.5,
-   "pop_informal": 7864,
-   "pop_informal_hand": [
-    {
-     "hasta_m": 1,
-     "personas": 597
-    },
-    {
-     "hasta_m": 2,
-     "personas": 894
-    },
-    {
-     "hasta_m": 3,
-     "personas": 1447
-    },
-    {
-     "hasta_m": 5,
-     "personas": 2433
-    }
-   ],
-   "renabap_barrios": 22,
-   "in_renabap_ha": 31.6,
-   "a_verificar_ha": 377.4,
-   "renabap_detectado": 0.822,
-   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
+   "error": "Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/noncommercial_tiers#restricted_mode",
    "id": "uruguay-cdeluruguay",
    "place": "Concepción del Uruguay",
    "river": "Uruguay",
@@ -1692,27 +1628,7 @@
    "fuente_renabap": "oficial"
   },
   {
-   "informal_ha": 220.2,
-   "pop_informal": null,
-   "pop_informal_hand": [
-    {
-     "hasta_m": 1,
-     "personas": null
-    },
-    {
-     "hasta_m": 2,
-     "personas": null
-    },
-    {
-     "hasta_m": 3,
-     "personas": null
-    },
-    {
-     "hasta_m": 5,
-     "personas": null
-    }
-   ],
-   "imagen_error": "Permission 'earthengine.thumbnails.create' denied on resource 'projects/gen-lang-client-0033518419' (or it may not exist).",
+   "error": "Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/noncommercial_tiers#restricted_mode",
    "id": "uruguay-fraybentos",
    "place": "Fray Bentos",
    "river": "Uruguay",

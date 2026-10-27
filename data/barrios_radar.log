@@ -1,3 +1,5 @@
+/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/google/api_core/_python_version_support.py:254: FutureWarning: You are using a Python version (3.11.17) which Google will stop supporting in new releases of google.api_core once it reaches its end of life (2027-10-24). Please upgrade to the latest Python version, or at least Python 3.12, to continue receiving updates for google.api_core past that date.
+  warnings.warn(message, FutureWarning)
 /opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/ee/data.py:335: UserWarning: Your project has exceeded its noncommercial compute quota and is now in restricted mode. Visit https://developers.google.com/earth-engine/guides/noncommercial_tiers#restricted_mode to learn more.
   warnings.warn(
 RENABAP descargado: 6467 barrios
@@ -35,71 +37,52 @@ Concordia · Salto: 59 barrios RENABAP (oficial)
 Colón: 4 barrios RENABAP (oficial)
 Concepción del Uruguay: 22 barrios RENABAP (oficial)
 Fray Bentos: 0 barrios RENABAP (oficial)
-/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/ee/data.py:335: UserWarning: Your project has exceeded its noncommercial compute quota and is now in restricted mode. Visit https://developers.google.com/earth-engine/guides/noncommercial_tiers#restricted_mode to learn more.
-  warnings.warn(
-  muestras Eldorado: 800
-  muestras Posadas: 800
-  muestras Ituzaingó: 800
-  muestras Corrientes: 800
-  muestras Bella Vista: 800
-  muestras Goya: 800
-  muestras Reconquista: 800
-  muestras Esquina: 800
-  muestras La Paz: 800
-  muestras Santa Fe · Paraná: 800
-  muestras Diamante: 800
-  muestras Rosario: 800
-  muestras San Nicolás: 800
-  muestras San Pedro: 800
-  muestras Zárate: 800
-  muestras Asunción: 800
-  muestras Formosa · Alberdi: 800
-  muestras Embarcación: 800
-  muestras Santo Tomé: 800
-  muestras Paso de los Libres: 800
-  muestras Monte Caseros: 800
-  muestras Concordia · Salto: 800
-  muestras Colón: 800
-  muestras Concepción del Uruguay: 800
-  Overpass Nairobi: 24 elementos {'way': 24} · Gitathuru, Kangemi, Kiamaiko, Kibera Resettlement Decanting Site, Kibera Soweto East Zone C, Kibera Soweto East Zone D, Korogocho A, Kosovo, Mathare 3A, Mathare 3B, Mathare 3C, Mathare 4A, Mathare North Area1, Mathare North Area2, Mathare North Area3
-  OpenStreetMap Nairobi: 24 barrios populares
-  etiquetas externas Nairobi: 800 puntos
+Reutilizo las muestras guardadas de 24 ciudades (no se vuelve a muestrear)
 Promedio por variante: {"optico": {"f1_barrio": 0.628, "exactitud": 0.619}, "optico_radar": {"f1_barrio": 0.681, "exactitud": 0.681}, "optico_radar_edificios": {"f1_barrio": 0.76, "exactitud": 0.763}, "optico_radar_externas": {"f1_barrio": 0.678, "exactitud": 0.68}}
 Modelo final: optico_radar_edificios
+/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/ee/deprecation.py:215: DeprecationWarning: 
+
+Attention required for WorldPop/GP/100m/pop! You are using a deprecated asset.
+To make sure your code keeps working, please update it.
+This dataset has been superseded by WorldPop/GP/100m/R2025A/v1/pop
+
+Learn more: https://developers.google.com/earth-engine/datasets/catalog/WorldPop_GP_100m_pop
+
+  warnings.warn(warning, category=DeprecationWarning)
 /opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/ee/data.py:335: UserWarning: Your project has exceeded its noncommercial compute quota and is now in restricted mode. Visit https://developers.google.com/earth-engine/guides/noncommercial_tiers#restricted_mode to learn more.
   warnings.warn(
 Andresito: 151.7 ha, None personas
-Posadas: 1793.2 ha, None personas
 Puerto Iguazú · Cataratas: 18.1 ha, 11 personas
 Eldorado: 540.5 ha, 5432 personas
-Ituzaingó: 242.7 ha, 1405 personas
-Corrientes: 3300.8 ha, None personas
+Posadas: 894.3 ha, None personas
 Bella Vista: 216.3 ha, 3796 personas
 Goya: 615.2 ha, 16713 personas
-Esquina: 236.5 ha, 3234 personas
+Corrientes: 3300.8 ha, None personas
 Reconquista: 630.6 ha, 8849 personas
+Ituzaingó: 242.7 ha, 1405 personas
 La Paz: 177.9 ha, None personas
-Diamante: 241.3 ha, 2606 personas
+Esquina: 236.5 ha, 3234 personas
 Santa Fe · Paraná: 1583.0 ha, 34438 personas
-San Nicolás: 1082.4 ha, None personas
+Diamante: 241.3 ha, 2606 personas
 Rosario: 1443.7 ha, 58883 personas
+San Nicolás: 1082.4 ha, None personas
 San Pedro: 324.3 ha, None personas
 Zárate: 735.4 ha, 11405 personas
-Asunción: 3814.7 ha, None personas
-Formosa · Alberdi: 2045.8 ha, None personas
+Concepción: 519.3 ha, 12084 personas
 Bahía Negra: 27.9 ha, 2 personas
+Formosa · Alberdi: 2045.8 ha, None personas
+Asunción: 3814.7 ha, None personas
 Pilar: 366.5 ha, None personas
 Humaitá: 30.1 ha, None personas
-Embarcación: 244.8 ha, 2807 personas
 El Colorado: 360.2 ha, None personas
-El Soberbio: 94.4 ha, 708 personas
-Alba Posse: 134.6 ha, 571 personas
-Paso de los Libres: 887.9 ha, None personas
-Santo Tomé: 487.9 ha, None personas
-Concepción: 519.3 ha, 12084 personas
-Monte Caseros: 387.1 ha, 8690 personas
-Colón: 1081.6 ha, 30347 personas
-Fray Bentos: 220.2 ha, None personas
-Concordia · Salto: 1681.4 ha, 54625 personas
-Concepción del Uruguay: 440.5 ha, 7864 personas
+Embarcación: 165.0 ha, 2807 personas
+El Soberbio: None ha, None personas · Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://de
+Alba Posse: 134.6 ha, None personas
+Santo Tomé: None ha, None personas · Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://de
+Paso de los Libres: None ha, None personas · Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://de
+Monte Caseros: None ha, None personas · Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://de
+Concordia · Salto: None ha, None personas · Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://de
+Concepción del Uruguay: None ha, None personas · Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://de
+Fray Bentos: None ha, None personas · Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://de
+Colón: 714.9 ha, 30347 personas
 Promedio por ciudad dejada afuera: {"optico": {"f1_barrio": 0.628, "exactitud": 0.619}, "optico_radar": {"f1_barrio": 0.681, "exactitud": 0.681}, "optico_radar_edificios": {"f1_barrio": 0.76, "exactitud": 0.763}, "optico_radar_externas": {"f1_barrio": 0.678, "exactitud": 0.68}}
