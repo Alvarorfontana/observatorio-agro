@@ -26,18 +26,14 @@
     bar.className = 'dv-bar';
     bar.setAttribute('role', 'region');
     bar.setAttribute('aria-label', 'Modo vitrina');
-    const zona = (info.zona_ejemplo && info.zona_ejemplo.nombre) || 'Bella Vista, Corrientes';
     bar.innerHTML = `<div class="dv-in">
-      <p class="dv-txt"><b>DOTS en modo vitrina.</b> Podés recorrer todo el sitio. Las consultas sobre tu campo o tu localidad son por invitación; la zona de ejemplo de <span class="dv-zona"></span> funciona completa.</p>
+      <p class="dv-txt"><b>DOTS en modo vitrina.</b> Podés recorrer el sitio. Para consultar datos o generar informes hace falta una clave de acceso.</p>
       <form class="dv-form" autocomplete="on">
         <input type="password" name="clave" placeholder="Clave de acceso" aria-label="Clave de acceso" autocomplete="current-password" required>
         <button type="submit">Entrar</button>
-        <button type="button" class="dv-contacto">Pedir acceso</button>
       </form>
       <p class="dv-msg" role="status" aria-live="polite"></p></div>`;
-    bar.querySelector('.dv-zona').textContent = zona;
     const msg = bar.querySelector('.dv-msg');
-    bar.querySelector('.dv-contacto').onclick = () => { location.href = '/contacto'; };
     bar.querySelector('form').onsubmit = async (e) => {
       e.preventDefault();
       const clave = e.target.clave.value.trim();

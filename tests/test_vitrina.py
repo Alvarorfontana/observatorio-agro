@@ -1,4 +1,4 @@
-"""Modo vitrina: el sitio se ve, la zona de ejemplo funciona y el resto de las consultas es por invitación."""
+"""Modo vitrina: el sitio se ve, pero sin clave la API no responde nada."""
 import json
 
 import pytest
@@ -6,7 +6,7 @@ from flask import Flask, jsonify
 
 import vitrina
 
-BV = (-28.507, -59.043)       # Bella Vista: zona de ejemplo
+BV = (-28.507, -59.043)       # Bella Vista
 CTES = (-27.47, -58.83)       # Corrientes capital: fuera de la zona
 
 
@@ -39,35 +39,17 @@ def test_apagado_no_bloquea(client, monkeypatch):
     assert client.get('/api/acceso').get_json()['vitrina'] is False
 
 
-def test_paneles_regionales_abiertos(client):
-    assert client.get('/api/fuentes/cuenca').status_code == 200
+def test_sin_clave_todo_cerrado(client):
+    for r in (client.get('/api/fuentes/cuenca'),
+              client.get(f'/api/fuentes/clima?lat={BV[0]}&lon={BV[1]}'),
+              client.post('/api/fuentes/analizar', json={'lat': BV[0], 'lon': BV[1]}),
+              client.post('/api/fuentes/contacto', json={'msg': 'hola'}),
+              client.post('/api/lotes/sincronizar', json={})):
+        assert r.status_code == 403 and r.get_json()['status'] == 'vitrina'
 
 
-def test_zona_de_ejemplo_funciona(client):
-    assert client.get(f'/api/fuentes/clima?lat={BV[0]}&lon={BV[1]}').status_code == 200
-    poly = [[-28.509, -59.049], [-28.509, -59.044], [-28.505, -59.044]]
-    assert client.get('/api/fuentes/ndvi?polygon=' + json.dumps(poly)).status_code == 200
-    geo = {'type': 'Polygon', 'coordinates': [[[-59.049, -28.509], [-59.044, -28.509], [-59.044, -28.505], [-59.049, -28.509]]]}
-    assert client.post('/api/fuentes/analizar', json={'lot': {'geometry': geo}, 'anios': [2024, 2025]}).status_code == 200
-
-
-def test_fuera_de_zona_bloquea(client):
-    r = client.get(f'/api/fuentes/clima?lat={CTES[0]}&lon={CTES[1]}')
-    assert r.status_code == 403 and r.get_json()['status'] == 'vitrina'
-    assert client.post('/api/fuentes/analizar', json={'lat': CTES[0], 'lon': CTES[1]}).status_code == 403
-    # un punto adentro no habilita un polígono afuera
-    poly = [[CTES[0], CTES[1]], [CTES[0] + .01, CTES[1]], [CTES[0], CTES[1] + .01]]
-    assert client.post('/api/fuentes/analizar', json={'lat': BV[0], 'lon': BV[1], 'polygon': poly}).status_code == 403
-    assert client.get('/api/fuentes/ndvi?bbox=-58.9,-27.5,-58.8,-27.4').status_code == 403
-
-
-def test_post_sin_coordenadas_y_cerradas(client):
-    assert client.post('/api/fuentes/costos', json={'heads': 100}).status_code == 403
-    assert client.post('/api/lotes/sincronizar', json={'lat': BV[0], 'lon': BV[1]}).status_code == 403
-
-
-def test_contacto_siempre_abierto(client):
-    assert client.post('/api/fuentes/contacto', json={'msg': 'hola'}).status_code == 200
+def test_entrada_siempre_abierta(client):
+    assert client.get('/api/acceso').status_code == 200
 
 
 def test_clave_y_cookie(client):
