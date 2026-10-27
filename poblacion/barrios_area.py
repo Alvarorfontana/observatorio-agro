@@ -71,6 +71,45 @@ def en_area(area_geojson):
                      'Fuera de Argentina no hay RENABAP.')}
 
 
+RADIO_LOCALIDAD_KM = 15
+CAMPOS = ('nombre', 'familias', 'ha', 'provincia', 'localidad', 'agua', 'cloaca', 'electricidad', 'cocina',
+          'tenencia', 'clasificacion', 'creacion', 'lat', 'lon')
+
+
+def _km(lat1, lon1, lat2, lon2):
+    import math
+    p = math.pi / 180
+    a = (math.sin((lat2 - lat1) * p / 2) ** 2
+         + math.cos(lat1 * p) * math.cos(lat2 * p) * math.sin((lon2 - lon1) * p / 2) ** 2)
+    return 12742 * math.asin(math.sqrt(a))
+
+
+def por_localidad(sid):
+    """Barrios del RENABAP a 15 km de una localidad ribereña («todas»: de cualquiera de las 34), para el mapa."""
+    import cuenca as cc
+    estaciones = cc.STATIONS if sid == 'todas' else [s for s in cc.STATIONS if s['id'] == sid]
+    if not estaciones:
+        raise LookupError('Localidad desconocida')
+    data = _cargar()
+    feats = []
+    for f in data['features']:
+        p = f.get('properties') or {}
+        if p.get('lat') is None or p.get('lon') is None:
+            continue
+        cerca = [(st, _km(st['lat'], st['lon'], p['lat'], p['lon'])) for st in estaciones]
+        st, d = min(cerca, key=lambda x: x[1])
+        if d > RADIO_LOCALIDAD_KM:
+            continue
+        props = {k: p.get(k) for k in CAMPOS}
+        props.update(estacion=st['id'], estacion_nombre=st['place'], rio=st['river'], km=round(d, 1))
+        feats.append({'type': 'Feature', 'geometry': f.get('geometry'), 'properties': props})
+    return {'type': 'FeatureCollection', 'features': feats,
+            'localidades': [{'id': s['id'], 'place': s['place'], 'river': s['river'], 'lat': s['lat'], 'lon': s['lon']}
+                            for s in estaciones],
+            'radio_km': RADIO_LOCALIDAD_KM, 'fuente': data.get('source') or 'RENABAP 2023',
+            'con_servicios': any(f['properties'].get('agua') for f in feats)}
+
+
 def pdf(resultado, poblacion=None):
     """Informe PDF de los barrios del área dibujada (y, si viene, la población WorldPop de esa misma área)."""
     import io

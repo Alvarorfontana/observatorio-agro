@@ -237,6 +237,18 @@ def informal_settlements_regional_report():
         return jsonify(error='No se pudo generar el informe regional.'), 500
 
 
+@bp.get('/api/poblacion/barrios/mapa')
+def informal_settlements_map():
+    """Polígonos del RENABAP de una localidad ribereña (o de todas) con familias, superficie y servicios."""
+    from . import barrios_area
+    try:
+        r=jsonify(barrios_area.por_localidad(request.args.get('id','todas')))
+    except LookupError as exc:
+        return jsonify(error=str(exc)), 404 if 'desconocida' in str(exc) else 503
+    r.headers['Cache-Control']='public, s-maxage=86400'
+    return r
+
+
 @bp.post('/api/poblacion/barrios/en-area')
 def informal_settlements_in_area():
     """Barrios del RENABAP dentro del área dibujada en el mapa."""

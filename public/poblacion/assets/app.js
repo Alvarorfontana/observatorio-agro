@@ -408,3 +408,73 @@ async function renderBarrios(id,box){const j=barriosData||await barriosLoad;if(!
     fig.append(img,make('figcaption','Rojo: firma de barrio popular según el modelo. Amarillo: barrios del RENABAP. Fondo: Sentinel-2 en color natural, radio de 15 km.'));sec.append(fig);}
   sec.append(barriosLocalPdf(id,p.place));
   box.append(sec);}
+
+// Barrios populares: mapa interactivo y consultas sobre el RENABAP (más la capa del modelo de radar si existe)
+const BX={map:null,layer:null,radar:null,data:null,rows:[],req:0};
+const BX_BREAKS=[[50,'#fde0c5'],[200,'#f9b384'],[500,'#f08151'],[1000,'#d4502b'],[Infinity,'#9e2a17']];
+const bxColor=f=>f==null?'#c7d3d6':BX_BREAKS.find(b=>f<b[0])[1];
+const bxFormal=v=>v&&/formal/i.test(v)&&!/irregular|informal/i.test(v);
+function bxEsc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function bxLegend(){const l=$('bx-legend');l.replaceChildren();let lo=0;
+  for(const [hi,col] of BX_BREAKS){const s=make('span','');const i=make('i','');i.style.background=col;s.append(i,document.createTextNode(hi===Infinity?`${number(lo)} o más familias`:`${number(lo)} a ${number(hi-1)}`));l.append(s);lo=hi;}
+  const s=make('span','');const i=make('i','');i.style.background='rgba(215,48,31,.55)';s.append(i,document.createTextNode('Firma de barrio popular según el radar'));l.append(s);}
+function bxInitMap(){if(BX.map||!window.L)return!!BX.map;
+  BX.map=L.map('barrios-map',{preferCanvas:true,scrollWheelZoom:false}).setView([-29,-58.5],6);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap contributors'}).addTo(BX.map);
+  setTimeout(()=>BX.map.invalidateSize(),150);return true;}
+function bxFilters(){const sv=[...document.querySelectorAll('#bx-services input[data-s]:checked')].map(x=>x.dataset.s);
+  return{q:$('bx-q').value.trim().toLowerCase(),fam:+$('bx-fam').value||0,ha:+$('bx-ha').value||0,sv};}
+function bxPopup(p){const row=(k,v)=>v==null||v===''?'':`<tr><th>${k}</th><td>${bxEsc(v)}</td></tr>`;
+  return `<b>${bxEsc(p.nombre)}</b><br><small>${bxEsc([p.localidad,p.provincia].filter(Boolean).join(', '))}</small><table class="bx-pop">`
+    +row('Familias',p.familias==null?'Sin dato':number(p.familias))+row('Superficie',number(p.ha,1)+' ha')
+    +row('Agua',p.agua)+row('Cloacas',p.cloaca)+row('Electricidad',p.electricidad)+row('Tenencia',p.tenencia)
+    +row('Desde',p.creacion)+row('Localidad DOTS',`${p.estacion_nombre} (${number(p.km,1)} km)`)+'</table>';}
+function bxDraw(fit){if(!BX.data||!bxInitMap())return;const f=bxFilters();
+  BX.rows=BX.data.features.filter(x=>{const p=x.properties;
+    if(f.q&&!String(p.nombre||'').toLowerCase().includes(f.q))return false;
+    if(f.fam&&!((p.familias||0)>=f.fam))return false;
+    if(f.ha&&!((p.ha||0)>=f.ha))return false;
+    for(const k of f.sv){if(!p[k]||bxFormal(p[k]))return false;}
+    return true;});
+  if(BX.layer)BX.map.removeLayer(BX.layer);
+  BX.layer=L.geoJSON({type:'FeatureCollection',features:BX.rows},{style:x=>({color:'#5a2a1c',weight:1,fillColor:bxColor(x.properties.familias),fillOpacity:.75}),
+    onEachFeature:(x,l)=>l.bindPopup(bxPopup(x.properties),{maxWidth:300})}).addTo(BX.map);
+  if(fit&&BX.rows.length)BX.map.fitBounds(BX.layer.getBounds(),{padding:[20,20],maxZoom:14});
+  const fam=BX.rows.reduce((a,x)=>a+(x.properties.familias||0),0),ha=BX.rows.reduce((a,x)=>a+(x.properties.ha||0),0);
+  $('bx-sum').textContent=`${number(BX.rows.length)} barrios · ${number(fam)} familias · ${number(ha)} ha`+(BX.rows.length<BX.data.features.length?` (de ${number(BX.data.features.length)} en la selección)`:'')+'. Fuente: '+(BX.data.fuente||'RENABAP')+'.';
+  $('bx-csv').disabled=!BX.rows.length;bxTable();}
+function bxTable(){const box=$('bx-table');box.replaceChildren();if(!BX.rows.length){box.append(make('p','Ningún barrio cumple los filtros.'));return;}
+  const rows=BX.rows.slice().sort((a,b)=>(b.properties.familias||0)-(a.properties.familias||0)).slice(0,400);
+  const t=make('table','');const hr=make('tr','');for(const h of ['Barrio','Localidad','Familias','Superficie','Agua','Cloacas','Electricidad'])hr.append(make('th',h));t.append(hr);
+  rows.forEach((x,i)=>{const p=x.properties,tr=make('tr','');tr.dataset.i=i;tr.tabIndex=0;
+    tr.append(make('td',p.nombre),make('td',p.estacion_nombre),make('td',p.familias==null?'—':number(p.familias)),make('td',number(p.ha,1)+' ha'),
+      make('td',p.agua?(bxFormal(p.agua)?'Formal':'Sin conexión formal'):'—'),make('td',p.cloaca?(bxFormal(p.cloaca)?'Formal':'Sin conexión formal'):'—'),make('td',p.electricidad?(bxFormal(p.electricidad)?'Formal':'Sin conexión formal'):'—'));
+    const go=()=>{const l=L.geoJSON(x);BX.map.fitBounds(l.getBounds(),{maxZoom:16});BX.layer.eachLayer(y=>{if(y.feature===x)y.openPopup();});$('barrios-map').scrollIntoView({behavior:'smooth',block:'center'});};
+    tr.addEventListener('click',go);tr.addEventListener('keydown',e=>{if(e.key==='Enter')go();});t.append(tr);});
+  box.append(t);if(BX.rows.length>400){const p=make('p',`Se muestran los 400 con más familias; el CSV trae los ${number(BX.rows.length)}.`);p.className='hint';box.append(p);}}
+function bxRadar(id){if(BX.radar){BX.map.removeLayer(BX.radar);BX.radar=null;}
+  if(!$('bx-radar').checked||!barriosData||!barriosData.data)return;
+  const places=(barriosData.data.places||[]).filter(p=>p.imagen&&(id==='todas'||p.id===id));
+  if(!places.length)return;const grp=L.layerGroup();
+  for(const p of places){const st=(BX.data.localidades||[]).find(s=>s.id===p.id);if(!st)continue;
+    const dl=15000/111320,dn=15000/(111320*Math.cos(st.lat*Math.PI/180));
+    L.imageOverlay((barriosData.image_base||'/api/poblacion/barrios/')+p.imagen,[[st.lat-dl,st.lon-dn],[st.lat+dl,st.lon+dn]],{opacity:.55}).addTo(grp);}
+  BX.radar=grp.addTo(BX.map);}
+async function bxLoad(){const id=$('bx-place').value,req=++BX.req;$('bx-sum').textContent='Cargando barrios…';
+  try{const d=await jsonFetch('/api/poblacion/barrios/mapa?id='+encodeURIComponent(id));if(req!==BX.req)return;BX.data=d;
+    const sv=$('bx-services');sv.querySelectorAll('input[data-s]').forEach(x=>{x.disabled=!d.con_servicios;});
+    if(!d.con_servicios)sv.title='Los servicios se suman cuando se vuelva a ejecutar la tarea «RENABAP por localidad».';
+    bxDraw(true);bxRadar(id);}
+  catch(e){if(req===BX.req){$('bx-sum').textContent='No se pudieron cargar los barrios: '+e.message;$('bx-table').replaceChildren();}}}
+function bxCsv(){const cols=['nombre','estacion_nombre','rio','localidad','provincia','familias','ha','agua','cloaca','electricidad','cocina','tenencia','clasificacion','creacion','lat','lon'];
+  const cell=v=>typeof v==='number'&&Number.isFinite(v)?String(v):csvValue(v);   // números tal cual (sin el resguardo de fórmulas)
+  const lines=[cols.join(',')].concat(BX.rows.map(x=>cols.map(c=>cell(x.properties[c])).join(',')));
+  save('DOTS-barrios-populares-'+$('bx-place').value+'.csv','\ufeff'+lines.join('\n'),'text/csv;charset=utf-8');}
+(function bxInit(){if(!$('barrios-explorer'))return;bxLegend();
+  jsonFetch('/api/poblacion/localidades').then(d=>{for(const p of d.places){const o=make('option',`${p.place} · río ${p.river}`);o.value=p.id;$('bx-place').append(o);}}).catch(()=>{});
+  let t=null;const later=()=>{clearTimeout(t);t=setTimeout(()=>bxDraw(false),200);};
+  $('bx-place').addEventListener('change',bxLoad);$('bx-q').addEventListener('input',later);$('bx-fam').addEventListener('input',later);$('bx-ha').addEventListener('input',later);
+  document.querySelectorAll('#bx-services input[data-s]').forEach(x=>x.addEventListener('change',()=>bxDraw(false)));
+  $('bx-radar').addEventListener('change',()=>bxRadar($('bx-place').value));$('bx-csv').addEventListener('click',bxCsv);
+  const start=()=>{if(window.L)bxLoad();else setTimeout(start,200);};start();
+  barriosLoad.then(()=>BX.data&&bxRadar($('bx-place').value));})();

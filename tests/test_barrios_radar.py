@@ -200,3 +200,22 @@ def test_rows_to_fc_balances_classes():
     fc = br.rows_to_fc(FakeEE, rows, ["x"], n=100)
     labels = [f.props["label"] for f in fc]
     assert labels.count(0) == 50 and labels.count(1) == 60
+
+
+def test_barrios_map_by_locality(monkeypatch):
+    from flask import Flask
+    import datastore
+    from poblacion import routes
+    sqr = {"type": "Polygon", "coordinates": [[[-58.84, -27.47], [-58.83, -27.47], [-58.83, -27.46], [-58.84, -27.47]]]}
+    fake = {"source": "RENABAP", "features": [
+        {"geometry": sqr, "properties": {"nombre": "Cerca", "familias": 100, "ha": 3, "lat": -27.465, "lon": -58.835, "agua": "Red"}},
+        {"geometry": sqr, "properties": {"nombre": "Lejos", "familias": 50, "ha": 2, "lat": -24.0, "lon": -65.0}}]}
+    monkeypatch.setattr(datastore, "load", lambda name, *a, **k: fake if name == "renabap_barrios.geojson" else None)
+    app = Flask(__name__)
+    app.register_blueprint(routes.bp)
+    c = app.test_client()
+    j = c.get("/api/poblacion/barrios/mapa?id=parana-corrientes").get_json()
+    assert [f["properties"]["nombre"] for f in j["features"]] == ["Cerca"]
+    assert j["features"][0]["properties"]["estacion_nombre"] == "Corrientes" and j["con_servicios"] is True
+    assert len(c.get("/api/poblacion/barrios/mapa?id=todas").get_json()["features"]) == 1
+    assert c.get("/api/poblacion/barrios/mapa?id=nada").status_code == 404

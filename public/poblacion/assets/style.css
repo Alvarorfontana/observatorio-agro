@@ -36,3 +36,28 @@
 
 .barrio:before{background:#8a3fb5}
 #area-barrios h3{margin:0 0 6px}
+
+/* Barrios: mapa y consultas */
+.bx{margin:18px 0 26px}
+.bx-filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:10px 0}
+.bx-filters label{display:flex;flex-direction:column;gap:4px;font-size:14px}
+.bx-filters input,.bx-filters select{min-width:0;width:100%;box-sizing:border-box}
+.bx-checks{display:flex;flex-wrap:wrap;gap:6px 18px;border:1px solid #cfdfe2;border-radius:8px;padding:8px 12px;margin:0 0 12px;font-size:14px}
+.bx-checks legend{padding:0 4px;font-weight:600}
+.bx-checks label{display:flex;gap:6px;align-items:center;margin:4px 0;font-size:14px;font-weight:400;white-space:nowrap}
+.bx-checks input{width:auto;margin:0;padding:0}
+.bx-filters label{margin:0}
+.bx-map{height:440px;width:100%;border-radius:12px;overflow:hidden;background:#e8f1f2}
+.bx-legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin:8px 0;font-size:13px}
+.bx-legend span{display:inline-flex;align-items:center;gap:6px}
+.bx-legend i{display:inline-block;width:14px;height:14px;border-radius:3px;border:1px solid rgba(0,0,0,.25)}
+.bx-table{max-height:420px;overflow:auto;border:1px solid #dbe7ea;border-radius:8px}
+.bx-table table{width:100%;border-collapse:collapse;font-size:14px}
+.bx-table th{position:sticky;top:0;background:#f2f7f8;z-index:1}
+.bx-table th,.bx-table td{text-align:left}
+.bx-table th:nth-child(3),.bx-table td:nth-child(3),.bx-table th:nth-child(4),.bx-table td:nth-child(4){text-align:right}
+.bx-table table{border:0}
+.bx-table th,.bx-table td{padding:6px 8px;border-bottom:1px solid #e3ecee}
+.bx-table tr[data-i]{cursor:pointer}
+.bx-table tr[data-i]:hover,.bx-table tr[data-i]:focus-visible{background:#eef6f7;outline:none}
+@media (max-width:600px){.bx-map{height:340px}.bx-table th:nth-child(2),.bx-table td:nth-child(2),.bx-table th:nth-child(n+5),.bx-table td:nth-child(n+5){display:none}}
