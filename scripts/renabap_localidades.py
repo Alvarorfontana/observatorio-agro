@@ -96,6 +96,25 @@ def summarize(data, stations):
     return places
 
 
+# Servicios y situación del barrio según el RENABAP. Los nombres de los campos cambian entre versiones del registro,
+# así que se buscan por palabra clave.
+SERVICE_FIELDS = {
+    "agua": ("agua",),
+    "cloaca": ("cloaca", "efluente"),
+    "electricidad": ("electric", "energia_el"),
+    "cocina": ("cocina",),
+    "tenencia": ("dominio", "tenencia", "situa_dom", "tipo_tierra"),
+    "clasificacion": ("clasif", "clas_bar"),
+}
+
+
+def services(props):
+    out = {k: (str(pick(props, *needles) or "")[:60] or None) for k, needles in SERVICE_FIELDS.items()}
+    year = pick(props, "creacion", "ano_de_cre", "anio", "año", numeric=True)
+    out["creacion"] = int(year) if year and 1900 < year < 2100 else None
+    return out
+
+
 def export_barrios(data, path):
     """Todos los barrios del país, simplificados (≈5 m), para consultarlos dentro de un área dibujada en el mapa."""
     from shapely.geometry import shape, mapping
@@ -124,6 +143,7 @@ def export_barrios(data, path):
                                      "ha": round(area_ha(geom), 2),
                                      "provincia": str(pick(props, "provincia") or "")[:40],
                                      "localidad": str(pick(props, "localidad", "municipio", "departamento") or "")[:60],
+                                     **services(props),
                                      "lat": round(c.y, 5), "lon": round(c.x, 5),
                                      "bbox": [round(v, 5) for v in b]}})
     with open(path, "w", encoding="utf-8") as fh:
@@ -136,6 +156,10 @@ def main(out_path):
     data = download()
     keys = sorted((data.get("features") or [{}])[0].get("properties", {}).keys())
     print(f"RENABAP: {len(data.get('features', []))} barrios · atributos: {', '.join(keys)}", flush=True)
+    from collections import Counter
+    for k, needles in SERVICE_FIELDS.items():
+        vals = Counter(str(pick(f.get("properties") or {}, *needles) or "")[:60] for f in data.get("features", []))
+        print(f"  {k}: {dict(vals.most_common(8))}", flush=True)
     places = summarize(data, cuenca.STATIONS)
     for p in places:
         print(f"{p['place']}: {p['barrios']} barrios, {p['familias']} familias, {p['superficie_ha']} ha", flush=True)

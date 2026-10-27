@@ -23,6 +23,27 @@
 <p class="hint">Aproximación de exposición, no un modelo hidráulico: no tiene en cuenta defensas, terraplenes ni cuánto dura la crecida. Los escenarios usan la diferencia entre el nivel de alerta o evacuación y el de aguas bajas de la escala del INA. Ver también las <a href="/alertas">alertas de crecidas</a>.</p></section>
 <section class="information flood" id="barrios"><p class="eyebrow dark">BARRIOS POPULARES Y RADAR</p><h2>¿Dónde están los barrios populares de cada localidad ribereña?</h2>
 <p class="section-dek">Las imágenes en color confunden un barrio popular con un barrio denso común. El radar Sentinel-1 responde a la forma y al desorden de las construcciones, y casi no cambia entre estación seca y húmeda. DOTS entrena un modelo con los barrios del <b>Registro Nacional de Barrios Populares (RENABAP)</b> y lo aplica a las 34 localidades, también en Paraguay y Uruguay. Elegí una localidad arriba para ver su mapa.</p>
+<div class="bx" id="barrios-explorer">
+<h3>Mapa y consultas</h3>
+<p class="hint">Elegí una localidad o toda la cuenca y filtrá los barrios del RENABAP. Tocá un barrio para ver sus datos; la tabla y el CSV siguen los filtros.</p>
+<div class="bx-filters">
+<label>Localidad<select id="bx-place"><option value="todas">Toda la cuenca (34 localidades)</option></select></label>
+<label>Buscar barrio<input id="bx-q" type="search" placeholder="Nombre…" autocomplete="off"></label>
+<label>Familias desde<input id="bx-fam" type="number" min="0" step="10" value="0" inputmode="numeric"></label>
+<label>Superficie desde (ha)<input id="bx-ha" type="number" min="0" step="1" value="0" inputmode="decimal"></label>
+</div>
+<fieldset class="bx-checks" id="bx-services"><legend>Solo barrios sin conexión formal a…</legend>
+<label><input type="checkbox" data-s="agua"> agua de red</label>
+<label><input type="checkbox" data-s="cloaca"> cloacas</label>
+<label><input type="checkbox" data-s="electricidad"> electricidad</label>
+<label><input type="checkbox" id="bx-radar" checked> Mostrar lo que detecta el radar</label>
+</fieldset>
+<div id="barrios-map" class="bx-map" role="region" aria-label="Mapa de barrios populares"></div>
+<div class="bx-legend" id="bx-legend"></div>
+<p id="bx-sum" class="hint" role="status" aria-live="polite">Cargando barrios…</p>
+<div class="exports"><button type="button" id="bx-csv" class="secondary" disabled>Descargar CSV</button></div>
+<div class="bx-table" id="bx-table"></div>
+</div>
 <div id="barrios-model"><p class="hint">Consultando el modelo…</p></div></section>
 <section class="information flood" id="salud"><p class="eyebrow dark">SALUD Y CLIMA</p><h2>Dengue y olas de calor en 80 localidades</h2>
 <p class="section-dek">Condiciones del clima de las últimas dos semanas y de los próximos 16 días. <b>Dengue</b>: qué tan favorable está el clima para el mosquito que lo transmite (no son casos). <b>Calor</b>: olas de calor según el criterio del Servicio Meteorológico Nacional, tres días seguidos con máxima y mínima muy altas para el lugar.</p>

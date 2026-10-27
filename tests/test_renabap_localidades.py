@@ -33,3 +33,11 @@ def test_summarize_counts_nearby_barrios_and_families():
 def test_pick_tolerates_renamed_fields():
     assert rl.pick({"Familias_estimadas": "12"}, "famil", numeric=True) == 12.0
     assert rl.pick({"x": 1}, "famil", numeric=True) is None
+
+
+def test_services_reads_renamed_fields():
+    out = rl.services({"agua_corriente": "Conexión irregular a la red", "efluente_cloacal": "Desagüe a pozo",
+                       "energia_el": "Conexión irregular", "situa_domi": "Sin título", "ano_de_cre": "1998"})
+    assert out["agua"].startswith("Conexión irregular") and out["cloaca"] == "Desagüe a pozo"
+    assert out["electricidad"] == "Conexión irregular" and out["tenencia"] == "Sin título" and out["creacion"] == 1998
+    assert rl.services({})["agua"] is None and rl.services({})["creacion"] is None
