@@ -9,6 +9,7 @@ from flask import Flask, jsonify
 from research_routes import research_api   # si algo falla acá, falla fuerte (no se esconde)
 from lotes_store import lotes_api
 from enso_data_api import enso_data_api
+from enso_forecast_api import enso_forecast_api
 from agro_telemetry_api import agro_telemetry_api
 try:
     from poblacion.routes import bp as population_bp
@@ -23,6 +24,7 @@ app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024
 app.register_blueprint(research_api)
 app.register_blueprint(lotes_api)
 app.register_blueprint(enso_data_api)
+app.register_blueprint(enso_forecast_api)
 app.register_blueprint(agro_telemetry_api)
 app.register_blueprint(copernicus_api)
 if population_bp is not None:

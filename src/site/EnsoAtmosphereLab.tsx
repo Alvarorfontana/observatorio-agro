@@ -10,7 +10,7 @@ const labels:Record<string,string>={
 };
 export function EnsoAtmosphereLab(){
  const [data,setData]=useState<Payload|null>(null),[error,setError]=useState(""),[selected,setSelected]=useState("");
- useEffect(()=>{const ctrl=new AbortController();fetch("/data/enso-atmosphere.json",{signal:ctrl.signal}).then(async r=>{if(!r.ok)throw Error("El conjunto atmosférico NOAA aún no fue procesado");return await r.json() as Payload}).then(d=>{if(!ctrl.signal.aborted)setData(d)}).catch(e=>{if(!ctrl.signal.aborted)setError(String(e))});return()=>ctrl.abort()},[]);
+ useEffect(()=>{const ctrl=new AbortController();fetch("/api/enso/atmosfera",{signal:ctrl.signal}).then(r=>r.ok?r:fetch("/data/enso-atmosphere.json",{signal:ctrl.signal})).then(async r=>{if(!r.ok)throw Error("El conjunto atmosférico NOAA aún no fue procesado");return await r.json() as Payload}).then(d=>{if(!ctrl.signal.aborted)setData(d)}).catch(e=>{if(!ctrl.signal.aborted)setError(String(e))});return()=>ctrl.abort()},[]);
  const available=Object.keys(data?.products||{}),key=available.includes(selected)?selected:available[0];
  const s=key?data?.products[key]:undefined;
  const v=s?.values||[],finite=v.filter((n):n is number=>n!==null&&Number.isFinite(n));

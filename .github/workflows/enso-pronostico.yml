@@ -1,0 +1,37 @@
+# El Niño: probabilidades oficiales NOAA (RONI), CCSR/IRI, MEI.v2 y pronóstico estacional por localidad.
+# Todos los días y a pedido. Guarda en la rama datos (no publica la web); la web lo lee en /api/enso/pronostico.
+name: "El Niño: pronósticos"
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [fix/enso-tareas]
+    paths: [scripts/enso_fuentes.py, .github/workflows/enso-pronostico.yml]
+  schedule:
+    - cron: "37 11 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: enso-pronostico
+  cancel-in-progress: false
+
+jobs:
+  pronostico:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Traer datos de la rama datos
+        run: bash scripts/datos_rama.sh traer
+      - name: Leer las fuentes
+        run: |
+          pip install -r requirements.txt
+          python -u scripts/enso_fuentes.py data/enso_pronostico.json
+      - name: Guardar en la rama datos (no publica la web)
+        run: |
+          cp scripts/datos_rama.sh /tmp/datos_rama.sh && bash /tmp/datos_rama.sh guardar "El Niño: pronósticos $(date -u +%Y-%m-%d)" data/enso_pronostico.json
