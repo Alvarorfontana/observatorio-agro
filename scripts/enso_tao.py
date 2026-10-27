@@ -37,7 +37,7 @@ def fetch_csv(query, timeout=300):
             r = requests.get(ERDDAP + "?" + query, timeout=timeout, headers=UA)
             if r.status_code == 200:
                 return parse_csv(r.text)
-            last = f"HTTP {r.status_code}: {r.text[:200]}"
+            last = f"HTTP {r.status_code}: {' '.join(r.text.split())[:300]} · consulta: {query[:200]}"
         except requests.RequestException as exc:
             last = type(exc).__name__
         time.sleep(10 * (attempt + 1))
@@ -157,7 +157,11 @@ def build():
 
 if __name__ == "__main__":
     out = sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, "data", "enso_tao.json")
-    data = build()
+    try:
+        data = build()
+    except Exception as exc:          # el motivo queda como anotación visible en GitHub
+        print(f"::error::Boyas TAO: {type(exc).__name__}: {str(exc)[:400]}", flush=True)
+        raise SystemExit(1)
     print(f"{len(data['boyas'])} boyas · último dato {data['resumen']['ultimo_dato']} · {data['resumen']}", flush=True)
     for b in data["boyas"]:
         print(f"  {b['nombre']}: {len(b['perfil'])} profundidades, isoterma 20 °C {b['isoterma20_m']} m (normal {b['isoterma20_normal_m']} m)", flush=True)
