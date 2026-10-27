@@ -58,3 +58,13 @@ def test_services_2020_survives_without_network(monkeypatch):
         raise rl.requests.ConnectionError("sin red")
     monkeypatch.setattr(rl.requests, "get", down)
     assert rl.services_2020() == {}
+
+
+def test_services_2020_reads_latin1(monkeypatch):
+    import json as _j
+    body = _j.dumps({"features": [{"properties": {"id_renabap": 7, "agua_2": "Conexión irregular"}}]}, ensure_ascii=False).encode("latin-1")
+    class R:
+        ok, status_code, content = True, 200, body
+        headers = {"content-type": "application/json"}
+    monkeypatch.setattr(rl.requests, "get", lambda *a, **k: R())
+    assert rl.services_2020()["7"]["agua_2"] == "Conexión irregular"

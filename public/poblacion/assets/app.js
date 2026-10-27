@@ -413,7 +413,7 @@ async function renderBarrios(id,box){const j=barriosData||await barriosLoad;if(!
 const BX={map:null,layer:null,radar:null,data:null,rows:[],req:0};
 const BX_BREAKS=[[50,'#fde0c5'],[200,'#f9b384'],[500,'#f08151'],[1000,'#d4502b'],[Infinity,'#9e2a17']];
 const bxColor=f=>f==null?'#c7d3d6':BX_BREAKS.find(b=>f<b[0])[1];
-const bxFormal=v=>v&&/formal/i.test(v)&&!/irregular|informal/i.test(v);
+const bxFormal=v=>!!v&&/formal|regular|medidor/i.test(v)&&!/irregular|informal/i.test(v);   // «regular», «con medidor» y «acceso formal» cuentan como formales
 function bxEsc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function bxLegend(){const l=$('bx-legend');l.replaceChildren();let lo=0;
   for(const [hi,col] of BX_BREAKS){const s=make('span','');const i=make('i','');i.style.background=col;s.append(i,document.createTextNode(hi===Infinity?`${number(lo)} o más familias`:`${number(lo)} a ${number(hi-1)}`));l.append(s);lo=hi;}

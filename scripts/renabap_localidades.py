@@ -124,8 +124,12 @@ def services_2020():
             r = requests.get(GEOPORTAL_WFS, params=params, timeout=240,
                              headers={"User-Agent": "DOTS observatorio (datos abiertos)"})
             if r.ok and "json" in r.headers.get("content-type", ""):
+                try:
+                    text = r.content.decode("utf-8")
+                except UnicodeDecodeError:       # el geoportal a veces responde en Latin-1
+                    text = r.content.decode("latin-1")
                 out = {}
-                for f in r.json().get("features", []):
+                for f in json.loads(text).get("features", []):
                     p = f.get("properties") or {}
                     rid = p.get("id_renabap")
                     if rid not in (None, ""):
