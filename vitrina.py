@@ -102,6 +102,25 @@ def salir():
     return resp
 
 
+def sin_cache_publico(resp):
+    """Con la vitrina prendida, ninguna respuesta de la API queda en el caché compartido de Vercel.
+
+    Si una respuesta con clave se guardara como pública, el CDN se la serviría después a cualquiera
+    sin pasar por el control de acceso. Se mantiene el caché sólo en el navegador de quien entró.
+    """
+    if not activo() or not request.path.startswith('/api/') or request.path.startswith(LIBRES):
+        return resp
+    cc = (resp.headers.get('Cache-Control') or '').lower()
+    if resp.status_code == 403 or not cc:
+        resp.headers['Cache-Control'] = 'private, no-store'
+    elif 'public' in cc or 's-maxage' in cc:
+        edad = next((p.split('=', 1)[1] for p in (x.strip() for x in cc.split(',')) if p.startswith('s-maxage=')), None)
+        resp.headers['Cache-Control'] = f'private, max-age={min(int(edad), 86400) if edad and edad.isdigit() else 600}'
+    resp.headers.add('Vary', 'Cookie')
+    return resp
+
+
 def install(app):
     app.register_blueprint(api)
     app.before_request(check)
+    app.after_request(sin_cache_publico)

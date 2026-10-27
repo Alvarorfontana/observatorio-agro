@@ -80,3 +80,27 @@ def test_sin_claves_nadie_entra(client, monkeypatch):
     monkeypatch.setenv('DOTS_ACCESO_CLAVES', '')
     assert client.post('/api/acceso', json={'clave': ''}).status_code == 401
     assert client.get(f'/api/fuentes/clima?lat={CTES[0]}&lon={CTES[1]}').status_code == 403
+
+
+def test_respuestas_con_clave_no_quedan_en_cache_publico(monkeypatch):
+    monkeypatch.setenv('DOTS_VITRINA', '1')
+    monkeypatch.setenv('DOTS_ACCESO_CLAVES', 'clave-uno')
+    app = Flask(__name__)
+
+    @app.get('/api/cacheable')
+    def cacheable():
+        r = jsonify(ok=True); r.headers['Cache-Control'] = 'public, s-maxage=604800'; return r
+
+    @app.get('/api/health')
+    def health():
+        r = jsonify(ok=True); r.headers['Cache-Control'] = 'public, s-maxage=60'; return r
+
+    vitrina.install(app)
+    cl = app.test_client()
+    r = cl.get('/api/cacheable', headers={vitrina.HEADER: 'clave-uno'})
+    assert r.status_code == 200 and r.headers['Cache-Control'] == 'private, max-age=86400' and 'Cookie' in r.headers['Vary']
+    r = cl.get('/api/cacheable')
+    assert r.status_code == 403 and r.headers['Cache-Control'] == 'private, no-store'
+    assert cl.get('/api/health').headers['Cache-Control'] == 'public, s-maxage=60'
+    monkeypatch.setenv('DOTS_VITRINA', '0')
+    assert cl.get('/api/cacheable').headers['Cache-Control'] == 'public, s-maxage=604800'
