@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from xml.sax.saxutils import escape
 
 
-def pdf(data):
+def pdf(data, mapa=None):
     from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
     from reportlab.lib import colors
     from reportlab.lib.pagesizes import A4
@@ -64,6 +64,14 @@ def pdf(data):
         drawing.add(chart)
         story += [Spacer(1,10),Paragraph('Gráfico de exposición acumulada',sty['Heading2']),drawing,
                   Paragraph('Las franjas son acumulativas; no se suman entre sí.',sty['DOTSNote'])]
+    if mapa and mapa.get('png'):
+        from reportlab.platypus import Image as RLImage
+        story += [Spacer(1,10),Paragraph('Mapa de la zona baja y de la población que vive en ella',sty['Heading2']),
+                  RLImage(io.BytesIO(mapa['png']),width=150*mm,height=150*mm),
+                  Paragraph('Celeste: terreno a '+safe(mapa.get('band'))+' m o menos sobre el curso de agua más cercano (MERIT Hydro HAND). '
+                            'Amarillo a rojo: personas por hectárea en esa franja, de menos de 10 a 40 o más (WorldPop 2020). '
+                            'Azul oscuro: agua permanente (JRC). Círculo de '+safe(data.get('radius_km'))+' km alrededor de la escala. '
+                            'No es una mancha de inundación modelada.',sty['DOTSNote'])]
     if isinstance(data.get('lat'),(int,float)) and isinstance(data.get('lon'),(int,float)):
         story.append(Paragraph('Ubicación del análisis: '+safe(round(data['lat'],5))+', '+safe(round(data['lon'],5))+
                                ' (centro del radio de estudio; no delimita la inundación).',sty['DOTSNote']))

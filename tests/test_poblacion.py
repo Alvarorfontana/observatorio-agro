@@ -122,3 +122,46 @@ def test_exposure_reports_missing_signing_key_without_starting_worldpop_tasks(mo
     response = app.test_client().post('/api/poblacion/exposicion', json=req())
     assert response.status_code == 503
     assert 'firma' in response.get_json()['error']
+
+
+def test_crecida_map_expression_and_bounds():
+    from poblacion import crecida as cr
+    e = cr.map_expression(-27.47, -58.83, 5, base=True)
+    assert e['fileFormat'] == 'PNG' and e['grid']['crsCode'] == 'EPSG:4326'
+    out = e['expression']['values']['out']['functionInvocationValue']
+    assert out['functionName'] == 'ImageCollection.mosaic'
+    capas = out['arguments']['collection']['functionInvocationValue']['arguments']['images']['arrayValue']['values']
+    assert len(capas) == 4 and len(cr.map_expression(-27.47, -58.83, 5)['expression']['values']['out']
+                                   ['functionInvocationValue']['arguments']['collection']['functionInvocationValue']
+                                   ['arguments']['images']['arrayValue']['values']) == 2
+    w, s, ea, n = cr.bounds(-27.47, -58.83)
+    assert abs((n - s) - 2 * 15000 / 111320) < 1e-9 and ea - w > n - s
+    g = e['grid']['affineTransform']
+    assert g['translateX'] == w and g['translateY'] == n and g['scaleY'] < 0
+
+
+def test_crecida_map_route_and_pdf_with_map(monkeypatch):
+    import io
+    from flask import Flask
+    from poblacion import routes, crecida, flood_report
+    from reportlab.lib.utils import ImageReader
+    from PIL import Image
+    buf = io.BytesIO(); Image.new('RGBA', (64, 64), (230, 97, 1, 200)).save(buf, 'PNG'); png = buf.getvalue()
+    pedidos = []
+    monkeypatch.setattr(crecida, 'map_png', lambda sid, band, base=False: (pedidos.append((sid, band, base)) or png, (0, 0, 1, 1)))
+    app = Flask(__name__); app.register_blueprint(routes.bp)
+    cl = app.test_client()
+    r = cl.get('/api/poblacion/crecida/mapa?id=corrientes&m=5')
+    assert r.status_code == 200 and r.mimetype == 'image/png' and r.data == png
+    assert 'private' in r.headers['Cache-Control']
+    assert cl.get('/api/poblacion/crecida/mapa?id=corrientes&m=4').status_code == 400
+    d = {'id': 'corrientes', 'place': 'Corrientes', 'river': 'Paraná', 'radius_km': 15, 'total': 400000, 'lat': -27.47, 'lon': -58.83,
+         'bands': [{'up_to_m': t, 'people': t * 1000, 'under5': t * 70, 'over65': t * 90} for t in crecida.BANDS_T],
+         'scenarios': [{'key': 'evac', 'label': 'Nivel de evacuación', 'band_m': 10, 'people': 10000}]}
+    r = cl.post('/api/poblacion/crecida/informe', json=d)
+    assert r.status_code == 200 and r.data[:5] == b'%PDF-' and pedidos[-1] == ('corrientes', 10, True)
+    sin = flood_report.pdf(d)
+    assert len(r.data) > len(sin)
+    # Si Earth Engine falla, el informe sale igual, sin mapa
+    monkeypatch.setattr(crecida, 'map_png', lambda *a, **k: (_ for _ in ()).throw(RuntimeError('x')))
+    assert cl.post('/api/poblacion/crecida/informe', json=d).data[:5] == b'%PDF-'

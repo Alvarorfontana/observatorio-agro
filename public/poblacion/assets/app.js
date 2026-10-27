@@ -220,27 +220,44 @@ $('flood-place').addEventListener('change',async()=>{const id=$('flood-place').v
     const t=make('table','');const hr=make('tr','');for(const h of ['Hasta … m sobre el río','Personas','Menores de 5','Mayores de 65','% de la zona'])hr.append(make('th',h));t.append(hr);
     for(const b of d.bands){const tr=make('tr','');tr.append(make('td',`${b.up_to_m} m`),make('td',number(b.people)),make('td',number(b.under5)),make('td',number(b.over65)),make('td',d.total?number(100*b.people/d.total,1)+' %':'Sin dato'));t.append(tr);}
     box.append(grid,t);
-    // Ubicación geográfica real de la estación y radio de cálculo, no mancha de inundación.
+    // Mapa de la zona baja (HAND) y de la gente que vive en ella, sobre el círculo de cálculo.
     if(d.lat!=null&&d.lon!=null&&Number.isFinite(Number(d.lat))&&Number.isFinite(Number(d.lon))&&window.L){
-      const mapTitle=make('h3','Área geográfica analizada · '+d.place);
-      const mapNote=make('p','El círculo indica el radio de '+d.radius_km+' km utilizado para sumar población. NO representa superficie inundada.');
-      mapNote.className='hint';
-      const mapEl=make('div','');mapEl.style.cssText='height:360px;width:100%;border-radius:12px;overflow:hidden;margin:12px 0 18px';
-      box.append(mapTitle,mapNote,mapEl);
-      const m=L.map(mapEl,{scrollWheelZoom:false}).setView([Number(d.lat),Number(d.lon)],10);
-      floodMap=m;
+      const lat=Number(d.lat),lon=Number(d.lon),rad=Number(d.radius_km||15)*1000;
+      const ev=(d.scenarios||[]).find(x=>x.key==='evac')||(d.scenarios||[])[0];
+      let band=ev?ev.band_m:3;
+      const mapTitle=make('h3','Dónde vive la gente en la zona baja · '+d.place);
+      const pick=make('div','');pick.className='exports';pick.setAttribute('role','group');pick.setAttribute('aria-label','Altura sobre el río');
+      const mapNote=make('p','');mapNote.className='hint';
+      const mapEl=make('div','');mapEl.style.cssText='height:400px;width:100%;border-radius:12px;overflow:hidden;margin:12px 0 8px';
+      const legend=make('div','');legend.className='hint';legend.style.cssText='display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;margin:0 0 6px';
+      legend.innerHTML='<span><i style="display:inline-block;width:14px;height:14px;border-radius:3px;background:#6fa8dc;opacity:.7;vertical-align:-2px"></i> Zona baja</span>'+
+        '<span>Personas por hectárea: <i style="display:inline-block;width:90px;height:10px;border-radius:3px;vertical-align:0;background:linear-gradient(90deg,#fff3b0,#fdb863,#e66101,#8b0000)"></i> 0 → 40 o más</span>'+
+        '<span><i style="display:inline-block;width:14px;height:14px;border-radius:50%;border:2px solid #0f9fa6;vertical-align:-3px"></i> Radio de cálculo</span>';
+      box.append(mapTitle,pick,mapEl,legend,mapNote);
+      const m=L.map(mapEl,{scrollWheelZoom:false});floodMap=m;
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap contributors'}).addTo(m);
-      const circle=L.circle([Number(d.lat),Number(d.lon)],{radius:Number(d.radius_km||15)*1000,color:'#0f9fa6',weight:2,fillOpacity:.10}).addTo(m);
-      const marker=L.marker([Number(d.lat),Number(d.lon)]).addTo(m);
-      const summary=(d.scenarios||[]).map(sc=>sc.label+': '+number(sc.people)+' personas (≤ '+sc.band_m+' m HAND)').join(' · ');
-      marker.bindPopup('<b>'+String(d.place).replace(/[&<>"']/g,'')+'</b><br>Río '+String(d.river).replace(/[&<>"']/g,'')+'<br>'+summary.replace(/[&<>"']/g,'')).openPopup();
-      const mapActions=make('div','');mapActions.className='exports';
-      const focus=make('button','Centrar mapa en '+d.place);focus.type='button';focus.className='secondary';
-      focus.addEventListener('click',()=>{m.fitBounds(circle.getBounds(),{padding:[20,20]});marker.openPopup();});
-      const open=make('a','Abrir mapa ampliado ↗');open.href='https://www.openstreetmap.org/?mlat='+encodeURIComponent(d.lat)+'&mlon='+encodeURIComponent(d.lon)+'#map=11/'+encodeURIComponent(d.lat)+'/'+encodeURIComponent(d.lon);open.target='_blank';open.rel='noopener noreferrer';
-      mapActions.append(focus,open);box.append(mapActions);
+      const circle=L.circle([lat,lon],{radius:rad,color:'#0f9fa6',weight:2,fill:false}).addTo(m);
+      const dlat=rad/111320,dlon=rad/(111320*Math.max(Math.cos(lat*Math.PI/180),.2));
+      const box4=[[lat-dlat,lon-dlon],[lat+dlat,lon+dlon]];
+      let overlay=null;
+      const marker=L.marker([lat,lon]).addTo(m).bindPopup('<b>'+String(d.place).replace(/[&<>"']/g,'')+'</b><br>Escala del río '+String(d.river).replace(/[&<>"']/g,''));
+      function people(t){const b=(d.bands||[]).find(x=>x.up_to_m===t);return b?number(b.people):'Sin dato';}
+      function draw(t){band=t;
+        pick.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(Number(x.dataset.m)===t)));
+        if(overlay){m.removeLayer(overlay);overlay=null;}
+        mapNote.textContent='Dibujando la zona baja hasta '+t+' m…';
+        const url='/api/poblacion/crecida/mapa?id='+encodeURIComponent(id)+'&m='+t;
+        const img=new Image();
+        img.onload=()=>{if(band!==t||floodMap!==m)return;overlay=L.imageOverlay(url,box4,{opacity:.85,interactive:false}).addTo(m);
+          mapNote.textContent='Hasta '+t+' m sobre el río viven unas '+people(t)+' personas dentro del círculo. Celeste: terreno bajo. Amarillo a rojo: cuánta gente vive en cada hectárea. No es una mancha de inundación modelada: no tiene en cuenta defensas ni terraplenes.';};
+        img.onerror=()=>{if(band===t)mapNote.textContent='No se pudo dibujar la zona baja en este momento. Las cifras de arriba siguen siendo válidas.';};
+        img.src=url;}
+      for(const t of [1,2,3,5,10]){const btn=make('button','Hasta '+t+' m');btn.type='button';btn.className='secondary';btn.dataset.m=t;
+        const sc=(d.scenarios||[]).find(x=>x.band_m===t);if(sc)btn.textContent+=' · '+sc.label.replace('Nivel de ','');
+        btn.addEventListener('click',()=>draw(t));pick.append(btn);}
       m.fitBounds(circle.getBounds(),{padding:[20,20]});
       setTimeout(()=>m.invalidateSize(),100);
+      draw(band);
     }
     // Barras horizontales: las franjas HAND son acumulativas, no sectores excluyentes.
     const barsTitle=make('h3','Población potencialmente expuesta por franja de altura');

@@ -99,7 +99,76 @@ def at_station(sid):
             msg = resp.text[:200]
         return c.envelope(None, veg.GEE, 'población cerca del río', 'Google Earth Engine', 'sin dato', f'Earth Engine HTTP {resp.status_code}: {msg[:220]}')
     data = summarize(resp.json().get('result') or {}, levels)
-    data.update(place=st['place'], river=st['river'], lat=st['lat'], lon=st['lon'], levels=levels,
+    data.update(id=sid, place=st['place'], river=st['river'], lat=st['lat'], lon=st['lon'], levels=levels,
                 method=__doc__.split('\n\n', 1)[1].strip(),
                 sources=['MERIT Hydro (Yamazaki et al., 2019) · CC BY-NC 4.0 / ODbL', 'WorldPop 2020 · CC BY 4.0'])
     return c.envelope(data, url.replace(proj, '{PROJECT}'), f"población cerca del río en {st['place']}", 'WorldPop · MERIT Hydro vía Google Earth Engine')
+
+
+# ───────────────────── Mapa de la zona baja y de la gente que vive en ella ─────────────────────
+# Imagen PNG para superponer en el mapa web o pegar en el informe:
+#   · azul claro: terreno a `band` metros o menos por encima del curso de agua más cercano (MERIT Hydro HAND)
+#   · amarillo → rojo: personas por hectárea que viven en esa franja (WorldPop 2020, 100 m = 1 ha por píxel)
+#   · con base=True se agrega un relieve sombreado (NASADEM) y el agua permanente (JRC), para el PDF
+# No es una mancha de inundación modelada: es la zona baja que quedaría expuesta si el río sube hasta esa franja.
+MAP_PX = 640
+POP_MAX = 40          # personas por hectárea en el extremo rojo de la escala
+POP_PALETTE = ['fff3b0', 'fdb863', 'e66101', '8b0000']
+ZONE_COLOR = '6fa8dc'
+
+
+def bounds(lat, lon, radius=RADIUS_M):
+    """Caja (oeste, sur, este, norte) en grados que contiene el círculo de análisis."""
+    import math
+    dlat = radius / 111320
+    dlon = radius / (111320 * max(math.cos(math.radians(lat)), 0.2))
+    return lon - dlon, lat - dlat, lon + dlon, lat + dlat
+
+
+def map_expression(lat, lon, band, base=False, radius=RADIUS_M):
+    band = band if band in BANDS_T else 3
+    circle = _f('Geometry.buffer', geometry=_f('GeometryConstructors.Point', coordinates=_k([lon, lat])), distance=_k(radius))
+    hand = _f('Image.select', input=_f('Image.load', id=_k(HAND)), bandSelectors=_k(['hnd']))
+    low = _f('Image.lte', image1=hand, image2=_f('Image.constant', value=_k(band)))
+    pop = _f('Image.select', input=_mosaic(POP), bandSelectors=_k(['population']))
+    zone = _f('Image.visualize', image=_f('Image.clip', input=_f('Image.selfMask', image=low), geometry=circle),
+              palette=_k([ZONE_COLOR]), opacity=_k(0.55))
+    people = _f('Image.updateMask', image=pop, mask=_f('Image.gt', image1=pop, image2=_f('Image.constant', value=_k(0.5))))
+    people = _f('Image.updateMask', image=people, mask=low)
+    people = _f('Image.visualize', image=_f('Image.clip', input=people, geometry=circle),
+                min=_k(0), max=_k(POP_MAX), palette=_k(POP_PALETTE))
+    layers = [zone, people]
+    if base:
+        dem = _f('Image.select', input=_f('Image.load', id=_k('NASA/NASADEM_HGT/001')), bandSelectors=_k(['elevation']))
+        shade = _f('Image.visualize', image=_f('Terrain.hillshade', input=dem), min=_k(120), max=_k(255),
+                   palette=_k(['9a9a9a', 'ffffff']))
+        water = _f('Image.select', input=_f('Image.load', id=_k('JRC/GSW1_4/GlobalSurfaceWater')), bandSelectors=_k(['occurrence']))
+        water = _f('Image.visualize', image=_f('Image.selfMask', image=_f('Image.gte', image1=water, image2=_f('Image.constant', value=_k(50)))),
+                   palette=_k(['1f4e79']))
+        layers = [shade, water] + layers
+    out = _f('ImageCollection.mosaic', collection=_f('ImageCollection.fromImages', images={'arrayValue': {'values': layers}}))
+    w, s, e, n = bounds(lat, lon, radius)
+    grid = {'dimensions': {'width': MAP_PX, 'height': MAP_PX},
+            'affineTransform': {'scaleX': (e - w) / MAP_PX, 'shearX': 0, 'translateX': w,
+                                'shearY': 0, 'scaleY': -(n - s) / MAP_PX, 'translateY': n},
+            'crsCode': 'EPSG:4326'}
+    return {'expression': {'result': 'out', 'values': {'out': out}}, 'fileFormat': 'PNG', 'grid': grid}
+
+
+def station(sid):
+    import cuenca as cc
+    st = next((s for s in cc.STATIONS if s['id'] == sid), None)
+    if not st:
+        raise LookupError('Localidad desconocida')
+    return st
+
+
+def map_png(sid, band, base=False):
+    """PNG de la zona baja y su población para una localidad ribereña. Devuelve (bytes, caja)."""
+    st = station(sid)
+    proj, tok = veg.gee_token()
+    resp = c.SESSION.post(f'{veg.GEE}/projects/{proj}/image:computePixels', json=map_expression(st['lat'], st['lon'], band, base),
+                          headers={'Authorization': f'Bearer {tok}'}, timeout=50)
+    if resp.status_code >= 400 or not resp.content.startswith(b'\x89PNG'):
+        raise RuntimeError(f'Earth Engine HTTP {resp.status_code}: {resp.text[:200]}')
+    return resp.content, bounds(st['lat'], st['lon'])

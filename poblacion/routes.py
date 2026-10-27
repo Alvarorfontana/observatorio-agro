@@ -149,7 +149,18 @@ def flood_report_pdf():
     from . import flood_report
     payload=request.get_json(silent=True)
     try:
-        out=flood_report.pdf(payload)
+        mapa=None
+        if isinstance(payload,dict) and payload.get('id'):
+            from . import crecida
+            esc=(payload.get('scenarios') or [])
+            band=next((x.get('band_m') for x in esc if isinstance(x,dict) and x.get('key')=='evac'),None) or \
+                 next((x.get('band_m') for x in esc if isinstance(x,dict)),None) or 3
+            try:
+                png,_=crecida.map_png(str(payload['id']),int(band),base=True)
+                mapa={'png':png,'band':int(band)}
+            except Exception:
+                current_app.logger.warning('Informe de crecida sin mapa: Earth Engine no respondió')
+        out=flood_report.pdf(payload,mapa=mapa)
         filename='DOTS-poblacion-ribereña-'+datetime.now(timezone.utc).strftime('%Y-%m-%d')+'.pdf'
         return Response(out,mimetype='application/pdf',
                         headers={'Content-Disposition':f'attachment; filename="{filename}"','Cache-Control':'no-store'})
@@ -179,6 +190,24 @@ def flood_people():
     except LookupError as exc: return jsonify(error=str(exc)),404
     except PermissionError: return jsonify(error='Earth Engine sin credencial en el servidor.'),503
     except Exception as exc: return jsonify(error=f'No se pudo calcular ({type(exc).__name__}).'),502
+
+
+@bp.get('/api/poblacion/crecida/mapa')
+def flood_people_map():
+    """PNG de la zona baja (hasta `m` metros sobre el río) y de las personas que viven en ella."""
+    from flask import Response
+    from . import crecida
+    try:
+        band=int(request.args.get('m','3'))
+        if band not in crecida.BANDS_T: return jsonify(error='Franja fuera de rango.'),400
+        png,_=crecida.map_png(request.args.get('id',''),band,base=request.args.get('base')=='1')
+        return Response(png,mimetype='image/png',headers={'Cache-Control':'private, max-age=86400'})
+    except ValueError: return jsonify(error='Franja inválida.'),400
+    except LookupError as exc: return jsonify(error=str(exc)),404
+    except PermissionError: return jsonify(error='Earth Engine sin credencial en el servidor.'),503
+    except Exception as exc:
+        current_app.logger.warning('Mapa de zona baja: %s',str(exc)[:200])
+        return jsonify(error='No se pudo dibujar el mapa.'),502
 
 
 @bp.get('/api/poblacion/barrios')
