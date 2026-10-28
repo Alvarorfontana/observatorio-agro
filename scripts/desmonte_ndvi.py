@@ -425,8 +425,7 @@ def lugares(ee, puntos):
 
 
 def foto(ee, p, v, ruta):
-    """Color natural del parche en una ventana, con 30 % de margen, 320 px."""
-    import requests
+    """Color natural del parche en una ventana, con 30 % de margen, 320 px de ancho."""
     xs = [c[0] for c in _coords(p["geom"])]; ys = [c[1] for c in _coords(p["geom"])]
     w, e, s, n = min(xs), max(xs), min(ys), max(ys)
     mx, my = max((e - w) * 0.3, 0.004), max((n - s) * 0.3, 0.004)
@@ -434,11 +433,19 @@ def foto(ee, p, v, ruta):
     img = s2(ee, reg, v).select(["B4", "B3", "B2"]).median().divide(10000)
     contorno = ee.Image().byte().paint(ee.Geometry(p["geom"]), 1, 2).visualize(palette=["ffd400"])
     vis = img.visualize(min=0, max=0.25, gamma=1.3).blend(contorno)
-    url = vis.getThumbURL({"region": reg, "dimensions": 320, "format": "png"})
-    r = requests.get(url, timeout=60)
-    r.raise_for_status()
+    # computePixels usa el mismo permiso que los cálculos; las miniaturas (getThumbURL) piden uno aparte
+    # que la cuenta de servicio no tiene.
+    w0, s0, e0, n0 = w - mx, s - my, e + mx, n + my
+    px = 320
+    alto = max(80, min(640, round(px * (n0 - s0) / max(e0 - w0, 1e-9))))
+    png = ee.data.computePixels({
+        "expression": vis, "fileFormat": "PNG",
+        "grid": {"dimensions": {"width": px, "height": alto},
+                 "affineTransform": {"scaleX": (e0 - w0) / px, "shearX": 0, "translateX": w0,
+                                     "shearY": 0, "scaleY": -(n0 - s0) / alto, "translateY": n0},
+                 "crsCode": "EPSG:4326"}})
     os.makedirs(os.path.dirname(ruta), exist_ok=True)
-    open(ruta, "wb").write(r.content)
+    open(ruta, "wb").write(png)
 
 
 def _coords(g):
@@ -460,7 +467,7 @@ def main():
     print(f"{len(elegidas)} provincias · {len(celdas)} celdas de {TILE_DEG}°")
     cand, medidas, fuente_bosque = construir(ee, antes, despues, mascara)
 
-    crudos, fallidas = [], []
+    crudos, fallidas, motivos = [], [], {}
     pool = cf.ThreadPoolExecutor(max_workers=WORKERS)
     futs = {pool.submit(parches_de_celda, ee, cand, medidas, c): c for c in celdas}
     hechas = 0
@@ -474,7 +481,9 @@ def main():
                 print(f"[{hechas}/{len(celdas)}] {c}: {len(feats)} parches")
         except Exception as ex:
             fallidas.append(c)
-            print(f"[{hechas}/{len(celdas)}] {c}: error {str(ex)[:160]}")
+            m = str(ex)[:160]
+            motivos[m] = motivos.get(m, 0) + 1
+            print(f"[{hechas}/{len(celdas)}] {c}: error {m}")
         if (time.time() - t0) / 60 > BUDGET_MIN:
             print("Se acabó el tiempo: se guarda lo calculado.")
             break
@@ -513,7 +522,8 @@ def main():
         "cobertura": {"celdas": len(celdas), "fallidas": len(fallidas), "sin_tiempo": sin_tiempo,
                       "parches_detectados": len(crudos),
                       "fotos": fotos, "error_foto": error_foto,
-                      "errores": [str(c) for c in fallidas[:10]]},
+                      "errores": [str(c) for c in fallidas[:10]],
+                      "motivos": sorted(([m, n] for m, n in motivos.items()), key=lambda x: -x[1])[:5]},
         "resumen": resumen(parches),
         "parches": parches,
         "creditos": CREDITOS,
