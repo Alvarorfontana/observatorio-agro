@@ -10,6 +10,38 @@ type Tabla = { titulo?: string; cols: string[]; filas: Fila[] };
 type Seccion = { id: string; tag: string; titulo: string; lead: string; tablas?: Tabla[]; puntos?: [string, string][]; nota?: string;
   ir?: [string, string] };
 
+
+const ENLACES: Record<string, string> = {
+  "Clima y suelo": "/observatorio?vista=variables", "Comparar modelos globales": "/observatorio?vista=modelos",
+  "Probabilidades y tendencias": "/observatorio?vista=estadistica", "Pronóstico estacional": "/observatorio?vista=estacional",
+  "Estaciones": "/observatorio?vista=smn", "Histórico reciente": "/observatorio?vista=historico", "Clima de 20 a 30 años": "/observatorio?vista=serie",
+  "Índices agroclimáticos": "/observatorio?vista=indices", "Proyección 2031-2040": "/observatorio?vista=proyeccion",
+  "Lluvia observada y sequía": "/observatorio?vista=lluvia", "Balance de agua": "/observatorio?vista=balance-agua",
+  "Humedad del suelo contra lo normal": "/observatorio?vista=humedad-nasa", "Humedad del suelo por radar": "/observatorio?vista=humedad-sar",
+  "Riesgo hídrico": "/observatorio?vista=riesgo-hidrico", "Ríos y caudales": "/observatorio?vista=rios", "Nivel del río": "/observatorio?vista=nivel-rio",
+  "Relieve y anegamiento": "/observatorio?vista=relieve", "Nitrógeno y carbono del suelo": "/observatorio?vista=suelo",
+  "Focos de incendio": "/observatorio?vista=firms", "Calidad del aire": "/observatorio?vista=aire", "Caminos y transitabilidad": "/observatorio?vista=caminos",
+  "Emergencia agropecuaria": "/observatorio?vista=emergencia", "Alertas del lote": "/observatorio?vista=alertas",
+  "NDVI del lote": "/observatorio?vista=ndvi", "Índices satelitales": "/observatorio?vista=indices-espectrales",
+  "Cobertura reciente": "/observatorio?vista=sustentabilidad", "Cambios año a año": "/observatorio?vista=sustentabilidad",
+  "Historia desde 1985": "/observatorio?vista=sustentabilidad", "Historia en imágenes": "/observatorio?vista=copernicus",
+  "Pasto y carga": "/observatorio?vista=forraje", "Ganado": "/observatorio?vista=ganado", "Pasto año por año": "/observatorio?vista=forraje",
+  "Costos y margen": "/observatorio?vista=costos", "Informe de cultivo": "/cultivos", "Labores": "/cultivos", "Planificación": "/cultivos",
+  "Clima avanzado": "/cultivos", "Rinde por agua regional": "/cultivos", "Heladas por satélite": "/focos",
+  "Nivel de cada localidad": "/alertas", "Lluvia en las cabeceras": "/alertas", "Represas de Brasil": "/alertas",
+  "Caudal de los grandes ríos": "/alertas", "Agua de crecida detectada": "/alertas", "Temporales": "/alertas", "Eventos extremos": "/focos",
+  "Población en una zona": "/poblacion", "Gente en la zona baja": "/poblacion#crecidas", "Mapa de la zona baja": "/poblacion#crecidas",
+  "Barrios populares": "/poblacion#barrios", "Barrios detectados por radar": "/poblacion#barrios", "Dengue": "/poblacion#salud",
+  "Olas de calor": "/poblacion#salud",
+  "Verificación libre de deforestación": "/observatorio?vista=sustentabilidad", "Árboles fuera del bosque": "/observatorio?vista=sustentabilidad",
+  "¿Puedo vender a la UE?": "/observatorio?vista=sustentabilidad", "Segunda opinión": "/observatorio?vista=sustentabilidad",
+  "Informe y polígono": "/observatorio?vista=sustentabilidad",
+  "Últimos 120 días": "/satelital#desmontes", "Último verano": "/satelital#desmontes", "Pérdida anual": "/satelital#desmontes", "Gravedad": "/satelital#desmontes",
+  "Informe de un campo o lote": "/informes", "Alerta de crecida por localidad": "/informes",
+  "Cuenca del Plata": "/informes", "Población en zona baja": "/informes", "El Niño en una localidad": "/informes",
+  "Población expuesta en una zona": "/poblacion", "Informe de relieve": "/lente",
+};
+
 const C3 = ["Consulta", "Qué te dice", "Fuente"];
 
 const SECCIONES: Seccion[] = [
@@ -77,7 +109,7 @@ const SECCIONES: Seccion[] = [
   },
   {
     id: "ganaderia", tag: "GANADERÍA Y CULTIVOS", titulo: "Del satélite a la decisión de manejo.",
-    lead: "Cuánto pasto hay, cuántos animales aguanta el lote, cuándo pulverizar o regar. Los coeficientes son orientativos y siempre se muestran; ninguno reemplaza un corte de pasto, un análisis de suelo o al asesor.",
+    lead: "Cuánto pasto hay, cuántos animales aguanta el lote, cuándo pulverizar, sembrar o cosechar. Los coeficientes son orientativos y siempre se muestran; ninguno reemplaza un corte de pasto, un análisis de suelo o al asesor.",
     tablas: [
       { titulo: "Ganadería y pasto", cols: ["Módulo", "Qué calcula", "Cómo"], filas: [
         ["Pasto y carga", "Cuánto pasto crece por día (kg de materia seca por hectárea) y cuántos equivalentes vaca sostiene el lote", "Modelo de Monteith con NDVI de Sentinel-2 y radiación solar"],
@@ -86,14 +118,11 @@ const SECCIONES: Seccion[] = [
         ["Costos y margen", "Flete, distancia a destino, valores en dólares y margen ganadero", "OSRM, OpenStreetMap y DolarAPI"],
       ] },
       { titulo: "Cultivos", cols: ["Módulo", "Qué calcula", "Cómo"], filas: [
-        ["Aptitud de cultivos", "Qué cultivos se adaptan al clima y al suelo del lugar, señalando el factor que más limita", "Perfiles tipo FAO EcoCrop"],
-        ["Agua del cultivo", "Cuánta agua necesita el cultivo en cada etapa y cuánto riego falta", "Método FAO-56"],
-        ["Rinde esperado por agua", "Qué parte del rinde posible permite el agua de la campaña", "Método FAO-33"],
-        ["Rinde por agua regional", "Maíz y soja en 19 localidades de Sudamérica: la campaña en curso contra las anteriores, con 30 escenarios", "AquaCrop (FAO)"],
-        ["Mapa de rinde", "Mapa del lote con los puntos del monitor de cosecha, limpio de errores, en relación con la media del lote", "Método del paquete pacu"],
-        ["Nitrógeno", "Dosis orientativa de nitrógeno y su equivalente en urea según el rinde objetivo", "Balance con carbono del suelo"],
-        ["Riesgo de enfermedades", "Índice de 0 a 100 por enfermedad según horas de mojado y temperatura del pronóstico", "Modelos de infección"],
-        ["Ventana de pulverización", "Hora por hora, si conviene pulverizar y por qué: viento, Delta T, lluvia, temperatura y humedad", "Umbrales de buenas prácticas"],
+        ["Informe de cultivo", "Por localidad, cultivo y fecha de siembra: lluvia y evapotranspiración de los últimos 30 días y los próximos 7, temperaturas contra el umbral de helada del cultivo, grados día y alertas", "Open-Meteo (ERA5 y pronóstico)"],
+        ["Labores", "Si conviene pulverizar (viento, Delta T, humedad, lluvia), sembrar (temperatura del suelo) o cosechar, el peligro de incendio (índice FWI), el lavado de agroquímicos a 48 horas y las heladas de los últimos 30 años", "Open-Meteo y ERA5"],
+        ["Planificación", "Margen bruto con valores que carga el productor, calendario de siembra por zona, plagas y enfermedades de la zona y carbono del suelo", "SoilGrids y método IPCC 2019"],
+        ["Clima avanzado", "Pronóstico de 16 días, comparador de dos localidades, viento en altura, potencial de tormentas severas, calidad del aire y lavado de nitratos", "Open-Meteo, ECMWF y CAMS"],
+        ["Rinde por agua regional", "Maíz y soja en 19 localidades de Sudamérica: la campaña en curso contra las anteriores, con 30 escenarios de lo que falta", "AquaCrop (FAO)"],
         ["Heladas por satélite", "Temperatura mínima de la superficie la última noche en cada localidad", "GOES-19, todas las mañanas"],
       ] },
     ],
@@ -175,11 +204,11 @@ const SECCIONES: Seccion[] = [
     lead: "Cada informe dice de dónde sale cada número, de qué fecha es y qué límites tiene. La Mesa de Informes los reúne con vista previa, historial y enlace para compartir.",
     tablas: [{ cols: ["Informe en PDF", "Qué contiene"], filas: [
       ["Informe de un campo o lote", "Todo lo del tablero: clima, agua, suelo, vegetación, riesgos y alertas"],
-      ["Verificación libre de deforestación", "La evidencia para vender a Europa, con el polígono y su huella digital"],
+      ["Verificación libre de deforestación", "La evidencia para vender a Europa, con el polígono y su huella digital", "", "/informes"],
       ["Alerta de crecida por localidad", "Nivel del río, cuencas que aportan y variables disponibles"],
       ["Cuenca del Plata", "El Niño, lluvia en las cabeceras, imágenes, ríos, represas y tiempos de traslado del agua"],
       ["Población en zona baja", "Personas por franja de altura, escenarios de alerta y evacuación, y el mapa de la zona baja"],
-      ["Barrios populares", "Por localidad, por zona dibujada o para toda la Cuenca del Plata"],
+      ["Barrios populares", "Por localidad, por zona dibujada o para toda la Cuenca del Plata", "", "/informes"],
       ["El Niño en una localidad", "Estado del Pacífico y lo que históricamente trajo El Niño a ese lugar"],
       ["Población expuesta en una zona", "La intersección entre la zona de estudio y la amenaza, con su método"],
       ["Informe de relieve", "El corte del terreno trazado con la Lente de Relieve"],
@@ -212,7 +241,7 @@ function TablaFunciones({ t }: { t: Tabla }) {
     <div className="guide-table-wrap"><table className="guide-table">
       <thead><tr>{cols.map(c => <th key={c}>{c}</th>)}</tr></thead>
       <tbody>{t.filas.map(f => <tr key={f[0]}>
-        <td>{f[3] ? <a href={f[3]}>{f[0]}</a> : f[0]}</td>
+        <td>{(f[3] || ENLACES[f[0]]) ? <a href={f[3] || ENLACES[f[0]]}>{f[0]}</a> : f[0]}</td>
         <td>{f[1]}</td>
         {cols.length > 2 ? <td>{f[2]}</td> : null}
       </tr>)}</tbody>
@@ -231,7 +260,7 @@ export function FuncionesContent() {
       <h2>{s.titulo}</h2>
       <p>{s.lead}</p>
       {s.tablas?.map((t, i) => <TablaFunciones key={i} t={t} />)}
-      {s.puntos && <div className="guide-grid">{s.puntos.map(([t, d]) => <article key={t}><h3>{t}</h3><p>{d}</p></article>)}</div>}
+      {s.puntos && <div className="guide-grid">{s.puntos.map(([t, d]) => <article key={t}><h3>{ENLACES[t] ? <a href={ENLACES[t]}>{t}</a> : t}</h3><p>{d}</p></article>)}</div>}
       {s.nota && <p className="guide-note" style={{ marginTop: 18 }}>{s.nota}</p>}
       {s.ir && <p style={{ marginTop: 14 }}><a className="module-action-link" href={s.ir[1]}>{s.ir[0]} →</a></p>}
     </section>)}

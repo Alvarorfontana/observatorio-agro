@@ -947,6 +947,11 @@ function Observatory({onHome}:{onHome:()=>void}) {
     if (key === "alertas") { void loadAlerts(); } else if (key === "forraje") { void loadForage(); } else if (key === "relieve") { void loadTerrain(); } else if (key === "costos") { void loadCosts(); } else if (key === "ganado") { if ((herdAll[herdKey] || []).some(r => Number(r.heads) > 0)) void loadHerd(); } else void load(key);
     requestAnimationFrame(() => { const el = document.getElementById("dots-detail"); const side = el?.closest(".sidebar") as HTMLElement | null; if (el && side) side.scrollTo({ top: Math.max(0, el.offsetTop - side.offsetTop - 16), behavior: "smooth" }); });
   };
+  // Enlace directo a una consulta: /observatorio?vista=ndvi abre esa vista (lo usa la página /funciones)
+  useEffect(() => {
+    const v = new URLSearchParams(window.location.search).get("vista");
+    if (v && ((SOURCES as any[]).some(x => x[0] === v) || ["riesgo-hidrico", "copernicus", "satelite-lote"].includes(v))) changeView(v);
+  }, []);
   const addFieldMarker = (type = markerType) => {
     if (!mapRef.current) return;
     markerTypeRef.current=type; placingMarkerRef.current=true; setPlacingMarker(true);
