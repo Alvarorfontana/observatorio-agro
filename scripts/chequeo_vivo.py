@@ -128,6 +128,8 @@ if os.environ.get('GITHUB_ACTIONS'):
     # la tabla también queda como anotación, legible por la API de GitHub
     rutas = [l for l in LINES if 'capa ·' not in l and not l.startswith('Capas:')]
     capas = [l for l in LINES if 'capa ·' in l or l.startswith('Capas:')]
-    for title, part in (('Rutas', rutas), ('Capas del mapa', capas)):
+    # GitHub corta cada anotación larga: se manda en tandas de 20 líneas (hasta 10 anotaciones por paso)
+    tandas = [(f'Rutas {i // 20 + 1}', rutas[i:i + 20]) for i in range(0, len(rutas), 20)] + [('Capas del mapa', capas[-1:])]
+    for title, part in tandas[:10]:
         print(f'::notice title={title}::' + '%0A'.join(l.replace('%', '%25') for l in part))
 sys.exit(1 if bad else 0)
