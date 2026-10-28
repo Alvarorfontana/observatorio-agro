@@ -1,0 +1,43 @@
+/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/google/api_core/_python_version_support.py:254: FutureWarning: You are using a Python version (3.11.17) which Google will stop supporting in new releases of google.api_core once it reaches its end of life (2027-10-24). Please upgrade to the latest Python version, or at least Python 3.12, to continue receiving updates for google.api_core past that date.
+  warnings.warn(message, FutureWarning)
+/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/ee/data.py:335: UserWarning: Your project has exceeded its noncommercial compute quota and is now in restricted mode. Visit https://developers.google.com/earth-engine/guides/noncommercial_tiers#restricted_mode to learn more.
+  warnings.warn(
+Traceback (most recent call last):
+  File "/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/ee/data.py", line 361, in _execute_cloud_call
+    return call.execute(num_retries=num_retries)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/googleapiclient/_helpers.py", line 130, in positional_wrapper
+    return wrapped(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/googleapiclient/http.py", line 1018, in execute
+    raise HttpError(resp, content, uri=self.uri)
+googleapiclient.errors.HttpError: <HttpError 429 when requesting https://earthengine.googleapis.com/v1/projects/gen-lang-client-0033518419/algorithms?prettyPrint=false&alt=json returned "Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/noncommercial_tiers#restricted_mode". Details: "Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/noncommercial_tiers#restricted_mode">
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/runner/work/observatorio-agro/observatorio-agro/scripts/enso_satelites.py", line 234, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/home/runner/work/observatorio-agro/observatorio-agro/scripts/enso_satelites.py", line 214, in main
+    ee = ee_init()
+         ^^^^^^^^^
+  File "/home/runner/work/observatorio-agro/observatorio-agro/scripts/enso_satelites.py", line 117, in ee_init
+    ee.Initialize(creds, project=os.environ["GOOGLE_CLOUD_PROJECT"])
+  File "/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/ee/_utils.py", line 39, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/ee/__init__.py", line 272, in Initialize
+    raise e
+  File "/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/ee/__init__.py", line 254, in Initialize
+    ApiFunction.initialize()
+  File "/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/ee/apifunction.py", line 163, in initialize
+    signatures = data.getAlgorithms()
+                 ^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/ee/data.py", line 1458, in getAlgorithms
+    return _cloud_api_utils.convert_algorithms(_execute_cloud_call(call))
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/ee/data.py", line 363, in _execute_cloud_call
+    raise _translate_cloud_exception(e)  # pylint: disable=raise-missing-from
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ee.ee_exception.EEException: Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/noncommercial_tiers#restricted_mode
