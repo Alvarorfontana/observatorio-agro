@@ -79,6 +79,16 @@
   ..d.series.map(r => (text(weight: if r.cut { "bold" } else { "regular" })[#r.year], [#r.trees], [#r.trees_ha], [#r.rangeland], [#r.crops], [#r.water])).flatten())
 #v(4pt)
 #if d.worldcover != "" [#card(fill: soft)[#text(size: 8.5pt)[*Control independiente.* #d.worldcover]]]
+#if d.at("trees_outside", default: none) != none [
+  #let t = d.trees_outside
+  #v(6pt)
+  #card(fill: soft)[
+    #text(size: 8.5pt)[*Árboles fuera del bosque de referencia de la UE · ESA WorldCover 2021 y JRC 2020 (10 m).* #t.reading]
+    #v(3pt)
+    #table(columns: (1fr, auto), stroke: (x, y) => (bottom: 0.4pt + line-c), inset: (x: 4pt, y: 3.5pt), align: (left, right),
+      ..t.rows.map(r => (text(size: 8pt)[#r.at(0)], text(size: 8pt)[#r.at(1)])).flatten())
+  ]
+]
 #if d.at("mapbiomas", default: none) != none [
   #let m = d.mapbiomas
   #v(6pt)

@@ -78,6 +78,7 @@ VEGETATION={
   'mapbiomas':lambda p,a:mbx.history(p),
   'cobertura-reciente':lambda p,a:cee.dynamic_world(p),
   'cambios-lote':lambda p,a:cee.changes(p),
+  'arboles-fuera':lambda p,a:__import__('arboles_fuera').analyze(p),
   'riesgo-hidrico':lambda p,a:__import__('riesgo_hidrico').analyze(p),
   'suelos-50mil':lambda p,a:__import__('suelos_ba').analyze(p),
   'ndvi-anomalia':lambda p,a:__import__('perfil_suelo').ndvi_anomaly(p),
@@ -501,14 +502,18 @@ def research_data(name):
         if name=='cobertura-imagen':
             png,bounds=sus.cover_png(request.args.get('item',''),polygon)
             return Response(png,mimetype='image/png',headers={'X-DOTS-Bounds':json.dumps(bounds),'Cache-Control':'public, max-age=604800'})
+        if name=='arboles-fuera-imagen':
+            png,bounds=__import__('arboles_fuera').png(polygon)
+            return Response(png,mimetype='image/png',headers={'X-DOTS-Bounds':json.dumps(bounds),'Cache-Control':'private, max-age=604800'})
         if name=='sustentabilidad':
             heads=_int(request.args,'heads',0,0,200000)
             def _both():
-                out={'deforestation':None,'carbon':None,'mapbiomas':None,'recent_cover':None,'changes':None,'errors':{}}
+                out={'deforestation':None,'carbon':None,'mapbiomas':None,'recent_cover':None,'changes':None,'trees_outside':None,'errors':{}}
                 from concurrent.futures import ThreadPoolExecutor
-                with ThreadPoolExecutor(max_workers=5) as pool:
+                with ThreadPoolExecutor(max_workers=6) as pool:
                     fm=pool.submit(mbx.history,polygon) if polygon else None
-                    extra={k:pool.submit(fn,polygon) for k,fn in (('recent_cover',cee.dynamic_world),('changes',cee.changes))} if polygon else {}
+                    extra={k:pool.submit(fn,polygon) for k,fn in (('recent_cover',cee.dynamic_world),('changes',cee.changes),
+                                                                   ('trees_outside',__import__('arboles_fuera').analyze))} if polygon else {}
                     fd=pool.submit(sus.deforestation,polygon) if polygon else None
                     fc=pool.submit(sus.carbon,lat,lon,veg.area_ha(polygon) if polygon else None,heads or None)
                     try: out['carbon']=fc.result()['data']

@@ -1822,7 +1822,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
                     <span style={{height:r.similarity!=null?`${Math.max(4,Math.round(r.similarity*100))}%`:"0"}}/><small>{String(r.year).slice(2)}</small></div>)}</div>
                   <p className="footnote">{d.reading} Barra alta: el lote se parece al año anterior; barra baja: cambió. Indica que hubo un cambio, no cuál. Google DeepMind AlphaEarth, CC BY 4.0.</p>
                 </>})()}
-                <EudrReadiness d={payload?.deforestation} onState={r=>{eudrReady.current=r}} whisp={whisp} onWhisp={p=>void askWhisp(p)} whispBusy={whispBusy}/>
+                <EudrReadiness d={payload?.deforestation} tof={payload?.trees_outside} tofImg={(()=>{const l=currentLot();return l&&payload?.trees_outside?`/api/fuentes/arboles-fuera-imagen?lat=${l.vertices[0][0]}&lon=${l.vertices[0][1]}&polygon=${encodeURIComponent(JSON.stringify(l.vertices))}`:undefined})()} onState={r=>{eudrReady.current=r}} whisp={whisp} onWhisp={p=>void askWhisp(p)} whispBusy={whispBusy}/>
                 <div className="eudr-actions">
                   <label className="small">Establecimiento (para el informe)<input value={estName} placeholder="Nombre · partido · provincia" onChange={e=>{setEstName(e.target.value);try{localStorage.setItem("dots-establishment",e.target.value)}catch{}}}/></label>
                   <button className="primary" disabled={eudrBusy} onClick={()=>void eudrDownload("pdf")}>{eudrBusy?"Generando…":"Informe de verificación (PDF)"}</button>

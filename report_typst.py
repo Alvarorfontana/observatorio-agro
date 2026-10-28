@@ -735,6 +735,17 @@ def _mapbiomas_block(mb):
             'reading': mb.get('reading') or ''}
 
 
+def _tof_block(t):
+    """Árboles fuera del bosque de referencia (arboles_fuera.py), para el informe EUDR."""
+    if not t or t.get('trees_ha') is None:
+        return None
+    return {'reading': str(t.get('reading') or ''),
+            'rows': [['Bosque 2020 en el lote (JRC)', f"{num(t.get('forest_2020_ha'), 1)} ha"],
+                     ['Árboles dentro de ese bosque', f"{num(t.get('in_forest_ha'), 1)} ha"],
+                     ['Cortinas y árboles sueltos (parches de menos de 0,5 ha)', f"{num(t.get('small_ha'), 1)} ha"],
+                     ['Montes fuera del bosque 2020 (0,5 ha o más)', f"{num(t.get('large_ha'), 1)} ha"]]}
+
+
 def eudr_data(lot, establishment, sust, generated=None, readiness=None):
     import hashlib
     vertices = lot.get('vertices') or []
@@ -807,6 +818,7 @@ def eudr_data(lot, establishment, sust, generated=None, readiness=None):
                         'La fila resaltada es el año de corte (2020).'),
         'worldcover': wc,
         'mapbiomas': _mapbiomas_block((sust or {}).get('mapbiomas')),
+        'trees_outside': _tof_block((sust or {}).get('trees_outside')),
         'movements': _movements(lot.get('movements')),
         'criteria': [
             ['Sin pérdida detectada', 'Pérdida estimada menor a 0,5 ha o variación de cobertura arbórea mayor a −1 punto entre 2020 y el último año.'],
@@ -830,6 +842,7 @@ def eudr_data(lot, establishment, sust, generated=None, readiness=None):
             ['Impact Observatory 10 m Annual LULC v2', 'Clasificación anual 2017-2023 a partir de Sentinel-2; clase 2 = árboles. Licencia CC-BY 4.0. Vía Microsoft Planetary Computer.'],
             ['ESA WorldCover 10 m', 'Clasificación 2020 y 2021 (Sentinel-1 y Sentinel-2); clase 10 = cobertura arbórea. Licencia CC-BY 4.0.'],
             ['Cálculo DOTS', 'Fracción de píxeles de cada clase dentro del polígono (estadística zonal en el servidor de datos) × superficie del lote.'],
+            ['JRC Global Forest Cover 2020 v2', 'Mapa de bosques al 31/12/2020 que la Comisión Europea publica como referencia del EUDR (10 m). Se cruza con ESA WorldCover para separar los árboles que ese mapa no considera bosque. Vía Google Earth Engine.'],
             ['MapBiomas', 'Clasificación anual de uso y cobertura del suelo desde 1985 a partir de Landsat (30 m), hecha por la red MapBiomas de cada país. Licencia CC BY 4.0. Vía Google Earth Engine.'],
             ['ISRIC SoilGrids', 'Stock de carbono orgánico 0-30 cm, 250 m, media y percentiles 5 y 95.'],
             ['IPCC', 'Directrices 2006, Vol. 4, Cap. 10, cuadro 10.11 (56 kg CH₄/cabeza/año) y AR6 (GWP100 del metano = 27).'],

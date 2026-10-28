@@ -29,7 +29,10 @@ function load(): Record<string, boolean> {
   try { return JSON.parse(localStorage.getItem("dots-eudr-checks") || "{}"); } catch { return {}; }
 }
 
-export function EudrReadiness({ d, onState, whisp, onWhisp, whispBusy }: { d?: Data; onState?: (r: Data) => void; whisp?: Data | null; onWhisp?: (product: string) => void; whispBusy?: boolean }) {
+export function EudrReadiness({ d, tof, tofImg, onState, whisp, onWhisp, whispBusy }: { d?: Data; tof?: Data | null; tofImg?: string; onState?: (r: Data) => void; whisp?: Data | null; onWhisp?: (product: string) => void; whispBusy?: boolean }) {
+  const [imgFail, setImgFail] = useState(false);
+  useEffect(() => setImgFail(false), [tofImg]);
+  const ha = (v: any) => v == null ? "—" : Number(v).toLocaleString("es-AR", { maximumFractionDigits: 1 }) + " ha";
   const [product, setProduct] = useState<string>(() => { try { return localStorage.getItem("dots-eudr-product") || "bovino"; } catch { return "bovino"; } });
   const [checks, setChecks] = useState<Record<string, boolean>>(load);
   const p = PRODUCTS.find(x => x[0] === product) || PRODUCTS[0];
@@ -93,6 +96,18 @@ export function EudrReadiness({ d, onState, whisp, onWhisp, whispBusy }: { d?: D
         <li className="warn"><i>!</i><span>Riesgo país: estándar<small>Argentina figura como riesgo estándar en la clasificación de la Comisión: debida diligencia completa y controles sobre el 3 % de los operadores.</small></span></li>
         {whisp?.risk && <li className={whisp.risk === "low" ? "ok" : whisp.risk === "high" ? "bad" : "warn"}><i>{whisp.risk === "low" ? "✓" : "!"}</i><span>Segunda opinión · Whisp (FAO)<small>{whisp.text}</small></span></li>}
       </ul>
+      {tof && tof.trees_ha != null && <>
+        <div className="eudr-sub">Árboles fuera del bosque</div>
+        <p className="small" style={{ margin: "4px 0 6px" }}>{tof.reading}</p>
+        <ul className="eudr-ranges">
+          <li><b><i className="dw-dot" style={{ background: "#1b5e20" }} /> Bosque 2020 (JRC)</b> {ha(tof.forest_2020_ha)} · cualquier pérdida posterior cuenta para la UE</li>
+          <li><b><i className="dw-dot" style={{ background: "#f2a900" }} /> Cortinas y árboles sueltos</b> {ha(tof.small_ha)} · parches de menos de 0,5 ha</li>
+          <li><b><i className="dw-dot" style={{ background: "#7cb342" }} /> Montes fuera del bosque</b> {ha(tof.large_ha)} · 0,5 ha o más: revisar altura</li>
+        </ul>
+        {tofImg && !imgFail && <img src={tofImg} alt="Mapa del lote con bosque 2020, cortinas y montes" loading="lazy" onError={() => setImgFail(true)}
+          style={{ width: "100%", borderRadius: 8, marginTop: 6, background: "#eef1ec" }} />}
+        <p className="footnote">ESA WorldCover 2021 (10 m) cruzado con el mapa de bosques 2020 del JRC, referencia de la Comisión Europea. Una cortina angosta puede quedar subestimada.</p>
+      </>}
       {onWhisp && <button disabled={whispBusy || !geo} onClick={() => onWhisp(product)}>{whispBusy ? "Consultando a Whisp… puede tardar un minuto" : whisp?.risk ? "Volver a consultar Whisp" : "Pedir segunda opinión a Whisp (FAO)"}</button>}
       {whisp?.status === "requiere credencial" && <p className="footnote">Whisp es gratis pero pide una clave: crear cuenta en whisp.openforis.org, generarla y cargarla en Vercel como WHISP_API_KEY.</p>}
       {whisp?.error && <p className="footnote">{whisp.error}</p>}
