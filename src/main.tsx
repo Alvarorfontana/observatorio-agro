@@ -48,6 +48,7 @@ import { OPEN_LAYERS, LAYER_GROUPS } from "./dashboard/openLayers";
 import { PacificSection, SAImpactMap } from "./site/NinoIllustrations";
 import { NinoNowSA } from "./site/NinoNow";
 import { NinoSatelites } from "./site/NinoSatelites";
+import { FuncionesContent } from "./site/Funciones";
 import { EnsoForecast } from "./site/EnsoForecast";
 import { EnsoTao } from "./site/EnsoTao";
 import { AvisosBox } from "./site/AvisosBox";
@@ -2706,6 +2707,7 @@ function PublicHeader({onDemo}:{onDemo:()=>void}){return <header className="site
   <SiteLink to="/el-nino">Clima y agua</SiteLink>
   <SiteLink to="/modulos">Informes</SiteLink>
   <details className="nav-more"><summary>Más módulos</summary><div aria-label="Módulos DOTS ordenados por función">
+    <SiteLink to="/funciones">Todo lo que hace DOTS</SiteLink>
     <strong>01 · Observatorio y producción</strong>
     <SiteLink to="/observatorio">Mapa principal · parcelas e informes</SiteLink><SiteLink to="/cultivos">Cultivos y rendimiento</SiteLink><SiteLink to="/agricultura-precision">Agricultura de precisión</SiteLink>
     <strong>02 · Clima y agua</strong>
@@ -3154,6 +3156,7 @@ const WHERE: [string, string, string][] = [
 function WhereToSee(){return <section className="where-see" id="donde"><span className="section-tag">DÓNDE VER CADA COSA</span><h2>Cada dato, en qué lugar del sitio está.</h2>
   <div className="where-table" role="table"><div className="where-row where-head" role="row"><span role="columnheader">Qué</span><span role="columnheader">Dónde</span><span role="columnheader">Fuente o alcance</span></div>
   {WHERE.map(([a,b,c])=><div className="where-row" role="row" key={a}><b role="cell">{a}</b><span role="cell">{b}</span><small role="cell">{c}</small></div>)}</div></section>}
+function Funciones({onDemo}:{onDemo:()=>void}){useEffect(()=>{document.title="Todo lo que hace DOTS";},[]);return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner guide funciones"><PageHero eyebrow="TODO LO QUE HACE DOTS" title="Cada herramienta del observatorio, en un solo lugar." lead="Qué se puede consultar, calcular y descargar en DOTS, ordenado por necesidad: el campo, los satélites, la ganadería y los cultivos, la venta a Europa, los desmontes, las crecidas, la población expuesta y El Niño. Cada función dice de dónde salen sus datos y lleva a la página donde se usa."/><FuncionesContent/></main><SiteFooter/></div>}
 function Guide({onDemo}:{onDemo:()=>void}){return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner guide"><PageHero eyebrow="CÓMO FUNCIONA DOTS" title="Lo que el satélite ve de un campo, contado para todos." lead="Para productores, estudiantes, profesionales, periodistas y curiosos: qué es DOTS, de qué satélite sale cada dato, cómo se procesa la información de un lote y cómo usarlo en cinco minutos."/><GuideContent onDemo={onDemo}/><WhereToSee/></main><SiteFooter/></div>}
 const LAYER_THEMES: [string,string,string][] = [
   ["Campo y ambiente","Bosque, agua y anegamiento","Pérdida de bosque año por año desde 2001 y dónde hubo agua en superficie desde 1984: bajos que se anegan, lagunas que aparecen o se secan, desmontes. Sirve para elegir potreros, ubicar aguadas y respaldar la verificación libre de deforestación."],
@@ -3532,7 +3535,7 @@ function Contact({onDemo}:{onDemo:()=>void}){
       {ch?.email_enabled===false && <p className="form-status">El envío se habilita cuando el correo de destino esté configurado. No simulamos envíos.</p>}
     </form></section></main><SiteFooter/></div>}
 function Access({onDemo}:{onDemo:()=>void}){return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner access-page"><PageHero eyebrow="ACCESO" title="Observatorio DOTS" lead="La autenticación real se incorporará con permisos por establecimiento. La demostración no simula una cuenta de usuario."/><button className="big-demo" onClick={onDemo}>Entrar a la demostración →</button></main><SiteFooter/></div>}
-function SiteFooter(){return <footer className="site-footer"><Brand/><p>DOTS · Sistema de Inteligencia Territorial, Ambiental y Climática. Observación satelital, telemetría y análisis geoespacial.</p><div><SiteLink to="/guia">Guía: cómo funciona</SiteLink><SiteLink to="/producto">Cómo funciona</SiteLink><SiteLink to="/tecnologia">Fuentes</SiteLink><SiteLink to="/capas">Capas</SiteLink><SiteLink to="/copernicus">Nuevo · Copernicus</SiteLink><SiteLink to="/conexiones">APIs</SiteLink><SiteLink to="/demo">Demo</SiteLink><SiteLink to="/cultivos">Informe de cultivo</SiteLink><SiteLink to="/caso-bella-vista">Caso Bella Vista</SiteLink><SiteLink to="/focos">Focos de calor</SiteLink><SiteLink to="/licencias">Fuentes y licencias</SiteLink><SiteLink to="/contacto">Contacto</SiteLink></div></footer>}
+function SiteFooter(){return <footer className="site-footer"><Brand/><p>DOTS · Sistema de Inteligencia Territorial, Ambiental y Climática. Observación satelital, telemetría y análisis geoespacial.</p><div><SiteLink to="/funciones">Todo lo que hace DOTS</SiteLink><SiteLink to="/guia">Guía: cómo funciona</SiteLink><SiteLink to="/producto">Cómo funciona</SiteLink><SiteLink to="/tecnologia">Fuentes</SiteLink><SiteLink to="/capas">Capas</SiteLink><SiteLink to="/copernicus">Nuevo · Copernicus</SiteLink><SiteLink to="/conexiones">APIs</SiteLink><SiteLink to="/demo">Demo</SiteLink><SiteLink to="/cultivos">Informe de cultivo</SiteLink><SiteLink to="/caso-bella-vista">Caso Bella Vista</SiteLink><SiteLink to="/focos">Focos de calor</SiteLink><SiteLink to="/licencias">Fuentes y licencias</SiteLink><SiteLink to="/contacto">Contacto</SiteLink></div></footer>}
 
 function App(){
   const [path,setPath]=useState(window.location.pathname);
@@ -3550,6 +3553,7 @@ function App(){
   if(path==="/guia"||path==="/como-funciona")return <Guide onDemo={openDemo}/>;
   if(path==="/libre-deforestacion")return <Deforestation onDemo={openDemo}/>;
   if(path==="/modulos")return <Modules onDemo={openDemo}/>;
+  if(path==="/funciones")return <Funciones onDemo={openDemo}/>;
   if(path==="/panel")return <RegionalPanel onDemo={openDemo}/>;
   if(path==="/alertas")return <AlertsPage onDemo={openDemo}/>;
   if(path==="/nino-crecidas")return <NinoCrecidasPage onDemo={openDemo}/>;
