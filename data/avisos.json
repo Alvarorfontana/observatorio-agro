@@ -1,6 +1,66 @@
 {
  "items": [
   {
+   "id": "parana-zarate",
+   "place": "Zárate",
+   "river": "Paraná",
+   "from": "Atención",
+   "to": "Normal",
+   "up": false,
+   "height": 0.85,
+   "alert": 2,
+   "evac": 2.2,
+   "date": "2026-10-28",
+   "trend_m_day": 0.05,
+   "text": "Zárate (río Paraná): el nivel baja de Atención a Normal. Altura 0,85 m el 2026-10-28; alerta 2,00 m, evacuación 2,20 m. Tendencia +0,05 m por día.",
+   "at": "2026-10-28T16:42+00:00"
+  },
+  {
+   "id": "uruguay-montecaseros",
+   "place": "Monte Caseros",
+   "river": "Uruguay",
+   "from": "Normal",
+   "to": "Atención",
+   "up": true,
+   "height": 5.58,
+   "alert": 7.5,
+   "evac": 8.5,
+   "date": "2026-10-28",
+   "trend_m_day": -0.23,
+   "text": "Monte Caseros (río Uruguay): el nivel sube de Normal a Atención. Altura 5,58 m el 2026-10-28; alerta 7,50 m, evacuación 8,50 m. Tendencia -0,23 m por día.",
+   "at": "2026-10-28T16:42+00:00"
+  },
+  {
+   "id": "uruguay-libres",
+   "place": "Paso de los Libres",
+   "river": "Uruguay",
+   "from": "Atención",
+   "to": "Alerta",
+   "up": true,
+   "height": 7.5,
+   "alert": 7.5,
+   "evac": 8.5,
+   "date": "2026-10-28",
+   "trend_m_day": -0.189,
+   "text": "Paso de los Libres (río Uruguay): el nivel sube de Atención a Alerta. Altura 7,50 m el 2026-10-28; alerta 7,50 m, evacuación 8,50 m. Tendencia -0,19 m por día.",
+   "at": "2026-10-28T16:42+00:00"
+  },
+  {
+   "id": "parana-bellavista",
+   "place": "Bella Vista",
+   "river": "Paraná",
+   "from": "Alerta",
+   "to": "Evacuación",
+   "up": true,
+   "height": 6.43,
+   "alert": 6,
+   "evac": 6.4,
+   "date": "2026-10-28",
+   "trend_m_day": 0.023,
+   "text": "Bella Vista (río Paraná): el nivel sube de Alerta a Evacuación. Altura 6,43 m el 2026-10-28; alerta 6,00 m, evacuación 6,40 m. Tendencia +0,02 m por día. Seguir las indicaciones de Defensa Civil.",
+   "at": "2026-10-28T16:42+00:00"
+  },
+  {
    "id": "uruguay-montecaseros",
    "place": "Monte Caseros",
    "river": "Uruguay",
@@ -271,5 +331,5 @@
    "at": "2026-10-15T18:22+00:00"
   }
  ],
- "updated": "2026-10-27T18:37+00:00"
+ "updated": "2026-10-28T16:42+00:00"
 }
