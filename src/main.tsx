@@ -47,6 +47,7 @@ const LotDashboard = lazy(() => import("./dashboard/LotDashboard").then(m => ({ 
 import { OPEN_LAYERS, LAYER_GROUPS } from "./dashboard/openLayers";
 import { PacificSection, SAImpactMap } from "./site/NinoIllustrations";
 import { NinoNowSA } from "./site/NinoNow";
+import { NinoSatelites } from "./site/NinoSatelites";
 import { EnsoForecast } from "./site/EnsoForecast";
 import { EnsoTao } from "./site/EnsoTao";
 import { AvisosBox } from "./site/AvisosBox";
@@ -3337,6 +3338,8 @@ function ElNinoPage({onDemo}:{onDemo:()=>void}){
     <section className="nino-regions">{NINO_REGIONS.map(([t,r,e,d])=><article key={r} className={t}><span>{e}</span><h3>{r}</h3><p>{d}</p></article>)}</section>
     <h2 className="layer-section-title">El impacto ahora, localidad por localidad</h2>
     <NinoNowSA data={sa} onPick={pickPlace}/>
+    <h2 className="layer-section-title">El Niño visto por satélite: el mar, el suelo y la lluvia</h2>
+    <NinoSatelites/>
     <h2 className="layer-section-title">Los grandes eventos y sus consecuencias</h2>
     <section className="nino-events">{NINO_EVENTS.map(([y,k,t,d])=><article key={y} className={k}><span>{y}</span><h3>{t}</h3><p>{d}</p></article>)}</section>
     <h2 className="layer-section-title">Qué pasó en tu zona en los El Niño anteriores</h2>

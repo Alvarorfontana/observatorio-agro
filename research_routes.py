@@ -317,6 +317,15 @@ def nino_crecidas_view():
     import datastore
     return jsonify({'status':'recibido','data':datastore.load('nino_crecidas.json', {})})
 
+@research_api.get('/enso-satelites')
+def enso_satellites_view():
+    """Clorofila del Pacífico, humedad del suelo y lluvia por satélite, calculadas por la tarea mensual «El Niño por satélite»."""
+    import datastore
+    data=datastore.load('enso_satelites.json')
+    if not data:
+        return jsonify({'status':'sin dato','data':None,'error':'Todavía no se calculó: correr la tarea «El Niño por satélite» en GitHub Actions.'})
+    return jsonify({'status':'recibido','data':data})
+
 @research_api.post('/contacto')
 def contact_send():
     try:

@@ -1,0 +1,37 @@
+# El Niño visto por satélite: clorofila del Pacífico (MODIS), humedad del suelo (SMAP) y lluvia (GPM IMERG).
+# Una vez por mes, con Google Earth Engine. Guarda data/enso_satelites.json en la rama datos (no publica la web).
+name: El Niño por satélite
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "37 8 12 * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: enso-satelites
+  cancel-in-progress: false
+
+jobs:
+  series:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Calcular las series
+        env:
+          GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT }}
+          GOOGLE_APPLICATION_CREDENTIALS_JSON: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}
+        run: |
+          pip install earthengine-api
+          set -o pipefail
+          python -u scripts/enso_satelites.py data/enso_satelites.json 2>&1 | tee data/enso_satelites.log
+      - name: Guardar en la rama datos (no publica la web)
+        if: always()
+        run: |
+          cp scripts/datos_rama.sh /tmp/datos_rama.sh && bash /tmp/datos_rama.sh guardar "El Niño por satélite $(date -u +%Y-%m-%d)" data/enso_satelites.json data/enso_satelites.log
