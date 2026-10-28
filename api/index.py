@@ -17,6 +17,7 @@ except ImportError:   # el módulo de población necesita pyclipper
     population_bp = None
 import security
 import vitrina
+import cache_ee
 from copernicus_routes import copernicus_api
 
 app = Flask(__name__)
@@ -31,8 +32,9 @@ if population_bp is not None:
     app.register_blueprint(population_bp)
 security.install(app)
 vitrina.install(app)   # modo vitrina (DOTS_VITRINA=1): se ve, pero las consultas son por invitación
+cache_ee.install(app)  # después de la vitrina: lo guardado sólo se entrega a quien tiene acceso
 
 
 @app.get('/api/health')
 def health():
-    return jsonify({'status': 'ok', 'app': 'DOTS Campo API'})
+    return jsonify({'status': 'ok', 'app': 'DOTS Campo API', 'cache_earth_engine': cache_ee.estado()})
