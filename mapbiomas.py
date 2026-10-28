@@ -97,7 +97,8 @@ def find_asset(tok, country):
             elif _score(a):
                 found.append(a)
     best = max(found, key=_score) if found else None
-    _ASSET[country] = (time.monotonic(), best)
+    if best:                     # si Earth Engine no respondió (cuota, límite), no se recuerda el «no hay» por un día
+        _ASSET[country] = (time.monotonic(), best)
     return best
 
 
