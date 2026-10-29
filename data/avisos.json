@@ -4,6 +4,36 @@
    "id": "parana-zarate",
    "place": "Zárate",
    "river": "Paraná",
+   "from": "Normal",
+   "to": "Atención",
+   "up": true,
+   "height": 1.14,
+   "alert": 2,
+   "evac": 2.2,
+   "date": "2026-10-29",
+   "trend_m_day": 0.052,
+   "text": "Zárate (río Paraná): el nivel sube de Normal a Atención. Altura 1,14 m el 2026-10-29; alerta 2,00 m, evacuación 2,20 m. Tendencia +0,05 m por día.",
+   "at": "2026-10-29T19:42+00:00"
+  },
+  {
+   "id": "parana-goya",
+   "place": "Goya",
+   "river": "Paraná",
+   "from": "Alerta",
+   "to": "Evacuación",
+   "up": true,
+   "height": 5.76,
+   "alert": 5.2,
+   "evac": 5.7,
+   "date": "2026-10-29",
+   "trend_m_day": 0.025,
+   "text": "Goya (río Paraná): el nivel sube de Alerta a Evacuación. Altura 5,76 m el 2026-10-29; alerta 5,20 m, evacuación 5,70 m. Tendencia +0,03 m por día. Seguir las indicaciones de Defensa Civil.",
+   "at": "2026-10-29T19:42+00:00"
+  },
+  {
+   "id": "parana-zarate",
+   "place": "Zárate",
+   "river": "Paraná",
    "from": "Atención",
    "to": "Normal",
    "up": false,
@@ -331,5 +361,5 @@
    "at": "2026-10-15T18:22+00:00"
   }
  ],
- "updated": "2026-10-28T16:42+00:00"
+ "updated": "2026-10-29T19:42+00:00"
 }
