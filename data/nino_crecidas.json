@@ -1,31 +1,25 @@
 {
- "updated": "2026-10-30T13:13+00:00",
+ "updated": "2026-10-30T19:30+00:00",
  "version": 1,
  "fuente": "https://observatorio-agro.vercel.app",
  "niveles": {
   "Normal": 8,
   "Atención": 10,
-  "Alerta": 2,
-  "Evacuación": 6
+  "Alerta": 3,
+  "Evacuación": 5
  },
  "peor": {
   "id": "iguazu-cataratas",
   "place": "Puerto Iguazú · Cataratas",
   "river": "Iguazú",
   "level": "Evacuación",
-  "height": 28.7
+  "height": 28.35
  },
  "alertas": [
   {
    "id": "iguazu-cataratas",
    "place": "Puerto Iguazú · Cataratas",
    "river": "Iguazú",
-   "level": "Evacuación"
-  },
-  {
-   "id": "parana-ituzaingo",
-   "place": "Ituzaingó",
-   "river": "Paraná",
    "level": "Evacuación"
   },
   {
@@ -53,6 +47,12 @@
    "level": "Evacuación"
   },
   {
+   "id": "parana-ituzaingo",
+   "place": "Ituzaingó",
+   "river": "Paraná",
+   "level": "Alerta"
+  },
+  {
    "id": "uruguay-libres",
    "place": "Paso de los Libres",
    "river": "Uruguay",
@@ -73,7 +73,7 @@
  "enviado_el": null,
  "pdf_el": "2026-10-30T13:13+00:00",
  "newsletter": {
-  "subject": "DOTS · El Niño y crecidas · 30/10/2026 13:13 UTC",
+  "subject": "DOTS · El Niño y crecidas · 30/10/2026 19:30 UTC",
   "bytes": 6215
  }
 }
