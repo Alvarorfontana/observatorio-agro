@@ -1,5 +1,5 @@
 {
- "actualizado": "2026-10-29T17:31Z",
+ "actualizado": "2026-10-30T17:09Z",
  "cpc": {
   "estado": "recibido",
   "fuente": "NOAA Climate Prediction Center",
@@ -386,6 +386,11 @@
       "mes": "2027-02",
       "lluvia_anomalia_mm": 127.7,
       "temp_anomalia_c": 1.0
+     },
+     {
+      "mes": "2027-03",
+      "lluvia_anomalia_mm": 123.9,
+      "temp_anomalia_c": 0.9
      }
     ],
     "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
@@ -419,6 +424,11 @@
       "mes": "2027-02",
       "lluvia_anomalia_mm": 131.8,
       "temp_anomalia_c": 1.0
+     },
+     {
+      "mes": "2027-03",
+      "lluvia_anomalia_mm": 122.1,
+      "temp_anomalia_c": 0.9
      }
     ],
     "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
@@ -452,6 +462,11 @@
       "mes": "2027-02",
       "lluvia_anomalia_mm": 120.7,
       "temp_anomalia_c": 0.9
+     },
+     {
+      "mes": "2027-03",
+      "lluvia_anomalia_mm": 118.6,
+      "temp_anomalia_c": 0.8
      }
     ],
     "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
@@ -485,6 +500,11 @@
       "mes": "2027-02",
       "lluvia_anomalia_mm": 132.4,
       "temp_anomalia_c": 0.6
+     },
+     {
+      "mes": "2027-03",
+      "lluvia_anomalia_mm": 126.9,
+      "temp_anomalia_c": 0.5
      }
     ],
     "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
@@ -518,6 +538,11 @@
       "mes": "2027-02",
       "lluvia_anomalia_mm": 133.0,
       "temp_anomalia_c": 0.3
+     },
+     {
+      "mes": "2027-03",
+      "lluvia_anomalia_mm": 103.5,
+      "temp_anomalia_c": 0.2
      }
     ],
     "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
@@ -551,6 +576,11 @@
       "mes": "2027-02",
       "lluvia_anomalia_mm": 118.5,
       "temp_anomalia_c": 0.1
+     },
+     {
+      "mes": "2027-03",
+      "lluvia_anomalia_mm": 38.1,
+      "temp_anomalia_c": 0.2
      }
     ],
     "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
@@ -584,6 +614,11 @@
       "mes": "2027-02",
       "lluvia_anomalia_mm": 108.2,
       "temp_anomalia_c": -0.1
+     },
+     {
+      "mes": "2027-03",
+      "lluvia_anomalia_mm": 27.2,
+      "temp_anomalia_c": 0.1
      }
     ],
     "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
@@ -617,6 +652,11 @@
       "mes": "2027-02",
       "lluvia_anomalia_mm": 86.1,
       "temp_anomalia_c": -0.2
+     },
+     {
+      "mes": "2027-03",
+      "lluvia_anomalia_mm": 24.7,
+      "temp_anomalia_c": -0.1
      }
     ],
     "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
@@ -650,6 +690,11 @@
       "mes": "2027-02",
       "lluvia_anomalia_mm": 72.8,
       "temp_anomalia_c": -0.2
+     },
+     {
+      "mes": "2027-03",
+      "lluvia_anomalia_mm": 22.8,
+      "temp_anomalia_c": -0.1
      }
     ],
     "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
@@ -683,6 +728,11 @@
       "mes": "2027-02",
       "lluvia_anomalia_mm": 69.2,
       "temp_anomalia_c": -0.2
+     },
+     {
+      "mes": "2027-03",
+      "lluvia_anomalia_mm": 21.5,
+      "temp_anomalia_c": -0.1
      }
     ],
     "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
@@ -716,6 +766,11 @@
       "mes": "2027-02",
       "lluvia_anomalia_mm": 50.9,
       "temp_anomalia_c": -0.2
+     },
+     {
+      "mes": "2027-03",
+      "lluvia_anomalia_mm": 13.8,
+      "temp_anomalia_c": 0.0
      }
     ],
     "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
@@ -749,6 +804,11 @@
       "mes": "2027-02",
       "lluvia_anomalia_mm": 26.9,
       "temp_anomalia_c": -0.1
+     },
+     {
+      "mes": "2027-03",
+      "lluvia_anomalia_mm": -10.9,
+      "temp_anomalia_c": 0.1
      }
     ],
     "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
@@ -782,6 +842,11 @@
       "mes": "2027-02",
       "lluvia_anomalia_mm": 25.5,
       "temp_anomalia_c": -0.1
+     },
+     {
+      "mes": "2027-03",
+      "lluvia_anomalia_mm": -12.9,
+      "temp_anomalia_c": 0.1
      }
     ],
     "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
@@ -814,6 +879,11 @@
      {
       "mes": "2027-02",
       "lluvia_anomalia_mm": 28.4,
+      "temp_anomalia_c": 0.1
+     },
+     {
+      "mes": "2027-03",
+      "lluvia_anomalia_mm": -5.4,
       "temp_anomalia_c": 0.1
      }
     ],
@@ -848,6 +918,11 @@
       "mes": "2027-02",
       "lluvia_anomalia_mm": 28.1,
       "temp_anomalia_c": 0.1
+     },
+     {
+      "mes": "2027-03",
+      "lluvia_anomalia_mm": 0.8,
+      "temp_anomalia_c": 0.1
      }
     ],
     "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
@@ -880,6 +955,11 @@
      {
       "mes": "2027-02",
       "lluvia_anomalia_mm": 26.0,
+      "temp_anomalia_c": 0.1
+     },
+     {
+      "mes": "2027-03",
+      "lluvia_anomalia_mm": 1.0,
       "temp_anomalia_c": 0.1
      }
     ],
@@ -914,6 +994,11 @@
       "mes": "2027-02",
       "lluvia_anomalia_mm": 33.0,
       "temp_anomalia_c": 0.0
+     },
+     {
+      "mes": "2027-03",
+      "lluvia_anomalia_mm": 9.4,
+      "temp_anomalia_c": 0.1
      }
     ],
     "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
@@ -947,6 +1032,11 @@
       "mes": "2027-02",
       "lluvia_anomalia_mm": 58.8,
       "temp_anomalia_c": 1.4
+     },
+     {
+      "mes": "2027-03",
+      "lluvia_anomalia_mm": 48.7,
+      "temp_anomalia_c": 0.8
      }
     ],
     "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
@@ -980,6 +1070,11 @@
       "mes": "2027-02",
       "lluvia_anomalia_mm": 115.7,
       "temp_anomalia_c": 0.7
+     },
+     {
+      "mes": "2027-03",
+      "lluvia_anomalia_mm": 95.1,
+      "temp_anomalia_c": 0.4
      }
     ],
     "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
@@ -1013,6 +1108,11 @@
       "mes": "2027-02",
       "lluvia_anomalia_mm": 159.2,
       "temp_anomalia_c": 0.4
+     },
+     {
+      "mes": "2027-03",
+      "lluvia_anomalia_mm": 95.6,
+      "temp_anomalia_c": 0.3
      }
     ],
     "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
@@ -1045,6 +1145,11 @@
      {
       "mes": "2027-02",
       "lluvia_anomalia_mm": 150.9,
+      "temp_anomalia_c": 0.2
+     },
+     {
+      "mes": "2027-03",
+      "lluvia_anomalia_mm": 80.6,
       "temp_anomalia_c": 0.2
      }
     ],
@@ -1079,6 +1184,11 @@
       "mes": "2027-02",
       "lluvia_anomalia_mm": 137.7,
       "temp_anomalia_c": 0.1
+     },
+     {
+      "mes": "2027-03",
+      "lluvia_anomalia_mm": 68.4,
+      "temp_anomalia_c": 0.2
      }
     ],
     "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
@@ -1112,6 +1222,11 @@
       "mes": "2027-02",
       "lluvia_anomalia_mm": 125.4,
       "temp_anomalia_c": 0.1
+     },
+     {
+      "mes": "2027-03",
+      "lluvia_anomalia_mm": 56.5,
+      "temp_anomalia_c": 0.2
      }
     ],
     "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
@@ -1145,6 +1260,11 @@
       "mes": "2027-02",
       "lluvia_anomalia_mm": -34.0,
       "temp_anomalia_c": 0.6
+     },
+     {
+      "mes": "2027-03",
+      "lluvia_anomalia_mm": -9.5,
+      "temp_anomalia_c": -0.2
      }
     ],
     "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
@@ -1177,6 +1297,11 @@
      {
       "mes": "2027-02",
       "lluvia_anomalia_mm": 106.6,
+      "temp_anomalia_c": -0.2
+     },
+     {
+      "mes": "2027-03",
+      "lluvia_anomalia_mm": 41.2,
       "temp_anomalia_c": -0.2
      }
     ],
@@ -1211,6 +1336,11 @@
       "mes": "2027-02",
       "lluvia_anomalia_mm": 107.6,
       "temp_anomalia_c": 0.8
+     },
+     {
+      "mes": "2027-03",
+      "lluvia_anomalia_mm": 113.5,
+      "temp_anomalia_c": 0.7
      }
     ],
     "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
@@ -1243,6 +1373,11 @@
      {
       "mes": "2027-02",
       "lluvia_anomalia_mm": 116.0,
+      "temp_anomalia_c": 0.6
+     },
+     {
+      "mes": "2027-03",
+      "lluvia_anomalia_mm": 110.2,
       "temp_anomalia_c": 0.6
      }
     ],
@@ -1277,6 +1412,11 @@
       "mes": "2027-02",
       "lluvia_anomalia_mm": 116.5,
       "temp_anomalia_c": 0.3
+     },
+     {
+      "mes": "2027-03",
+      "lluvia_anomalia_mm": 79.0,
+      "temp_anomalia_c": 0.4
      }
     ],
     "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
@@ -1310,6 +1450,11 @@
       "mes": "2027-02",
       "lluvia_anomalia_mm": 117.1,
       "temp_anomalia_c": 0.1
+     },
+     {
+      "mes": "2027-03",
+      "lluvia_anomalia_mm": 38.1,
+      "temp_anomalia_c": 0.2
      }
     ],
     "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
@@ -1343,6 +1488,11 @@
       "mes": "2027-02",
       "lluvia_anomalia_mm": 97.9,
       "temp_anomalia_c": -0.1
+     },
+     {
+      "mes": "2027-03",
+      "lluvia_anomalia_mm": 35.7,
+      "temp_anomalia_c": 0.1
      }
     ],
     "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
@@ -1376,6 +1526,11 @@
       "mes": "2027-02",
       "lluvia_anomalia_mm": 71.7,
       "temp_anomalia_c": -0.1
+     },
+     {
+      "mes": "2027-03",
+      "lluvia_anomalia_mm": 34.7,
+      "temp_anomalia_c": 0.1
      }
     ],
     "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
@@ -1409,6 +1564,11 @@
       "mes": "2027-02",
       "lluvia_anomalia_mm": 53.5,
       "temp_anomalia_c": 0.0
+     },
+     {
+      "mes": "2027-03",
+      "lluvia_anomalia_mm": 17.5,
+      "temp_anomalia_c": 0.1
      }
     ],
     "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
@@ -1442,6 +1602,11 @@
       "mes": "2027-02",
       "lluvia_anomalia_mm": 46.0,
       "temp_anomalia_c": 0.1
+     },
+     {
+      "mes": "2027-03",
+      "lluvia_anomalia_mm": 16.7,
+      "temp_anomalia_c": 0.1
      }
     ],
     "unidad_lluvia": "mm en el mes, por encima (+) o por debajo (−) de lo normal"
@@ -1474,6 +1639,11 @@
      {
       "mes": "2027-02",
       "lluvia_anomalia_mm": 25.3,
+      "temp_anomalia_c": 0.1
+     },
+     {
+      "mes": "2027-03",
+      "lluvia_anomalia_mm": 16.2,
       "temp_anomalia_c": 0.1
      }
     ],
