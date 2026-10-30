@@ -2,9 +2,6 @@
  "iguazu-cataratas": {
   "level": "Evacuación"
  },
- "parana-ituzaingo": {
-  "level": "Evacuación"
- },
  "parana-corrientes": {
   "level": "Evacuación"
  },
@@ -16,6 +13,9 @@
  },
  "parana-bellavista": {
   "level": "Evacuación"
+ },
+ "parana-ituzaingo": {
+  "level": "Alerta"
  },
  "uruguay-libres": {
   "level": "Alerta"
@@ -29,7 +29,7 @@
  "paraguay-humaita": {
   "level": "Atención"
  },
- "uruguay-santotome": {
+ "parana-posadas": {
   "level": "Atención"
  },
  "parana-santafe": {
@@ -38,10 +38,10 @@
  "parana-diamante": {
   "level": "Atención"
  },
- "uruguay-cdeluruguay": {
+ "uruguay-concordia": {
   "level": "Atención"
  },
- "uruguay-concordia": {
+ "uruguay-cdeluruguay": {
   "level": "Atención"
  },
  "uruguay-montecaseros": {
@@ -56,10 +56,10 @@
  "parana-eldorado": {
   "level": "Normal"
  },
- "parana-posadas": {
+ "parana-rosario": {
   "level": "Normal"
  },
- "parana-rosario": {
+ "uruguay-santotome": {
   "level": "Normal"
  },
  "paraguay-formosa": {
