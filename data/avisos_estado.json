@@ -1,20 +1,20 @@
 {
- "iguazu-cataratas": {
-  "level": "Evacuación"
- },
- "parana-corrientes": {
+ "parana-reconquista": {
   "level": "Evacuación"
  },
  "parana-goya": {
   "level": "Evacuación"
  },
- "parana-reconquista": {
+ "parana-corrientes": {
   "level": "Evacuación"
  },
  "parana-bellavista": {
   "level": "Evacuación"
  },
  "parana-ituzaingo": {
+  "level": "Alerta"
+ },
+ "iguazu-cataratas": {
   "level": "Alerta"
  },
  "uruguay-libres": {
@@ -41,16 +41,13 @@
  "uruguay-concordia": {
   "level": "Atención"
  },
- "uruguay-cdeluruguay": {
-  "level": "Atención"
- },
  "uruguay-montecaseros": {
   "level": "Atención"
  },
- "uruguay-colon": {
+ "uruguay-cdeluruguay": {
   "level": "Atención"
  },
- "parana-zarate": {
+ "uruguay-colon": {
   "level": "Atención"
  },
  "parana-eldorado": {
@@ -59,19 +56,22 @@
  "parana-rosario": {
   "level": "Normal"
  },
- "uruguay-santotome": {
-  "level": "Normal"
- },
  "paraguay-formosa": {
   "level": "Normal"
  },
- "paraguay-asuncion": {
+ "uruguay-santotome": {
   "level": "Normal"
  },
  "parana-sannicolas": {
   "level": "Normal"
  },
+ "paraguay-asuncion": {
+  "level": "Normal"
+ },
  "parana-sanpedro": {
+  "level": "Normal"
+ },
+ "parana-zarate": {
   "level": "Normal"
  },
  "iguazu-andresito": {
