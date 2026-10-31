@@ -1,30 +1,24 @@
 {
- "updated": "2026-10-31T12:50+00:00",
+ "updated": "2026-10-31T18:39+00:00",
  "version": 1,
  "fuente": "https://observatorio-agro.vercel.app",
  "niveles": {
-  "Normal": 8,
-  "Atención": 10,
-  "Alerta": 3,
-  "Evacuación": 5
+  "Normal": 9,
+  "Atención": 9,
+  "Alerta": 4,
+  "Evacuación": 4
  },
  "peor": {
-  "id": "iguazu-cataratas",
-  "place": "Puerto Iguazú · Cataratas",
-  "river": "Iguazú",
+  "id": "parana-reconquista",
+  "place": "Reconquista",
+  "river": "Paraná",
   "level": "Evacuación",
-  "height": 28.35
+  "height": 5.86
  },
  "alertas": [
   {
-   "id": "iguazu-cataratas",
-   "place": "Puerto Iguazú · Cataratas",
-   "river": "Iguazú",
-   "level": "Evacuación"
-  },
-  {
-   "id": "parana-corrientes",
-   "place": "Corrientes",
+   "id": "parana-reconquista",
+   "place": "Reconquista",
    "river": "Paraná",
    "level": "Evacuación"
   },
@@ -35,8 +29,8 @@
    "level": "Evacuación"
   },
   {
-   "id": "parana-reconquista",
-   "place": "Reconquista",
+   "id": "parana-corrientes",
+   "place": "Corrientes",
    "river": "Paraná",
    "level": "Evacuación"
   },
@@ -50,6 +44,12 @@
    "id": "parana-ituzaingo",
    "place": "Ituzaingó",
    "river": "Paraná",
+   "level": "Alerta"
+  },
+  {
+   "id": "iguazu-cataratas",
+   "place": "Puerto Iguazú · Cataratas",
+   "river": "Iguazú",
    "level": "Alerta"
   },
   {
@@ -73,7 +73,7 @@
  "enviado_el": null,
  "pdf_el": "2026-10-31T12:50+00:00",
  "newsletter": {
-  "subject": "DOTS · El Niño y crecidas · 31/10/2026 12:50 UTC",
+  "subject": "DOTS · El Niño y crecidas · 31/10/2026 18:39 UTC",
   "bytes": 6215
  }
 }
