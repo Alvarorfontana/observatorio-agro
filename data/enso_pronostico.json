@@ -1,5 +1,5 @@
 {
- "actualizado": "2026-10-31T16:19Z",
+ "actualizado": "2026-11-01T17:14Z",
  "cpc": {
   "estado": "recibido",
   "fuente": "NOAA Climate Prediction Center",
@@ -363,11 +363,6 @@
     "river": "Iguazú",
     "meses": [
      {
-      "mes": "2026-10",
-      "lluvia_anomalia_mm": 198.6,
-      "temp_anomalia_c": 0.7
-     },
-     {
       "mes": "2026-11",
       "lluvia_anomalia_mm": 180.7,
       "temp_anomalia_c": 0.8
@@ -400,11 +395,6 @@
     "place": "Puerto Iguazú · Cataratas",
     "river": "Iguazú",
     "meses": [
-     {
-      "mes": "2026-10",
-      "lluvia_anomalia_mm": 198.2,
-      "temp_anomalia_c": 0.6
-     },
      {
       "mes": "2026-11",
       "lluvia_anomalia_mm": 185.4,
@@ -439,11 +429,6 @@
     "river": "Paraná",
     "meses": [
      {
-      "mes": "2026-10",
-      "lluvia_anomalia_mm": 199.4,
-      "temp_anomalia_c": 0.5
-     },
-     {
       "mes": "2026-11",
       "lluvia_anomalia_mm": 175.4,
       "temp_anomalia_c": 0.6
@@ -476,11 +461,6 @@
     "place": "Posadas",
     "river": "Paraná",
     "meses": [
-     {
-      "mes": "2026-10",
-      "lluvia_anomalia_mm": 189.7,
-      "temp_anomalia_c": 0.3
-     },
      {
       "mes": "2026-11",
       "lluvia_anomalia_mm": 170.1,
@@ -515,11 +495,6 @@
     "river": "Paraná",
     "meses": [
      {
-      "mes": "2026-10",
-      "lluvia_anomalia_mm": 136.0,
-      "temp_anomalia_c": 0.0
-     },
-     {
       "mes": "2026-11",
       "lluvia_anomalia_mm": 154.7,
       "temp_anomalia_c": 0.1
@@ -552,11 +527,6 @@
     "place": "Corrientes",
     "river": "Paraná",
     "meses": [
-     {
-      "mes": "2026-10",
-      "lluvia_anomalia_mm": 78.9,
-      "temp_anomalia_c": -0.1
-     },
      {
       "mes": "2026-11",
       "lluvia_anomalia_mm": 135.1,
@@ -591,11 +561,6 @@
     "river": "Paraná",
     "meses": [
      {
-      "mes": "2026-10",
-      "lluvia_anomalia_mm": 25.3,
-      "temp_anomalia_c": 0.0
-     },
-     {
       "mes": "2026-11",
       "lluvia_anomalia_mm": 130.5,
       "temp_anomalia_c": -0.1
@@ -628,11 +593,6 @@
     "place": "Goya",
     "river": "Paraná",
     "meses": [
-     {
-      "mes": "2026-10",
-      "lluvia_anomalia_mm": 11.4,
-      "temp_anomalia_c": 0.1
-     },
      {
       "mes": "2026-11",
       "lluvia_anomalia_mm": 103.8,
@@ -667,11 +627,6 @@
     "river": "Paraná",
     "meses": [
      {
-      "mes": "2026-10",
-      "lluvia_anomalia_mm": 0.1,
-      "temp_anomalia_c": 0.1
-     },
-     {
       "mes": "2026-11",
       "lluvia_anomalia_mm": 93.0,
       "temp_anomalia_c": -0.1
@@ -704,11 +659,6 @@
     "place": "Esquina",
     "river": "Paraná",
     "meses": [
-     {
-      "mes": "2026-10",
-      "lluvia_anomalia_mm": -4.7,
-      "temp_anomalia_c": 0.0
-     },
      {
       "mes": "2026-11",
       "lluvia_anomalia_mm": 78.4,
@@ -743,11 +693,6 @@
     "river": "Paraná",
     "meses": [
      {
-      "mes": "2026-10",
-      "lluvia_anomalia_mm": -9.7,
-      "temp_anomalia_c": -0.1
-     },
-     {
       "mes": "2026-11",
       "lluvia_anomalia_mm": 63.8,
       "temp_anomalia_c": 0.0
@@ -780,11 +725,6 @@
     "place": "Santa Fe · Paraná",
     "river": "Paraná",
     "meses": [
-     {
-      "mes": "2026-10",
-      "lluvia_anomalia_mm": -8.7,
-      "temp_anomalia_c": 0.0
-     },
      {
       "mes": "2026-11",
       "lluvia_anomalia_mm": 43.7,
@@ -819,11 +759,6 @@
     "river": "Paraná",
     "meses": [
      {
-      "mes": "2026-10",
-      "lluvia_anomalia_mm": -9.6,
-      "temp_anomalia_c": 0.0
-     },
-     {
       "mes": "2026-11",
       "lluvia_anomalia_mm": 32.1,
       "temp_anomalia_c": 0.1
@@ -856,11 +791,6 @@
     "place": "Rosario",
     "river": "Paraná",
     "meses": [
-     {
-      "mes": "2026-10",
-      "lluvia_anomalia_mm": -3.2,
-      "temp_anomalia_c": -0.2
-     },
      {
       "mes": "2026-11",
       "lluvia_anomalia_mm": 19.0,
@@ -895,11 +825,6 @@
     "river": "Paraná",
     "meses": [
      {
-      "mes": "2026-10",
-      "lluvia_anomalia_mm": -2.6,
-      "temp_anomalia_c": -0.2
-     },
-     {
       "mes": "2026-11",
       "lluvia_anomalia_mm": 22.7,
       "temp_anomalia_c": 0.0
@@ -932,11 +857,6 @@
     "place": "San Pedro",
     "river": "Paraná",
     "meses": [
-     {
-      "mes": "2026-10",
-      "lluvia_anomalia_mm": -4.2,
-      "temp_anomalia_c": -0.2
-     },
      {
       "mes": "2026-11",
       "lluvia_anomalia_mm": 19.3,
@@ -971,11 +891,6 @@
     "river": "Paraná",
     "meses": [
      {
-      "mes": "2026-10",
-      "lluvia_anomalia_mm": -0.7,
-      "temp_anomalia_c": -0.2
-     },
-     {
       "mes": "2026-11",
       "lluvia_anomalia_mm": 24.1,
       "temp_anomalia_c": 0.0
@@ -1008,11 +923,6 @@
     "place": "Bahía Negra",
     "river": "Paraguay",
     "meses": [
-     {
-      "mes": "2026-10",
-      "lluvia_anomalia_mm": 31.7,
-      "temp_anomalia_c": 1.2
-     },
      {
       "mes": "2026-11",
       "lluvia_anomalia_mm": 32.8,
@@ -1047,11 +957,6 @@
     "river": "Paraguay",
     "meses": [
      {
-      "mes": "2026-10",
-      "lluvia_anomalia_mm": 128.3,
-      "temp_anomalia_c": 0.4
-     },
-     {
       "mes": "2026-11",
       "lluvia_anomalia_mm": 113.8,
       "temp_anomalia_c": 0.6
@@ -1084,11 +989,6 @@
     "place": "Asunción",
     "river": "Paraguay",
     "meses": [
-     {
-      "mes": "2026-10",
-      "lluvia_anomalia_mm": 159.9,
-      "temp_anomalia_c": 0.2
-     },
      {
       "mes": "2026-11",
       "lluvia_anomalia_mm": 156.0,
@@ -1123,11 +1023,6 @@
     "river": "Paraguay",
     "meses": [
      {
-      "mes": "2026-10",
-      "lluvia_anomalia_mm": 141.3,
-      "temp_anomalia_c": -0.1
-     },
-     {
       "mes": "2026-11",
       "lluvia_anomalia_mm": 157.0,
       "temp_anomalia_c": 0.0
@@ -1160,11 +1055,6 @@
     "place": "Pilar",
     "river": "Paraguay",
     "meses": [
-     {
-      "mes": "2026-10",
-      "lluvia_anomalia_mm": 121.3,
-      "temp_anomalia_c": -0.2
-     },
      {
       "mes": "2026-11",
       "lluvia_anomalia_mm": 133.9,
@@ -1199,11 +1089,6 @@
     "river": "Paraguay",
     "meses": [
      {
-      "mes": "2026-10",
-      "lluvia_anomalia_mm": 95.0,
-      "temp_anomalia_c": -0.1
-     },
-     {
       "mes": "2026-11",
       "lluvia_anomalia_mm": 145.4,
       "temp_anomalia_c": -0.1
@@ -1236,11 +1121,6 @@
     "place": "Embarcación",
     "river": "Bermejo",
     "meses": [
-     {
-      "mes": "2026-10",
-      "lluvia_anomalia_mm": 7.3,
-      "temp_anomalia_c": -0.6
-     },
      {
       "mes": "2026-11",
       "lluvia_anomalia_mm": -30.8,
@@ -1275,11 +1155,6 @@
     "river": "Bermejo",
     "meses": [
      {
-      "mes": "2026-10",
-      "lluvia_anomalia_mm": 75.6,
-      "temp_anomalia_c": -0.4
-     },
-     {
       "mes": "2026-11",
       "lluvia_anomalia_mm": 109.9,
       "temp_anomalia_c": -0.4
@@ -1312,11 +1187,6 @@
     "place": "El Soberbio",
     "river": "Uruguay",
     "meses": [
-     {
-      "mes": "2026-10",
-      "lluvia_anomalia_mm": 180.7,
-      "temp_anomalia_c": 0.4
-     },
      {
       "mes": "2026-11",
       "lluvia_anomalia_mm": 140.6,
@@ -1351,11 +1221,6 @@
     "river": "Uruguay",
     "meses": [
      {
-      "mes": "2026-10",
-      "lluvia_anomalia_mm": 182.8,
-      "temp_anomalia_c": 0.3
-     },
-     {
       "mes": "2026-11",
       "lluvia_anomalia_mm": 151.4,
       "temp_anomalia_c": 0.4
@@ -1388,11 +1253,6 @@
     "place": "Santo Tomé",
     "river": "Uruguay",
     "meses": [
-     {
-      "mes": "2026-10",
-      "lluvia_anomalia_mm": 122.7,
-      "temp_anomalia_c": 0.1
-     },
      {
       "mes": "2026-11",
       "lluvia_anomalia_mm": 139.0,
@@ -1427,11 +1287,6 @@
     "river": "Uruguay",
     "meses": [
      {
-      "mes": "2026-10",
-      "lluvia_anomalia_mm": 50.0,
-      "temp_anomalia_c": -0.1
-     },
-     {
       "mes": "2026-11",
       "lluvia_anomalia_mm": 128.4,
       "temp_anomalia_c": -0.1
@@ -1464,11 +1319,6 @@
     "place": "Monte Caseros",
     "river": "Uruguay",
     "meses": [
-     {
-      "mes": "2026-10",
-      "lluvia_anomalia_mm": 25.0,
-      "temp_anomalia_c": 0.0
-     },
      {
       "mes": "2026-11",
       "lluvia_anomalia_mm": 111.4,
@@ -1503,11 +1353,6 @@
     "river": "Uruguay",
     "meses": [
      {
-      "mes": "2026-10",
-      "lluvia_anomalia_mm": 10.8,
-      "temp_anomalia_c": -0.1
-     },
-     {
       "mes": "2026-11",
       "lluvia_anomalia_mm": 85.8,
       "temp_anomalia_c": -0.1
@@ -1540,11 +1385,6 @@
     "place": "Colón",
     "river": "Uruguay",
     "meses": [
-     {
-      "mes": "2026-10",
-      "lluvia_anomalia_mm": -6.6,
-      "temp_anomalia_c": 0.3
-     },
      {
       "mes": "2026-11",
       "lluvia_anomalia_mm": 49.8,
@@ -1579,11 +1419,6 @@
     "river": "Uruguay",
     "meses": [
      {
-      "mes": "2026-10",
-      "lluvia_anomalia_mm": -11.3,
-      "temp_anomalia_c": 0.2
-     },
-     {
       "mes": "2026-11",
       "lluvia_anomalia_mm": 38.8,
       "temp_anomalia_c": 0.2
@@ -1616,11 +1451,6 @@
     "place": "Fray Bentos",
     "river": "Uruguay",
     "meses": [
-     {
-      "mes": "2026-10",
-      "lluvia_anomalia_mm": -6.5,
-      "temp_anomalia_c": -0.1
-     },
      {
       "mes": "2026-11",
       "lluvia_anomalia_mm": 26.7,
