@@ -26,13 +26,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
       # La memoria del aviso (último dato y categoría) se guarda en la caché de Actions, no en el repositorio.
       - name: Recuperar el último estado
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: data/nino_avisos_estado.json
           key: nino-estado-${{ github.run_id }}
@@ -50,13 +50,13 @@ jobs:
           python scripts/avisos_nino.py | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Guardar el estado
         if: always()
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: data/nino_avisos_estado.json
           key: nino-estado-${{ github.run_id }}
       - name: Guardar los gráficos del día
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: graficos-el-nino
           path: data/nino_graficos/
