@@ -29,19 +29,16 @@
  "parana-posadas": {
   "level": "Atención"
  },
- "paraguay-humaita": {
-  "level": "Atención"
- },
  "parana-diamante": {
   "level": "Atención"
  },
- "uruguay-libres": {
-  "level": "Atención"
- },
- "uruguay-concordia": {
+ "paraguay-humaita": {
   "level": "Atención"
  },
  "uruguay-cdeluruguay": {
+  "level": "Atención"
+ },
+ "uruguay-libres": {
   "level": "Atención"
  },
  "uruguay-colon": {
@@ -53,13 +50,16 @@
  "parana-rosario": {
   "level": "Normal"
  },
+ "uruguay-concordia": {
+  "level": "Normal"
+ },
  "paraguay-formosa": {
   "level": "Normal"
  },
- "uruguay-montecaseros": {
+ "parana-sannicolas": {
   "level": "Normal"
  },
- "parana-sannicolas": {
+ "uruguay-montecaseros": {
   "level": "Normal"
  },
  "paraguay-asuncion": {
@@ -68,13 +68,13 @@
  "parana-sanpedro": {
   "level": "Normal"
  },
+ "parana-zarate": {
+  "level": "Normal"
+ },
  "uruguay-santotome": {
   "level": "Normal"
  },
  "iguazu-andresito": {
-  "level": "Normal"
- },
- "parana-zarate": {
   "level": "Normal"
  }
 }
