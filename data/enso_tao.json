@@ -1,5 +1,5 @@
 {
- "actualizado": "2026-11-02T21:42Z",
+ "actualizado": "2026-11-05T19:56Z",
  "fuente": "GTMBA Project Office de NOAA/PMEL (boyas TAO/TRITON) vía ERDDAP de NOAA",
  "url": "https://www.pmel.noaa.gov/gtmba/",
  "normal": "promedio 1993–2020 de cada boya y profundidad",
@@ -8,795 +8,795 @@
    "longitud": 165.0,
    "lon": 165.0,
    "nombre": "165° E",
-   "desde": "2026-09-23",
-   "hasta": "2026-09-27",
+   "desde": "2026-10-28",
+   "hasta": "2026-11-01",
    "perfil": [
     {
      "prof": 1.0,
-     "temp": 29.61,
-     "anom": 0.18
+     "temp": 30.59,
+     "anom": 1.16
     },
     {
      "prof": 5.0,
-     "temp": 29.53,
-     "anom": 0.21
+     "temp": 30.37,
+     "anom": 1.05
     },
     {
      "prof": 15.0,
-     "temp": 29.47,
+     "temp": 30.25,
      "anom": null
     },
     {
      "prof": 20.0,
-     "temp": 29.46,
+     "temp": 30.07,
      "anom": null
     },
     {
      "prof": 25.0,
-     "temp": 29.45,
-     "anom": 0.11
+     "temp": 29.65,
+     "anom": 0.31
     },
     {
      "prof": 30.0,
-     "temp": 29.45,
-     "anom": 0.26
+     "temp": 28.99,
+     "anom": -0.2
     },
     {
      "prof": 40.0,
-     "temp": 29.39,
+     "temp": 27.67,
      "anom": null
     },
     {
      "prof": 50.0,
-     "temp": 29.21,
-     "anom": 0.16
+     "temp": 27.09,
+     "anom": -1.96
     },
     {
      "prof": 60.0,
-     "temp": 28.9,
+     "temp": 26.92,
      "anom": null
     },
     {
      "prof": 80.0,
-     "temp": 27.97,
+     "temp": 26.75,
      "anom": null
     },
     {
      "prof": 100.0,
-     "temp": 26.18,
-     "anom": -1.09
+     "temp": 24.96,
+     "anom": -2.31
     },
     {
      "prof": 125.0,
-     "temp": 21.94,
-     "anom": -3.02
+     "temp": 22.48,
+     "anom": -2.48
     },
     {
      "prof": 150.0,
-     "temp": 19.59,
-     "anom": -2.53
+     "temp": 18.71,
+     "anom": -3.41
     },
     {
      "prof": 200.0,
-     "temp": 14.96,
-     "anom": -2.11
+     "temp": 15.39,
+     "anom": -1.68
     },
     {
      "prof": 250.0,
-     "temp": 13.16,
-     "anom": -0.44
+     "temp": 13.47,
+     "anom": -0.13
     },
     {
      "prof": 300.0,
-     "temp": 12.35,
-     "anom": 0.19
+     "temp": 12.07,
+     "anom": -0.09
     },
     {
      "prof": 500.0,
-     "temp": 8.2,
-     "anom": 0.02
+     "temp": 8.14,
+     "anom": -0.04
     }
    ],
-   "isoterma20_m": 145.6,
+   "isoterma20_m": 141.4,
    "isoterma20_normal_m": 171.1
   },
   {
    "longitud": 180.0,
    "lon": 180.0,
    "nombre": "180°",
-   "desde": "2026-09-23",
-   "hasta": "2026-09-27",
+   "desde": "2026-10-28",
+   "hasta": "2026-11-01",
    "perfil": [
     {
      "prof": 1.0,
-     "temp": 29.77,
-     "anom": 1.24
+     "temp": 30.09,
+     "anom": 1.56
     },
     {
      "prof": 5.0,
-     "temp": 29.64,
-     "anom": 1.42
+     "temp": 30.0,
+     "anom": 1.78
     },
     {
      "prof": 10.0,
-     "temp": 29.6,
-     "anom": 1.43
+     "temp": 29.95,
+     "anom": 1.78
     },
     {
      "prof": 15.0,
-     "temp": 29.57,
-     "anom": 1.41
+     "temp": 29.91,
+     "anom": 1.75
     },
     {
      "prof": 20.0,
-     "temp": 29.56,
-     "anom": 1.42
+     "temp": 29.87,
+     "anom": 1.73
     },
     {
      "prof": 25.0,
-     "temp": 29.54,
-     "anom": 1.17
+     "temp": 29.83,
+     "anom": 1.46
     },
     {
      "prof": 30.0,
-     "temp": 29.52,
-     "anom": 1.43
+     "temp": 29.8,
+     "anom": 1.71
     },
     {
      "prof": 40.0,
-     "temp": 29.49,
-     "anom": 1.44
+     "temp": 29.75,
+     "anom": 1.7
     },
     {
      "prof": 50.0,
-     "temp": 29.47,
-     "anom": 1.22
+     "temp": 29.68,
+     "anom": 1.43
     },
     {
      "prof": 60.0,
-     "temp": 29.43,
-     "anom": 1.48
+     "temp": 29.67,
+     "anom": 1.72
     },
     {
      "prof": 80.0,
-     "temp": 29.3,
+     "temp": 29.66,
      "anom": null
     },
     {
      "prof": 100.0,
-     "temp": 28.88,
-     "anom": 1.82
+     "temp": 25.47,
+     "anom": -1.59
     },
     {
      "prof": 125.0,
-     "temp": 22.2,
-     "anom": -2.95
+     "temp": 19.4,
+     "anom": -5.75
     },
     {
      "prof": 150.0,
-     "temp": 19.38,
-     "anom": -2.7
+     "temp": 17.87,
+     "anom": -4.21
     },
     {
      "prof": 200.0,
-     "temp": 15.86,
-     "anom": -0.52
+     "temp": 14.81,
+     "anom": -1.57
     },
     {
      "prof": 250.0,
-     "temp": 13.18,
-     "anom": -0.1
+     "temp": 13.16,
+     "anom": -0.12
     },
     {
      "prof": 300.0,
-     "temp": 12.0,
-     "anom": 0.16
+     "temp": 11.63,
+     "anom": -0.21
     },
     {
      "prof": 500.0,
-     "temp": 8.23,
-     "anom": 0.04
+     "temp": 8.13,
+     "anom": -0.06
     }
    ],
-   "isoterma20_m": 144.5,
+   "isoterma20_m": 122.5,
    "isoterma20_normal_m": 168.2
   },
   {
    "longitud": 190.0,
    "lon": -170.0,
    "nombre": "170° O",
-   "desde": "2026-09-23",
-   "hasta": "2026-09-27",
+   "desde": "2026-10-28",
+   "hasta": "2026-11-01",
    "perfil": [
     {
      "prof": 1.0,
-     "temp": 30.06,
-     "anom": 2.33
+     "temp": 30.11,
+     "anom": 2.38
     },
     {
      "prof": 5.0,
-     "temp": 30.0,
-     "anom": 2.09
+     "temp": 29.96,
+     "anom": 2.05
     },
     {
      "prof": 10.0,
-     "temp": 29.96,
-     "anom": 1.92
+     "temp": 29.92,
+     "anom": 1.88
     },
     {
      "prof": 15.0,
-     "temp": 29.94,
-     "anom": null
-    },
-    {
-     "prof": 20.0,
-     "temp": 29.92,
-     "anom": null
-    },
-    {
-     "prof": 25.0,
-     "temp": 29.9,
-     "anom": 2.14
-    },
-    {
-     "prof": 30.0,
      "temp": 29.88,
      "anom": null
     },
     {
+     "prof": 20.0,
+     "temp": 29.81,
+     "anom": null
+    },
+    {
+     "prof": 25.0,
+     "temp": 29.76,
+     "anom": 2.0
+    },
+    {
+     "prof": 30.0,
+     "temp": 29.72,
+     "anom": null
+    },
+    {
      "prof": 40.0,
-     "temp": 29.84,
+     "temp": 29.63,
      "anom": null
     },
     {
      "prof": 50.0,
-     "temp": 29.78,
-     "anom": 2.14
+     "temp": 29.53,
+     "anom": 1.89
     },
     {
      "prof": 60.0,
-     "temp": 29.71,
+     "temp": 29.42,
      "anom": null
     },
     {
      "prof": 80.0,
-     "temp": 29.59,
+     "temp": 29.35,
      "anom": null
     },
     {
      "prof": 100.0,
-     "temp": 29.49,
-     "anom": 3.21
+     "temp": 29.06,
+     "anom": 2.78
     },
     {
      "prof": 200.0,
-     "temp": 15.57,
-     "anom": 0.06
+     "temp": 14.33,
+     "anom": -1.18
     },
     {
      "prof": 250.0,
-     "temp": 13.12,
-     "anom": 0.28
+     "temp": 12.83,
+     "anom": -0.01
     },
     {
      "prof": 300.0,
-     "temp": 12.31,
-     "anom": 0.65
+     "temp": 11.99,
+     "anom": 0.33
     },
     {
      "prof": 500.0,
-     "temp": 8.35,
-     "anom": 0.16
+     "temp": 8.4,
+     "anom": 0.21
     }
    ],
-   "isoterma20_m": 168.2,
+   "isoterma20_m": 161.5,
    "isoterma20_normal_m": 158.6
   },
   {
    "longitud": 205.0,
    "lon": -155.0,
    "nombre": "155° O",
-   "desde": "2026-09-23",
-   "hasta": "2026-09-27",
+   "desde": "2026-10-28",
+   "hasta": "2026-11-01",
    "perfil": [
     {
      "prof": 1.0,
-     "temp": 30.6,
-     "anom": 3.67
+     "temp": 30.26,
+     "anom": 3.33
     },
     {
      "prof": 5.0,
-     "temp": 30.43,
-     "anom": 3.95
+     "temp": 30.19,
+     "anom": 3.71
     },
     {
      "prof": 10.0,
-     "temp": 30.39,
-     "anom": 3.94
+     "temp": 30.16,
+     "anom": 3.71
     },
     {
      "prof": 15.0,
-     "temp": 30.36,
-     "anom": 3.93
+     "temp": 30.15,
+     "anom": 3.72
     },
     {
      "prof": 20.0,
-     "temp": 30.35,
-     "anom": 3.95
+     "temp": 30.14,
+     "anom": 3.74
     },
     {
      "prof": 25.0,
-     "temp": 30.34,
-     "anom": 3.55
+     "temp": 30.14,
+     "anom": 3.35
     },
     {
      "prof": 30.0,
-     "temp": 30.35,
-     "anom": 4.01
+     "temp": 30.12,
+     "anom": 3.78
     },
     {
      "prof": 40.0,
-     "temp": 30.36,
-     "anom": 4.1
+     "temp": 30.06,
+     "anom": 3.8
     },
     {
      "prof": 50.0,
-     "temp": 30.33,
-     "anom": 3.89
+     "temp": 29.97,
+     "anom": 3.53
     },
     {
      "prof": 60.0,
-     "temp": 30.34,
-     "anom": 4.29
+     "temp": 29.9,
+     "anom": 3.85
     },
     {
      "prof": 80.0,
-     "temp": 30.33,
+     "temp": 29.86,
      "anom": null
     },
     {
      "prof": 100.0,
-     "temp": 30.04,
-     "anom": 5.64
+     "temp": 29.86,
+     "anom": 5.46
     },
     {
      "prof": 125.0,
-     "temp": 28.25,
-     "anom": 6.52
+     "temp": 29.07,
+     "anom": 7.34
     },
     {
      "prof": 150.0,
-     "temp": 24.19,
-     "anom": 5.63
+     "temp": 19.34,
+     "anom": 0.78
     },
     {
      "prof": 200.0,
-     "temp": 14.96,
-     "anom": 0.76
+     "temp": 14.65,
+     "anom": 0.45
     },
     {
      "prof": 250.0,
-     "temp": 13.12,
-     "anom": 0.6
+     "temp": 12.84,
+     "anom": 0.32
     },
     {
      "prof": 300.0,
-     "temp": 12.36,
-     "anom": 0.66
+     "temp": 11.95,
+     "anom": 0.25
     },
     {
      "prof": 500.0,
-     "temp": 8.28,
-     "anom": 0.11
+     "temp": 8.31,
+     "anom": 0.14
     }
    ],
-   "isoterma20_m": 172.7,
+   "isoterma20_m": 148.3,
    "isoterma20_normal_m": 138.6
   },
   {
    "longitud": 220.0,
    "lon": -140.0,
    "nombre": "140° O",
-   "desde": "2026-09-23",
-   "hasta": "2026-09-27",
+   "desde": "2026-10-28",
+   "hasta": "2026-11-01",
    "perfil": [
     {
      "prof": 1.0,
-     "temp": 30.2,
-     "anom": 4.3
+     "temp": 30.36,
+     "anom": 4.46
     },
     {
      "prof": 5.0,
-     "temp": 30.18,
-     "anom": 4.34
+     "temp": 30.33,
+     "anom": 4.49
     },
     {
      "prof": 10.0,
-     "temp": 30.16,
-     "anom": 4.29
+     "temp": 30.3,
+     "anom": 4.43
     },
     {
      "prof": 15.0,
-     "temp": 30.15,
+     "temp": 30.29,
      "anom": null
     },
     {
      "prof": 20.0,
-     "temp": 30.14,
-     "anom": 4.42
+     "temp": 30.28,
+     "anom": 4.56
     },
     {
      "prof": 25.0,
-     "temp": 30.14,
-     "anom": 4.49
+     "temp": 30.28,
+     "anom": 4.63
     },
     {
      "prof": 30.0,
-     "temp": 30.13,
+     "temp": 30.28,
      "anom": null
     },
     {
      "prof": 40.0,
-     "temp": 30.13,
-     "anom": 4.65
+     "temp": 30.28,
+     "anom": 4.8
     },
     {
      "prof": 50.0,
-     "temp": 30.13,
+     "temp": 30.3,
      "anom": null
     },
     {
      "prof": 60.0,
-     "temp": 30.14,
-     "anom": 5.51
+     "temp": 30.33,
+     "anom": 5.7
     },
     {
      "prof": 80.0,
-     "temp": 29.88,
-     "anom": 6.63
+     "temp": 30.35,
+     "anom": 7.1
     },
     {
      "prof": 100.0,
-     "temp": 29.43,
-     "anom": 8.26
+     "temp": 30.27,
+     "anom": 9.1
     },
     {
      "prof": 125.0,
-     "temp": 28.32,
+     "temp": 28.66,
      "anom": null
     },
     {
      "prof": 150.0,
-     "temp": 23.77,
+     "temp": 22.75,
      "anom": null
     },
     {
      "prof": 200.0,
-     "temp": 15.23,
-     "anom": 1.88
+     "temp": 15.38,
+     "anom": 2.03
     },
     {
      "prof": 250.0,
-     "temp": 13.25,
+     "temp": 13.11,
      "anom": null
     },
     {
      "prof": 300.0,
-     "temp": 12.47,
-     "anom": 0.67
+     "temp": 12.46,
+     "anom": 0.66
     },
     {
      "prof": 500.0,
-     "temp": 8.28,
-     "anom": 0.03
+     "temp": 8.53,
+     "anom": 0.28
     }
    ],
-   "isoterma20_m": 172.1,
+   "isoterma20_m": 168.7,
    "isoterma20_normal_m": 110.3
   },
   {
    "longitud": 235.0,
    "lon": -125.0,
    "nombre": "125° O",
-   "desde": "2026-09-23",
-   "hasta": "2026-09-27",
+   "desde": "2026-10-28",
+   "hasta": "2026-11-01",
    "perfil": [
     {
      "prof": 1.0,
-     "temp": 29.21,
-     "anom": 4.28
+     "temp": 29.77,
+     "anom": 4.84
     },
     {
      "prof": 5.0,
-     "temp": 29.21,
-     "anom": 4.83
+     "temp": 29.82,
+     "anom": 5.44
     },
     {
      "prof": 10.0,
-     "temp": 29.2,
-     "anom": 4.66
+     "temp": 29.9,
+     "anom": 5.36
     },
     {
      "prof": 15.0,
-     "temp": 29.18,
-     "anom": 5.02
+     "temp": 29.91,
+     "anom": 5.75
     },
     {
      "prof": 20.0,
-     "temp": 29.17,
-     "anom": 5.0
+     "temp": 29.91,
+     "anom": 5.74
     },
     {
      "prof": 25.0,
-     "temp": 29.17,
-     "anom": 5.4
+     "temp": 29.91,
+     "anom": 6.14
     },
     {
      "prof": 30.0,
-     "temp": 29.15,
-     "anom": 4.46
+     "temp": 29.9,
+     "anom": 5.21
     },
     {
      "prof": 40.0,
-     "temp": 29.01,
-     "anom": 5.8
+     "temp": 29.9,
+     "anom": 6.69
     },
     {
      "prof": 50.0,
-     "temp": 28.81,
-     "anom": 5.88
+     "temp": 29.94,
+     "anom": 7.01
     },
     {
      "prof": 60.0,
-     "temp": 28.63,
-     "anom": 6.94
+     "temp": 29.92,
+     "anom": 8.23
     },
     {
      "prof": 80.0,
-     "temp": 28.48,
-     "anom": 9.12
+     "temp": 29.86,
+     "anom": 10.5
     },
     {
      "prof": 100.0,
-     "temp": 28.53,
-     "anom": 10.64
+     "temp": 29.83,
+     "anom": 11.94
     },
     {
      "prof": 125.0,
-     "temp": 26.97,
+     "temp": 28.67,
      "anom": null
     },
     {
      "prof": 150.0,
-     "temp": 20.7,
+     "temp": 22.41,
      "anom": null
     },
     {
      "prof": 200.0,
-     "temp": 14.87,
+     "temp": 15.04,
      "anom": null
     },
     {
      "prof": 250.0,
-     "temp": 13.1,
+     "temp": 13.16,
      "anom": null
     },
     {
      "prof": 300.0,
-     "temp": 12.72,
-     "anom": 0.91
+     "temp": 12.65,
+     "anom": 0.84
     },
     {
      "prof": 500.0,
-     "temp": 8.22,
-     "anom": 0.0
+     "temp": 8.18,
+     "anom": -0.04
     }
    ],
-   "isoterma20_m": 156.0,
+   "isoterma20_m": 166.4,
    "isoterma20_normal_m": 74.5
   },
   {
    "longitud": 250.0,
    "lon": -110.0,
    "nombre": "110° O",
-   "desde": "2026-09-23",
-   "hasta": "2026-09-27",
+   "desde": "2026-10-28",
+   "hasta": "2026-11-01",
    "perfil": [
     {
      "prof": 1.0,
-     "temp": 28.66,
-     "anom": 4.57
+     "temp": 28.73,
+     "anom": 4.64
     },
     {
      "prof": 5.0,
-     "temp": 28.64,
-     "anom": 4.69
+     "temp": 28.73,
+     "anom": 4.78
     },
     {
      "prof": 10.0,
-     "temp": 28.61,
-     "anom": 4.76
+     "temp": 28.74,
+     "anom": 4.89
     },
     {
      "prof": 15.0,
-     "temp": 28.59,
-     "anom": 3.58
+     "temp": 28.73,
+     "anom": 3.72
     },
     {
      "prof": 20.0,
-     "temp": 28.58,
-     "anom": 5.54
+     "temp": 28.72,
+     "anom": 5.68
     },
     {
      "prof": 25.0,
-     "temp": 28.55,
-     "anom": 5.61
+     "temp": 28.71,
+     "anom": 5.77
     },
     {
      "prof": 30.0,
-     "temp": 28.46,
-     "anom": 0.66
+     "temp": 28.71,
+     "anom": 0.91
     },
     {
      "prof": 40.0,
-     "temp": 28.29,
-     "anom": 7.62
+     "temp": 28.71,
+     "anom": 8.04
     },
     {
      "prof": 50.0,
-     "temp": 28.2,
-     "anom": 1.22
+     "temp": 28.71,
+     "anom": 1.73
     },
     {
      "prof": 60.0,
-     "temp": 28.14,
-     "anom": 9.29
+     "temp": 28.7,
+     "anom": 9.85
     },
     {
      "prof": 80.0,
-     "temp": 27.89,
-     "anom": 10.95
+     "temp": 28.69,
+     "anom": 11.75
     },
     {
      "prof": 100.0,
-     "temp": 27.44,
-     "anom": 11.78
+     "temp": 28.58,
+     "anom": 12.92
     },
     {
      "prof": 125.0,
-     "temp": 22.95,
+     "temp": 27.1,
      "anom": null
     },
     {
      "prof": 150.0,
-     "temp": 17.58,
+     "temp": 21.33,
      "anom": null
     },
     {
      "prof": 200.0,
-     "temp": 14.4,
-     "anom": 1.29
+     "temp": 15.0,
+     "anom": 1.89
     },
     {
      "prof": 250.0,
-     "temp": 13.15,
+     "temp": 13.04,
      "anom": null
     },
     {
      "prof": 300.0,
-     "temp": 12.76,
-     "anom": 0.89
+     "temp": 12.88,
+     "anom": 1.01
     },
     {
      "prof": 500.0,
-     "temp": 8.47,
-     "anom": 0.24
+     "temp": 8.28,
+     "anom": 0.05
     }
    ],
-   "isoterma20_m": 138.7,
+   "isoterma20_m": 160.5,
    "isoterma20_normal_m": 51.0
   },
   {
    "longitud": 265.0,
    "lon": -95.0,
    "nombre": "95° O",
-   "desde": "2026-09-23",
-   "hasta": "2026-09-27",
+   "desde": "2026-10-28",
+   "hasta": "2026-11-01",
    "perfil": [
     {
      "prof": 1.0,
-     "temp": 27.83,
-     "anom": 3.95
+     "temp": 28.72,
+     "anom": 4.84
     },
     {
      "prof": 5.0,
-     "temp": 27.82,
-     "anom": 4.19
+     "temp": 28.72,
+     "anom": 5.09
     },
     {
      "prof": 10.0,
-     "temp": 27.8,
-     "anom": 4.04
+     "temp": 28.73,
+     "anom": 4.97
     },
     {
      "prof": 15.0,
-     "temp": 27.76,
+     "temp": 28.72,
      "anom": null
     },
     {
      "prof": 20.0,
-     "temp": 27.72,
-     "anom": 5.76
+     "temp": 28.71,
+     "anom": 6.75
     },
     {
      "prof": 25.0,
-     "temp": 27.63,
+     "temp": 28.7,
      "anom": null
     },
     {
      "prof": 30.0,
-     "temp": 27.52,
+     "temp": 28.68,
      "anom": null
     },
     {
      "prof": 40.0,
-     "temp": 27.35,
-     "anom": 8.11
+     "temp": 28.42,
+     "anom": 9.18
     },
     {
      "prof": 50.0,
-     "temp": 27.27,
+     "temp": 28.11,
      "anom": null
     },
     {
      "prof": 60.0,
-     "temp": 27.17,
-     "anom": 10.04
+     "temp": 27.99,
+     "anom": 10.86
     },
     {
      "prof": 80.0,
-     "temp": 26.97,
-     "anom": 11.1
+     "temp": 27.66,
+     "anom": 11.79
     },
     {
      "prof": 100.0,
-     "temp": 25.83,
-     "anom": 10.83
+     "temp": 26.13,
+     "anom": 11.13
     },
     {
      "prof": 125.0,
-     "temp": 20.38,
+     "temp": 21.43,
      "anom": null
     },
     {
      "prof": 150.0,
-     "temp": 17.02,
+     "temp": 16.29,
      "anom": null
     },
     {
      "prof": 250.0,
-     "temp": 14.09,
+     "temp": 14.36,
      "anom": null
     },
     {
      "prof": 300.0,
-     "temp": 13.23,
-     "anom": 1.42
+     "temp": 13.15,
+     "anom": 1.34
     },
     {
      "prof": 500.0,
-     "temp": 8.76,
-     "anom": 0.54
+     "temp": 8.29,
+     "anom": 0.07
     }
    ],
-   "isoterma20_m": 127.8,
+   "isoterma20_m": 132.0,
    "isoterma20_normal_m": 34.4
   }
  ],
  "resumen": {
-  "anom_este_0_150m": 6.26,
-  "anom_oeste_80_200m": -1.64,
-  "ultimo_dato": "2026-09-27"
+  "anom_este_0_150m": 6.94,
+  "anom_oeste_80_200m": -2.88,
+  "ultimo_dato": "2026-11-01"
  },
  "nota": "Corte de la línea del ecuador con las boyas TAO. Rojo: agua más caliente que lo normal; azul: más fría. La línea es la isoterma de 20 °C, que marca la termoclina. Los datos de las boyas llegan con algunas semanas de demora y algunas boyas pueden estar sin datos por mantenimiento."
 }
