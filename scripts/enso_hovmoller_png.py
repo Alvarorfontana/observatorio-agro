@@ -1,10 +1,15 @@
-"""enso_hovmoller_png v1.0 - El Hovmoller de El Nino en version imprimible.
+"""enso_hovmoller_png v2.0 - El Hovmoller de El Nino en version imprimible.
 
 Toma la matriz que ya genera tools/build_enso_ersst.py (public/data/enso-ersst.json) y la
 dibuja con el diseno de DOTS: PNG de 1600x900, listo para una nota, un PDF o Telegram.
 
 No descarga nada ni recalcula indices: usa los datos que valida el workflow
 .github/workflows/enso-data-build.yml. La ciencia vive en un solo lugar.
+
+Cada figura lleva tres lecturas alineadas en el mismo eje de tiempo:
+  * a la izquierda, la serie del indice Nino 3.4, para saber si hubo Nino o Nina;
+  * en el centro, la franja 5S-5N: donde esta el agua caliente en cada momento;
+  * a la derecha, los eventos fuertes marcados, detectados de los propios datos.
 
 Salidas (por defecto en data/enso):
   * enso-hovmoller-completo.png   desde 1981 hasta el ultimo mes con dato
@@ -32,12 +37,19 @@ for _f in os.listdir(os.path.join(HERE, 'fonts')):
         fm.fontManager.addfont(os.path.join(HERE, 'fonts', _f))
 
 DATOS = os.path.join(ROOT, 'public', 'data', 'enso-ersst.json')
-LIMITE = 3.0  # tope de la escala de color, en grados
+LIMITE = 3.0      # tope de la escala de color, en grados
+UMBRAL = 0.5      # desde aca se considera episodio Nino o Nina
+MINIMO = 5        # meses seguidos para que cuente como episodio
+FUERTE = 1.5      # desde aca se marca en el grafico
+ETIQUETA = 2.0    # desde aca se escribe el nombre del evento
 FUENTE = 'Fuente: NOAA ERSST v5 · base 1991-2020 · datos de public/data/enso-ersst.json'
 
 # Paleta DOTS, la misma de scripts/nino_graficos.py
 FONDO, TINTA, GRIS, LINEA = '#F7F6F2', '#15191A', '#6B706C', '#DEDCD5'
-ROJO, PIZARRA = '#C8102E', '#4E6A8A'
+ROJO, PIZARRA, AZUL = '#C8102E', '#4E6A8A', '#0A4D8C'
+
+MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto',
+         'septiembre', 'octubre', 'noviembre', 'diciembre']
 
 plt.rcParams.update({'font.family': 'IBM Plex Sans', 'font.size': 12.5, 'text.color': TINTA,
                      'axes.labelcolor': GRIS, 'xtick.color': GRIS, 'ytick.color': GRIS,
@@ -50,22 +62,50 @@ def numero(v, d=2):
     return f'{v:+.{d}f}'.replace('.', ',').replace('-', '−')
 
 
-MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto',
-         'septiembre', 'octubre', 'noviembre', 'diciembre']
-
-
 def mes_largo(mes):
     """'2026-09' -> 'septiembre de 2026'."""
     return f'{MESES[int(mes[5:]) - 1]} de {mes[:4]}'
 
 
+def nombre_evento(meses, ini, fin):
+    """'1997-05'..'1998-06' -> '1997-98'; si cae en un solo anio, '1982'."""
+    a, b = meses[ini][:4], meses[fin][:4]
+    return a if a == b else f'{a}-{b[2:]}'
+
+
 def cargar(ruta=DATOS):
-    """Lee el JSON del laboratorio y devuelve meses, longitudes y la matriz del Hovmoller."""
+    """Lee el JSON del laboratorio y devuelve meses, longitudes, matriz y el indice Nino 3.4."""
     with open(ruta, encoding='utf-8') as fh:
         d = json.load(fh)
     hov = d['hovmoller']
     matriz = np.array([[np.nan if v is None else float(v) for v in fila] for fila in hov['values']])
-    return d['months'], list(hov['lon']), matriz, d.get('indices', {})
+    crudo = (d.get('indices') or {}).get('nino34') or []
+    serie = np.array([np.nan if v is None else float(v) for v in crudo])
+    if serie.size != matriz.shape[0]:  # sin indice no hay panel lateral, pero el mapa se dibuja igual
+        serie = np.full(matriz.shape[0], np.nan)
+    return d['months'], list(hov['lon']), matriz, serie
+
+
+def detectar_eventos(serie, meses, umbral=UMBRAL, minimo=MINIMO):
+    """Episodios de Nino o Nina: tramos seguidos que superan el umbral al menos 'minimo' meses."""
+    eventos, n, i = [], len(serie), 0
+    while i < n:
+        v = serie[i]
+        if np.isnan(v) or abs(v) < umbral:
+            i += 1
+            continue
+        signo = 1 if v > 0 else -1
+        j = i
+        while j < n and not np.isnan(serie[j]) and serie[j] * signo >= umbral:
+            j += 1
+        if j - i >= minimo:
+            tramo = serie[i:j]
+            pico = i + int(np.nanargmax(np.abs(tramo)))
+            eventos.append({'ini': i, 'fin': j - 1, 'pico': pico, 'valor': float(serie[pico]),
+                            'tipo': 'nino' if signo > 0 else 'nina',
+                            'nombre': nombre_evento(meses, i, j - 1)})
+        i = j
+    return eventos
 
 
 def etiqueta_lon(x):
@@ -96,10 +136,34 @@ def lienzo(kicker, titulo, subtitulo):
     return fig
 
 
-def dibujar(meses, lons, matriz, ruta, titulo, subtitulo, cada=5):
-    """Dibuja un Hovmoller: longitud en el eje horizontal, tiempo en el vertical."""
+def dibujar_indice(ax, serie, eventos):
+    """Panel izquierdo: el indice Nino 3.4 como barras horizontales, alineado al tiempo."""
+    filas = np.arange(len(serie))
+    limpio = np.nan_to_num(serie, nan=0.0)
+    ax.fill_betweenx(filas, 0, limpio, where=limpio >= 0, color=ROJO, alpha=.75, lw=0)
+    ax.fill_betweenx(filas, 0, limpio, where=limpio < 0, color=AZUL, alpha=.75, lw=0)
+    ax.axvline(0, color=GRIS, lw=.8)
+    for e in eventos:
+        if abs(e['valor']) >= FUERTE:
+            ax.plot(e['valor'], e['pico'], 'o', ms=4, mfc='none', mec=TINTA, mew=1)
+    ax.set_xlim(-3.2, 3.2)
+    ax.set_xticks([-2, 0, 2])
+    ax.set_xticklabels(['−2', '0', '+2'], fontsize=8.5)
+    ax.tick_params(length=0, pad=2)
+    for lado in ('top', 'right', 'left'):
+        ax.spines[lado].set_visible(False)
+    ax.spines['bottom'].set_visible(False)
+    ax.set_ylabel('')
+    ax.text(.5, 1.008, 'Niño 3.4', transform=ax.transAxes, fontsize=9.5, color=GRIS,
+            ha='center', va='bottom')
+
+
+def dibujar(meses, lons, matriz, serie, ruta, titulo, subtitulo, cada=5):
+    """Dibuja el Hovmoller con su indice a la izquierda y los eventos fuertes marcados."""
     fig = lienzo('DOTS · El Niño', titulo, subtitulo)
-    ax = fig.add_axes([.075, .115, .775, .655])
+    ax = fig.add_axes([.175, .115, .675, .655])
+    axi = fig.add_axes([.075, .115, .062, .655], sharey=ax)
+
     malla = ax.pcolormesh(np.arange(len(lons)), np.arange(len(meses)), matriz,
                           cmap='RdBu_r', norm=TwoSlopeNorm(vcenter=0, vmin=-LIMITE, vmax=LIMITE),
                           shading='auto')
@@ -115,10 +179,29 @@ def dibujar(meses, lons, matriz, ruta, titulo, subtitulo, cada=5):
         anios = [i for i, m in enumerate(meses) if m.endswith('-01')]
     ax.set_yticks(anios)
     ax.set_yticklabels([meses[i][:4] for i in anios])
+    ax.tick_params(labelleft=False)  # los años van una sola vez, en el panel del índice
 
     for lado in ('top', 'right'):
         ax.spines[lado].set_visible(False)
     ax.tick_params(length=0, pad=4)
+
+    # Eventos fuertes: banda tenue y nombre sobre el pico.
+    eventos = detectar_eventos(serie, meses)
+    for e in eventos:
+        if abs(e['valor']) < FUERTE:
+            continue
+        color = ROJO if e['tipo'] == 'nino' else AZUL
+        ax.axhspan(e['ini'] - .5, e['fin'] + .5, color=color, alpha=.09, lw=0, zorder=2)
+        if abs(e['valor']) < ETIQUETA:  # solo los muy fuertes llevan nombre, para no amontonar
+            continue
+        # la etiqueta mide ~14 px: se mantiene dentro del area visible, corrida si el pico toca el borde
+        margen = max(1.0, len(meses) * .02)
+        y = min(max(e['pico'], margen), len(meses) - 1 - margen)
+        ax.text(len(lons) - .9, y, e['nombre'], fontsize=10, color=TINTA,
+                ha='right', va='center', zorder=4,
+                bbox={'boxstyle': 'round,pad=0.22', 'facecolor': FONDO, 'edgecolor': 'none', 'alpha': .82})
+
+    dibujar_indice(axi, serie, eventos)
 
     cax = fig.add_axes([.862, .115, .014, .655])
     barra = fig.colorbar(malla, cax=cax)
@@ -132,13 +215,13 @@ def dibujar(meses, lons, matriz, ruta, titulo, subtitulo, cada=5):
 
 def generar(carpeta, datos=DATOS):
     """Genera las dos versiones del Hovmoller y devuelve las rutas."""
-    meses, lons, matriz, indices = cargar(datos)
+    meses, lons, matriz, serie = cargar(datos)
     os.makedirs(carpeta, exist_ok=True)
-    n34 = indices.get('nino34') or []
-    valor = numero(float(n34[-1])) if n34 and n34[-1] is not None else 'sin dato'
+    ultimo = serie[-1] if serie.size else np.nan
+    valor = numero(float(ultimo)) if not np.isnan(ultimo) else 'sin dato'
 
     salidas = [
-        dibujar(meses, lons, matriz, os.path.join(carpeta, 'enso-hovmoller-completo.png'),
+        dibujar(meses, lons, matriz, serie, os.path.join(carpeta, 'enso-hovmoller-completo.png'),
                 'Cómo viaja el agua cálida por el Pacífico',
                 'Anomalía promedio entre 5°S y 5°N, de 1981 a hoy, en °C. '
                 'Las franjas que bajan a la derecha son ondas Kelvin.'),
@@ -146,7 +229,7 @@ def generar(carpeta, datos=DATOS):
 
     corte = max(0, len(meses) - 60)
     if corte > 0:
-        salidas.append(dibujar(meses[corte:], lons, matriz[corte:],
+        salidas.append(dibujar(meses[corte:], lons, matriz[corte:], serie[corte:],
                                os.path.join(carpeta, 'enso-hovmoller-5anios.png'),
                                'El último tramo: cinco años de Pacífico',
                                f'De {mes_largo(meses[corte])} a {mes_largo(meses[-1])}. '
