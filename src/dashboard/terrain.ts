@@ -33,8 +33,9 @@ export function analysisBbox(polygon: LatLon[]): Bbox {
   return { w, s, e, n };
 }
 
-export async function loadDem(b: Bbox, signal?: AbortSignal): Promise<DemGrid> {
-  const rx = 1 / 3600, ry = 1 / 3600; // grilla destino: 1" (≈ 30 m)
+export async function loadDem(b: Bbox, signal?: AbortSignal, stepSec = 1): Promise<DemGrid> {
+  const paso = Math.max(1, stepSec) / 3600; // por defecto 1" (≈ 30 m); más grueso para tramos largos
+  const rx = paso, ry = paso;
   const nx = Math.ceil((b.e - b.w) / rx), ny = Math.ceil((b.n - b.s) / ry);
   if (nx * ny > MAX_CELLS) throw new Error("El lote es demasiado grande para analizar el relieve en el navegador. Dividilo en lotes más chicos");
   const z = new Float32Array(nx * ny).fill(NaN);
