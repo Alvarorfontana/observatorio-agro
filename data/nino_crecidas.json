@@ -1,19 +1,19 @@
 {
- "updated": "2026-11-07T16:33+00:00",
+ "updated": "2026-11-07T22:03+00:00",
  "version": 1,
  "fuente": "https://observatorio-agro.vercel.app",
  "niveles": {
-  "Normal": 12,
+  "Normal": 11,
   "Atención": 6,
-  "Alerta": 3,
-  "Evacuación": 5
+  "Alerta": 5,
+  "Evacuación": 4
  },
  "peor": {
   "id": "parana-goya",
   "place": "Goya",
   "river": "Paraná",
   "level": "Evacuación",
-  "height": 6.09
+  "height": 6.07
  },
  "alertas": [
   {
@@ -44,12 +44,6 @@
    "id": "parana-bellavista",
    "place": "Bella Vista",
    "river": "Paraná",
-   "level": "Evacuación"
-  },
-  {
-   "id": "parana-ituzaingo",
-   "place": "Ituzaingó",
-   "river": "Paraná",
    "level": "Alerta"
   },
   {
@@ -59,8 +53,20 @@
    "level": "Alerta"
   },
   {
+   "id": "parana-ituzaingo",
+   "place": "Ituzaingó",
+   "river": "Paraná",
+   "level": "Alerta"
+  },
+  {
    "id": "parana-lapaz",
    "place": "La Paz",
+   "river": "Paraná",
+   "level": "Alerta"
+  },
+  {
+   "id": "parana-santafe",
+   "place": "Santa Fe · Paraná",
    "river": "Paraná",
    "level": "Alerta"
   }
@@ -73,7 +79,7 @@
  "enviado_el": null,
  "pdf_el": "2026-11-07T08:57+00:00",
  "newsletter": {
-  "subject": "DOTS · El Niño y crecidas · 07/11/2026 16:33 UTC",
+  "subject": "DOTS · El Niño y crecidas · 07/11/2026 22:03 UTC",
   "bytes": 6215
  }
 }
