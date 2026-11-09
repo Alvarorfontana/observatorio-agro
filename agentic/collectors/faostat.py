@@ -5,7 +5,8 @@ import requests
 BASE = "https://fenixservices.fao.org/faostat/api/v1/en/data/QCL"
 COUNTRIES = {"Argentina": "9", "Brasil": "21", "Paraguay": "169", "Uruguay": "234"}
 # FAOSTAT filter codes, not display codes.
-ELEMENTS = {"area_harvested": "2312", "yield": "2412", "production": "2510"}
+ELEMENT_FILTER_CODES = {"area_harvested": "2312", "yield": "2412", "production": "2510"}
+ELEMENT_DISPLAY_CODES = {"area_harvested": "5312", "yield": "5412", "production": "5510"}
 FIRST_YEAR = 1961
 
 
@@ -13,7 +14,7 @@ def collect(session=requests, end_year=None):
     end_year = end_year or datetime.now(timezone.utc).year - 1
     years = ",".join(str(y) for y in range(FIRST_YEAR, end_year + 1))
     params = {
-        "area": ",".join(COUNTRIES.values()), "element": ",".join(ELEMENTS.values()),
+        "area": ",".join(COUNTRIES.values()), "element": ",".join(ELEMENT_FILTER_CODES.values()),
         "year": years, "area_cs": "FAO", "show_code": "1", "show_unit": "1",
         "show_flags": "1", "null_values": "0", "limit": "-1", "output_type": "objects",
     }
@@ -33,7 +34,7 @@ def collect(session=requests, end_year=None):
         records.append({
             "country": country, "area_code": area, "item": row.get("Item"),
             "item_code": row.get("Item Code"),
-            "indicator": next((k for k, v in ELEMENTS.items() if v == element), row.get("Element")),
+            "indicator": next((k for k, v in ELEMENT_DISPLAY_CODES.items() if v == element), row.get("Element")),
             "element": row.get("Element"), "year": row.get("Year"), "value": row.get("Value"),
             "unit": row.get("Unit"), "flag": row.get("Flag"), "source": "FAOSTAT QCL",
             "source_url": "https://www.fao.org/faostat/en/#data/QCL",
