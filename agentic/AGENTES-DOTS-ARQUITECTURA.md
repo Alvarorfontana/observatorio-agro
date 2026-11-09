@@ -30,6 +30,10 @@ flowchart TD
     DB --> S
 ```
 
+## Alcance territorial
+
+DOTS es un observatorio agroterritorial sudamericano. La primera cobertura comprende Argentina (provincias y regiones productivas), Brasil (estados y regiones), Uruguay (departamentos) y Paraguay (departamentos). La incorporación de otros países será gradual. No se incluyen penínsulas europeas ni regiones fuera de Sudamérica.
+
 ## Agentes y tareas
 
 | Agente | Trabajo propio | Ritmo objetivo | Producto |
