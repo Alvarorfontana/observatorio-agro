@@ -1,6 +1,66 @@
 {
  "items": [
   {
+   "id": "uruguay-libres",
+   "place": "Paso de los Libres",
+   "river": "Uruguay",
+   "from": "Normal",
+   "to": "Atención",
+   "up": true,
+   "height": 6.83,
+   "alert": 7.5,
+   "evac": 8.5,
+   "date": "2026-11-09",
+   "trend_m_day": -0.087,
+   "text": "Paso de los Libres (río Uruguay): el nivel sube de Normal a Atención. Altura 6,83 m el 2026-11-09; alerta 7,50 m, evacuación 8,50 m. Tendencia -0,09 m por día.",
+   "at": "2026-11-09T20:49+00:00"
+  },
+  {
+   "id": "uruguay-santotome",
+   "place": "Santo Tomé",
+   "river": "Uruguay",
+   "from": "Normal",
+   "to": "Atención",
+   "up": true,
+   "height": 10.83,
+   "alert": 11.5,
+   "evac": 12.5,
+   "date": "2026-11-09",
+   "trend_m_day": 0.794,
+   "text": "Santo Tomé (río Uruguay): el nivel sube de Normal a Atención. Altura 10,83 m el 2026-11-09; alerta 11,50 m, evacuación 12,50 m. Tendencia +0,79 m por día.",
+   "at": "2026-11-09T20:49+00:00"
+  },
+  {
+   "id": "parana-corrientes",
+   "place": "Corrientes",
+   "river": "Paraná",
+   "from": "Evacuación",
+   "to": "Alerta",
+   "up": false,
+   "height": 6.91,
+   "alert": 6.5,
+   "evac": 7,
+   "date": "2026-11-09",
+   "trend_m_day": -0.024,
+   "text": "Corrientes (río Paraná): el nivel baja de Evacuación a Alerta. Altura 6,91 m el 2026-11-09; alerta 6,50 m, evacuación 7,00 m. Tendencia -0,02 m por día.",
+   "at": "2026-11-09T20:49+00:00"
+  },
+  {
+   "id": "parana-santafe",
+   "place": "Santa Fe · Paraná",
+   "river": "Paraná",
+   "from": "Alerta",
+   "to": "Evacuación",
+   "up": true,
+   "height": 5.05,
+   "alert": 4.7,
+   "evac": 5,
+   "date": "2026-11-09",
+   "trend_m_day": 0.088,
+   "text": "Santa Fe · Paraná (río Paraná): el nivel sube de Alerta a Evacuación. Altura 5,05 m el 2026-11-09; alerta 4,70 m, evacuación 5,00 m. Tendencia +0,09 m por día. Seguir las indicaciones de Defensa Civil.",
+   "at": "2026-11-09T20:49+00:00"
+  },
+  {
    "id": "parana-zarate",
    "place": "Zárate",
    "river": "Paraná",
@@ -661,5 +721,5 @@
    "at": "2026-10-15T18:22+00:00"
   }
  ],
- "updated": "2026-11-07T21:57+00:00"
+ "updated": "2026-11-09T20:49+00:00"
 }
