@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DOTS Historical Timeline Observation",
+  "type": "object",
+  "required": ["series_id", "indicator", "value", "unit", "period_start", "period_end", "temporal_resolution", "geography", "source", "retrieved_at", "status"],
+  "properties": {
+    "series_id": {"type": "string"},
+    "indicator": {"type": "string"},
+    "value": {"type": ["number", "null"]},
+    "unit": {"type": "string"},
+    "period_start": {"type": "string", "format": "date"},
+    "period_end": {"type": "string", "format": "date"},
+    "temporal_resolution": {"enum": ["day", "month", "year", "campaign", "decade", "century", "millennium", "event"]},
+    "geography": {
+      "type": "object",
+      "required": ["country"],
+      "properties": {
+        "country": {"type": "string"},
+        "province": {"type": ["string", "null"]},
+        "admin_level": {"type": ["integer", "null"]},
+        "geometry_id": {"type": ["string", "null"]}
+      },
+      "additionalProperties": true
+    },
+    "crop": {"type": ["string", "null"]},
+    "source": {"type": "string"},
+    "source_url": {"type": ["string", "null"], "format": "uri"},
+    "published_at": {"type": ["string", "null"], "format": "date"},
+    "retrieved_at": {"type": "string", "format": "date-time"},
+    "methodology": {"type": ["string", "null"]},
+    "status": {"enum": ["observed", "estimated", "forecast", "reconstructed", "interpretation"]},
+    "revision": {"type": ["string", "null"]},
+    "quality_flags": {"type": "array", "items": {"type": "string"}}
+  },
+  "additionalProperties": false
+}
