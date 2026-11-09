@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from agentic.collectors.faostat import collect as collect_faostat
+from agentic.collectors.magyp import collect as collect_magyp
 from agentic.collectors.nasa_power import collect as collect_nasa_power
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -20,6 +21,7 @@ def main():
     run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     results = []
     for agent, collector in (
+        ("argentina_agriculture", collect_magyp),
         ("agricultural_history", collect_faostat),
         ("climate", collect_nasa_power),
     ):
