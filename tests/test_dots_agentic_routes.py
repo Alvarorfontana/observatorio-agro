@@ -29,4 +29,6 @@ def test_atlas_endpoint_exposes_temporal_scales_and_regions():
     payload = response.get_json()
     assert "day" in payload["time_scales"]
     assert "millennium" in payload["time_scales"]
-    assert "Provincia de Buenos Aires" in payload["initial_regions"]
+    assert payload["geographic_scope"]["continent"] == "South America"
+    assert payload["geographic_scope"]["initial_countries"] == ["Argentina", "Brasil", "Uruguay", "Paraguay"]
+    assert "Península Ibérica" not in str(payload)
