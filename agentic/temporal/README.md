@@ -1,44 +1,37 @@
 # DOTS — Atlas histórico y temporal
 
-## Experiencia visual requerida
+## Experiencia visual
 
-Una línea de tiempo horizontal, densa y navegable, inspirada en las grandes cronologías históricas de 5.000 años. El usuario puede desplazarse y hacer zoom sin perder el contexto temporal. La vista combina:
+Una línea de tiempo horizontal, densa y navegable, inspirada en la cronología mundial de 5.000 años de la referencia. El usuario se desplaza y hace zoom conservando el contexto temporal. La vista combina:
 
-- carriles de acontecimientos históricos y productivos;
-- series cuantitativas de superficie sembrada, superficie cosechada, producción y rendimiento;
-- series climáticas: precipitación, temperatura y anomalías;
-- hitos territoriales, tecnológicos, normativos y de infraestructura;
-- gráficos comparativos y mapas vinculados a la región seleccionada.
+- Carriles de acontecimientos históricos y productivos.
+- Series de superficie sembrada, cosechada, producción y rendimiento.
+- Series climáticas: precipitación, temperatura y anomalías.
+- Hitos tecnológicos, territoriales, normativos y de infraestructura.
+- Gráficos comparativos y mapas vinculados a la región seleccionada.
 
-## Escalas y límites reales de resolución
+## Escalas temporales y rigor
 
-| Escala visible | Contenido admisible |
+| Escala | Información |
 |---|---|
-| 5.000 años / milenios | Cronología histórica, domesticación, difusión de cultivos, sociedades agrarias y grandes hitos; no atribuir cifras anuales inexistentes |
-| Siglos / décadas | Cambios de uso del suelo, expansión agrícola, censos y reconstrucciones históricas con método documentado |
-| Años | Series oficiales de siembra, cosecha, producción, rendimiento, comercio y clima |
-| Meses | Series mensuales cuando la fuente las publique; clima, precios y campañas |
-| Días | Observaciones diarias, satélite, estaciones, pronósticos y eventos sólo desde la fecha de cobertura real de cada fuente |
+| 5.000 años / milenios | Historia agraria, domesticación y difusión de cultivos, sociedades y grandes hitos; no atribuir cifras anuales inexistentes |
+| Siglos / décadas | Reconstrucciones históricas y cambios de uso del suelo con método documentado |
+| Años / campañas | Siembra, cosecha, producción, rendimiento, comercio y clima según estadísticas disponibles |
+| Meses | Series mensuales publicadas por las fuentes |
+| Días | Satélite, estaciones, clima y eventos desde el comienzo real de la cobertura |
 
-El zoom visual puede recorrer todo el rango, pero el detalle que aparece depende de la resolución temporal de los datos. Nunca interpolar una serie anual para presentarla como observación diaria.
+El zoom puede recorrer todo el rango, pero el detalle depende de la resolución temporal real de cada fuente. Nunca presentar una serie anual interpolada como observación diaria. Diferenciar dato observado, estimación, pronóstico y reconstrucción.
 
-## Alcance geográfico inicial: Sudamérica
+## Alcance geográfico: Sudamérica
 
-El Observatorio se concentra exclusivamente en Sudamérica. Primera etapa:
+Primera etapa, exclusivamente sudamericana:
 
-1. Argentina: país, provincias y regiones productivas; desglose por departamento/partido cuando las fuentes lo permitan.
-2. Brasil: país, estados y regiones productivas; desglose municipal cuando las fuentes lo permitan.
-3. Uruguay: país, departamentos y regiones productivas.
-4. Paraguay: país, departamentos y regiones productivas.
+1. **Argentina:** país, provincias y regiones productivas; departamentos/partidos cuando las fuentes lo permitan.
+2. **Brasil:** país, estados y regiones productivas; municipios cuando las fuentes lo permitan.
+3. **Uruguay:** país, departamentos y regiones productivas.
+4. **Paraguay:** país, departamentos y regiones productivas.
 
-La arquitectura permitirá sumar progresivamente otros países sudamericanos, pero no se incorporan al alcance inicial hasta definir prioridades y fuentes.
-
-##
-
-1. Provincia de Buenos Aires: provincia completa, con desglose por partido cuando la fuente lo permita.
-2. Argentina y regiones productivas: comparación nacional y entre provincias.
-3. Península ibérica e itálica: módulos comparativos de territorio, agricultura y clima, siempre sujetos a disponibilidad y armonización de fuentes oficiales.
-4. Escala global: hitos de historia agrícola y series comparables internacionales.
+La arquitectura permitirá incorporar gradualmente otros países de Sudamérica cuando se definan prioridades y fuentes. No incluir Europa ni otras regiones fuera del alcance acordado.
 
 ## Indicadores agrícolas
 
@@ -47,16 +40,19 @@ La arquitectura permitirá sumar progresivamente otros países sudamericanos, pe
 - Producción (t).
 - Rendimiento (kg/ha o t/ha).
 - Cultivo, campaña, jurisdicción y metodología.
-- Fecha de publicación y revisión de la estadística.
+- Fecha de publicación y revisión estadística.
 
-No mezclar campaña agrícola con año calendario sin explicitar la conversión. Mantener cultivos y unidades comparables.
+No mezclar campaña agrícola con año calendario sin explicitar la conversión. Mantener los valores originales y sus unidades.
 
-## Fuentes prioritarias a integrar y verificar
+## Fuentes prioritarias por cobertura
 
-- Argentina: MAGyP / SIIA, INDEC y estadísticas provinciales; bolsas de cereales como fuente complementaria, identificando su carácter.
-- Internacional: FAOSTAT para cultivos y países; Eurostat y estadísticas nacionales para España e Italia.
-- Clima: SMN, NASA POWER, ERA5 y CHIRPS según variable y resolución.
-- Satélite: Landsat, MODIS, Sentinel y SAOCOM/CONAE según producto y cobertura.
+- **Argentina:** MAGyP/SIIA, INDEC, estadísticas provinciales y bolsas de cereales como fuentes complementarias identificadas.
+- **Brasil:** IBGE, CONAB, MAPA y estadísticas oficiales estatales.
+- **Uruguay:** MGAP, DIEA e INE.
+- **Paraguay:** MAG, INE y estadísticas oficiales agropecuarias.
+- **Comparación regional:** FAOSTAT y CEPAL, con metadatos para armonizar definiciones.
+- **Clima:** SMN y servicios meteorológicos nacionales, NASA POWER, ERA5 y CHIRPS según variable y resolución.
+- **Satélite:** Landsat, MODIS, Sentinel y SAOCOM/CONAE según producto y cobertura.
 
 Una fuente documentada no equivale a un conector operativo. Cada integración debe registrar endpoint, licencia, cobertura, frecuencia, unidades, última consulta y prueba de actualización.
 
@@ -73,8 +69,8 @@ Una fuente documentada no equivale a un conector operativo. Cada integración de
   "temporal_resolution": "campaign",
   "geography": {
     "country": "AR",
-    "province": "Buenos Aires",
-    "admin_level": 1
+    "admin1": "Buenos Aires",
+    "admin2": null
   },
   "crop": "soybean",
   "source": "official-source-id",
@@ -87,24 +83,24 @@ Una fuente documentada no equivale a un conector operativo. Cada integración de
 }
 ```
 
-El cero del ejemplo es un marcador de esquema, no una observación. Los datos productivos deben almacenarse sin redondeo prematuro y con su valor original.
+El cero del ejemplo es un marcador de esquema, no una observación real.
 
-## Interacción entre gráfico, mapa y cronología
+## Interacción entre cronología, gráficos y mapa
 
-- Seleccionar una provincia/país actualiza los carriles y gráficos.
+- Seleccionar un país o jurisdicción actualiza los carriles, gráficos y mapa.
 - Seleccionar un cultivo filtra siembra, cosecha, producción y rendimiento.
-- Seleccionar un intervalo temporal actualiza el mapa y las series.
+- Seleccionar un intervalo temporal actualiza todas las vistas relacionadas.
 - Seleccionar un hito abre su ficha, fecha, territorio y referencias.
-- Comparar regiones usa escalas y unidades explícitas.
+- Comparar regiones utiliza unidades y escalas explícitas.
 - Cada gráfico informa fuente, cobertura, resolución y faltantes.
 
 ## Criterios de aceptación
 
-- Zoom y desplazamiento fluidos desde milenios hasta días.
-- Cambio de granularidad sin fingir resolución inexistente.
-- Provincia de Buenos Aires como primera región productiva.
-- Vistas comparativas ibérica e itálica.
-- Gráficos vinculados a la cronología y al mapa.
-- Fuentes y fecha de actualización visibles.
+- Zoom fluido desde milenios hasta días, sin fingir resolución inexistente.
+- Cobertura inicial de Argentina, Brasil, Uruguay y Paraguay.
+- Argentina: primera vista provincial productiva; Buenos Aires incluida.
+- Comparación de provincias, estados, departamentos y regiones según cobertura estadística.
+- Gráficos vinculados a cronología y mapa.
+- Fuentes, fechas de actualización y metodología visibles.
 - Datos faltantes y estimaciones claramente diferenciados.
-- Exportación de gráficos e informe con metodología y referencias.
+- Exportación de gráficos e informes con referencias.
