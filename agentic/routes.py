@@ -11,14 +11,21 @@ ALLOWED_DATASETS = {"argentina_agriculture", "agricultural_history", "climate"}
 
 @dots_agentic_api.get("/agents")
 def agents():
+    manifest_path = DATA_DIR / "latest_run.json"
+    runtime = {}
+    if manifest_path.exists():
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        runtime = {item["agent_id"]: item for item in manifest.get("results", [])}
+    items = []
+    for agent_id, definition in AGENTS.items():
+        result = runtime.get(agent_id)
+        state = result.get("state") if result else DEFAULT_AGENT_STATE
+        items.append({"id": agent_id, **definition, "state": state, "last_result": result})
     return jsonify({
         "system": "DOTS Agentic",
-        "registry_state": DEFAULT_AGENT_STATE,
-        "note": "Defined does not mean running. Runtime state requires a tested adapter and successful scheduled execution.",
-        "agents": [
-            {"id": agent_id, **definition, "state": DEFAULT_AGENT_STATE}
-            for agent_id, definition in AGENTS.items()
-        ],
+        "registry_state": "executed" if runtime else DEFAULT_AGENT_STATE,
+        "note": "Runtime status comes from the last persisted collection cycle.",
+        "agents": items,
     })
 
 
