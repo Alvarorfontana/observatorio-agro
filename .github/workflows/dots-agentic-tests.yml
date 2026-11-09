@@ -12,7 +12,7 @@ on:
     paths:
       - "agentic/**"
       - "api/index.py"
-      - "tests/test_dots_agentic_routes.py"
+      - "tests/**"
       - ".github/workflows/dots-agentic-tests.yml"
 
 jobs:
