@@ -26,7 +26,7 @@ class FakeSession:
 
 def test_faostat_collector_normalizes_real_source_records():
     session = FakeSession({"data": [{
-        "Area Code": "9", "Area": "Argentina", "Element Code": "2510",
+        "Area Code": "9", "Area": "Argentina", "Element Code": "5510",
         "Element": "Production", "Item": "Maize", "Item Code": "56",
         "Year": "2022", "Value": 59000000, "Unit": "t", "Flag": "A"
     }]})
@@ -58,3 +58,30 @@ def test_agent_data_routes_return_empty_state_until_first_collection():
     assert response.status_code == 200
     assert response.get_json()["state"] == "not_collected"
     assert app.test_client().get("/api/agentic/runs/latest").get_json()["state"] == "not_run_yet"
+
+
+def test_magyp_collector_extracts_sown_and_production_by_province():
+    from agentic.collectors.magyp import collect as collect_magyp
+
+    class FakeMagypSession:
+        def get(self, url, params=None, timeout=None):
+            if "package_show" in url:
+                return FakeResponse({"success": True, "result": {"resources": [{
+                    "id": "resource-1", "format": "CSV",
+                    "url": "https://example.invalid/estimaciones.csv",
+                    "last_modified": "2026-01-20"
+                }]}})
+            response = FakeResponse({})
+            response.content = (
+                "cultivo,anio,campania,provincia,provincia_id,departamento,departamento_id,"
+                "superficie_sembrada_ha,superficie_cosechada_ha,produccion_tm,rendimiento_kgxha\n"
+                "Soja,2024,2024/25,Buenos Aires,06,Junin,035,1000,900,2700,3000\n"
+            ).encode("utf-8")
+            return response
+
+    result = collect_magyp(session=FakeMagypSession())
+    assert result["record_count"] == 1
+    row = result["records"][0]
+    assert row["area_sown_ha"] == 1000
+    assert row["production_t"] == 2700
+    assert row["province"] == "Buenos Aires"
