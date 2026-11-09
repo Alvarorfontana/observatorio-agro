@@ -6,7 +6,7 @@ from agentic.agents.registry import AGENTS, DEFAULT_AGENT_STATE
 
 dots_agentic_api = Blueprint("dots_agentic_api", __name__, url_prefix="/api/agentic")
 DATA_DIR = Path(__file__).resolve().parents[1] / "data" / "dots"
-ALLOWED_DATASETS = {"agricultural_history", "climate"}
+ALLOWED_DATASETS = {"argentina_agriculture", "agricultural_history", "climate"}
 
 
 @dots_agentic_api.get("/agents")
@@ -33,7 +33,7 @@ def atlas():
             "initial_countries": ["Argentina", "Brasil", "Uruguay", "Paraguay"],
             "administrative_detail": "provincias, estados, departamentos y regiones productivas según cobertura de cada fuente",
         },
-        "indicators": ["area_harvested", "production", "yield", "precipitation", "temperature"],
+        "indicators": ["area_sown", "area_harvested", "production", "yield", "precipitation", "temperature"],
         "data_policy": "Display only source-backed observations at their actual temporal and geographic resolution.",
         "schema": "agentic/temporal/schema.json",
     })
