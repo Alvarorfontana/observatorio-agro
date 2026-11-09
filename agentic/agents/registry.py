@@ -11,6 +11,13 @@ AGENTS = {
         "inputs": ["estado_de_agentes", "cola_de_tareas", "alertas_de_calidad"],
         "outputs": ["plan_de_trabajo", "estado_general", "resumen_diario"],
     },
+    "argentina_agriculture": {
+        "name": "Agente de Estadística Agrícola Argentina",
+        "role": "Descargar y normalizar la serie oficial MAGyP por cultivo, campaña, provincia y departamento: superficie sembrada, cosechada, producción y rendimiento.",
+        "cadence": "diario: comprobar cambios del dataset; importar sólo cuando se actualice el recurso",
+        "sources": ["MAGyP - Estimaciones Agrícolas / CKAN"],
+        "outputs": ["series_argentinas_por_cultivo", "series_por_provincia", "series_por_departamento"],
+    },
     "agricultural_history": {
         "name": "Agente de Historia Agrícola",
         "role": "Construir series históricas de cultivos, superficie sembrada, cosechada, producción y rendimiento.",
