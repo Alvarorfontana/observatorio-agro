@@ -24,7 +24,7 @@ def atlas():
         "module": "DOTS Historical and Temporal Atlas",
         "status": "specification",
         "time_scales": ["millennium", "century", "decade", "year", "month", "day"],
-        "initial_regions": ["Provincia de Buenos Aires", "Península Ibérica", "Península Itálica"],
+        "geographic_scope": {"continent": "South America", "initial_countries": ["Argentina", "Brasil", "Uruguay", "Paraguay"], "administrative_detail": "provincias, estados, departamentos y regiones productivas según cobertura de cada fuente"},
         "indicators": ["area_sown", "area_harvested", "production", "yield", "precipitation", "temperature", "vegetation"],
         "data_policy": "Display only source-backed observations at their actual temporal and geographic resolution.",
         "schema": "agentic/temporal/schema.json",
