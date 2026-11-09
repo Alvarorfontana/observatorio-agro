@@ -1,10 +1,10 @@
 {
- "updated": "2026-11-09T09:57+00:00",
+ "updated": "2026-11-09T20:52+00:00",
  "version": 1,
  "fuente": "https://observatorio-agro.vercel.app",
  "niveles": {
-  "Normal": 11,
-  "Atención": 6,
+  "Normal": 9,
+  "Atención": 8,
   "Alerta": 5,
   "Evacuación": 4
  },
@@ -13,7 +13,7 @@
   "place": "Goya",
   "river": "Paraná",
   "level": "Evacuación",
-  "height": 6.07
+  "height": 5.98
  },
  "alertas": [
   {
@@ -35,14 +35,26 @@
    "level": "Evacuación"
   },
   {
-   "id": "parana-corrientes",
-   "place": "Corrientes",
+   "id": "parana-santafe",
+   "place": "Santa Fe · Paraná",
    "river": "Paraná",
    "level": "Evacuación"
   },
   {
+   "id": "parana-corrientes",
+   "place": "Corrientes",
+   "river": "Paraná",
+   "level": "Alerta"
+  },
+  {
    "id": "parana-bellavista",
    "place": "Bella Vista",
+   "river": "Paraná",
+   "level": "Alerta"
+  },
+  {
+   "id": "parana-lapaz",
+   "place": "La Paz",
    "river": "Paraná",
    "level": "Alerta"
   },
@@ -57,18 +69,6 @@
    "place": "Ituzaingó",
    "river": "Paraná",
    "level": "Alerta"
-  },
-  {
-   "id": "parana-lapaz",
-   "place": "La Paz",
-   "river": "Paraná",
-   "level": "Alerta"
-  },
-  {
-   "id": "parana-santafe",
-   "place": "Santa Fe · Paraná",
-   "river": "Paraná",
-   "level": "Alerta"
   }
  ],
  "enso": {
@@ -79,7 +79,7 @@
  "enviado_el": null,
  "pdf_el": "2026-11-09T09:57+00:00",
  "newsletter": {
-  "subject": "DOTS · El Niño y crecidas · 09/11/2026 09:57 UTC",
-  "bytes": 6215
+  "subject": "DOTS · El Niño y crecidas · 09/11/2026 20:52 UTC",
+  "bytes": 6223
  }
 }
