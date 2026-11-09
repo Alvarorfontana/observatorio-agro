@@ -22,7 +22,18 @@ Una línea de tiempo horizontal, densa y navegable, inspirada en las grandes cro
 
 El zoom visual puede recorrer todo el rango, pero el detalle que aparece depende de la resolución temporal de los datos. Nunca interpolar una serie anual para presentarla como observación diaria.
 
-## Regiones iniciales
+## Alcance geográfico inicial: Sudamérica
+
+El Observatorio se concentra exclusivamente en Sudamérica. Primera etapa:
+
+1. Argentina: país, provincias y regiones productivas; desglose por departamento/partido cuando las fuentes lo permitan.
+2. Brasil: país, estados y regiones productivas; desglose municipal cuando las fuentes lo permitan.
+3. Uruguay: país, departamentos y regiones productivas.
+4. Paraguay: país, departamentos y regiones productivas.
+
+La arquitectura permitirá sumar progresivamente otros países sudamericanos, pero no se incorporan al alcance inicial hasta definir prioridades y fuentes.
+
+##
 
 1. Provincia de Buenos Aires: provincia completa, con desglose por partido cuando la fuente lo permita.
 2. Argentina y regiones productivas: comparación nacional y entre provincias.
