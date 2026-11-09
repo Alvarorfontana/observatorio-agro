@@ -6,13 +6,13 @@ on:
     paths:
       - "agentic/**"
       - "api/index.py"
-      - "tests/**"
+      - "tests/test_dots_*.py"
       - ".github/workflows/dots-agentic-tests.yml"
   pull_request:
     paths:
       - "agentic/**"
       - "api/index.py"
-      - "tests/**"
+      - "tests/test_dots_*.py"
       - ".github/workflows/dots-agentic-tests.yml"
 
 jobs:
@@ -23,10 +23,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install API dependencies
-        run: |
-          python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          pip install pytest
-      - name: Test agent registry and atlas API
-        run: python -m pytest -q tests/
+      - name: Install DOTS test dependencies
+        run: python -m pip install flask requests pytest
+      - name: Test DOTS agents and data collectors
+        run: python -m pytest -q tests/test_dots_agentic_routes.py tests/test_dots_collectors.py
