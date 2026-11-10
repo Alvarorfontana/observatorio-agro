@@ -11,7 +11,7 @@ import boto3
 from botocore.config import Config
 
 vision_api = Blueprint("vision_api", __name__, url_prefix="/api/fuentes/vision")
-KEY_RE = re.compile(r"^vision/uploads/[a-f0-9-]{36}\\.mp4$")
+KEY_RE = re.compile(r"^vision/uploads/[a-f0-9-]{36}\.mp4$")
 
 
 def _r2():
