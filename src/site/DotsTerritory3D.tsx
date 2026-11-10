@@ -45,7 +45,7 @@ export function DotsTerritory3D({ lot = null }: { lot?: Lot3D | null }) {
     if (!maplibregl) return;
     const map = new maplibregl.Map({
       container: mapNode.current,
-      center: lot?.center ? [lot.center[1], lot.center[0]] : [-60.65, -32.95],
+      center: lot?.center ? [lot.center[1], lot.center[0]] : lot?.vertices?.length ? [lot.vertices.reduce((a,p)=>a+p[1],0)/lot.vertices.length, lot.vertices.reduce((a,p)=>a+p[0],0)/lot.vertices.length] : [-60.65, -32.95],
       zoom: 6.2,
       pitch: 58,
       bearing: -18,
@@ -116,12 +116,17 @@ export function DotsTerritory3D({ lot = null }: { lot?: Lot3D | null }) {
     const syncLot = () => {
       const source = map.getSource("selected-lot");
       if (source) (source as any).setData(lotGeoJson(lot));
-      if (lot?.vertices?.length >= 3) fitLot(map, lot.vertices);
+      if (lot?.vertices?.length >= 3) {
+        const centerLat = lot.vertices.reduce((a,p)=>a+p[0],0)/lot.vertices.length;
+        const centerLon = lot.vertices.reduce((a,p)=>a+p[1],0)/lot.vertices.length;
+        setLat(centerLat.toFixed(5)); setLon(centerLon.toFixed(5));
+        fitLot(map, lot.vertices);
+      }
     };
     if (map.isStyleLoaded() && map.getSource("selected-lot")) syncLot();
     else map.once("load", syncLot);
     return () => { map.off("load", syncLot); };
-  }, [lot]);
+  }, [lot?.name, lot?.areaHa, lot?.vertices]);
 
   useEffect(() => {
     const map = mapRef.current;
