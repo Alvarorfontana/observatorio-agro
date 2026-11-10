@@ -1,5 +1,5 @@
-runpod>=1.7.0
-ultralytics>=8.4.0
-opencv-python-headless>=4.10.0
-boto3>=1.35.0
-torch>=2.5.0
+runpod>=2.1.0
+ultralytics>=8.4.206
+opencv-python-headless>=5.0.0.93
+boto3>=1.43.126
+torch>=2.15.0
