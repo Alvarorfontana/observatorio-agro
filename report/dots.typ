@@ -403,6 +403,7 @@
       #text(size: 8.5pt, fill: ink2)[#d.vegetation_interpretation]
     ]
   ]
+  #if d.at("modis_history_note", default: "") != "" [#v(4pt) #text(size: 7pt, fill: muted)[#d.modis_history_note]]
   #if d.at("forage_note", default: "") != "" [#v(3pt) #text(size: 7pt, fill: muted)[#d.forage_note]]
 ]
 
