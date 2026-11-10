@@ -1489,7 +1489,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
             {key:"focos",label:"Focos térmicos",value:sources.firms?.status==="recibido"?String(inside):"—",unit:sources.firms?.status==="recibido"?"en el lote":undefined,hint:sources.firms?.status==="recibido"?`${det.length} en el entorno · NASA FIRMS 3 días`:"Tocá para consultar FIRMS",icon:<Flame/>,tone:sources.firms?.status==="recibido"?(inside>0?"risk":"ok"):"idle",onClick:()=>changeView("firms")},
           ]}/>;
         })()}
-        {view === "territorio-3d" ? <DotsTerritory3D lot={currentLot()} terrainSummary={(sources.relieve?.payload as any)?.data?.lot === lotKey ? (sources.relieve?.payload as any).data : null} onTerrain={() => void loadTerrain()} terrainBusy={sources.relieve?.status === "consultando"} /> : view === "atlas-dot" ? <DotsResearchHub /> : mainView === "tablero" && <section className="db-wrap" aria-label="Tablero del lote">
+        {view === "territorio-3d" ? <DotsTerritory3D lot={currentLot()} terrainSummary={(sources.relieve?.payload as any)?.data?.lot === lotKey ? (sources.relieve?.payload as any).data : null} onTerrain={() => void loadTerrain()} onSelectLot={() => { changeView("variables"); startDraw("free"); }} terrainBusy={sources.relieve?.status === "consultando"} /> : view === "atlas-dot" ? <DotsResearchHub /> : mainView === "tablero" && <section className="db-wrap" aria-label="Tablero del lote">
           <Suspense fallback={null}><LotDashboard weather={weather} sources={sources as any} thi={thi} hasLot={vertices.length >= 3}
             lot={lots.find(x => x.id === selectedLotId) || null}
             terrain={(sources.relieve?.payload as any)?.data?.lot === lotKey ? (sources.relieve?.payload as any)?.data : null}
@@ -3560,7 +3560,6 @@ function App(){
   const [inside,setInside]=useState(()=>isObservatoryPath(window.location.pathname));
   useEffect(()=>{const h=()=>{const p=window.location.pathname;setPath(p);setInside(isObservatoryPath(p))};addEventListener("popstate",h);return()=>removeEventListener("popstate",h)},[]);
   const openDemo=()=>{history.pushState({},"","/observatorio");setPath("/observatorio");setInside(true);window.scrollTo(0,0)};
-  const openModel3D=()=>{history.pushState({},"","/modelo-3d");setPath("/modelo-3d");setInside(true);window.scrollTo(0,0)};
   const home=()=>{history.pushState({},"","/");setPath("/");setInside(false);window.scrollTo(0,0)};
   if(inside)return <Observatory onHome={home}/>;
   if(path==="/simulador-ambiental")return <div className="public-site"><PublicHeader onDemo={openDemo}/><main style={{maxWidth:1800,margin:"24px auto",padding:"0 20px"}}><h1>Simulador ambiental · América del Sur</h1><p>Explorá El Niño y La Niña, crecidas e inundaciones, capas satelitales y variables climáticas. Para ver las capas sobre el mapa y delimitar un área, abrí el Observatorio.</p><button className="demo-btn" onClick={openDemo}>Abrir mapa principal · parcelas e informes →</button><EnvironmentalWorkspace/></main></div>;
