@@ -23,6 +23,7 @@ const SOIL_PROPS = ["phh2o", "soc", "clay", "sand", "nitrogen"];
 export function DotsTerritory3D({ lot = null, terrainSummary = null, onTerrain, terrainBusy = false }: { lot?: Lot3D | null; terrainSummary?: TerrainSummary3D | null; onTerrain?: () => void; terrainBusy?: boolean }) {
   const mapNode = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
+  const [mapStatus, setMapStatus] = useState("Preparando el motor cartográfico 3D…");
   const [terrainOn, setTerrainOn] = useState(true);
   const [imageryOn, setImageryOn] = useState(false);
   const [exaggeration, setExaggeration] = useState(1.35);
@@ -47,7 +48,8 @@ export function DotsTerritory3D({ lot = null, terrainSummary = null, onTerrain, 
     const startMap = () => {
     if (disposed || !mapNode.current || mapRef.current) return;
     const maplibregl = (window as any).maplibregl;
-    if (!maplibregl) return;
+    if (!maplibregl) { setMapStatus("No se pudo iniciar el motor 3D. Reintentando la conexión…"); return; }
+    setMapStatus("Cargando mapa base y relieve del terreno…");
     const map = new maplibregl.Map({
       container: mapNode.current,
       center: lot?.center ? [lot.center[1], lot.center[0]] : lot?.vertices?.length ? [lot.vertices.reduce((a,p)=>a+p[1],0)/lot.vertices.length, lot.vertices.reduce((a,p)=>a+p[0],0)/lot.vertices.length] : [-60.65, -32.95],
@@ -87,12 +89,15 @@ export function DotsTerritory3D({ lot = null, terrainSummary = null, onTerrain, 
       }
     });
     map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
+    map.on("error", (event: any) => { setMapStatus("El motor 3D inició, pero una capa no respondió: " + (event?.error?.message || "error cartográfico")); });
     map.on("load", () => {
       map.setTerrain({ source: "dem", exaggeration: 1.35 });
       map.addSource("selected-lot", { type: "geojson", data: lotGeoJson(lot) });
       map.addLayer({ id: "selected-lot-fill", type: "fill", source: "selected-lot", paint: { "fill-color": "#39d5b0", "fill-opacity": 0.20 } });
       map.addLayer({ id: "selected-lot-line", type: "line", source: "selected-lot", paint: { "line-color": "#ffe08a", "line-width": 3, "line-dasharray": [2, 1] } });
       if (lot && lot.vertices.length >= 3) fitLot(map, lot.vertices);
+      setMapStatus("Mapa 3D listo. Podés girarlo, inclinarlo y acercarte al lote.");
+      window.setTimeout(() => map.resize(), 150);
     });
     mapRef.current = map;
     };
@@ -105,12 +110,26 @@ export function DotsTerritory3D({ lot = null, terrainSummary = null, onTerrain, 
     }
     if ((window as any).maplibregl) startMap();
     else {
-      const script = document.createElement("script");
-      script.src = "https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.js";
-      script.async = true;
-      script.onload = startMap;
-      script.onerror = () => setError("No se pudo cargar MapLibre GL desde el CDN.");
-      document.head.appendChild(script);
+      const loadEngine = (urls: string[], index = 0) => {
+        if (disposed) return;
+        if (index >= urls.length) {
+          setMapStatus("No se pudo descargar el motor 3D. Revisá la conexión y volvé a abrir el modelo.");
+          return;
+        }
+        const script = document.createElement("script");
+        script.src = urls[index];
+        script.async = true;
+        script.onload = () => {
+          if ((window as any).maplibregl) startMap();
+          else loadEngine(urls, index + 1);
+        };
+        script.onerror = () => loadEngine(urls, index + 1);
+        document.head.appendChild(script);
+      };
+      loadEngine([
+        "https://cdn.jsdelivr.net/npm/maplibre-gl@5.6.1/dist/maplibre-gl.js",
+        "https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.js"
+      ]);
     }
     return () => { disposed = true; mapRef.current?.remove(); mapRef.current = null; };
   }, []);
@@ -300,7 +319,7 @@ export function DotsTerritory3D({ lot = null, terrainSummary = null, onTerrain, 
       .dots-territory{color:#e7edf2;background:#101a22;padding:22px;border-radius:16px;margin:14px 0;font-family:inherit}
       .dt-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap}.dt-kicker{font-size:11px;letter-spacing:.14em;color:#7fc9b6;font-weight:700}.dt-head h1{font-size:25px;margin:7px 0}.dt-head p,.dt-muted{color:#a8b6c1;font-size:13px}
       .dt-btn{border:1px solid #40515d;background:#1b2a35;color:#edf5f6;padding:9px 12px;border-radius:8px;cursor:pointer}.dt-btn:disabled{opacity:.45;cursor:wait}
-      .dt-layout{display:grid;grid-template-columns:minmax(0,1.8fr) minmax(260px,.8fr);gap:14px;margin-top:16px}.dt-panel{background:#172630;border:1px solid #2a3b46;border-radius:12px;padding:14px;min-width:0}.dt-map{height:430px;border-radius:9px;overflow:hidden;background:#22343e}.dt-map-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}.dt-map-tools label{font-size:12px;color:#b7c5ce}.dt-map-tools input{accent-color:#55b69b}
+      .dt-layout{display:grid;grid-template-columns:minmax(0,1.8fr) minmax(260px,.8fr);gap:14px;margin-top:16px}.dt-panel{background:#172630;border:1px solid #2a3b46;border-radius:12px;padding:14px;min-width:0}.dt-map-wrap{position:relative}.dt-map{height:430px;border-radius:9px;overflow:hidden;background:#22343e}.dt-map-status{font-size:12px;color:#b8c9d2;background:#20313b;padding:8px 10px;border-radius:0 0 8px 8px;min-height:18px}.dt-map-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}.dt-map-tools label{font-size:12px;color:#b7c5ce}.dt-map-tools input{accent-color:#55b69b}
       .dt-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:14px 0}.dt-stat{background:#1a2b35;border:1px solid #2b3d48;padding:12px;border-radius:10px}.dt-stat small{display:block;color:#9fb0ba;font-size:11px}.dt-stat b{display:block;font-size:19px;margin:7px 0}.dt-stat span{font-size:11px;color:#91a5b0}
       .dt-side h3,.dt-panel h3{font-size:14px;margin:0 0 10px}.dt-panel select,.dt-panel input{background:#0f1c24;color:#edf5f6;border:1px solid #40515d;border-radius:7px;padding:8px;max-width:100%}.dt-chart{width:100%;height:auto;display:block}.dt-legend{display:flex;justify-content:space-between;font-size:11px;color:#a8b6c1}.dt-soil{width:100%;border-collapse:collapse;font-size:12px}.dt-soil td,.dt-soil th{padding:8px 5px;border-bottom:1px solid #2b3d48;text-align:left}.dt-source{font-size:11px;color:#9dafb9;line-height:1.5;margin-top:10px}.dt-alert{background:#352d1d;border:1px solid #66532c;color:#f4d99b;padding:10px;border-radius:8px;font-size:12px;margin-top:12px}
       @media(max-width:850px){.dt-layout{grid-template-columns:1fr}.dt-map{height:330px}.dt-cards{grid-template-columns:1fr 1fr}.dots-territory{padding:14px}}@media(max-width:480px){.dt-cards{grid-template-columns:1fr}}
@@ -314,7 +333,7 @@ export function DotsTerritory3D({ lot = null, terrainSummary = null, onTerrain, 
       <div className="dt-stat"><small>Perfil topográfico</small><b>{profile.length ? profile.length + " puntos" : "No consultado"}</b><span>Elevación modelada · Open-Meteo</span></div>
     </div>
     <div className="dt-layout">
-      <section className="dt-panel"><div className="dt-head"><h3>Modelo digital del terreno</h3><button className="dt-btn" onClick={onTerrain} disabled={!lot || !onTerrain || terrainBusy}>{terrainBusy ? "Calculando relieve…" : terrainSummary ? "Actualizar relieve e hidrología" : "Calcular relieve e hidrología del lote"}</button></div><div className="dt-map-tools"><label><input type="checkbox" checked={terrainOn} onChange={e => setTerrainOn(e.target.checked)} /> Relieve 3D</label><label><input type="checkbox" checked={imageryOn} onChange={e => setImageryOn(e.target.checked)} /> Imagen satelital NASA MODIS</label><label>Exageración <input type="range" min="0.5" max="2.5" step="0.05" value={exaggeration} onChange={e => setExaggeration(Number(e.target.value))} /></label><span className="dt-muted">{lot?.name ? "Lote delimitado sobre el terreno" : "Cuenca del Paraná · navegación libre"}</span></div><div ref={mapNode} className="dt-map" aria-label="Mapa tridimensional de relieve" /><p className="dt-source">Cartografía base: OpenStreetMap. Elevación: AWS Terrain Tiles (Terrarium). Imagen opcional: NASA GIBS MODIS Terra True Color, 250 m. Es contexto regional y no sustituye Sentinel-2 de 10 m para decisiones parcelarias. El polígono amarillo corresponde al lote activo.</p></section>
+      <section className="dt-panel"><div className="dt-head"><h3>Modelo digital del terreno</h3><button className="dt-btn" onClick={onTerrain} disabled={!lot || !onTerrain || terrainBusy}>{terrainBusy ? "Calculando relieve…" : terrainSummary ? "Actualizar relieve e hidrología" : "Calcular relieve e hidrología del lote"}</button></div><div className="dt-map-tools"><label><input type="checkbox" checked={terrainOn} onChange={e => setTerrainOn(e.target.checked)} /> Relieve 3D</label><label><input type="checkbox" checked={imageryOn} onChange={e => setImageryOn(e.target.checked)} /> Imagen satelital NASA MODIS</label><label>Exageración <input type="range" min="0.5" max="2.5" step="0.05" value={exaggeration} onChange={e => setExaggeration(Number(e.target.value))} /></label><span className="dt-muted">{lot?.name ? "Lote delimitado sobre el terreno" : "Cuenca del Paraná · navegación libre"}</span></div><div className="dt-map-wrap"><div ref={mapNode} className="dt-map" aria-label="Mapa tridimensional de relieve" /><div className="dt-map-status" role="status">{mapStatus}</div></div><p className="dt-source">Cartografía base: OpenStreetMap. Elevación: AWS Terrain Tiles (Terrarium). Imagen opcional: NASA GIBS MODIS Terra True Color, 250 m. Es contexto regional y no sustituye Sentinel-2 de 10 m para decisiones parcelarias. El polígono amarillo corresponde al lote activo.</p></section>
       <aside className="dt-panel dt-side"><h3>Series históricas agrícolas</h3><label className="dt-muted">País </label><select value={country} onChange={e => setCountry(e.target.value)}><option value="ARG">Argentina</option><option value="BRA">Brasil</option><option value="URY">Uruguay</option><option value="PRY">Paraguay</option></select><p className="dt-muted">Índice de producción agrícola (2014–16 = 100)</p>{series.length ? <><svg className="dt-chart" viewBox="0 0 640 160" role="img" aria-label="Serie histórica del índice de producción agrícola"><line x1="20" y1="140" x2="620" y2="140" stroke="#60727d"/><polyline points={chart} fill="none" stroke="#5bc3a5" strokeWidth="4" strokeLinejoin="round" strokeLinecap="round"/></svg><div className="dt-legend"><span>{series[0].year}</span><span>{series[series.length-1].year}</span></div><button className="dt-btn" onClick={exportCsv}>Descargar serie CSV</button></> : <p className="dt-muted">{busy ? "Consultando Banco Mundial…" : "No hay observaciones para mostrar."}</p>}<p className="dt-source">Fuente: World Bank API · WDI {WDI}. Consulta: {sourceStamp || "pendiente"}. Los años faltantes no se interpolan.</p></aside>
     </div>
     {terrainSummary && <section className="dt-panel" style={{ marginTop: 14 }}>
