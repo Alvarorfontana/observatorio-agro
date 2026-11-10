@@ -3,7 +3,6 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 type WdiPoint = { year: string; value: number };
 type SoilLayer = { name: string; unit: string; depths: { depth: string; value: number | null }[] };
 
-const YEARS = ["1995", "2000", "2005", "2010", "2015", "2020", "2024"];
 const WDI = "AG.PRD.CROP.XD";
 const SOIL_PROPS = ["phh2o", "soc", "clay", "sand", "nitrogen"];
 
