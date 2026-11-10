@@ -63,7 +63,7 @@ def _int(args,key,default,lo,hi):
 
 VEGETATION={
   'ndvi':lambda p,a:veg.ndvi_best(p,_int(a,'days',120,15,365),_int(a,'scenes',6,1,10)),
-  'ndvi-modis':lambda p,a:veg.ndvi_modis(p,_int(a,'days',120,30,760)),
+  'ndvi-modis':lambda p,a:veg.ndvi_modis(p,_int(a,'days',120,30,1825)),
   'ndvi-zonas':lambda p,a:veg.ndvi_zones(p,_int(a,'days',60,15,180)),
   'ndvi-zonas-imagen':None,
   'ndvi-imagen':None,
