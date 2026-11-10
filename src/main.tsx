@@ -1480,7 +1480,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
             {key:"focos",label:"Focos térmicos",value:sources.firms?.status==="recibido"?String(inside):"—",unit:sources.firms?.status==="recibido"?"en el lote":undefined,hint:sources.firms?.status==="recibido"?`${det.length} en el entorno · NASA FIRMS 3 días`:"Tocá para consultar FIRMS",icon:<Flame/>,tone:sources.firms?.status==="recibido"?(inside>0?"risk":"ok"):"idle",onClick:()=>changeView("firms")},
           ]}/>;
         })()}
-        {view === "territorio-3d" ? <DotsTerritory3D lot={currentLot()} terrainSummary={(sources.relieve?.payload as any)?.data?.lot === lotKey ? (sources.relieve?.payload as any).data : null} /> : view === "atlas-dot" ? <DotsResearchHub /> : mainView === "tablero" && <section className="db-wrap" aria-label="Tablero del lote">
+        {view === "territorio-3d" ? <DotsTerritory3D lot={currentLot()} terrainSummary={(sources.relieve?.payload as any)?.data?.lot === lotKey ? (sources.relieve?.payload as any).data : null} onTerrain={() => void loadTerrain()} /> : view === "atlas-dot" ? <DotsResearchHub /> : mainView === "tablero" && <section className="db-wrap" aria-label="Tablero del lote">
           <Suspense fallback={null}><LotDashboard weather={weather} sources={sources as any} thi={thi} hasLot={vertices.length >= 3}
             lot={lots.find(x => x.id === selectedLotId) || null}
             terrain={(sources.relieve?.payload as any)?.data?.lot === lotKey ? (sources.relieve?.payload as any)?.data : null}
