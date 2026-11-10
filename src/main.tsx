@@ -899,6 +899,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
   }, [sources.ndvi, showNdvi, view, vertices, overlayMode, ndviIdx]);
   // Relieve y anegamiento: DEM Copernicus leído y procesado en el navegador (enfoque GeoLibre/Whitebox).
   const terrainRef = useRef<{ key: string; a: TerrainAnalysis } | null>(null);
+  const terrainAutoAttempt = useRef<string | null>(null);
   const terrainCtl = useRef<AbortController | null>(null);
   const terrainOverlay = useRef<L.ImageOverlay | null>(null);
   const [terrainMode, setTerrainMode] = useState<TerrainMode | "off">("anegamiento");
@@ -945,7 +946,8 @@ function Observatory({onHome}:{onHome:()=>void}) {
   useEffect(() => {
     if (view !== "territorio-3d" || vertices.length < 3) return;
     const cached = (sources.relieve?.payload as any)?.data;
-    if (terrainRef.current?.key === lotKey || sources.relieve?.status === "consultando" || cached?.lot === lotKey) return;
+    if (terrainRef.current?.key === lotKey || terrainAutoAttempt.current === lotKey || sources.relieve?.status === "consultando" || cached?.lot === lotKey) return;
+    terrainAutoAttempt.current = lotKey;
     void loadTerrain();
   }, [view, lotKey, sources.relieve?.status]);
 
