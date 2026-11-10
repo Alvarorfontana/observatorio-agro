@@ -1,0 +1,58 @@
+# Fichas de los gestores de DOTS.
+# Cada gestor agrupa tareas automáticas de GitHub Actions. Para cambiar lo que hace un gestor
+# se edita esta ficha: no hace falta tocar código.
+#   tareas: archivo del workflow y cada cuántas horas, como máximo, debería haber corrido.
+#   (sin "max_horas" = se corre a mano o por mes y no se reclama si pasa tiempo)
+
+recolector:
+  nombre: Recolector
+  funcion: Baja datos de satélites, ríos, clima y El Niño y los guarda en la rama datos.
+  tareas:
+    - {workflow: nino34-diario.yml, max_horas: 30}
+    - {workflow: enso-pronostico.yml, max_horas: 30}
+    - {workflow: enso-tao.yml, max_horas: 100}
+    - {workflow: enso-satelites.yml}
+    - {workflow: enso-sudamerica.yml}
+    - {workflow: enso-atmosphere-data.yml}
+    - {workflow: goes-heladas.yml, max_horas: 30}
+    - {workflow: goes-rayos.yml, max_horas: 3}
+    - {workflow: normales-cuenca.yml, max_horas: 30}
+    - {workflow: focos-historia.yml}
+    - {workflow: renabap-localidades.yml}
+
+calculador:
+  nombre: Calculador
+  funcion: Procesa lotes y regiones (desmontes, rinde por agua, barrios por radar) y deja los resultados listos para la web.
+  tareas:
+    - {workflow: procesamiento-semanal.yml, max_horas: 180}
+    - {workflow: rinde-agua.yml}
+    - {workflow: desmonte-ndvi.yml}
+    - {workflow: barrios-radar.yml}
+    - {workflow: calor-p90.yml}
+    - {workflow: earthalign.yml}
+
+vigia:
+  nombre: Vigía
+  funcion: Mira crecidas y El Niño y avisa cuando cambia el nivel de alerta.
+  tareas:
+    - {workflow: avisos.yml, max_horas: 4}
+    - {workflow: nino-crecidas.yml, max_horas: 4}
+    - {workflow: avisos-nino.yml, max_horas: 30}
+
+control:
+  nombre: Control
+  funcion: Revisa que todo haya corrido, que las fuentes respondan y manda el informe.
+  tareas:
+    - {workflow: chequeo-vivo.yml, max_horas: 30}
+    - {workflow: seguridad.yml, max_horas: 180}
+    - {workflow: ci.yml}
+  # Datos de la rama "datos" que se consideran viejos si no se actualizan en ese plazo (horas)
+  datos_frescos:
+    data/avisos_estado.json: 6
+    data/nino_crecidas.json: 12
+    data/goes_heladas.json: 30
+    data/enso_pronostico.json: 30
+    data/rinde_agua.json: 200
+  avisos:
+    telegram: true        # usa los secretos TELEGRAM_BOT_TOKEN y TELEGRAM_CHAT_ID
+    github_issue: true    # deja el informe en el issue "Informe de gestores" (llega a la app de GitHub)

@@ -1,0 +1,50 @@
+# Gestor de Control: todos los días a la mañana revisa que cada gestor haya corrido,
+# la frescura de los datos y el estado del sitio, y manda el informe por Telegram y al issue
+# «Informe de gestores». Las fichas están en gestores/fichas.yml. Ver scripts/gestor_control.py.
+name: Gestor de Control
+
+on:
+  workflow_dispatch:
+    inputs:
+      modo:
+        description: "informe completo o sólo prueba de Telegram"
+        type: choice
+        options: [informe, prueba]
+        default: informe
+  schedule:
+    - cron: "13 11 * * *"   # 08:13 de Argentina
+
+permissions:
+  contents: write
+  actions: read
+  issues: write
+
+concurrency:
+  group: gestor-control
+  cancel-in-progress: false
+
+jobs:
+  control:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Traer datos de la rama datos
+        run: |
+          git fetch -q --depth=400 origin datos:refs/remotes/origin/datos || true
+          bash scripts/datos_rama.sh traer
+      - name: Armar y mandar el informe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CONTROL_CHAT_ID }}
+        run: |
+          pip install -q requests pyyaml
+          if [ "${{ github.event.inputs.modo }}" = "prueba" ]; then python scripts/gestor_control.py --prueba; else python scripts/gestor_control.py; fi
+      - name: Guardar en la rama datos (no publica la web)
+        if: always() && github.event.inputs.modo != 'prueba'
+        run: |
+          cp scripts/datos_rama.sh /tmp/datos_rama.sh && bash /tmp/datos_rama.sh guardar "Gestor de Control $(date -u +%Y-%m-%d)" data/control.json

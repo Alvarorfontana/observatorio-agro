@@ -1,0 +1,53 @@
+# Gestor de Control · aviso inmediato: cuando una tarea automática falla, manda un mensaje corto por Telegram.
+name: Gestor de Control · fallas
+
+on:
+  workflow_run:
+    workflows:
+      - "Avisos de El Niño"
+      - "Avisos de crecidas"
+      - "Barrios populares por radar"
+      - "Umbrales de calor"
+      - "Chequeo en vivo"
+      - "Desmontes por resta de NDVI"
+      - "EarthAlign · descripciones del tiempo"
+      - "ENSO atmósfera NOAA"
+      - "El Niño: pronósticos"
+      - "El Niño por satélite"
+      - "El Niño en Sudamérica"
+      - "El Niño: boyas TAO"
+      - "Historia de focos"
+      - "Heladas GOES"
+      - "Rayos GOES"
+      - "El Niño y crecidas (digest y newsletter)"
+      - "El Niño día por día"
+      - "Normales de la Cuenca del Plata"
+      - "Procesamiento semanal de lotes"
+      - "RENABAP por localidad"
+      - "Rinde por agua"
+      - "Seguridad y accesibilidad"
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  aviso:
+    if: github.event.workflow_run.conclusion == 'failure' || github.event.workflow_run.conclusion == 'timed_out'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Avisar por Telegram
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CONTROL_CHAT_ID }}
+          RUN_NAME: ${{ github.event.workflow_run.name }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+          RUN_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+        run: |
+          pip install -q requests pyyaml
+          python scripts/gestor_control.py --falla
