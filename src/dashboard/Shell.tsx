@@ -37,6 +37,9 @@ export function buildNav(go: (k: string) => void, draw: () => void, pdf: () => v
       { key: "suelo", label: "Suelo y nitrógeno", icon: <CircleDot />, onClick: () => go("suelo") },
       { key: "ganado", label: "Ganado", icon: <Beef />, onClick: () => go("ganado") },
     ]},
+    { title: "Agricultura de precisión", items: [
+      { key: "lote-3d", label: "Modelado 3D del lote", icon: <Mountain />, onClick: open3D },
+    ]},
     { title: "Historia y territorio", items: [
       { key: "atlas-dot", label: "Atlas agrícola e informes", icon: <BookOpen />, onClick: () => go("atlas-dot") },
       { key: "territorio-3d", label: "Territorio 3D", icon: <Mountain />, onClick: () => go("territorio-3d") },
