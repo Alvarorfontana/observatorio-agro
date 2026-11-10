@@ -6,6 +6,7 @@ def vision_client(monkeypatch):
     for key in ("R2_ACCOUNT_ID", "R2_BUCKET", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY",
                 "RUNPOD_ENDPOINT_ID", "RUNPOD_API_KEY"):
         monkeypatch.delenv(key, raising=False)
+    monkeypatch.setenv("DOTS_VISION_ACTIVA", "1")
     sys.path.insert(0, ".")
     module = importlib.import_module("vision_api")
     from flask import Flask
@@ -44,3 +45,11 @@ def test_analyze_rejects_untrusted_object_key(monkeypatch):
     response = client.post("/api/fuentes/vision/analyze",
                            json={"object_key": "../private/video.mp4"})
     assert response.status_code == 400
+
+
+def test_vision_is_paused_by_default(monkeypatch):
+    client = vision_client(monkeypatch)
+    monkeypatch.delenv("DOTS_VISION_ACTIVA", raising=False)
+    assert client.get("/api/fuentes/vision/status").get_json()["status"] == "pausado"
+    response = client.post("/api/fuentes/vision/upload-url", json={"filename": "a.mp4", "size": 10})
+    assert response.status_code == 503

@@ -65,6 +65,11 @@ export function HerdVision() {
     } finally { setWorking(false); }
   }
 
+  if (config?.status === "pausado") return <section className="dt-panel" style={{ marginTop: 14 }}>
+    <h3>Visión artificial ganadera · análisis de video</h3>
+    <p className="dt-muted">Módulo en preparación. El conteo y seguimiento de bovinos en video se habilitará cuando pueda funcionar con herramientas gratuitas.</p>
+  </section>;
+
   return <section className="dt-panel" style={{ marginTop: 14 }}>
     <h3>Visión artificial ganadera · análisis de video</h3>
     <p className="dt-muted">Carga privada a R2 y procesamiento remoto con GPU. Detecta bovinos y sigue sus trayectorias dentro del video.</p>

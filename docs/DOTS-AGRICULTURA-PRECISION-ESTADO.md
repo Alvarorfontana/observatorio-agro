@@ -2,7 +2,7 @@
 
 **Fecha:** 10 de noviembre de 2026  
 **Rama:** `feat/dots-vision-suelos-territorio`  
-**Producción:** pendiente de revisión y merge del PR #58.  
+**Producción:** publicado en `main` (PR #58) y corregido en el PR #62 (consultas por polígono y Modelo 3D).  
 **Presupuesto:** cero; no habilitar proveedores, credenciales o servicios que generen cargos.
 
 Este documento separa implementación, pruebas automáticas y validación agronómica. Un test aprobado no equivale a comprobar una fuente externa en un lote real.
@@ -23,6 +23,12 @@ Este documento separa implementación, pruebas automáticas y validación agron�
 | Territorio 3D | MapLibre con DEM Terrarium, relieve navegable, contorno y relleno del lote activo, encuadre automático, imagen NASA GIBS MODIS opcional, perfil topográfico por la diagonal del lote, SoilGrids, indicadores Copernicus GLO-30 y búsqueda espacial del archivo paleoclimático NOAA para 0–5.000 años BP | La imagen MODIS es 250 m y contextual; el DEM no es un levantamiento topográfico; la transecta usa elevación modelada de Open-Meteo; falta verificación visual real en navegador y la búsqueda NOAA devuelve metadatos de estudios, no una serie local reconstruida; no se afirma delimitación oficial de cuenca |
 | Informe técnico | Generador Typst/ReportLab; interpretación redactada de NDVI; el botón de la página solicita el PDF al backend | Falta comprobar PDF generado desde la página desplegada con fuentes reales y datos de varios lotes |
 | Validación por lote | La página incorpora chequeo de respuestas de Sentinel-2, MODIS, zonas, índices, suelo, balance y radar | Es una validación de disponibilidad/contrato, no certificación de exactitud ni reemplazo de recorrida agronómica |
+
+## Visión ganadera
+
+En pausa. La versión integrada usa GPU RunPod y almacenamiento Cloudflare R2, que son pagos.
+La API responde «pausado» salvo que se configure `DOTS_VISION_ACTIVA=1`. Se retomará con una
+alternativa gratuita (por ejemplo, procesar en GitHub Actions con CPU o en el navegador).
 
 ## Reglas de interpretación
 

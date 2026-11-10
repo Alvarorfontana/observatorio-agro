@@ -13,6 +13,21 @@ from botocore.config import Config
 vision_api = Blueprint("vision_api", __name__, url_prefix="/api/fuentes/vision")
 KEY_RE = re.compile(r"^vision/uploads/[a-f0-9-]{36}\.mp4$")
 
+# Pausado por decisión del proyecto: RunPod y R2 son servicios pagos y DOTS trabaja con
+# presupuesto cero. Se reactiva sólo con DOTS_VISION_ACTIVA=1 en Vercel.
+PAUSA = ("La visión ganadera está en pausa: hoy depende de servicios pagos (GPU RunPod y "
+         "almacenamiento R2). Se retomará cuando haya una alternativa gratuita.")
+
+
+def _activa():
+    return os.getenv("DOTS_VISION_ACTIVA") == "1"
+
+
+@vision_api.before_request
+def _solo_si_activa():
+    if not _activa() and request.endpoint != "vision_api.vision_status":
+        return jsonify({"status": "pausado", "error": PAUSA}), 503
+
 
 def _r2():
     account = os.getenv("R2_ACCOUNT_ID")
@@ -39,6 +54,8 @@ def _job_url(action):
 def vision_status():
     required = ("R2_ACCOUNT_ID", "R2_BUCKET", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY",
                 "RUNPOD_ENDPOINT_ID", "RUNPOD_API_KEY")
+    if not _activa():
+        return jsonify({"status": "pausado", "message": PAUSA, "missing_environment": []})
     missing = [key for key in required if not os.getenv(key)]
     return jsonify({
         "status": "ready" if not missing else "configuration_required",

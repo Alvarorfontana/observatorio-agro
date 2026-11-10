@@ -1139,7 +1139,8 @@ function Observatory({onHome}:{onHome:()=>void}) {
       const areaHa = (()=>{ const R=6378137,lat0=points.reduce((a,p)=>a+p[0],0)/points.length*Math.PI/180,xy=points.map(([la,lo])=>[R*lo*Math.PI/180*Math.cos(lat0),R*la*Math.PI/180]);let a=0;for(let i=0;i<xy.length;i++){const j=(i+1)%xy.length;a+=xy[i][0]*xy[j][1]-xy[j][0]*xy[i][1]}return Math.abs(a)/2/10000;})();
       const perimeterKm = (()=>{const rad=(x:number)=>x*Math.PI/180,R=6371;let d=0;for(let i=0;i<points.length;i++){const a=points[i],b=points[(i+1)%points.length],dl=rad(b[0]-a[0]),dn=rad(b[1]-a[1]);const h=Math.sin(dl/2)**2+Math.cos(rad(a[0]))*Math.cos(rad(b[0]))*Math.sin(dn/2)**2;d+=2*R*Math.asin(Math.sqrt(h))}return d;})();
       const id=`lote-${Date.now()}-${Math.random().toString(36).slice(2,7)}`;
-      const name=label || `Lote ${lots.length+1}${origin?" · "+origin:""}`;
+      const nextN=(()=>{let n=lots.length+1;while(lots.some(x=>x.name.startsWith(`Lote ${n}`)))n++;return n;})();
+      const name=label || `Lote ${nextN}${origin?" · "+origin:""}`;
       if(given){currentPoints.current=points;setVertices(points);}
       const layer=drawLotLayer(id,name,points,center);
       poly.current=layer;
