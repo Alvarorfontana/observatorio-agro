@@ -4,6 +4,7 @@ Uses the COCO-pretrained YOLO26 nano model. COCO's cow class supports a first
 functional bovine detector, but not breed recognition or permanent animal identity.
 """
 import os
+import math
 import tempfile
 from pathlib import Path
 
@@ -64,16 +65,19 @@ def handler(job):
             cap.release()
             raise ValueError("El video supera los 120 segundos permitidos.")
         detector = model()
-        device = 0 if torch.cuda.is_available() else "cpu"
+        if not torch.cuda.is_available():
+            raise RuntimeError("El worker no tiene GPU CUDA disponible; configurá una GPU en el endpoint RunPod.")
+        device = 0
+        stride = max(1, math.ceil(total / 240)) if total else SAMPLE_EVERY
         frame_no = 0
         sampled = 0
         frames = []
         unique_tracks = set()
-        while sampled < 240:
+        while True:
             ok, frame = cap.read()
             if not ok:
                 break
-            if frame_no % SAMPLE_EVERY == 0:
+            if frame_no % stride == 0 and sampled < 240:
                 result = detector.track(
                     source=frame, persist=True, tracker="botsort.yaml",
                     classes=[19], conf=CONFIDENCE, imgsz=960,
@@ -103,7 +107,7 @@ def handler(job):
             "video_duration_seconds": round(duration, 2),
             "video_frames": total,
             "sampled_frames": sampled,
-            "sampling": f"1 de cada {SAMPLE_EVERY} fotogramas",
+            "sampling": f"1 de cada {stride} fotogramas, distribuidos a lo largo del video",
             "cattle_detections": sum(f["cattle_count"] for f in frames),
             "max_cattle_in_frame": max((f["cattle_count"] for f in frames), default=0),
             "unique_temporary_track_ids": len(unique_tracks),
@@ -121,6 +125,19 @@ def handler(job):
     finally:
         if path and os.path.exists(path):
             os.remove(path)
+        # El video original se borra de R2 al terminar, también si falla la inferencia.
+        try:
+            if key.startswith("vision/uploads/"):
+                client = boto3.client(
+                    "s3",
+                    endpoint_url=f"https://${os.environ['R2_ACCOUNT_ID']}.r2.cloudflarestorage.com",
+                    aws_access_key_id=os.environ["R2_ACCESS_KEY_ID"],
+                    aws_secret_access_key=os.environ["R2_SECRET_ACCESS_KEY"],
+                    region_name="auto",
+                )
+                client.delete_object(Bucket=os.environ["R2_BUCKET"], Key=key)
+        except Exception:
+            pass
 
 
 runpod.serverless.start({"handler": handler})
