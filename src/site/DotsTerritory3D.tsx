@@ -1,15 +1,29 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
 type WdiPoint = { year: string; value: number };
+type Lot3D = { name: string; vertices: [number, number][]; areaHa?: number; center?: [number, number] };
 type SoilLayer = { name: string; unit: string; depths: { depth: string; value: number | null }[] };
+
+function lotGeoJson(lot: Lot3D | null): any {
+  if (!lot || !Array.isArray(lot.vertices) || lot.vertices.length < 3) return { type: "FeatureCollection", features: [] };
+  const ring = lot.vertices.map(([lat, lon]) => [lon, lat]);
+  ring.push(ring[0]);
+  return { type: "FeatureCollection", features: [{ type: "Feature", properties: { name: lot.name }, geometry: { type: "Polygon", coordinates: [ring] } }] };
+}
+
+function fitLot(map: any, vertices: [number, number][]) {
+  const lons = vertices.map(p => p[1]), lats = vertices.map(p => p[0]);
+  map.fitBounds([[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]], { padding: 55, maxZoom: 15, pitch: 58, duration: 900 });
+}
 
 const WDI = "AG.PRD.CROP.XD";
 const SOIL_PROPS = ["phh2o", "soc", "clay", "sand", "nitrogen"];
 
-export function DotsTerritory3D() {
+export function DotsTerritory3D({ lot = null }: { lot?: Lot3D | null }) {
   const mapNode = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const [terrainOn, setTerrainOn] = useState(true);
+  const [imageryOn, setImageryOn] = useState(false);
   const [exaggeration, setExaggeration] = useState(1.35);
   const [country, setCountry] = useState("ARG");
   const [series, setSeries] = useState<WdiPoint[]>([]);
@@ -31,7 +45,7 @@ export function DotsTerritory3D() {
     if (!maplibregl) return;
     const map = new maplibregl.Map({
       container: mapNode.current,
-      center: [-60.65, -32.95],
+      center: lot?.center ? [lot.center[1], lot.center[0]] : [-60.65, -32.95],
       zoom: 6.2,
       pitch: 58,
       bearing: -18,
@@ -52,14 +66,28 @@ export function DotsTerritory3D() {
             encoding: "terrarium",
             maxzoom: 15,
             attribution: "Terrain RGB: AWS Terrain Tiles"
+          },
+          modis: {
+            type: "raster",
+            tiles: [`https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/${new Date().toISOString().slice(0,10)}/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg`],
+            tileSize: 256,
+            maxzoom: 9,
+            attribution: "NASA GIBS / NASA Earthdata"
           }
         },
-        layers: [{ id: "base", type: "raster", source: "osm", paint: { "raster-opacity": 0.88 } }]
+        layers: [
+          { id: "base", type: "raster", source: "osm", paint: { "raster-opacity": 0.88 } },
+          { id: "modis-imagery", type: "raster", source: "modis", layout: { visibility: "none" }, paint: { "raster-opacity": 0.82 } }
+        ]
       }
     });
     map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
     map.on("load", () => {
       map.setTerrain({ source: "dem", exaggeration: 1.35 });
+      map.addSource("selected-lot", { type: "geojson", data: lotGeoJson(lot) });
+      map.addLayer({ id: "selected-lot-fill", type: "fill", source: "selected-lot", paint: { "fill-color": "#39d5b0", "fill-opacity": 0.20 } });
+      map.addLayer({ id: "selected-lot-line", type: "line", source: "selected-lot", paint: { "line-color": "#ffe08a", "line-width": 3, "line-dasharray": [2, 1] } });
+      if (lot?.vertices?.length >= 3) fitLot(map, lot.vertices);
     });
     mapRef.current = map;
     };
@@ -84,9 +112,28 @@ export function DotsTerritory3D() {
 
   useEffect(() => {
     const map = mapRef.current;
+    if (!map) return;
+    const syncLot = () => {
+      const source = map.getSource("selected-lot");
+      if (source) (source as any).setData(lotGeoJson(lot));
+      if (lot?.vertices?.length >= 3) fitLot(map, lot.vertices);
+    };
+    if (map.isStyleLoaded() && map.getSource("selected-lot")) syncLot();
+    else map.once("load", syncLot);
+    return () => { map.off("load", syncLot); };
+  }, [lot]);
+
+  useEffect(() => {
+    const map = mapRef.current;
     if (!map || !map.isStyleLoaded()) return;
     map.setTerrain(terrainOn ? { source: "dem", exaggeration } : null);
   }, [terrainOn, exaggeration]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !map.isStyleLoaded()) return;
+    map.setLayoutProperty("modis-imagery", "visibility", imageryOn ? "visible" : "none");
+  }, [imageryOn]);
 
   useEffect(() => {
     let cancelled = false;
@@ -199,14 +246,15 @@ export function DotsTerritory3D() {
       @media(max-width:850px){.dt-layout{grid-template-columns:1fr}.dt-map{height:330px}.dt-cards{grid-template-columns:1fr 1fr}.dots-territory{padding:14px}}@media(max-width:480px){.dt-cards{grid-template-columns:1fr}}
       @media print{.dt-btn,.dt-map-tools{display:none!important}.dots-territory{background:white;color:#111}.dt-panel,.dt-stat{background:white;color:#111;border-color:#ccc;break-inside:avoid}.dt-muted,.dt-source,.dt-stat small,.dt-stat span{color:#444}}
     `}</style>
-    <header className="dt-head"><div><div className="dt-kicker">DOTS / OBSERVATORIO AGRO</div><h1>Territorio 3D · Relieve y análisis geoespacial</h1><p>Relieve, cuencas, series históricas y variables de suelo con procedencia visible.</p></div><button className="dt-btn" onClick={() => window.print()}>Generar informe PDF</button></header>
+    <header className="dt-head"><div><div className="dt-kicker">DOTS / OBSERVATORIO AGRO</div><h1>Territorio 3D · Modelo del establecimiento</h1><p>Relieve digital, polígono del lote seleccionado, perfil topográfico, suelos y contexto satelital.</p></div><button className="dt-btn" onClick={() => window.print()}>Generar informe PDF</button></header>
     <div className="dt-cards">
+      <div className="dt-stat"><small>Lote activo</small><b>{lot?.name || "Sin lote seleccionado"}</b><span>{lot?.areaHa != null ? lot.areaHa.toLocaleString("es-AR",{maximumFractionDigits:2})+" ha · polígono real" : "Seleccioná un lote en el mapa principal"}</span></div>
       <div className="dt-stat"><small>Serie agrícola · último dato disponible</small><b>{latest ? latest.value.toLocaleString("es-AR", { maximumFractionDigits: 2 }) : "—"}</b><span>{latest ? latest.year + " · Banco Mundial" : busy ? "Consultando fuente…" : "Sin observación"}</span></div>
       <div className="dt-stat"><small>Observaciones históricas</small><b>{series.length || "—"}</b><span>Argentina · 1995–2024 · WDI</span></div>
       <div className="dt-stat"><small>Perfil topográfico</small><b>{profile.length ? profile.length + " puntos" : "No consultado"}</b><span>Elevación modelada · Open-Meteo</span></div>
     </div>
     <div className="dt-layout">
-      <section className="dt-panel"><h3>Modelo digital del terreno</h3><div className="dt-map-tools"><label><input type="checkbox" checked={terrainOn} onChange={e => setTerrainOn(e.target.checked)} /> Relieve 3D</label><label>Exageración <input type="range" min="0.5" max="2.5" step="0.05" value={exaggeration} onChange={e => setExaggeration(Number(e.target.value))} /></label><span className="dt-muted">Cuenca del Paraná · navegación libre</span></div><div ref={mapNode} className="dt-map" aria-label="Mapa tridimensional de relieve" /><p className="dt-source">Cartografía base: OpenStreetMap. Elevación: AWS Terrain Tiles (Terrarium). La exageración vertical es un ajuste visual; no modifica las alturas de origen.</p></section>
+      <section className="dt-panel"><h3>Modelo digital del terreno</h3><div className="dt-map-tools"><label><input type="checkbox" checked={terrainOn} onChange={e => setTerrainOn(e.target.checked)} /> Relieve 3D</label><label><input type="checkbox" checked={imageryOn} onChange={e => setImageryOn(e.target.checked)} /> Imagen satelital NASA MODIS</label><label>Exageración <input type="range" min="0.5" max="2.5" step="0.05" value={exaggeration} onChange={e => setExaggeration(Number(e.target.value))} /></label><span className="dt-muted">{lot?.name ? "Lote delimitado sobre el terreno" : "Cuenca del Paraná · navegación libre"}</span></div><div ref={mapNode} className="dt-map" aria-label="Mapa tridimensional de relieve" /><p className="dt-source">Cartografía base: OpenStreetMap. Elevación: AWS Terrain Tiles (Terrarium). Imagen opcional: NASA GIBS MODIS Terra True Color, 250 m. Es contexto regional y no sustituye Sentinel-2 de 10 m para decisiones parcelarias. El polígono amarillo corresponde al lote activo.</p></section>
       <aside className="dt-panel dt-side"><h3>Series históricas agrícolas</h3><label className="dt-muted">País </label><select value={country} onChange={e => setCountry(e.target.value)}><option value="ARG">Argentina</option><option value="BRA">Brasil</option><option value="URY">Uruguay</option><option value="PRY">Paraguay</option></select><p className="dt-muted">Índice de producción agrícola (2014–16 = 100)</p>{series.length ? <><svg className="dt-chart" viewBox="0 0 640 160" role="img" aria-label="Serie histórica del índice de producción agrícola"><line x1="20" y1="140" x2="620" y2="140" stroke="#60727d"/><polyline points={chart} fill="none" stroke="#5bc3a5" strokeWidth="4" strokeLinejoin="round" strokeLinecap="round"/></svg><div className="dt-legend"><span>{series[0].year}</span><span>{series[series.length-1].year}</span></div><button className="dt-btn" onClick={exportCsv}>Descargar serie CSV</button></> : <p className="dt-muted">{busy ? "Consultando Banco Mundial…" : "No hay observaciones para mostrar."}</p>}<p className="dt-source">Fuente: World Bank API · WDI {WDI}. Consulta: {sourceStamp || "pendiente"}. Los años faltantes no se interpolan.</p></aside>
     </div>
     <div className="dt-layout">
