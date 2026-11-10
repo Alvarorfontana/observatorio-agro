@@ -50,7 +50,7 @@ class VegetationInterpretationTests(unittest.TestCase):
         self.assertIsNotNone(card)
         self.assertIn("Arcilla · 0-5cm", str(card["facts"]))
         self.assertIn("28,40 %", str(card["facts"]))
-        self.assertIn("no equivalen a un muestreo", card["note"])
+        self.assertIn("no equivalen a un muestreo", card["note"].lower())
         self.assertIsNone(report_typst.soilgrids_card({}))
 
     def test_comparison_is_explicitly_limited_to_two_observations(self):
