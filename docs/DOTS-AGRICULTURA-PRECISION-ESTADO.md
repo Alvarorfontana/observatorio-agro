@@ -11,7 +11,7 @@ Este documento separa implementación, pruebas automáticas y validación agron�
 
 | Componente | Implementado en la rama | Límite / validación pendiente |
 |---|---|---|
-| Geometría del lote | Dibujo de polígono, cálculo geodésico de superficie y consultas zonales | No hay aún validación de inventario de múltiples lotes en lote masivo ni contraste de cada geometría con catastro |
+| Geometría del lote | Dibujo de polígono, cálculo geodésico de superficie y consultas zonales; el panel 3D recibe el polígono del lote activo | No hay aún validación de inventario de múltiples lotes en lote masivo ni contraste de cada geometría con catastro |
 | Sentinel-2 | NDVI L2A vía Microsoft Planetary Computer, máscara SCL de nube/nieve, estadísticas y overlays RGB/NDVI | Depende de escenas despejadas y disponibilidad externa; falta prueba visual real en Vercel para polígonos de distinto tamaño |
 | Índices | EVI, SAVI, NDMI y NDWI mediante Sentinel-2; endpoint de índices espectrales | Revisar disponibilidad por escena y no interpretar índices como rendimiento o diagnóstico |
 | Histórico MODIS | NASA ORNL DAAC MOD13Q1, compuestos de 16 días, hasta cinco años en la ruta pública | Resolución de 250 m; es contexto de vegetación de una ventana centrada en el lote, no historia intralote de 10 m ni clasificación de cultivos |
@@ -20,6 +20,7 @@ Este documento separa implementación, pruebas automáticas y validación agron�
 | Suelos | SoilGrids y capas de suelos existentes; carta INTA 1:50.000 en ámbito geográfico disponible | SoilGrids es modelado y puntual/grillado, no análisis de laboratorio. La carta INTA no cubre todas las regiones |
 | Agua | Balance hídrico y perfil ERA5-Land; humedad SAR y análisis de agua/riesgo existentes | ERA5-Land es grilla de ~9 km, no medición intralote. Radar requiere interpretación específica; caudal GloFAS no es nivel ni mapa de inundación |
 | Clima | Open-Meteo/ERA5, CHIRPS, NASA POWER, índices agroclimáticos y pronósticos | Distinguir observación, reanálisis y pronóstico; las grillas no describen microclimas del lote |
+| Territorio 3D | MapLibre con DEM Terrarium, relieve navegable, contorno y relleno del lote activo, encuadre automático, imagen NASA GIBS MODIS opcional, perfil topográfico por la diagonal del lote, SoilGrids y series WDI por país | La imagen MODIS es 250 m y contextual; el DEM no es un levantamiento topográfico; la transecta usa elevación modelada de Open-Meteo; falta verificación visual real en navegador y añadir delimitación hidrológica de cuenca específica por lote |
 | Informe técnico | Generador Typst/ReportLab; interpretación redactada de NDVI; el botón de la página solicita el PDF al backend | Falta comprobar PDF generado desde la página desplegada con fuentes reales y datos de varios lotes |
 | Validación por lote | La página incorpora chequeo de respuestas de Sentinel-2, MODIS, zonas, índices, suelo, balance y radar | Es una validación de disponibilidad/contrato, no certificación de exactitud ni reemplazo de recorrida agronómica |
 
@@ -37,7 +38,7 @@ Este documento separa implementación, pruebas automáticas y validación agron�
 
 1. Tests de geometría, índices, nubes/nieve, fechas, valores faltantes, series y regresión aprobados.
 2. Consultas reales a fuentes públicas verificadas con al menos un lote de prueba conocido.
-3. Mapas Sentinel-2 y zonas superpuestos correctamente sobre la geometría en escritorio y móvil.
+3. Mapas Sentinel-2 y zonas superpuestos correctamente sobre la geometría en escritorio y móvil; verificar el nuevo contorno parcelario y la capa MODIS del panel 3D.
 4. Validación separada de lotes pequeños y grandes, y lotes fuera de Buenos Aires.
 5. Histórico de cultivos/rotaciones sustentado por una fuente abierta real, no inferido sólo de NDVI.
 6. Ambientes estables comprobados en varias fechas/campañas y, cuando se formulen recomendaciones, contrastados con datos de campo.
