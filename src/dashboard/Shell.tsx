@@ -18,7 +18,7 @@ export type NavItem = {
   soon?: boolean;
 };
 
-export function buildNav(go: (k: string) => void, draw: () => void, pdf: () => void): { title: string; items: NavItem[] }[] {
+export function buildNav(go: (k: string) => void, draw: () => void, pdf: () => void, open3D: () => void): { title: string; items: NavItem[] }[] {
   return [
     { title: "Observatorio", items: [
       { key: "variables", label: "Resumen del lote", icon: <LayoutDashboard />, onClick: () => go("variables") },
