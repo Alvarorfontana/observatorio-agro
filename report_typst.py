@@ -265,7 +265,8 @@ def advisor_block(asesor):
                        'subtitle': 'Índice 0 a 100 por día de pronóstico', 'unit': '/100',
                        'labels': [str(r['date'])[8:10] + '/' + str(r['date'])[5:7] for r in enfer['rows']],
                        'series': [{'name': 'Riesgo', 'values': [_f(r.get('risk')) for r in enfer['rows']]}]})
-    return {'cards': cards, 'charts': charts, 'lectura': str(data.get('lectura') or '')}
+    return {'cards': cards, 'charts': charts,
+        'vegetation_interpretation': vegetation_interpretation(ndvi, nser), 'lectura': str(data.get('lectura') or '')}
 
 
 def exec_summary(d):
@@ -317,6 +318,37 @@ SECTIONS = [
 
 def section_ids():
     return [s['id'] for s in SECTIONS]
+
+
+
+def vegetation_interpretation(ndvi, series):
+    """Texto técnico descriptivo: sólo afirma lo respaldado por la serie y declara el alcance del índice."""
+    latest = ndvi.get('latest') or {}
+    value = _f(latest.get('ndvi_mean'))
+    if value is None:
+        return 'No se obtuvo una observación Sentinel-2 válida para calcular el NDVI del lote en el período consultado. No corresponde inferir el estado de la vegetación a partir de la ausencia de datos.'
+    date_obs = str(latest.get('datetime') or 'fecha no informada')[:10]
+    clear = _f(latest.get('clear_fraction_lot'))
+    coverage = f" La fracción despejada considerada fue {num(clear * 100, 1)} % del polígono." if clear is not None else ''
+    valid = [r for r in (series or []) if r.get('status') == 'válida' and _f(r.get('ndvi_mean')) is not None]
+    trend = ''
+    if len(valid) >= 2:
+        delta = _f(valid[-1].get('ndvi_mean')) - _f(valid[-2].get('ndvi_mean'))
+        prior_date = str(valid[-2].get('datetime') or '')[:10]
+        if delta > 0:
+            direction = 'aumentó'
+        elif delta < 0:
+            direction = 'disminuyó'
+        else:
+            direction = 'no registró variación'
+        trend = (f" En comparación con la observación válida anterior ({prior_date}), el promedio {direction} "
+                 f"{num(abs(delta), 3)} unidades de NDVI. Esta diferencia describe el cambio entre dos fechas y no identifica por sí sola su causa.")
+    return (f"En la escena Sentinel-2 L2A del {date_obs}, el NDVI medio calculado sobre los píxeles válidos "
+            f"del lote fue {num(value, 3)}.{coverage}{trend} El NDVI expresa el contraste espectral asociado "
+            "a la presencia de vegetación verde; no constituye una medición directa de biomasa, estado sanitario "
+            "ni rendimiento. Su interpretación agronómica requiere considerar el cultivo, la etapa fenológica, "
+            "la cobertura del suelo y las condiciones de observación. Las diferencias espaciales deben verificarse "
+            "con antecedentes de manejo y recorrida a campo.")
 
 
 def build_data(result, name='Lote DOTS', extras=None):
