@@ -19,6 +19,7 @@ import security
 import vitrina
 import cache_ee
 from copernicus_routes import copernicus_api
+from vision_api import vision_api
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024
@@ -28,6 +29,7 @@ app.register_blueprint(enso_data_api)
 app.register_blueprint(enso_forecast_api)
 app.register_blueprint(agro_telemetry_api)
 app.register_blueprint(copernicus_api)
+app.register_blueprint(vision_api)
 if population_bp is not None:
     app.register_blueprint(population_bp)
 security.install(app)
