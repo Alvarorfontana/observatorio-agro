@@ -350,10 +350,26 @@ def vegetation_interpretation(ndvi, series):
             "con antecedentes de manejo y recorrida a campo.")
 
 
+def modis_history_chart(modis):
+    rows = [r for r in (modis or {}).get('series', []) if r.get('status') == 'válida' and _f(r.get('ndvi_mean')) is not None]
+    if not rows:
+        return None, ''
+    sensor = str((modis or {}).get('sensor') or 'NASA MODIS MOD13Q1')
+    chart = {'kind': 'line', 'group': 'veg', 'title': 'Historial de vegetación · MODIS',
+             'subtitle': f'{sensor} · 250 m · compuestos de 16 días · señal contextual', 'unit': 'NDVI',
+             'labels': [str(r.get('datetime') or '')[8:10] + '/' + str(r.get('datetime') or '')[5:7] + '/' + str(r.get('datetime') or '')[2:4] for r in rows],
+             'series': [{'name': 'NDVI MODIS', 'values': [_f(r.get('ndvi_mean')) for r in rows]}], 'lo': 0, 'hi': 1}
+    note = ('La serie MODIS representa compuestos de 250 m y una ventana de píxeles centrada en el lote; '
+            'se utiliza como contexto histórico de vegetación. No equivale a una medición intralote de 10 m, '
+            'no identifica cultivos ni rotaciones y no debe compararse directamente con valores Sentinel-2.')
+    return chart, note
+
+
 def build_data(result, name='Lote DOTS', extras=None):
     extras = extras or {}
     lot = extras.get('lot') or {}
     ndvi = extras.get('ndvi') or {}
+    modis_history = extras.get('ndvi_modis') or {}
     indices = extras.get('indices') or {}
     tele = extras.get('telecon') or {}
     poly = result.get('polygon') or lot.get('vertices') or []
@@ -423,6 +439,9 @@ def build_data(result, name='Lote DOTS', extras=None):
                        'series': [{'name': 'Máxima', 'values': [_f(x) for x in daily['temperature_2m_max'][:7]]},
                                   {'name': 'Mínima', 'values': [_f(x) for x in (daily.get('temperature_2m_min') or [])[:7]]}]})
     nser = [r for r in (ndvi.get('series') or []) if r.get('status') == 'válida' and r.get('ndvi_mean') is not None]
+    modis_chart, modis_history_note = modis_history_chart(modis_history)
+    if modis_chart:
+        charts.append(modis_chart)
     if nser:
         charts.append({'kind': 'line', 'group': 'veg', 'title': 'NDVI del lote', 'subtitle': f"{ndvi.get('sensor', 'Sentinel-2')} · media zonal",
                        'unit': '', 'labels': [str(r.get('datetime') or r.get('from'))[5:10][3:] + '/' + str(r.get('datetime') or r.get('from'))[5:7] for r in nser],
@@ -617,6 +636,7 @@ def build_data(result, name='Lote DOTS', extras=None):
                     for m in result.get('metrics') or []],
         'charts': charts,
         'vegetation_interpretation': vegetation_interpretation(ndvi, nser),
+        'modis_history_note': modis_history_note,
         'advisor': advisor, 'exec_summary': exec_text,
         'indices': irows,
         'indices_head': ['Índice', str(indices.get('last_year', 'Último año')), 'Promedio', 'Diferencia'],
