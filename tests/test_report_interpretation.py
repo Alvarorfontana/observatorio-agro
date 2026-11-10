@@ -36,6 +36,23 @@ class VegetationInterpretationTests(unittest.TestCase):
         self.assertIn("no identifica cultivos ni rotaciones", note)
         self.assertIn("no debe compararse directamente", note)
 
+    def test_soilgrids_card_uses_only_returned_values_and_discloses_model_scope(self):
+        raw = {"suelo_completo": {"payload": {"data": {"properties": {"layers": [
+            {"name": "clay", "unit_measure": {"mapped_units": "%"}, "depths": [
+                {"label": "0-5cm", "values": {"mean": 28.4}},
+                {"label": "5-15cm", "values": {"mean": 31.2}},
+            ]},
+            {"name": "phh2o", "unit_measure": {"mapped_units": "pH"}, "depths": [
+                {"label": "0-5cm", "values": {"mean": 6.1}},
+            ]},
+        ]}}}}}
+        card = report_typst.soilgrids_card(raw)
+        self.assertIsNotNone(card)
+        self.assertIn("Arcilla · 0-5cm", str(card["facts"]))
+        self.assertIn("28,4 %", str(card["facts"]))
+        self.assertIn("no equivalen a un muestreo", card["note"])
+        self.assertIsNone(report_typst.soilgrids_card({}))
+
     def test_comparison_is_explicitly_limited_to_two_observations(self):
         rows = [
             {"status": "válida", "datetime": "2026-09-20T00:00:00Z", "ndvi_mean": 0.51},
