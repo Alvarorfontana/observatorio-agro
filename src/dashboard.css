@@ -965,3 +965,13 @@
 .ta-menu-item.is-3d-entry{border:1px solid rgba(61,189,161,.42);background:rgba(61,189,161,.10);font-weight:750}
 .ta-menu-item.is-3d-entry .ta-menu-icon{color:var(--ta-accent,#3dbda1)}
 @media(max-width:760px){.ta-3d-launch{padding:8px 9px;font-size:11px}.ta-header .live{display:none}}
+
+
+/* Contextual 3D action: appears immediately below the currently selected lot */
+.lot-3d-entry{display:flex;align-items:center;justify-content:space-between;gap:14px;width:100%;box-sizing:border-box;margin-top:12px;padding:12px 14px;border:1px solid rgba(39,174,145,.48);border-radius:12px;background:linear-gradient(100deg,rgba(39,174,145,.13),rgba(39,174,145,.045))}
+.lot-3d-entry>div{display:flex;flex-direction:column;gap:4px;min-width:0}
+.lot-3d-entry strong{font-size:11px;letter-spacing:.07em;color:var(--ta-accent,#39b99a)}
+.lot-3d-entry span{font-size:12px;line-height:1.4;color:var(--ta-text-muted,#aab9bd)}
+.lot-3d-entry button{display:inline-flex;align-items:center;justify-content:center;gap:8px;flex:none;min-height:42px;padding:10px 16px;border:0;border-radius:9px;background:#16866f;color:#fff;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.16)}
+.lot-3d-entry button:hover{background:#119b7d;transform:translateY(-1px)}
+@media(max-width:680px){.lot-3d-entry{align-items:stretch;flex-direction:column;gap:10px}.lot-3d-entry button{width:100%;min-height:46px;font-size:14px}.lot-3d-entry strong{font-size:10px}}
