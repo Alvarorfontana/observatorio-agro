@@ -16,7 +16,7 @@ class VegetationInterpretationTests(unittest.TestCase):
             "clear_fraction_lot": 0.82,
         }}
         text = report_typst.vegetation_interpretation(ndvi, [ndvi["latest"]])
-        self.assertIn("18/10/2026", text) if False else self.assertIn("2026-10-18", text)
+        self.assertIn("2026-10-18", text)
         self.assertIn("0,643", text)
         self.assertIn("82,0 %", text)
         self.assertIn("no constituye una medición directa", text)
