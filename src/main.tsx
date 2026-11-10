@@ -901,7 +901,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
   const [terrainMode, setTerrainMode] = useState<TerrainMode | "off">("anegamiento");
   const [terrainTick, setTerrainTick] = useState(0);
   const activeLot = currentLot();
-  const activeVertices: Point[] = activeLot?.vertices?.length >= 3 ? activeLot.vertices : vertices;
+  const activeVertices: Point[] = activeLot && activeLot.vertices && activeLot.vertices.length >= 3 ? activeLot.vertices : vertices;
   const lotKey = JSON.stringify(activeVertices);
   const loadTerrain = async () => {
     if (activeVertices.length < 3) { setSources(p => ({ ...p, relieve: { status: "sin dato", error: "Primero seleccioná una parcela completa en el mapa o dibujá su contorno." } })); notify("Para generar el 3D, primero seleccioná el lote completo."); return; }
