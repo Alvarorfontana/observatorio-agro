@@ -177,6 +177,10 @@ def test_routes(monkeypatch, pc):
     img = cl.get('/api/fuentes/ndvi-imagen' + q + '&item=S2B_MSIL2A_20261008_1&baseline=05.10')
     assert img.status_code == 200 and img.mimetype == 'image/png'
     assert cl.get('/api/fuentes/ndvi' + q + '&days=9999').status_code == 400
+    monkeypatch.setattr(veg, 'ndvi_modis', lambda polygon, days: {'status': 'recibido', 'data': {'series': [], 'requested_days': days}})
+    hist = cl.get('/api/fuentes/ndvi-modis' + q + '&days=1825')
+    assert hist.status_code == 200 and hist.json['data']['requested_days'] == 1825
+    assert cl.get('/api/fuentes/ndvi-modis' + q + '&days=1826').status_code == 400
 
 
 def test_rgb_overlay_uses_visual_asset(pc):

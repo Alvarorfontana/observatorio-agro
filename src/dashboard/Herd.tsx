@@ -3,6 +3,7 @@
  * y registro de movimientos de hacienda (para trazabilidad e informe EUDR). Se guarda en el navegador.
  */
 import React, { useState } from "react";
+import { HerdVision } from "./HerdVision";
 
 export type HerdRow = { cat: string; heads: string; weight: string };
 export type Movement = { date: string; kind: string; cat: string; heads: string; note: string };
@@ -59,6 +60,7 @@ export function HerdPanel({ rows, setRows, movements, setMovements, onRun, busy,
       {data.advice?.length > 0 && <><div className="lot-vars-title" style={{ marginTop: 10 }}>Qué conviene revisar</div>
         <ul className="small" style={{ paddingLeft: 18, margin: 0 }}>{data.advice.map((a: string) => <li key={a} style={{ marginBottom: 4 }}>{a}</li>)}</ul></>}
     </>}
+    <HerdVision />
     <div className="lot-vars-title" style={{ marginTop: 14 }}>Movimientos de hacienda</div>
     <div className="herd-mv">
       <input type="date" value={mv.date} onChange={e => setMv({ ...mv, date: e.target.value })} aria-label="Fecha" />

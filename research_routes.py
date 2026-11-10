@@ -63,7 +63,7 @@ def _int(args,key,default,lo,hi):
 
 VEGETATION={
   'ndvi':lambda p,a:veg.ndvi_best(p,_int(a,'days',120,15,365),_int(a,'scenes',6,1,10)),
-  'ndvi-modis':lambda p,a:veg.ndvi_modis(p,_int(a,'days',120,30,760)),
+  'ndvi-modis':lambda p,a:veg.ndvi_modis(p,_int(a,'days',120,30,1825)),
   'ndvi-zonas':lambda p,a:veg.ndvi_zones(p,_int(a,'days',60,15,180)),
   'ndvi-zonas-imagen':None,
   'ndvi-imagen':None,
@@ -637,8 +637,8 @@ def agentic_status():
       'credenciales':{
         'NASA FIRMS': 'configurada' if os.environ.get('FIRMS_MAP_KEY') else 'requiere FIRMS_MAP_KEY',
       },
-      'procesamiento':{'NDVI Sentinel-2 por lote':'abierto · Planetary Computer','NDVI Sentinel Hub':'requiere CDSE','NDVI openEO':'requiere CDSE','NDVI MODIS histórico':'requiere Earth Engine'},
-      'procesamiento_pendiente':['EVI/NDWI','biomasa/pastura','detección satelital validada de cuerpos de agua','sensores de ganado'], 'enso':['NOAA CPC/RONI','Columbia IRI','WMO','JMA','BOM Australia'],
+      'procesamiento':{'NDVI Sentinel-2 por lote':'abierto · Planetary Computer · 10 m · escenas recientes','NDVI MODIS histórico':'abierto · NASA ORNL DAAC · 250 m · hasta cinco años en la ruta pública','NDVI Sentinel Hub':'requiere credencial CDSE','NDVI openEO':'requiere credencial CDSE','historia de cultivos y rotaciones':'no validada por lote; NDVI no identifica cultivos'},
+      'procesamiento_pendiente':['clasificación histórica de cultivos y rotaciones con fuente abierta validada','ambientes productivos estables entre campañas y contrastados en campo','validación agronómica con registros de siembra, cosecha y rendimiento','detección satelital validada de cuerpos de agua','sensores de ganado'], 'enso':['NOAA CPC/RONI','Columbia IRI','WMO','JMA','BOM Australia'],
       'regla':'Una fuente caída se reporta como faltante y no impide que las demás produzcan el análisis.'
     })
 

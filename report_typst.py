@@ -163,9 +163,37 @@ def _dm(d):
     return f'{d[8:10]}/{d[5:7]}' if len(d) >= 10 else '—'
 
 
-def more_cards(extras):
-    """Lecturas del lote calculadas en el panel con Earth Engine y el perfil de suelo: cada una entra solo si vino con dato."""
+def soilgrids_card(raw):
+    """Propiedades SoilGrids recibidas por el motor: estimación espacial, nunca análisis de laboratorio."""
+    source = (raw or {}).get('suelo_completo') or {}
+    payload = source.get('payload') or {}
+    data = payload.get('data') or {}
+    layers = ((data.get('properties') or {}).get('layers') or [])
+    labels = {'nitrogen': 'Nitrógeno total', 'clay': 'Arcilla', 'sand': 'Arena', 'silt': 'Limo',
+              'soc': 'Carbono orgánico', 'phh2o': 'pH en agua', 'bdod': 'Densidad aparente'}
+    facts = []
+    for layer in layers:
+        name = labels.get(layer.get('name'), str(layer.get('name') or 'Propiedad'))
+        unit = ((layer.get('unit_measure') or {}).get('mapped_units')
+                or (layer.get('unit_measure') or {}).get('target_units') or '')
+        for depth in (layer.get('depths') or [])[:3]:
+            value = (depth.get('values') or {}).get('mean')
+            if value is not None:
+                facts.append([f"{name} · {depth.get('label') or 'profundidad no informada'}",
+                              f"{num(value, 2)} {unit}".strip()])
+    if not facts:
+        return None
+    return {'title': 'Propiedades del suelo · SoilGrids', 'facts': facts[:12],
+            'note': 'ISRIC SoilGrids: estimaciones modeladas por grilla y profundidad para el entorno del punto consultado. No equivalen a un muestreo ni a un análisis de laboratorio del lote.' ,
+            'credit': 'propiedades del suelo: ISRIC SoilGrids'}
+
+
+def more_cards(extras, raw=None):
+    """Lecturas del lote calculadas por fuentes disponibles: cada tarjeta entra solo si recibió datos."""
     out = []
+    sg = soilgrids_card(raw)
+    if sg:
+        out.append(sg)
     rh = extras.get('riesgo') or {}
     if rh.get('zones'):
         out.append({'title': 'Lomas, planos y bajos', 'facts': [[z['name'], f"{num(z.get('pct'), 0)} % · {num(z.get('ha'), 0)} ha"] for z in rh['zones'] if (_f(z.get('pct')) or 0) >= 0.5]
@@ -319,10 +347,57 @@ def section_ids():
     return [s['id'] for s in SECTIONS]
 
 
+
+def vegetation_interpretation(ndvi, series):
+    """Texto técnico descriptivo: sólo afirma lo respaldado por la serie y declara el alcance del índice."""
+    latest = ndvi.get('latest') or {}
+    value = _f(latest.get('ndvi_mean'))
+    if value is None:
+        return 'No se obtuvo una observación Sentinel-2 válida para calcular el NDVI del lote en el período consultado. No corresponde inferir el estado de la vegetación a partir de la ausencia de datos.'
+    date_obs = str(latest.get('datetime') or 'fecha no informada')[:10]
+    clear = _f(latest.get('clear_fraction_lot'))
+    coverage = f" La fracción despejada considerada fue {num(clear * 100, 1)} % del polígono." if clear is not None else ''
+    valid = [r for r in (series or []) if r.get('status') == 'válida' and _f(r.get('ndvi_mean')) is not None]
+    trend = ''
+    if len(valid) >= 2:
+        delta = _f(valid[-1].get('ndvi_mean')) - _f(valid[-2].get('ndvi_mean'))
+        prior_date = str(valid[-2].get('datetime') or '')[:10]
+        if delta > 0:
+            direction = 'aumentó'
+        elif delta < 0:
+            direction = 'disminuyó'
+        else:
+            direction = 'no registró variación'
+        trend = (f" En comparación con la observación válida anterior ({prior_date}), el promedio {direction} "
+                 f"{num(abs(delta), 3)} unidades de NDVI. Esta diferencia describe el cambio entre dos fechas y no identifica por sí sola su causa.")
+    return (f"En la escena Sentinel-2 L2A del {date_obs}, el NDVI medio calculado sobre los píxeles válidos "
+            f"del lote fue {num(value, 3)}.{coverage}{trend} El NDVI expresa el contraste espectral asociado "
+            "a la presencia de vegetación verde; no constituye una medición directa de biomasa, estado sanitario "
+            "ni rendimiento. Su interpretación agronómica requiere considerar el cultivo, la etapa fenológica, "
+            "la cobertura del suelo y las condiciones de observación. Las diferencias espaciales deben verificarse "
+            "con antecedentes de manejo y recorrida a campo.")
+
+
+def modis_history_chart(modis):
+    rows = [r for r in (modis or {}).get('series', []) if r.get('status') == 'válida' and _f(r.get('ndvi_mean')) is not None]
+    if not rows:
+        return None, ''
+    sensor = str((modis or {}).get('sensor') or 'NASA MODIS MOD13Q1')
+    chart = {'kind': 'line', 'group': 'veg', 'title': 'Historial de vegetación · MODIS',
+             'subtitle': f'{sensor} · 250 m · compuestos de 16 días · señal contextual', 'unit': 'NDVI',
+             'labels': [str(r.get('datetime') or '')[8:10] + '/' + str(r.get('datetime') or '')[5:7] + '/' + str(r.get('datetime') or '')[2:4] for r in rows],
+             'series': [{'name': 'NDVI MODIS', 'values': [_f(r.get('ndvi_mean')) for r in rows]}], 'lo': 0, 'hi': 1}
+    note = ('La serie MODIS representa compuestos de 250 m y una ventana de píxeles centrada en el lote; '
+            'se utiliza como contexto histórico de vegetación. No equivale a una medición intralote de 10 m, '
+            'no identifica cultivos ni rotaciones y no debe compararse directamente con valores Sentinel-2.')
+    return chart, note
+
+
 def build_data(result, name='Lote DOTS', extras=None):
     extras = extras or {}
     lot = extras.get('lot') or {}
     ndvi = extras.get('ndvi') or {}
+    modis_history = extras.get('ndvi_modis') or {}
     indices = extras.get('indices') or {}
     tele = extras.get('telecon') or {}
     poly = result.get('polygon') or lot.get('vertices') or []
@@ -392,6 +467,9 @@ def build_data(result, name='Lote DOTS', extras=None):
                        'series': [{'name': 'Máxima', 'values': [_f(x) for x in daily['temperature_2m_max'][:7]]},
                                   {'name': 'Mínima', 'values': [_f(x) for x in (daily.get('temperature_2m_min') or [])[:7]]}]})
     nser = [r for r in (ndvi.get('series') or []) if r.get('status') == 'válida' and r.get('ndvi_mean') is not None]
+    modis_chart, modis_history_note = modis_history_chart(modis_history)
+    if modis_chart:
+        charts.append(modis_chart)
     if nser:
         charts.append({'kind': 'line', 'group': 'veg', 'title': 'NDVI del lote', 'subtitle': f"{ndvi.get('sensor', 'Sentinel-2')} · media zonal",
                        'unit': '', 'labels': [str(r.get('datetime') or r.get('from'))[5:10][3:] + '/' + str(r.get('datetime') or r.get('from'))[5:7] for r in nser],
@@ -552,7 +630,7 @@ def build_data(result, name='Lote DOTS', extras=None):
                                   ['Caminos dentro del lote', f"{num((ck.get('caminos_lote') or 0) + (ck.get('rutas_lote') or 0))} km"],
                                   ['Construcciones en el lote', num(en.get('construcciones_lote'), 0)], ['Construcciones a 2 km', num(en.get('construcciones_2km'), 0)]],
                         'note': f"Overture Maps (OpenStreetMap, Microsoft, Google y otros), versión {en.get('release', '—')}. Pueden faltar caminos internos o galpones nuevos."}
-    lot_more = more_cards(extras)
+    lot_more = more_cards(extras, result.get('raw') or {})
     nl_series = [r for r in (ndvi.get('series') or []) if r.get('status') == 'válida' and r.get('ndvi_mean') is not None]
     week = week_outlook(nmean, nl_series, bal, _f(rain and rain.get('value')), _f(et and et.get('value')), thiv, fo)
     thumb = extras.get('_thumb') if '_thumb' in extras else satellite_thumb(poly)
@@ -585,6 +663,8 @@ def build_data(result, name='Lote DOTS', extras=None):
                      'reference': str(m.get('reference', '')), 'reading': str(m.get('reading', '')), 'tone': metric_tone(m)}
                     for m in result.get('metrics') or []],
         'charts': charts,
+        'vegetation_interpretation': vegetation_interpretation(ndvi, nser),
+        'modis_history_note': modis_history_note,
         'advisor': advisor, 'exec_summary': exec_text,
         'indices': irows,
         'indices_head': ['Índice', str(indices.get('last_year', 'Último año')), 'Promedio', 'Diferencia'],
