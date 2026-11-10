@@ -900,12 +900,14 @@ function Observatory({onHome}:{onHome:()=>void}) {
   const terrainOverlay = useRef<L.ImageOverlay | null>(null);
   const [terrainMode, setTerrainMode] = useState<TerrainMode | "off">("anegamiento");
   const [terrainTick, setTerrainTick] = useState(0);
-  const lotKey = JSON.stringify(vertices);
+  const activeLot = currentLot();
+  const activeVertices: Point[] = activeLot?.vertices?.length >= 3 ? activeLot.vertices : vertices;
+  const lotKey = JSON.stringify(activeVertices);
   const loadTerrain = async () => {
-    if (vertices.length < 3) { setSources(p => ({ ...p, relieve: { status: "sin dato", error: "Dibujá o seleccioná un lote para analizar su relieve" } })); return; }
+    if (activeVertices.length < 3) { setSources(p => ({ ...p, relieve: { status: "sin dato", error: "Primero seleccioná una parcela completa en el mapa o dibujá su contorno." } })); notify("Para generar el 3D, primero seleccioná el lote completo."); return; }
     terrainCtl.current?.abort();
     const ctl = new AbortController(); terrainCtl.current = ctl;
-    const key = lotKey, poly = vertices;
+    const key = lotKey, poly = activeVertices;
     setSources(p => ({ ...p, relieve: { status: "consultando" } }));
     try {
       const a = await terrainForLot(poly, ctl.signal);
@@ -1464,7 +1466,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
               <button onClick={() => { setSideTab("lote"); startFtw(); }}>Automático</button>
               <button onClick={() => { setSideTab("lote"); startCatastro(); }} title="Tocá la parcela del catastro: Buenos Aires, Córdoba, Salta, Neuquén, Gualeguaychú, Paraguay y Brasil">Parcela del catastro</button>
               <button className="primary" onClick={() => void pdf()} disabled={pdfBusy}><FileText className="icon" />{pdfBusy ? "Generando…" : "Informe PDF"}</button>
-              {vertices.length >= 3 && <button className="primary" onClick={() => { setShowLot3D(true); void loadTerrain(); requestAnimationFrame(() => document.getElementById("dots-lot-3d")?.scrollIntoView({ behavior: "smooth", block: "start" })); }} title="Mostrar el modelo tridimensional debajo del mapa">Ver lote en 3D</button>}
+              <button className="primary" disabled={!activeLot || activeVertices.length < 3} onClick={() => { if (!activeLot || activeVertices.length < 3) { notify("Primero seleccioná una parcela completa en el mapa."); return; } setVertices(activeVertices); setShowLot3D(true); void loadTerrain(); requestAnimationFrame(() => document.getElementById("dots-lot-3d")?.scrollIntoView({ behavior: "smooth", block: "start" })); }} title="Mostrar el modelo tridimensional debajo del mapa">Ver lote en 3D</button>
               {l && <button onClick={() => void campoPdf()} disabled={pdfBusy} title="Lomas, planos y bajos del campo, con un código QR para llevar el mapa al celular (funciona sin señal)">Informe de campo + mapa para el celular</button>}
             </div>
           </section>;
@@ -2339,7 +2341,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
         {gibsLayer===WORLDCOVER && <div className="dots-legend wc-legend" aria-label="Leyenda WorldCover">{WORLDCOVER_CLASSES.map(([c,l])=><span key={l}><i style={{background:c}}/>{l}</span>)}</div>}
         <MarkerLegend types={[...fieldMarkers.map((m:any)=>m.type),...waterAssets.map((a:any)=>a.type)]}/>
         </section>
-        {showLot3D && <section id="dots-lot-3d" className="ta-map-card" style={{ gridColumn: "1 / -1", marginTop: 14 }} aria-label="Modelo 3D del lote seleccionado">
+        {showLot3D && <section id="dots-lot-3d" className="ta-map-card" style={{ gridColumn: "1 / -1", marginTop: 14, minWidth: 0, display: "block" }} aria-label="Modelo 3D del lote seleccionado">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "12px 16px" }}>
             <div><b>MODELO 3D DEL LOTE SELECCIONADO</b><div className="small">Vista tridimensional del mismo polígono que está marcado en el mapa superior.</div></div>
             <button onClick={() => setShowLot3D(false)}>Ocultar 3D</button>
