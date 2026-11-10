@@ -244,11 +244,12 @@ export function DotsTerritory3D({ lot = null, terrainSummary = null, onTerrain, 
     setPaleoBusy(true); setPaleoError("");
     try {
       const vertices = lot?.vertices?.length ? lot.vertices : [[Number(lat)-0.25, Number(lon)-0.25], [Number(lat)-0.25, Number(lon)+0.25], [Number(lat)+0.25, Number(lon)+0.25], [Number(lat)+0.25, Number(lon)-0.25]] as [number, number][];
+      const minLat = Math.max(-90, Math.floor(Math.min(...vertices.map(p => p[0]))));
+      const maxLat = Math.min(90, Math.ceil(Math.max(...vertices.map(p => p[0]))));
+      const minLon = Math.max(-180, Math.floor(Math.min(...vertices.map(p => p[1]))));
+      const maxLon = Math.min(180, Math.ceil(Math.max(...vertices.map(p => p[1]))));
       const params = new URLSearchParams({
-        minLat: String(Math.max(-90, Math.floor(Math.min(...vertices.map(p => p[0])))),
-        maxLat: String(Math.min(90, Math.ceil(Math.max(...vertices.map(p => p[0])))),
-        minLon: String(Math.max(-180, Math.floor(Math.min(...vertices.map(p => p[1])))),
-        maxLon: String(Math.min(180, Math.ceil(Math.max(...vertices.map(p => p[1])))),
+        minLat: String(minLat), maxLat: String(maxLat), minLon: String(minLon), maxLon: String(maxLon),
         earliestYear: "5000", latestYear: "0", timeFormat: "BP", timeMethod: "overAny",
         dataPublisher: "NOAA", headersOnly: "true", limit: "10"
       });
