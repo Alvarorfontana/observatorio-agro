@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 
 type WdiPoint = { year: string; value: number };
 type Lot3D = { name: string; vertices: [number, number][]; areaHa?: number | null; center?: [number, number] };
+type TerrainSummary3D = { elevMin?: number; elevMean?: number; elevMax?: number; relief?: number; slopeMeanPct?: number; flatPct?: number; depressionPct?: number; depressionHa?: number; maxDepthM?: number; storageM3?: number; drainageHa?: number; positionLabel?: string; riskPct?: { bajo?: number; medio?: number; alto?: number } };
 type SoilLayer = { name: string; unit: string; depths: { depth: string; value: number | null }[] };
 
 function lotGeoJson(lot: Lot3D | null): any {
@@ -19,7 +20,7 @@ function fitLot(map: any, vertices: [number, number][]) {
 const WDI = "AG.PRD.CROP.XD";
 const SOIL_PROPS = ["phh2o", "soc", "clay", "sand", "nitrogen"];
 
-export function DotsTerritory3D({ lot = null }: { lot?: Lot3D | null }) {
+export function DotsTerritory3D({ lot = null, terrainSummary = null }: { lot?: Lot3D | null; terrainSummary?: TerrainSummary3D | null }) {
   const mapNode = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const [terrainOn, setTerrainOn] = useState(true);
@@ -253,6 +254,19 @@ export function DotsTerritory3D({ lot = null }: { lot?: Lot3D | null }) {
     const a = document.createElement("a"); a.href = url; a.download = "DOTS-observatorio-suelos.csv"; a.click(); URL.revokeObjectURL(url);
   }
 
+  function exportTerrainCsv() {
+    if (!terrainSummary) return;
+    const rows = [["variable", "valor", "unidad"], ["elevacion_minima", String(terrainSummary.elevMin ?? ""), "m"],
+      ["elevacion_media", String(terrainSummary.elevMean ?? ""), "m"], ["elevacion_maxima", String(terrainSummary.elevMax ?? ""), "m"],
+      ["relieve_p95_p5", String(terrainSummary.relief ?? ""), "m"], ["pendiente_media", String(terrainSummary.slopeMeanPct ?? ""), "%"],
+      ["superficie_plana", String(terrainSummary.flatPct ?? ""), "%"], ["depresiones", String(terrainSummary.depressionHa ?? ""), "ha"],
+      ["depresiones_porcentaje", String(terrainSummary.depressionPct ?? ""), "%"], ["profundidad_maxima_depresion", String(terrainSummary.maxDepthM ?? ""), "m"],
+      ["almacenamiento_topografico_estimado", String(terrainSummary.storageM3 ?? ""), "m3"], ["drenaje_en_lote", String(terrainSummary.drainageHa ?? ""), "ha"]];
+    const csv = "\\ufeff" + rows.map(r => r.map(v => '"' + v.replaceAll('"', '""') + '"').join(";")).join("\\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const a = document.createElement("a"); a.href = url; a.download = "DOTS-relieve-hidrologia-lote.csv"; a.click(); URL.revokeObjectURL(url);
+  }
+
   return <main className="dots-territory">
     <style>{`
       .dots-territory{color:#e7edf2;background:#101a22;padding:22px;border-radius:16px;margin:14px 0;font-family:inherit}
@@ -275,6 +289,18 @@ export function DotsTerritory3D({ lot = null }: { lot?: Lot3D | null }) {
       <section className="dt-panel"><h3>Modelo digital del terreno</h3><div className="dt-map-tools"><label><input type="checkbox" checked={terrainOn} onChange={e => setTerrainOn(e.target.checked)} /> Relieve 3D</label><label><input type="checkbox" checked={imageryOn} onChange={e => setImageryOn(e.target.checked)} /> Imagen satelital NASA MODIS</label><label>Exageración <input type="range" min="0.5" max="2.5" step="0.05" value={exaggeration} onChange={e => setExaggeration(Number(e.target.value))} /></label><span className="dt-muted">{lot?.name ? "Lote delimitado sobre el terreno" : "Cuenca del Paraná · navegación libre"}</span></div><div ref={mapNode} className="dt-map" aria-label="Mapa tridimensional de relieve" /><p className="dt-source">Cartografía base: OpenStreetMap. Elevación: AWS Terrain Tiles (Terrarium). Imagen opcional: NASA GIBS MODIS Terra True Color, 250 m. Es contexto regional y no sustituye Sentinel-2 de 10 m para decisiones parcelarias. El polígono amarillo corresponde al lote activo.</p></section>
       <aside className="dt-panel dt-side"><h3>Series históricas agrícolas</h3><label className="dt-muted">País </label><select value={country} onChange={e => setCountry(e.target.value)}><option value="ARG">Argentina</option><option value="BRA">Brasil</option><option value="URY">Uruguay</option><option value="PRY">Paraguay</option></select><p className="dt-muted">Índice de producción agrícola (2014–16 = 100)</p>{series.length ? <><svg className="dt-chart" viewBox="0 0 640 160" role="img" aria-label="Serie histórica del índice de producción agrícola"><line x1="20" y1="140" x2="620" y2="140" stroke="#60727d"/><polyline points={chart} fill="none" stroke="#5bc3a5" strokeWidth="4" strokeLinejoin="round" strokeLinecap="round"/></svg><div className="dt-legend"><span>{series[0].year}</span><span>{series[series.length-1].year}</span></div><button className="dt-btn" onClick={exportCsv}>Descargar serie CSV</button></> : <p className="dt-muted">{busy ? "Consultando Banco Mundial…" : "No hay observaciones para mostrar."}</p>}<p className="dt-source">Fuente: World Bank API · WDI {WDI}. Consulta: {sourceStamp || "pendiente"}. Los años faltantes no se interpolan.</p></aside>
     </div>
+    {terrainSummary && <section className="dt-panel" style={{ marginTop: 14 }}>
+      <div className="dt-head"><div><h3>Relieve e hidrología del lote</h3><p className="dt-muted">Análisis del DEM Copernicus GLO-30, con cuenca de aporte local alrededor del polígono. Indicadores topográficos modelados; no equivalen a un estudio hidráulico.</p></div><button className="dt-btn" onClick={exportTerrainCsv}>Descargar relieve e hidrología CSV</button></div>
+      <div className="dt-cards">
+        <div className="dt-stat"><small>Elevación media</small><b>{terrainSummary.elevMean?.toFixed(1) ?? "—"} m</b><span>mín. {terrainSummary.elevMin?.toFixed(1) ?? "—"} · máx. {terrainSummary.elevMax?.toFixed(1) ?? "—"} m</span></div>
+        <div className="dt-stat"><small>Relieve interno P95–P5</small><b>{terrainSummary.relief?.toFixed(2) ?? "—"} m</b><span>Pendiente media {terrainSummary.slopeMeanPct?.toFixed(2) ?? "—"} %</span></div>
+        <div className="dt-stat"><small>Superficie casi plana</small><b>{terrainSummary.flatPct?.toFixed(1) ?? "—"} %</b><span>Pendiente menor a 0,5 %</span></div>
+        <div className="dt-stat"><small>Depresiones modeladas</small><b>{terrainSummary.depressionHa?.toFixed(2) ?? "—"} ha</b><span>{terrainSummary.depressionPct?.toFixed(1) ?? "—"} % del lote · profundidad máx. {terrainSummary.maxDepthM?.toFixed(2) ?? "—"} m</span></div>
+        <div className="dt-stat"><small>Almacenamiento topográfico potencial</small><b>{terrainSummary.storageM3?.toLocaleString("es-AR",{maximumFractionDigits:0}) ?? "—"} m³</b><span>Estimación geomorfológica, no volumen de agua medido</span></div>
+        <div className="dt-stat"><small>Vías de escurrimiento</small><b>{terrainSummary.drainageHa?.toFixed(2) ?? "—"} ha</b><span>Dentro del polígono · posición {terrainSummary.positionLabel || "—"}</span></div>
+      </div>
+      <p className="dt-source">Fuente: Copernicus DEM GLO-30. El flujo y las depresiones son derivados de elevación y algoritmo D8; requieren verificación de campo y no reemplazan curvas de nivel ni modelación hidráulica calibrada.</p>
+    </section>}
     <div className="dt-layout">
       <section className="dt-panel"><h3>Perfil topográfico</h3><p className="dt-muted">{lot && lot.vertices.length >= 3 ? "Transecta sobre el lote: une los dos vértices más distantes del polígono." : "Transecta de contexto de aproximadamente 20 km centrada en las coordenadas ingresadas."}</p><button className="dt-btn" onClick={() => void loadProfile()} disabled={profileBusy}>{profileBusy ? "Consultando elevación…" : "Consultar perfil de elevación"}</button>{profile.length > 0 && <><svg className="dt-chart" viewBox="0 0 640 170" role="img" aria-label="Perfil de elevación consultado"><polyline points={profile.map((p,i)=>`${20+i*600/Math.max(1,profile.length-1)},${145-(p.elevation-Math.min(...profile.map(x=>x.elevation)))/(Math.max(...profile.map(x=>x.elevation))-Math.min(...profile.map(x=>x.elevation))||1)*115}`).join(" ")} fill="none" stroke="#e1b45b" strokeWidth="3"/></svg><div className="dt-muted">Mínimo: {Math.min(...profile.map(p=>p.elevation)).toFixed(1)} m · Máximo: {Math.max(...profile.map(p=>p.elevation)).toFixed(1)} m · Distancia: {profile[profile.length-1].distance.toFixed(2)} km · {profile.length} puntos</div></>}</section>
       <section className="dt-panel"><h3>Composición del suelo · SoilGrids</h3><div className="dt-map-tools"><label>Latitud <input value={lat} onChange={e=>setLat(e.target.value)} size={9}/></label><label>Longitud <input value={lon} onChange={e=>setLon(e.target.value)} size={9}/></label><button className="dt-btn" onClick={() => void loadSoil()} disabled={busy}>{busy ? "Consultando…" : "Consultar punto"}</button></div>{soil.length > 0 ? <><button className="dt-btn" onClick={exportSoilCsv}>Descargar suelo CSV</button><table className="dt-soil"><thead><tr><th>Variable</th><th>Profundidad</th><th>Valor</th><th>Unidad</th></tr></thead><tbody>{soil.flatMap(layer=>layer.depths.map(d=><tr key={layer.name+d.depth}><td>{layer.name}</td><td>{d.depth}</td><td>{d.value ?? "Sin dato"}</td><td>{layer.unit}</td></tr>))}</tbody></table></> : <p className="dt-muted">Ingresá coordenadas y consultá el producto modelado de SoilGrids. No se presentan valores hasta recibir respuesta de la fuente.</p>}<p className="dt-source">Fuente: ISRIC SoilGrids · resolución espacial aproximada 250 m. Producto modelado; no equivale a análisis de laboratorio ni medición de compactación.</p></section>
