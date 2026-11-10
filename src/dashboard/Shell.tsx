@@ -6,7 +6,7 @@
  */
 import React from "react";
 import {
-  LayoutDashboard, Layers, Satellite, Sprout, Waves, CircleDot, Beef, CloudSun, FlaskConical,
+  LayoutDashboard, Layers, Satellite, Sprout, Waves, CircleDot, Beef, CloudSun, FlaskConical, BookOpen,
   Flame, Gauge, FileText, Network, Thermometer, CloudRain, Sigma, BellRing, Leaf, Wheat, Truck, ChevronsLeft, X, Hexagon, Trees, Globe2,
 } from "lucide-react";
 
@@ -36,6 +36,9 @@ export function buildNav(go: (k: string) => void, draw: () => void, pdf: () => v
       { key: "lluvia", label: "Lluvia y sequía", icon: <CloudRain />, onClick: () => go("lluvia") },
       { key: "suelo", label: "Suelo y nitrógeno", icon: <CircleDot />, onClick: () => go("suelo") },
       { key: "ganado", label: "Ganado", icon: <Beef />, onClick: () => go("ganado") },
+    ]},
+    { title: "Historia y territorio", items: [
+      { key: "atlas-dot", label: "Atlas agrícola e informes", icon: <BookOpen />, onClick: () => go("atlas-dot") },
     ]},
     { title: "Bosque y exportación", items: [
       { key: "sustentabilidad", label: "Bosque y deforestación", icon: <Trees />, onClick: () => go("sustentabilidad") },
