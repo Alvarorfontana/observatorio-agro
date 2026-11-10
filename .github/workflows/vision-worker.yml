@@ -1,0 +1,33 @@
+name: DOTS vision worker validation
+
+on:
+  push:
+    branches:
+      - feat/dots-vision-suelos-territorio
+    paths:
+      - "vision_worker/**"
+      - "vision_api.py"
+      - "tests/test_vision_api.py"
+      - ".github/workflows/vision-worker.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "vision_worker/**"
+      - "vision_api.py"
+      - "tests/test_vision_api.py"
+      - ".github/workflows/vision-worker.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  python-syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile worker and API modules
+        run: python -m compileall -q vision_worker vision_api.py tests/test_vision_api.py
