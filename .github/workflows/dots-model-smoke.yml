@@ -1,0 +1,40 @@
+name: DOTS model execution smoke test
+
+on:
+  push:
+    branches:
+      - feat/dots-vision-suelos-territorio
+    paths:
+      - "scripts/run_yolo26_smoke.py"
+      - ".github/workflows/dots-model-smoke.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  yolo26-cpu-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install runtime
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "ultralytics>=8.4.0" opencv-python-headless
+      - name: Execute YOLO26n detection and BoT-SORT tracking on CPU
+        run: python scripts/run_yolo26_smoke.py
+      - name: Upload execution report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dots-yolo26-smoke-report
+          path: artifacts/yolo26-smoke/
+          if-no-files-found: warn
+          retention-days: 14
