@@ -1,6 +1,4 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import maplibregl from "maplibre-gl";
-import "maplibre-gl/dist/maplibre-gl.css";
 
 type WdiPoint = { year: string; value: number };
 type SoilLayer = { name: string; unit: string; depths: { depth: string; value: number | null }[] };
@@ -11,7 +9,7 @@ const SOIL_PROPS = ["phh2o", "soc", "clay", "sand", "nitrogen"];
 
 export function DotsTerritory3D() {
   const mapNode = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<maplibregl.Map | null>(null);
+  const mapRef = useRef<any>(null);
   const [terrainOn, setTerrainOn] = useState(true);
   const [exaggeration, setExaggeration] = useState(1.35);
   const [country, setCountry] = useState("ARG");
@@ -27,6 +25,11 @@ export function DotsTerritory3D() {
 
   useEffect(() => {
     if (!mapNode.current || mapRef.current) return;
+    let disposed = false;
+    const startMap = () => {
+    if (disposed || !mapNode.current || mapRef.current) return;
+    const maplibregl = (window as any).maplibregl;
+    if (!maplibregl) return;
     const map = new maplibregl.Map({
       container: mapNode.current,
       center: [-60.65, -32.95],
@@ -60,7 +63,24 @@ export function DotsTerritory3D() {
       map.setTerrain({ source: "dem", exaggeration: 1.35 });
     });
     mapRef.current = map;
-    return () => { map.remove(); mapRef.current = null; };
+    };
+    const cssId = "dots-maplibre-css";
+    if (!document.getElementById(cssId)) {
+      const link = document.createElement("link");
+      link.id = cssId; link.rel = "stylesheet";
+      link.href = "https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.css";
+      document.head.appendChild(link);
+    }
+    if ((window as any).maplibregl) startMap();
+    else {
+      const script = document.createElement("script");
+      script.src = "https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.js";
+      script.async = true;
+      script.onload = startMap;
+      script.onerror = () => setError("No se pudo cargar MapLibre GL desde el CDN.");
+      document.head.appendChild(script);
+    }
+    return () => { disposed = true; mapRef.current?.remove(); mapRef.current = null; };
   }, []);
 
   useEffect(() => {
