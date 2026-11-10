@@ -29,7 +29,6 @@ import {
   Plus,
   Minus,
   Menu,
-  Mountain,
 } from "lucide-react";
 import "./styles.css";
 import "./dashboard.css";
@@ -1432,7 +1431,6 @@ function Observatory({onHome}:{onHome:()=>void}) {
           </b>
           <span>WGS84</span>
         </div>
-        <button type="button" className="ta-3d-launch" onClick={() => changeView("territorio-3d")} title="Abrir el modelo 3D del terreno del lote seleccionado"><Mountain size={16}/> Modelo 3D del terreno</button>
         <button className="theme-toggle" onClick={()=>setTheme(t=>t==="oscuro"?"claro":"oscuro")} title="Cambiar entre tema claro y oscuro" aria-label="Cambiar tema">{theme==="oscuro"?"Claro":"Oscuro"}</button>
         <button className={"ta-bell"+(alertsData?.alerts?.some((a:any)=>a.level==="alta")?" hot":alertsData?.alerts?.length?" warm":"")} onClick={()=>{setView("alertas");void loadAlerts();}} title="Alertas del lote">
           <TriangleAlert/>{alertsData?.alerts?.length ? <b>{alertsData.alerts.length}</b> : null}
@@ -1464,6 +1462,10 @@ function Observatory({onHome}:{onHome:()=>void}) {
                   : <h1>{l ? l.name : "Sin lote seleccionado"}</h1>}
               </div>
               <a className="lot-bar-help" href="/guia" target="_blank" rel="noreferrer">¿Cómo se calcula cada dato?</a><span className="lot-bar-meta">{l ? `${fmt(l.areaHa,1)} ha · ${fmt(l.perimeterKm,2)} km de perímetro · ${l.ftw ? "límite automático FTW" : "límite dibujado"} · ${placeLabel}` : `${placeLabel} · dibujá, tomá automático o importá tus lotes`}</span>
+              {l && <div className="lot-3d-entry">
+                <div><strong>LOTE SELECCIONADO: {l.name}</strong><span>El modelo 3D se abrirá sobre este polígono y su superficie.</span></div>
+                <button type="button" onClick={() => changeView("territorio-3d")} aria-label={`Ver ${l.name} en el modelo 3D`}><span aria-hidden="true">⛰</span> Ver este lote en 3D <span aria-hidden="true">→</span></button>
+              </div>}
             </div>
             <div className="lot-bar-week">
               {chips.map(c => <button key={c.k} className={"week-chip tone-" + c.tone} onClick={() => changeView(c.go)}>
