@@ -105,7 +105,7 @@ export function DotsTerritory3D({ lot = null, terrainSummary = null, onTerrain, 
     if (!document.getElementById(cssId)) {
       const link = document.createElement("link");
       link.id = cssId; link.rel = "stylesheet";
-      link.href = "https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.css";
+      link.href = "https://cdn.jsdelivr.net/npm/maplibre-gl@5.6.1/dist/maplibre-gl.css";
       document.head.appendChild(link);
     }
     if ((window as any).maplibregl) startMap();
