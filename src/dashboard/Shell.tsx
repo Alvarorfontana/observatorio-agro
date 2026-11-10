@@ -7,7 +7,7 @@
 import React from "react";
 import {
   LayoutDashboard, Layers, Satellite, Sprout, Waves, CircleDot, Beef, CloudSun, FlaskConical, BookOpen,
-  Flame, Gauge, FileText, Network, Thermometer, CloudRain, Sigma, BellRing, Leaf, Wheat, Truck, ChevronsLeft, X, Hexagon, Trees, Globe2,
+  Flame, Gauge, FileText, Network, Thermometer, CloudRain, Sigma, BellRing, Leaf, Wheat, Truck, ChevronsLeft, X, Hexagon, Trees, Globe2, Mountain,
 } from "lucide-react";
 
 export type NavItem = {
@@ -39,6 +39,7 @@ export function buildNav(go: (k: string) => void, draw: () => void, pdf: () => v
     ]},
     { title: "Historia y territorio", items: [
       { key: "atlas-dot", label: "Atlas agrícola e informes", icon: <BookOpen />, onClick: () => go("atlas-dot") },
+      { key: "territorio-3d", label: "Territorio 3D", icon: <Mountain />, onClick: () => go("territorio-3d") },
     ]},
     { title: "Bosque y exportación", items: [
       { key: "sustentabilidad", label: "Bosque y deforestación", icon: <Trees />, onClick: () => go("sustentabilidad") },
