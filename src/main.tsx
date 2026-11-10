@@ -54,6 +54,7 @@ import { EnsoTao } from "./site/EnsoTao";
 import { AvisosBox } from "./site/AvisosBox";
 import { HerdPanel, HERD_CATS, type HerdRow, type Movement } from "./dashboard/Herd";
 import { GuideContent } from "./site/GuideContent";
+import { DotsResearchHub } from "./site/DotsResearchHub";
 import { FloodRadarConnected } from "./site/FloodRadarConnected";
 const CuencaPanel = lazy(() => import("./site/CuencaPanel").then(m => ({ default: m.CuencaPanel })));
 const AlertasTeaser = lazy(() => import("./site/CuencaPanel").then(m => ({ default: m.AlertasTeaser })));
@@ -1478,7 +1479,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
             {key:"focos",label:"Focos térmicos",value:sources.firms?.status==="recibido"?String(inside):"—",unit:sources.firms?.status==="recibido"?"en el lote":undefined,hint:sources.firms?.status==="recibido"?`${det.length} en el entorno · NASA FIRMS 3 días`:"Tocá para consultar FIRMS",icon:<Flame/>,tone:sources.firms?.status==="recibido"?(inside>0?"risk":"ok"):"idle",onClick:()=>changeView("firms")},
           ]}/>;
         })()}
-        {mainView === "tablero" && <section className="db-wrap" aria-label="Tablero del lote">
+        {view === "atlas-dot" ? <DotsResearchHub /> : mainView === "tablero" && <section className="db-wrap" aria-label="Tablero del lote">
           <Suspense fallback={null}><LotDashboard weather={weather} sources={sources as any} thi={thi} hasLot={vertices.length >= 3}
             lot={lots.find(x => x.id === selectedLotId) || null}
             terrain={(sources.relieve?.payload as any)?.data?.lot === lotKey ? (sources.relieve?.payload as any)?.data : null}
