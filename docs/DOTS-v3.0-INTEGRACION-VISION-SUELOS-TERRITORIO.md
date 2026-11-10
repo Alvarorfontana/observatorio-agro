@@ -135,3 +135,100 @@ Contrastar las estimaciones con mediciones de penetrómetro, densidad aparente e
 
 ---
 **Nota de rigor:** este documento registra la decisión y el diseño de integración. No significa que las inferencias de ganado, la vista 3D, ni un diagnóstico de compactación estén ya ejecutándose o validados en DOTS.
+
+
+## Alcance funcional ampliado acordado — módulos nuevos para incorporar
+
+Esta sección incorpora el conjunto de funcionalidades conversadas para ampliar DOTS. Es un alcance de desarrollo: **no reemplaza módulos existentes, no redefine sus resultados y no constituye una auditoría ni una certificación**. Cada elemento se agrega como módulo, capa, herramienta o informe independiente, conectado al DOTS actual mediante accesos adicionales.
+
+### 1. Agricultura, cultivos y agricultura de precisión
+
+- Series temporales de índices de vegetación: NDVI, EVI y SAVI.
+- Integración de imágenes Sentinel-2 y Landsat para observación óptica, y Sentinel-1 para radar.
+- Seguimiento de cobertura y uso del suelo, evolución de lotes, rotaciones e historia de cultivos.
+- Identificación y seguimiento de áreas agrícolas y comparación entre campañas.
+- Capas de vigor, estrés y variabilidad intralote, diferenciando observaciones satelitales de índices derivados.
+- Módulo de agricultura de precisión con análisis por lote, ambiente y región.
+- Pasturas y recursos forrajeros: evolución de cobertura, disponibilidad estimada, productividad y relación con la carga animal.
+- Atlas agrícola histórico y comparado, con series documentales y estadísticas disponibles. La referencia temporal de hasta 5.000 años se utilizará únicamente cuando existan registros paleoclimáticos, arqueológicos o reconstrucciones científicas pertinentes; cada período deberá identificarse como registro, reconstrucción o estimación, sin presentar reconstrucciones como observaciones directas.
+
+### 2. Ganadería, visión artificial e identificación animal
+
+- Detección de bovinos y otros animales en imágenes y videos.
+- Conteo automático por cuadro, lote, corral, cámara y período.
+- Seguimiento de desplazamientos, entradas y salidas, permanencia y distribución espacial.
+- Identificación de animales individuales mediante lectura de caravanas visuales, RFID u otros identificadores disponibles.
+- Vinculación de la identidad entre cámaras y fechas sólo mediante un identificador persistente verificable; los IDs temporales de seguimiento no se considerarán identidad individual.
+- Registro de rodeos, categorías, cantidad de animales, densidad y ocupación de corrales.
+- Relación espacial entre animales, aguadas, sombra, comederos y superficie de pastoreo.
+- Herramientas para analizar disponibilidad forrajera, carga animal y distribución del pastoreo.
+- Indicadores de estrés térmico y condiciones ambientales asociados a datos meteorológicos y registros disponibles.
+- Historial por animal y por rodeo cuando exista identificación trazable.
+
+### 3. Suelos y aptitud productiva
+
+- Capas de textura, proporción de arcilla, limo y arena.
+- Materia orgánica, carbono y nitrógeno.
+- Humedad, cobertura, degradación y evolución de las condiciones del suelo.
+- Densidad aparente, resistencia a la penetración y compactación.
+- Infiltración, drenaje, profundidad efectiva y condiciones para el desarrollo radicular.
+- Comparación entre información satelital, productos modelados y análisis de laboratorio o mediciones georreferenciadas.
+- Ficha de suelo por lote, perfiles por profundidad y evolución temporal.
+- Mapas de limitaciones y aptitud productiva, con variables, unidades, profundidad y procedencia visibles.
+- Incorporación de observaciones de campo para calibrar o complementar los productos de suelo.
+
+### 4. Territorio, relieve y visualización 3D
+
+- Visor tridimensional de terreno y elevación para lotes, departamentos, provincias, regiones y cuencas.
+- Modelos digitales de elevación, sombreado, pendientes, orientación y perfiles topográficos.
+- Delimitación y visualización de cuencas, subcuencas, divisorias y redes de drenaje.
+- Superposición de imágenes satelitales, uso del suelo, vegetación, agua, suelos e infraestructura.
+- Navegación desde escala regional hasta lote, conservando la referencia geográfica.
+- Herramientas para seleccionar áreas, medir distancias y superficies, consultar perfiles y comparar capas.
+- Visualización de exposición territorial de establecimientos, infraestructura y población frente a amenazas ambientales.
+- El visor 3D se incorpora como capacidad adicional y no sustituye el visor geográfico que DOTS ya utiliza.
+
+### 5. Hidrología, cuencas e inundaciones
+
+- Seguimiento de las cuencas de los ríos Paraná, Iguazú, Uruguay, Paraguay, Bermejo y Pilcomayo, además de las cuencas y regiones relacionadas de Argentina, Brasil, Uruguay y Bolivia.
+- Consulta de niveles, caudales, estaciones y registros hidrométricos disponibles.
+- Capas de red hidrográfica, acumulación de flujo, drenaje y áreas susceptibles a anegamiento.
+- Integración de MERIT Hydro, GloFAS, Copernicus, INA y otras fuentes oficiales pertinentes.
+- Detección y seguimiento de agua e inundaciones observadas mediante Sentinel-1 y productos satelitales.
+- Consulta histórica de eventos, niveles y extensión de áreas afectadas cuando existan series disponibles.
+- Análisis territorial de población, establecimientos, caminos e infraestructura expuestos.
+- Escenarios de inundación como módulo diferenciado, con parámetros y modelo hidrológico/hidráulico identificados; no confundirlos con mapas de agua observada.
+
+### 6. Clima, variabilidad y riesgos agroambientales
+
+- Seguimiento de El Niño, La Niña y ENSO, con indicadores oceánicos y atmosféricos.
+- Series de precipitación, temperatura, humedad y variables meteorológicas.
+- Integración de ERA5, CHIRPS, NASA POWER, ECMWF y fuentes oficiales nacionales.
+- Análisis de sequías, excesos hídricos, heladas, olas de calor y condiciones de estrés agropecuario.
+- Pronósticos y perspectivas estacionales presentados por separado de los registros observados.
+- Series históricas de 20 a 30 años cuando la cobertura y calidad de las fuentes lo permitan.
+- Alertas de incendios y focos de calor con fuentes como MODIS y VIIRS.
+- Comparación entre regiones, campañas agrícolas y períodos climáticos.
+
+### 7. Población, infraestructura y exposición territorial
+
+- Capas de población y distribución territorial para contextualizar los riesgos agroambientales.
+- Integración de WorldPop y fuentes censales oficiales disponibles.
+- Cruce espacial de población, establecimientos productivos, infraestructura, redes viales, cursos de agua y áreas expuestas.
+- Indicadores territoriales por cuenca, municipio, provincia y región.
+- Diferenciación entre población censada, estimaciones gridded y resultados derivados de cruces geoespaciales.
+
+### 8. Informes, series y productos de salida
+
+- Generación de informes PDF por lote, establecimiento, municipio, provincia, región o cuenca.
+- Informes con mapas, vistas 3D cuando correspondan, gráficos, tablas, series históricas y comparaciones.
+- Exportación de datos y tablas en CSV.
+- Fichas específicas de agricultura, ganadería, suelos, clima, hidrología y exposición territorial.
+- Inclusión de fuentes, fecha, unidad, escala espacial, período, metodología y versión de procesamiento en cada producto.
+- Separación explícita entre observación, dato administrativo, producto satelital, estimación, pronóstico y escenario.
+- Presentación de datos faltantes como faltantes, sin completar valores ni generar cifras ficticias.
+
+### 9. Organización de la ampliación
+
+Los ítems anteriores se incorporan como módulos funcionales nuevos dentro de DOTS, con sus propias vistas, servicios, capas y herramientas. Los módulos existentes permanecen como están. La navegación puede sumar nuevas entradas y agrupaciones, pero no eliminar, renombrar ni sustituir accesos actuales. Las conexiones con fuentes externas se agregan sin duplicar ni alterar conectores ya presentes.
+
