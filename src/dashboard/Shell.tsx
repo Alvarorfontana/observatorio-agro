@@ -22,6 +22,7 @@ export function buildNav(go: (k: string) => void, draw: () => void, pdf: () => v
   return [
     { title: "Observatorio", items: [
       { key: "variables", label: "Resumen del lote", icon: <LayoutDashboard />, onClick: () => go("variables") },
+      { key: "territorio-3d", label: "Modelo 3D del terreno", icon: <Mountain />, onClick: () => go("territorio-3d") },
       { key: "simulador", label: "Simulador ambiental · Sudamérica", icon: <FlaskConical />, onClick: () => go("simulador") },
       { key: "__draw", label: "Lotes y potreros", icon: <Layers />, onClick: draw },
       { key: "escenas", label: "Satélites", icon: <Satellite />, onClick: () => go("escenas") },
@@ -39,7 +40,6 @@ export function buildNav(go: (k: string) => void, draw: () => void, pdf: () => v
     ]},
     { title: "Historia y territorio", items: [
       { key: "atlas-dot", label: "Atlas agrícola e informes", icon: <BookOpen />, onClick: () => go("atlas-dot") },
-      { key: "territorio-3d", label: "Territorio 3D", icon: <Mountain />, onClick: () => go("territorio-3d") },
     ]},
     { title: "Bosque y exportación", items: [
       { key: "sustentabilidad", label: "Bosque y deforestación", icon: <Trees />, onClick: () => go("sustentabilidad") },
@@ -93,10 +93,10 @@ export function ObsSidebar({ groups, active, collapsed, mobileOpen, onCollapse, 
                 {g.items.map(it => (
                   <li key={it.key}>
                     <button
-                      className={"ta-menu-item " + (active === it.key ? "is-active" : "")}
+                      className={"ta-menu-item " + (active === it.key ? "is-active" : "") + (it.key === "territorio-3d" ? " is-3d-entry" : "")}
                       onClick={() => { it.onClick?.(); onCloseMobile(); }}
                       disabled={it.soon}
-                      title={it.label}
+                      title={it.key === "territorio-3d" ? "Abrir el modelo 3D: relieve, lote, perfil, suelo e hidrología" : it.label}
                       aria-current={active === it.key ? "page" : undefined}
                     >
                       <span className="ta-menu-icon">{it.icon}</span>
