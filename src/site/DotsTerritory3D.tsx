@@ -36,6 +36,10 @@ export function DotsTerritory3D({ lot = null, terrainSummary = null, onTerrain, 
   const [sourceStamp, setSourceStamp] = useState("");
   const [profile, setProfile] = useState<{ distance: number; elevation: number }[]>([]);
   const [profileBusy, setProfileBusy] = useState(false);
+  const [paleoStudies, setPaleoStudies] = useState<any[]>([]);
+  const [paleoBusy, setPaleoBusy] = useState(false);
+  const [paleoError, setPaleoError] = useState("");
+  const [paleoStamp, setPaleoStamp] = useState("");
 
   useEffect(() => {
     if (!mapNode.current || mapRef.current) return;
@@ -236,6 +240,29 @@ export function DotsTerritory3D({ lot = null, terrainSummary = null, onTerrain, 
     finally { setProfileBusy(false); }
   }
 
+  async function loadPaleoArchive() {
+    setPaleoBusy(true); setPaleoError("");
+    try {
+      const vertices = lot?.vertices?.length ? lot.vertices : [[Number(lat)-0.25, Number(lon)-0.25], [Number(lat)-0.25, Number(lon)+0.25], [Number(lat)+0.25, Number(lon)+0.25], [Number(lat)+0.25, Number(lon)-0.25]] as [number, number][];
+      const params = new URLSearchParams({
+        minLat: String(Math.max(-90, Math.min(...vertices.map(p => p[0])))),
+        maxLat: String(Math.min(90, Math.max(...vertices.map(p => p[0])))),
+        minLon: String(Math.max(-180, Math.min(...vertices.map(p => p[1])))),
+        maxLon: String(Math.min(180, Math.max(...vertices.map(p => p[1])))),
+        earliestYear: "5000", latestYear: "0", timeFormat: "BP", timeMethod: "overAny",
+        dataPublisher: "NOAA", headersOnly: "true", limit: "10"
+      });
+      const response = await fetch("https://www.ncei.noaa.gov/access/paleo-search/study/search.json?" + params.toString());
+      if (!response.ok) throw new Error("NOAA Paleo respondió HTTP " + response.status);
+      const json = await response.json();
+      if (!Array.isArray(json.study)) throw new Error("La respuesta del catálogo NOAA no contiene estudios reconocibles.");
+      setPaleoStudies(json.study);
+      setPaleoStamp(new Date().toISOString());
+      if (!json.study.length) setPaleoError("No se encontraron registros NOAA dentro del área y ventana temporal consultadas. No se extrapolan registros de otras regiones.");
+    } catch (e) { setPaleoStudies([]); setPaleoError((e as Error).message); }
+    finally { setPaleoBusy(false); }
+  }
+
   function exportCsv() {
     const rows = [["anio", "indicador", "valor"], ...series.map(p => [p.year, "AG.PRD.CROP.XD", String(p.value)])];
     const csv = "\ufeff" + rows.map(r => r.map(v => '"' + v.replaceAll('"', '""') + '"').join(";")).join("\n");
@@ -301,6 +328,12 @@ export function DotsTerritory3D({ lot = null, terrainSummary = null, onTerrain, 
       </div>
       <p className="dt-source">Fuente: Copernicus DEM GLO-30. El flujo y las depresiones son derivados de elevación y algoritmo D8; requieren verificación de campo y no reemplazan curvas de nivel ni modelación hidráulica calibrada. La hidrografía de fondo procede de OpenStreetMap; no se dibuja una cuenca oficial si no hay delimitación disponible.</p>
     </section>}
+    <section className="dt-panel" style={{ marginTop: 14 }}>
+      <div className="dt-head"><div><h3>Archivo paleoclimático regional · últimos 5.000 años</h3><p className="dt-muted">Búsqueda de registros proxy publicados para el entorno del lote: sedimentos lacustres, polen, espeleotemas, anillos de árboles y reconstrucciones. El catálogo no implica que exista una serie local continua.</p></div><button className="dt-btn" onClick={() => void loadPaleoArchive()} disabled={paleoBusy}>{paleoBusy ? "Buscando registros…" : "Consultar archivo NOAA"}</button></div>
+      <p className="dt-source">Fuente: NOAA National Centers for Environmental Information · World Data Service for Paleoclimatology. Ventana: 0–5.000 años antes del presente (BP, referencia 1950). Consulta espacial: caja envolvente del lote; se muestran metadatos, no valores proxy reconstruidos.</p>
+      {paleoError && <div className="dt-alert" role="status">{paleoError}</div>}
+      {paleoStudies.length > 0 && <><p className="dt-muted">{paleoStudies.length} registro(s) de catálogo · consulta {paleoStamp}</p><div className="dt-soil">{paleoStudies.map((study:any,i:number)=>{const id=study.NOAAStudyId||study.noaaStudyId;const sites=Array.isArray(study.site)?study.site:[];return <div key={String(id||study.xmlId||i)} style={{padding:"9px 0",borderBottom:"1px solid #2b3d48"}}><b>{study.studyName||study.title||study.name||"Registro paleoclimático NOAA"}</b><div className="dt-source">ID: {id||study.xmlId||"s/d"} · Sitios: {sites.length||"metadatos sin detalle"}</div>{id&&<a href={"https://www.ncei.noaa.gov/access/paleo-search/study/"+id} target="_blank" rel="noreferrer" style={{color:"#8bdac6"}}>Consultar ficha y datos originales</a>}</div>})}</div></>}
+    </section>
     <div className="dt-layout">
       <section className="dt-panel"><h3>Perfil topográfico</h3><p className="dt-muted">{lot && lot.vertices.length >= 3 ? "Transecta sobre el lote: une los dos vértices más distantes del polígono." : "Transecta de contexto de aproximadamente 20 km centrada en las coordenadas ingresadas."}</p><button className="dt-btn" onClick={() => void loadProfile()} disabled={profileBusy}>{profileBusy ? "Consultando elevación…" : "Consultar perfil de elevación"}</button>{profile.length > 0 && <><svg className="dt-chart" viewBox="0 0 640 170" role="img" aria-label="Perfil de elevación consultado"><polyline points={profile.map((p,i)=>`${20+i*600/Math.max(1,profile.length-1)},${145-(p.elevation-Math.min(...profile.map(x=>x.elevation)))/(Math.max(...profile.map(x=>x.elevation))-Math.min(...profile.map(x=>x.elevation))||1)*115}`).join(" ")} fill="none" stroke="#e1b45b" strokeWidth="3"/></svg><div className="dt-muted">Mínimo: {Math.min(...profile.map(p=>p.elevation)).toFixed(1)} m · Máximo: {Math.max(...profile.map(p=>p.elevation)).toFixed(1)} m · Distancia: {profile[profile.length-1].distance.toFixed(2)} km · {profile.length} puntos</div></>}</section>
       <section className="dt-panel"><h3>Composición del suelo · SoilGrids</h3><div className="dt-map-tools"><label>Latitud <input value={lat} onChange={e=>setLat(e.target.value)} size={9}/></label><label>Longitud <input value={lon} onChange={e=>setLon(e.target.value)} size={9}/></label><button className="dt-btn" onClick={() => void loadSoil()} disabled={busy}>{busy ? "Consultando…" : "Consultar punto"}</button></div>{soil.length > 0 ? <><button className="dt-btn" onClick={exportSoilCsv}>Descargar suelo CSV</button><table className="dt-soil"><thead><tr><th>Variable</th><th>Profundidad</th><th>Valor</th><th>Unidad</th></tr></thead><tbody>{soil.flatMap(layer=>layer.depths.map(d=><tr key={layer.name+d.depth}><td>{layer.name}</td><td>{d.depth}</td><td>{d.value ?? "Sin dato"}</td><td>{layer.unit}</td></tr>))}</tbody></table></> : <p className="dt-muted">Ingresá coordenadas y consultá el producto modelado de SoilGrids. No se presentan valores hasta recibir respuesta de la fuente.</p>}<p className="dt-source">Fuente: ISRIC SoilGrids · resolución espacial aproximada 250 m. Producto modelado; no equivale a análisis de laboratorio ni medición de compactación.</p></section>
