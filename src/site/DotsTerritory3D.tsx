@@ -193,8 +193,9 @@ export function DotsTerritory3D({ lot = null, terrainSummary = null, onTerrain, 
     return series.map((p, i) => `${i * 600 / Math.max(1, series.length - 1)},${130 - ((p.value - min) / span) * 110}`).join(" ");
   }, [series]);
 
-  async function loadSoil() {
-    const a = Number(lat), o = Number(lon);
+  async function loadSoil(useLotCenter = false) {
+    const a = useLotCenter && lot?.vertices?.length ? lot.vertices.reduce((sum,p)=>sum+p[0],0)/lot.vertices.length : Number(lat);
+    const o = useLotCenter && lot?.vertices?.length ? lot.vertices.reduce((sum,p)=>sum+p[1],0)/lot.vertices.length : Number(lon);
     if (!Number.isFinite(a) || !Number.isFinite(o) || a < -90 || a > 90 || o < -180 || o > 180) { setError("Coordenadas inválidas."); return; }
     setBusy(true); setError("");
     try {
@@ -217,7 +218,8 @@ export function DotsTerritory3D({ lot = null, terrainSummary = null, onTerrain, 
   async function loadProfile() {
     setProfileBusy(true); setError("");
     try {
-      const centerLat = Number(lat), centerLon = Number(lon);
+      const centerLat = lot?.vertices?.length ? lot.vertices.reduce((sum,p)=>sum+p[0],0)/lot.vertices.length : Number(lat);
+      const centerLon = lot?.vertices?.length ? lot.vertices.reduce((sum,p)=>sum+p[1],0)/lot.vertices.length : Number(lon);
       if (!Number.isFinite(centerLat) || !Number.isFinite(centerLon) || centerLat < -90 || centerLat > 90 || centerLon < -180 || centerLon > 180) {
         throw new Error("Coordenadas inválidas para la transecta.");
       }
@@ -285,6 +287,16 @@ export function DotsTerritory3D({ lot = null, terrainSummary = null, onTerrain, 
     } catch (e) { setPaleoStudies([]); setPaleoError((e as Error).message); }
     finally { setPaleoBusy(false); }
   }
+
+  useEffect(() => {
+    if (!lot || lot.vertices.length < 3) return;
+    const centerLat = lot.vertices.reduce((sum,p)=>sum+p[0],0)/lot.vertices.length;
+    const centerLon = lot.vertices.reduce((sum,p)=>sum+p[1],0)/lot.vertices.length;
+    setLat(centerLat.toFixed(5));
+    setLon(centerLon.toFixed(5));
+    void loadProfile();
+    void loadSoil(true);
+  }, [lot?.name, lot?.vertices]);
 
   function exportCsv() {
     const rows = [["anio", "indicador", "valor"], ...series.map(p => [p.year, "AG.PRD.CROP.XD", String(p.value)])];
