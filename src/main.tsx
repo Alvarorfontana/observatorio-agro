@@ -942,15 +942,19 @@ function Observatory({onHome}:{onHome:()=>void}) {
     }, 600);
     return () => clearTimeout(t);
   }, [mainView, lotKey, !!sources.ndvi, !!sources.lluvia, !!sources.relieve, !!sources["humedad-nasa"]]);
+  useEffect(() => {
+    if (view !== "territorio-3d" || vertices.length < 3) return;
+    const cached = (sources.relieve?.payload as any)?.data;
+    if (terrainRef.current?.key === lotKey || sources.relieve?.status === "consultando" || cached?.lot === lotKey) return;
+    void loadTerrain();
+  }, [view, lotKey, sources.relieve?.status]);
+
   const changeView = (key: string) => {
     // Always refresh: source results are spatial/temporal and must follow the currently selected lot.
     // Reusing an old payload after changing polygon was a functional bug in earlier versions.
     setView(key);
     setSideTab("datos");
-    if (key === "territorio-3d") {
-      if (vertices.length >= 3 && terrainRef.current?.key !== lotKey) void loadTerrain();
-      return;
-    }
+    if (key === "territorio-3d") return;
     if (key === "copernicus") return;
     if (key === "riesgo-hidrico") { void load("suelos-50mil"); }
     if (key === "satelite-lote") { if (vertices.length >= 3) ["ndvi-anomalia", "etr-lote", "heladas-satelite"].forEach(k => void load(k)); else notify("Dibujá o elegí el lote: la anomalía, el consumo de agua y las heladas se calculan sobre el polígono."); return; }
