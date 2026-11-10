@@ -944,6 +944,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
     setView(key);
     setSideTab("datos");
     if (key === "copernicus") return;
+    if (key === "territorio-3d") { if (vertices.length >= 3) void loadTerrain(); else notify("Primero seleccioná o dibujá un lote para abrir su modelo 3D."); return; }
     if (key === "riesgo-hidrico") { void load("suelos-50mil"); }
     if (key === "satelite-lote") { if (vertices.length >= 3) ["ndvi-anomalia", "etr-lote", "heladas-satelite"].forEach(k => void load(k)); else notify("Dibujá o elegí el lote: la anomalía, el consumo de agua y las heladas se calculan sobre el polígono."); return; }
     if (key === "alertas") { void loadAlerts(); } else if (key === "forraje") { void loadForage(); } else if (key === "relieve") { void loadTerrain(); } else if (key === "costos") { void loadCosts(); } else if (key === "ganado") { if ((herdAll[herdKey] || []).some(r => Number(r.heads) > 0)) void loadHerd(); } else void load(key);
@@ -1463,6 +1464,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
               <button onClick={() => { setSideTab("lote"); startFtw(); }}>Automático</button>
               <button onClick={() => { setSideTab("lote"); startCatastro(); }} title="Tocá la parcela del catastro: Buenos Aires, Córdoba, Salta, Neuquén, Gualeguaychú, Paraguay y Brasil">Parcela del catastro</button>
               <button className="primary" onClick={() => void pdf()} disabled={pdfBusy}><FileText className="icon" />{pdfBusy ? "Generando…" : "Informe PDF"}</button>
+              {l && <button className="primary" onClick={() => changeView("territorio-3d")} title="Abrir el modelo tridimensional del lote seleccionado">Ver lote en 3D <Mountain className="icon" /></button>}
               {l && <button onClick={() => void campoPdf()} disabled={pdfBusy} title="Lomas, planos y bajos del campo, con un código QR para llevar el mapa al celular (funciona sin señal)">Informe de campo + mapa para el celular</button>}
             </div>
           </section>;
