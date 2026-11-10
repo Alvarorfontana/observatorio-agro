@@ -58,8 +58,6 @@ export function DotsTerritory3D() {
     map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
     map.on("load", () => {
       map.setTerrain({ source: "dem", exaggeration: 1.35 });
-      map.addSource("relief-hillshade", { type: "raster-dem", url: "https://demotiles.maplibre.org/terrain-tiles/tiles.json", tileSize: 256 });
-      map.addLayer({ id: "relief-hillshade", type: "hillshade", source: "relief-hillshade", paint: { "hillshade-shadow-color": "#152d36", "hillshade-highlight-color": "#e4e8d9", "hillshade-exaggeration": 0.28 } });
     });
     mapRef.current = map;
     return () => { map.remove(); mapRef.current = null; };
