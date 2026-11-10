@@ -49,7 +49,7 @@ class VegetationInterpretationTests(unittest.TestCase):
         card = report_typst.soilgrids_card(raw)
         self.assertIsNotNone(card)
         self.assertIn("Arcilla · 0-5cm", str(card["facts"]))
-        self.assertIn("28,4 %", str(card["facts"]))
+        self.assertIn("28,40 %", str(card["facts"]))
         self.assertIn("no equivalen a un muestreo", card["note"])
         self.assertIsNone(report_typst.soilgrids_card({}))
 
