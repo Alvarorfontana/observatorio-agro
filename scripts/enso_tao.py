@@ -54,10 +54,15 @@ def fetch_csv(query, timeout=300):
                 return parse_csv(r.text)
             msg = " ".join(r.text.split())[:160]
             errors.append(f"{base.split('/')[2]}: HTTP {r.status_code} {msg}")
-            if r.status_code in (400, 404):      # el servidor no tiene el conjunto o no acepta la consulta: el siguiente
+            if r.status_code in (400, 403, 404):  # sin el conjunto, consulta rechazada o IP bloqueada (403): el siguiente
                 break
             time.sleep(8)
-    raise RuntimeError(" | ".join(errors)[:900] + f" · consulta: {query[:160]}")
+    # Un renglón corto por servidor, para que se vean todos en la anotación de GitHub
+    por_servidor = {}
+    for e in errors:
+        host, _, msg = e.partition(": ")
+        por_servidor.setdefault(host, msg[:90])
+    raise RuntimeError(" | ".join(f"{h}: {m}" for h, m in por_servidor.items()) + f" · consulta: {query[:120]}")
 
 
 def parse_csv(text):
@@ -178,7 +183,20 @@ if __name__ == "__main__":
     try:
         data = build()
     except Exception as exc:          # el motivo queda como anotación visible en GitHub
-        print(f"::error::Boyas TAO: {type(exc).__name__}: {str(exc)[:400]}", flush=True)
+        # Si los servidores de NOAA no responden pero hay un corte reciente (menos de 21 días),
+        # se conserva ese y la tarea no se marca como fallida: el gestor de Control avisa si envejece.
+        previo = None
+        try:
+            with open(out, encoding="utf-8") as f:
+                previo = json.load(f)
+            edad = datetime.now(timezone.utc) - datetime.strptime(previo["actualizado"], "%Y-%m-%dT%H:%MZ").replace(tzinfo=timezone.utc)
+        except Exception:
+            edad = None
+        if previo and edad is not None and edad.days < 21:
+            print(f"::warning::Boyas TAO: los servidores ERDDAP no respondieron; se conserva el corte del "
+                  f"{previo['actualizado']} ({edad.days} días). {type(exc).__name__}: {str(exc)[:700]}", flush=True)
+            raise SystemExit(0)
+        print(f"::error::Boyas TAO: {type(exc).__name__}: {str(exc)[:900]}", flush=True)
         raise SystemExit(1)
     print(f"{len(data['boyas'])} boyas · último dato {data['resumen']['ultimo_dato']} · {data['resumen']}", flush=True)
     for b in data["boyas"]:

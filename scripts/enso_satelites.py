@@ -114,7 +114,26 @@ def ee_init():
     import ee
     info = json.loads(os.environ["GOOGLE_APPLICATION_CREDENTIALS_JSON"])
     creds = ee.ServiceAccountCredentials(info["client_email"], key_data=json.dumps(info))
-    ee.Initialize(creds, project=os.environ["GOOGLE_CLOUD_PROJECT"])
+    # Con la cuota mensual gratuita agotada, Earth Engine pasa a «modo restringido»: sigue calculando,
+    # pero con menos consultas simultáneas y responde 429. Se reintenta con esperas crecientes
+    # (hasta ~15 minutos) en vez de abortar al primer rechazo.
+    import time
+    espera = 30
+    for intento in range(7):
+        try:
+            ee.Initialize(creds, project=os.environ["GOOGLE_CLOUD_PROJECT"])
+            break
+        except Exception as exc:
+            if "429" not in str(exc) and "Too Many Requests" not in str(exc) or intento == 6:
+                if "Restricted Mode" in str(exc):
+                    print("::error::Earth Engine en modo restringido: se agotó la cuota mensual gratuita del proyecto "
+                          "(se renueva el día 1 de cada mes). Ver la consola de Google Cloud > Earth Engine.", flush=True)
+                raise
+            print(f"Earth Engine ocupado (429), reintento {intento + 1} en {espera} s", flush=True)
+            time.sleep(espera)
+            espera = min(espera * 2, 240)
+    if hasattr(ee.data, "setMaxRetries"):
+        ee.data.setMaxRetries(10)     # las consultas también reintentan si el proyecto está restringido
     return ee
 
 

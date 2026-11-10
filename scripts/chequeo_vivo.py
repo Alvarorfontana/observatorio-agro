@@ -46,9 +46,13 @@ def show(name, r, t0, extra=''):
         js = {}
     err = js.get('error') if isinstance(js, dict) else None
     st = js.get('status') if isinstance(js, dict) else None
-    out(f"{r.status_code:>3}  {ms:>6} ms  {name:<16} {kind:<22} {st or '':<22} {(str(err) if err else '')[:110]}{extra}")
+    tipo = js.get('type') if isinstance(js, dict) else None
+    out(f"{r.status_code:>3}  {ms:>6} ms  {name:<16} {kind:<22} {st or '':<22} {(str(err) if err else '')[:110]}"
+        f"{f' ({tipo})' if tipo else ''}{extra}")
     if not name.startswith('/') and kind == 'text/html':
         return 598   # la API respondió una página web: ruta inexistente o login de Vercel
+    if r.status_code == 502 and st == 'sin dato':
+        return 504   # DOTS respondió ordenado que la fuente externa falló: se informa aparte, no es error de DOTS
     return r.status_code
 
 
@@ -120,8 +124,8 @@ for l in layers:
     out(f"{'OK ' if ok else 'MAL'}  {round((time.monotonic()-t0)*1000):>6} ms  capa · {l['name'][:60]}  ({code})")
 out(f"Capas: {len(layers) - len(bad_layers)} de {len(layers)} devuelven imagen." + (f" Sin imagen: {', '.join(bad_layers)}" if bad_layers else ''))
 
-bad = {k: v for k, v in codes.items() if v >= 500 and v != 503}   # 503 = fuente externa caída, se informa aparte
-slow = {k: v for k, v in codes.items() if v in (429, 503)}
+bad = {k: v for k, v in codes.items() if v >= 500 and v not in (503, 504)}   # 503/504 = fuente externa caída, se informa aparte
+slow = {k: v for k, v in codes.items() if v in (429, 503, 504)}
 out(f"{len(codes) - len(bad)} de {len(codes)} sin error de DOTS." + (f" Fallan: {', '.join(bad)}" if bad else '')
     + (f" Fuente externa sin respuesta o con límite: {', '.join(slow)}" if slow else ''))
 if os.environ.get('GITHUB_ACTIONS'):
@@ -132,4 +136,6 @@ if os.environ.get('GITHUB_ACTIONS'):
     tandas = [(f'Rutas {i // 20 + 1}', rutas[i:i + 20]) for i in range(0, len(rutas), 20)] + [('Capas del mapa', capas[-1:])]
     for title, part in tandas[:10]:
         print(f'::notice title={title}::' + '%0A'.join(l.replace('%', '%25') for l in part))
+    if slow:
+        print('::warning title=Fuentes externas::' + 'Sin respuesta o con límite: ' + ', '.join(slow))
 sys.exit(1 if bad else 0)
