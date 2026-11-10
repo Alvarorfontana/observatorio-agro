@@ -955,7 +955,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
     // Reusing an old payload after changing polygon was a functional bug in earlier versions.
     setView(key);
     setSideTab("datos");
-    if (key === "territorio-3d") return;
+    if (key === "territorio-3d") { setTimeout(() => document.querySelector(".dots-territory")?.scrollIntoView({ behavior: "smooth", block: "start" }), 120); return; }
     if (key === "copernicus") return;
     if (key === "riesgo-hidrico") { void load("suelos-50mil"); }
     if (key === "satelite-lote") { if (vertices.length >= 3) ["ndvi-anomalia", "etr-lote", "heladas-satelite"].forEach(k => void load(k)); else notify("Dibujá o elegí el lote: la anomalía, el consumo de agua y las heladas se calculan sobre el polígono."); return; }
@@ -1032,6 +1032,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
   };
   const startDraw = (mode:"free"|"triangle"|"rectangle"="free") => {
     setMainView("mapa");
+    setView(v => v === "territorio-3d" ? "variables" : v);
     setDrawMode(mode); drawModeRef.current = mode;
     mapRef.current?.doubleClickZoom.disable();
     poly.current = null;
@@ -1211,6 +1212,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
   const startFtw = () => {
     if (!mapRef.current) return;
     setMainView("mapa");
+    setView(v => v === "territorio-3d" ? "variables" : v);
     stopDraw(); setFtwMode(true);
     const map = mapRef.current;
     if (map.getZoom() < 13) map.setZoom(14);
@@ -1234,6 +1236,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
   const startCatastro = () => {
     if (!mapRef.current) return;
     setMainView("mapa");
+    setView(v => v === "territorio-3d" ? "variables" : v);
     stopDraw(); setFtwMode(true); setCatMode(true);
     const map = mapRef.current;
     if (map.getZoom() < 14) map.setZoom(15);
@@ -1440,7 +1443,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
           FUENTES RECIBIDAS
         </span>
       </header>
-      <main className={"app ta-content mode-" + mainView}>
+      <main className={"app ta-content mode-" + mainView + (view === "territorio-3d" ? " mode-3d" : "")}>
         {(()=>{
           const l = lots.find(x => x.id === selectedLotId);
           const rain7 = (daily.precipitation_sum||[]).reduce((a:number,b:number)=>a+(Number(b)||0),0);
@@ -1474,7 +1477,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
             </div>
             <div className="lot-bar-actions">
               <div className="view-switch" role="tablist" aria-label="Vista">
-                {([["tablero","Tablero"],["mapa","Mapa"]] as const).map(([k,t])=><button key={k} role="tab" aria-selected={mainView===k} className={mainView===k?"active":""} onClick={()=>setMainView(k)}>{t}</button>)}
+                {([["tablero","Tablero"],["mapa","Mapa"]] as const).map(([k,t])=><button key={k} role="tab" aria-selected={mainView===k} className={mainView===k?"active":""} onClick={()=>{ if (view === "territorio-3d") setView("variables"); setMainView(k); }}>{t}</button>)}
               </div>
               <button onClick={() => { setSideTab("lote"); startDraw("free"); }}>Dibujar lote</button>
               <button onClick={() => { setSideTab("lote"); startFtw(); }}>Automático</button>

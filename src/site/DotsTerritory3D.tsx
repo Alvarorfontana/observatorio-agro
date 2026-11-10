@@ -23,6 +23,9 @@ const SOIL_PROPS = ["phh2o", "soc", "clay", "sand", "nitrogen"];
 export function DotsTerritory3D({ lot = null, terrainSummary = null, onTerrain, onSelectLot, terrainBusy = false }: { lot?: Lot3D | null; terrainSummary?: TerrainSummary3D | null; onTerrain?: () => void; onSelectLot?: () => void; terrainBusy?: boolean }) {
   const mapNode = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
+  const lotRef = useRef<Lot3D | null>(lot);
+  lotRef.current = lot;
+  const terrainRef = useRef({ on: true, exaggeration: 1.35 });
   const [terrainOn, setTerrainOn] = useState(true);
   const [imageryOn, setImageryOn] = useState(false);
   const [exaggeration, setExaggeration] = useState(1.35);
@@ -46,6 +49,7 @@ export function DotsTerritory3D({ lot = null, terrainSummary = null, onTerrain, 
   useEffect(() => {
     if (!mapNode.current || mapRef.current) return;
     let disposed = false;
+    let ro: ResizeObserver | null = null;
     const startMap = () => {
     if (disposed || !mapNode.current || mapRef.current) return;
     const maplibregl = (window as any).maplibregl;
@@ -56,7 +60,7 @@ export function DotsTerritory3D({ lot = null, terrainSummary = null, onTerrain, 
     }
     const map = new maplibregl.Map({
       container: mapNode.current,
-      center: lot?.center ? [lot.center[1], lot.center[0]] : lot?.vertices?.length ? [lot.vertices.reduce((a,p)=>a+p[1],0)/lot.vertices.length, lot.vertices.reduce((a,p)=>a+p[0],0)/lot.vertices.length] : [-60.65, -32.95],
+      center: (() => { const l = lotRef.current; return l?.center ? [l.center[1], l.center[0]] : l?.vertices?.length ? [l.vertices.reduce((a,p)=>a+p[1],0)/l.vertices.length, l.vertices.reduce((a,p)=>a+p[0],0)/l.vertices.length] : [-60.65, -32.95]; })(),
       zoom: 6.2,
       pitch: 58,
       bearing: -18,
@@ -83,7 +87,7 @@ export function DotsTerritory3D({ lot = null, terrainSummary = null, onTerrain, 
           },
           modis: {
             type: "raster",
-            tiles: [`https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/${new Date().toISOString().slice(0,10)}/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg`],
+            tiles: [`https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/${new Date(Date.now() - 86400000).toISOString().slice(0,10)}/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg`],
             tileSize: 256,
             maxzoom: 9,
             attribution: "NASA GIBS / NASA Earthdata"
@@ -98,21 +102,32 @@ export function DotsTerritory3D({ lot = null, terrainSummary = null, onTerrain, 
     map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
     if (maplibregl.ScaleControl) map.addControl(new maplibregl.ScaleControl({ maxWidth: 120, unit: "metric" }), "bottom-left");
     if (maplibregl.FullscreenControl) map.addControl(new maplibregl.FullscreenControl(), "top-right");
+    let loaded = false;
     map.on("error", (event: any) => {
-      if (!map.isStyleLoaded()) {
+      // Un mosaico que falla (OSM, relieve o MODIS) no invalida el mapa: sólo se avisa.
+      if (event?.sourceId || event?.tile) { if (loaded) setMapError("Algunos mosaicos no se descargaron; el mapa sigue activo."); return; }
+      if (!loaded) {
         setMapStatus("error");
         setMapError(event?.error?.message || "No se pudo cargar el estilo del mapa 3D.");
       }
     });
     map.on("load", () => {
-      map.setTerrain(terrainOn ? { source: "dem", exaggeration } : null);
+      loaded = true;
+      const lot = lotRef.current;
+      map.setTerrain(terrainRef.current.on ? { source: "dem", exaggeration: terrainRef.current.exaggeration } : null);
       map.addSource("selected-lot", { type: "geojson", data: lotGeoJson(lot) });
       map.addLayer({ id: "selected-lot-fill", type: "fill", source: "selected-lot", paint: { "fill-color": "#39d5b0", "fill-opacity": 0.20 } });
       map.addLayer({ id: "selected-lot-line", type: "line", source: "selected-lot", paint: { "line-color": "#ffe08a", "line-width": 3, "line-dasharray": [2, 1] } });
       if (lot && lot.vertices.length >= 3) fitLot(map, lot.vertices);
       setMapStatus("ready");
       setMapError("");
+      map.resize();
     });
+    // Si el contenedor cambia de tamaño (menú lateral, giro del celular), el lienzo se ajusta.
+    if (typeof ResizeObserver !== "undefined" && mapNode.current) {
+      ro = new ResizeObserver(() => map.resize());
+      ro.observe(mapNode.current);
+    }
     mapRef.current = map;
     };
     const cssId = "dots-maplibre-css";
@@ -134,7 +149,7 @@ export function DotsTerritory3D({ lot = null, terrainSummary = null, onTerrain, 
       };
       document.head.appendChild(script);
     }
-    return () => { disposed = true; mapRef.current?.remove(); mapRef.current = null; };
+    return () => { disposed = true; ro?.disconnect(); mapRef.current?.remove(); mapRef.current = null; };
   }, []);
 
   useEffect(() => {
@@ -150,20 +165,21 @@ export function DotsTerritory3D({ lot = null, terrainSummary = null, onTerrain, 
         fitLot(map, lot.vertices);
       }
     };
-    if (map.isStyleLoaded() && map.getSource("selected-lot")) syncLot();
+    if (map.getSource("selected-lot")) syncLot();
     else map.once("load", syncLot);
     return () => { map.off("load", syncLot); };
-  }, [lot?.name, lot?.areaHa, lot?.vertices]);
+  }, [lot?.name, lot?.areaHa, lot?.vertices, mapStatus]);
 
   useEffect(() => {
+    terrainRef.current = { on: terrainOn, exaggeration };
     const map = mapRef.current;
-    if (!map || !map.isStyleLoaded()) return;
+    if (!map || !map.getSource("dem")) return;
     map.setTerrain(terrainOn ? { source: "dem", exaggeration } : null);
   }, [terrainOn, exaggeration]);
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !map.isStyleLoaded()) return;
+    if (!map || !map.getLayer("modis-imagery")) return;
     map.setLayoutProperty("modis-imagery", "visibility", imageryOn ? "visible" : "none");
   }, [imageryOn]);
 
@@ -311,7 +327,7 @@ export function DotsTerritory3D({ lot = null, terrainSummary = null, onTerrain, 
       ["propiedad", "unidad", "profundidad", "valor"],
       ...soil.flatMap(layer => layer.depths.map(d => [layer.name, layer.unit, d.depth, String(d.value ?? "")]))
     ];
-    const csv = "\\ufeff" + rows.map(r => r.map(v => '"' + v.replaceAll('"', '""') + '"').join(";")).join("\\n");
+    const csv = "\ufeff" + rows.map(r => r.map(v => '"' + v.replaceAll('"', '""') + '"').join(";")).join("\n");
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
     const a = document.createElement("a"); a.href = url; a.download = "DOTS-observatorio-suelos.csv"; a.click(); URL.revokeObjectURL(url);
   }
@@ -324,15 +340,15 @@ export function DotsTerritory3D({ lot = null, terrainSummary = null, onTerrain, 
       ["superficie_plana", String(terrainSummary.flatPct ?? ""), "%"], ["depresiones", String(terrainSummary.depressionHa ?? ""), "ha"],
       ["depresiones_porcentaje", String(terrainSummary.depressionPct ?? ""), "%"], ["profundidad_maxima_depresion", String(terrainSummary.maxDepthM ?? ""), "m"],
       ["almacenamiento_topografico_estimado", String(terrainSummary.storageM3 ?? ""), "m3"], ["drenaje_en_lote", String(terrainSummary.drainageHa ?? ""), "ha"]];
-    const csv = "\\ufeff" + rows.map(r => r.map(v => '"' + v.replaceAll('"', '""') + '"').join(";")).join("\\n");
+    const csv = "\ufeff" + rows.map(r => r.map(v => '"' + v.replaceAll('"', '""') + '"').join(";")).join("\n");
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
     const a = document.createElement("a"); a.href = url; a.download = "DOTS-relieve-hidrologia-lote.csv"; a.click(); URL.revokeObjectURL(url);
   }
 
   return <main className="dots-territory">
     <style>{`
-      .dots-territory{color:#e7edf2;background:#101a22;padding:22px;border-radius:16px;margin:14px 0;font-family:inherit}
-      .dt-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap}.dt-kicker{font-size:11px;letter-spacing:.14em;color:#7fc9b6;font-weight:700}.dt-head h1{font-size:25px;margin:7px 0}.dt-head p,.dt-muted{color:#a8b6c1;font-size:13px}
+      .dots-territory{grid-area:db;min-width:0;color:#e7edf2;background:#101a22;padding:22px;border-radius:16px;margin:14px 0;font-family:inherit}
+      .dots-territory header.dt-head{position:static;left:auto;right:auto;top:auto;z-index:auto;padding:0}.dt-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap}.dt-kicker{font-size:11px;letter-spacing:.14em;color:#7fc9b6;font-weight:700}.dt-head h1{font-size:25px;margin:7px 0}.dt-head p,.dt-muted{color:#a8b6c1;font-size:13px}
       .dt-btn{border:1px solid #40515d;background:#1b2a35;color:#edf5f6;padding:9px 12px;border-radius:8px;cursor:pointer}.dt-btn:disabled{opacity:.45;cursor:wait}
       .dt-layout{display:grid;grid-template-columns:minmax(0,1.8fr) minmax(260px,.8fr);gap:14px;margin-top:16px}.dt-panel{background:#172630;border:1px solid #2a3b46;border-radius:12px;padding:14px;min-width:0}.dt-map{height:540px;border-radius:9px;overflow:hidden;background:#22343e}.dt-map-status{display:flex;align-items:center;gap:8px;padding:9px 11px;margin:0 0 10px;border-radius:8px;background:#10212b;color:#b9cbd3;font-size:12px}.dt-map-status strong{color:#8bdac6}.dt-map-error{color:#ffcf9a}.dt-map-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}.dt-map-tools label{font-size:12px;color:#b7c5ce}.dt-map-tools input{accent-color:#55b69b}
       .dt-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:14px 0}.dt-stat{background:#1a2b35;border:1px solid #2b3d48;padding:12px;border-radius:10px}.dt-stat small{display:block;color:#9fb0ba;font-size:11px}.dt-stat b{display:block;font-size:19px;margin:7px 0}.dt-stat span{font-size:11px;color:#91a5b0}

@@ -8,7 +8,7 @@ Contrato (el que esperan research_routes.py, agentic_engine.py y el frontend):
     el motor Agentic marca la fuente como 'sin dato'). Nunca se inventan datos.
   * Las credenciales jamás se incluyen en source_url ni en la respuesta.
 """
-import csv, io, math, os, re
+import csv, io, json, math, os, re
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 
@@ -78,7 +78,19 @@ def coordinates(q):
     try:
         lat = float(q['lat'][0]); lon = float(q['lon'][0])
     except (KeyError, IndexError, TypeError, ValueError):
-        raise ValueError('Coordenadas inválidas: se requieren lat y lon numéricos')
+        # Si la consulta trae el polígono del lote pero no lat/lon, se usa el
+        # promedio de sus vértices (la página de Agricultura de precisión manda sólo el polígono).
+        lat = lon = None
+        try:
+            raw = q.get('polygon', [None])[0] if hasattr(q, 'get') else None
+            pts = json.loads(raw) if raw else None
+            if isinstance(pts, list) and len(pts) >= 3:
+                pts = [[float(a), float(b)] for a, b in pts]
+                lat = sum(p[0] for p in pts) / len(pts); lon = sum(p[1] for p in pts) / len(pts)
+        except (TypeError, ValueError, IndexError):
+            lat = lon = None
+        if lat is None:
+            raise ValueError('Coordenadas inválidas: se requieren lat y lon numéricos')
     if not (math.isfinite(lat) and math.isfinite(lon)) or not -90 <= lat <= 90 or not -180 <= lon <= 180:
         raise ValueError('Coordenadas fuera de rango')
     return lat, lon
