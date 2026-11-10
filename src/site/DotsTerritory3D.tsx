@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
 type WdiPoint = { year: string; value: number };
-type Lot3D = { name: string; vertices: [number, number][]; areaHa?: number; center?: [number, number] };
+type Lot3D = { name: string; vertices: [number, number][]; areaHa?: number | null; center?: [number, number] };
 type SoilLayer = { name: string; unit: string; depths: { depth: string; value: number | null }[] };
 
 function lotGeoJson(lot: Lot3D | null): any {
@@ -87,7 +87,7 @@ export function DotsTerritory3D({ lot = null }: { lot?: Lot3D | null }) {
       map.addSource("selected-lot", { type: "geojson", data: lotGeoJson(lot) });
       map.addLayer({ id: "selected-lot-fill", type: "fill", source: "selected-lot", paint: { "fill-color": "#39d5b0", "fill-opacity": 0.20 } });
       map.addLayer({ id: "selected-lot-line", type: "line", source: "selected-lot", paint: { "line-color": "#ffe08a", "line-width": 3, "line-dasharray": [2, 1] } });
-      if (lot?.vertices?.length >= 3) fitLot(map, lot.vertices);
+      if (lot && lot.vertices.length >= 3) fitLot(map, lot.vertices);
     });
     mapRef.current = map;
     };
@@ -116,7 +116,7 @@ export function DotsTerritory3D({ lot = null }: { lot?: Lot3D | null }) {
     const syncLot = () => {
       const source = map.getSource("selected-lot");
       if (source) (source as any).setData(lotGeoJson(lot));
-      if (lot?.vertices?.length >= 3) {
+      if (lot && lot.vertices.length >= 3) {
         const centerLat = lot.vertices.reduce((a,p)=>a+p[0],0)/lot.vertices.length;
         const centerLon = lot.vertices.reduce((a,p)=>a+p[1],0)/lot.vertices.length;
         setLat(centerLat.toFixed(5)); setLon(centerLon.toFixed(5));
@@ -196,7 +196,7 @@ export function DotsTerritory3D({ lot = null }: { lot?: Lot3D | null }) {
       }
       // Si hay lote, la transecta une sus dos vértices más distantes; sin lote usa 20 km de contexto.
       let start: [number, number], end: [number, number];
-      if (lot?.vertices?.length >= 3) {
+      if (lot && lot.vertices.length >= 3) {
         let maxDistance = -1;
         start = lot.vertices[0]; end = lot.vertices[1];
         for (let i = 0; i < lot.vertices.length; i++) for (let j = i + 1; j < lot.vertices.length; j++) {
@@ -276,7 +276,7 @@ export function DotsTerritory3D({ lot = null }: { lot?: Lot3D | null }) {
       <aside className="dt-panel dt-side"><h3>Series históricas agrícolas</h3><label className="dt-muted">País </label><select value={country} onChange={e => setCountry(e.target.value)}><option value="ARG">Argentina</option><option value="BRA">Brasil</option><option value="URY">Uruguay</option><option value="PRY">Paraguay</option></select><p className="dt-muted">Índice de producción agrícola (2014–16 = 100)</p>{series.length ? <><svg className="dt-chart" viewBox="0 0 640 160" role="img" aria-label="Serie histórica del índice de producción agrícola"><line x1="20" y1="140" x2="620" y2="140" stroke="#60727d"/><polyline points={chart} fill="none" stroke="#5bc3a5" strokeWidth="4" strokeLinejoin="round" strokeLinecap="round"/></svg><div className="dt-legend"><span>{series[0].year}</span><span>{series[series.length-1].year}</span></div><button className="dt-btn" onClick={exportCsv}>Descargar serie CSV</button></> : <p className="dt-muted">{busy ? "Consultando Banco Mundial…" : "No hay observaciones para mostrar."}</p>}<p className="dt-source">Fuente: World Bank API · WDI {WDI}. Consulta: {sourceStamp || "pendiente"}. Los años faltantes no se interpolan.</p></aside>
     </div>
     <div className="dt-layout">
-      <section className="dt-panel"><h3>Perfil topográfico</h3><p className="dt-muted">{lot?.vertices?.length >= 3 ? "Transecta sobre el lote: une los dos vértices más distantes del polígono." : "Transecta de contexto de aproximadamente 20 km centrada en las coordenadas ingresadas."}</p><button className="dt-btn" onClick={() => void loadProfile()} disabled={profileBusy}>{profileBusy ? "Consultando elevación…" : "Consultar perfil de elevación"}</button>{profile.length > 0 && <><svg className="dt-chart" viewBox="0 0 640 170" role="img" aria-label="Perfil de elevación consultado"><polyline points={profile.map((p,i)=>`${20+i*600/Math.max(1,profile.length-1)},${145-(p.elevation-Math.min(...profile.map(x=>x.elevation)))/(Math.max(...profile.map(x=>x.elevation))-Math.min(...profile.map(x=>x.elevation))||1)*115}`).join(" ")} fill="none" stroke="#e1b45b" strokeWidth="3"/></svg><div className="dt-muted">Mínimo: {Math.min(...profile.map(p=>p.elevation)).toFixed(1)} m · Máximo: {Math.max(...profile.map(p=>p.elevation)).toFixed(1)} m · Distancia: {profile[profile.length-1].distance.toFixed(2)} km · {profile.length} puntos</div></>}</section>
+      <section className="dt-panel"><h3>Perfil topográfico</h3><p className="dt-muted">{lot && lot.vertices.length >= 3 ? "Transecta sobre el lote: une los dos vértices más distantes del polígono." : "Transecta de contexto de aproximadamente 20 km centrada en las coordenadas ingresadas."}</p><button className="dt-btn" onClick={() => void loadProfile()} disabled={profileBusy}>{profileBusy ? "Consultando elevación…" : "Consultar perfil de elevación"}</button>{profile.length > 0 && <><svg className="dt-chart" viewBox="0 0 640 170" role="img" aria-label="Perfil de elevación consultado"><polyline points={profile.map((p,i)=>`${20+i*600/Math.max(1,profile.length-1)},${145-(p.elevation-Math.min(...profile.map(x=>x.elevation)))/(Math.max(...profile.map(x=>x.elevation))-Math.min(...profile.map(x=>x.elevation))||1)*115}`).join(" ")} fill="none" stroke="#e1b45b" strokeWidth="3"/></svg><div className="dt-muted">Mínimo: {Math.min(...profile.map(p=>p.elevation)).toFixed(1)} m · Máximo: {Math.max(...profile.map(p=>p.elevation)).toFixed(1)} m · Distancia: {profile[profile.length-1].distance.toFixed(2)} km · {profile.length} puntos</div></>}</section>
       <section className="dt-panel"><h3>Composición del suelo · SoilGrids</h3><div className="dt-map-tools"><label>Latitud <input value={lat} onChange={e=>setLat(e.target.value)} size={9}/></label><label>Longitud <input value={lon} onChange={e=>setLon(e.target.value)} size={9}/></label><button className="dt-btn" onClick={() => void loadSoil()} disabled={busy}>{busy ? "Consultando…" : "Consultar punto"}</button></div>{soil.length > 0 ? <><button className="dt-btn" onClick={exportSoilCsv}>Descargar suelo CSV</button><table className="dt-soil"><thead><tr><th>Variable</th><th>Profundidad</th><th>Valor</th><th>Unidad</th></tr></thead><tbody>{soil.flatMap(layer=>layer.depths.map(d=><tr key={layer.name+d.depth}><td>{layer.name}</td><td>{d.depth}</td><td>{d.value ?? "Sin dato"}</td><td>{layer.unit}</td></tr>))}</tbody></table></> : <p className="dt-muted">Ingresá coordenadas y consultá el producto modelado de SoilGrids. No se presentan valores hasta recibir respuesta de la fuente.</p>}<p className="dt-source">Fuente: ISRIC SoilGrids · resolución espacial aproximada 250 m. Producto modelado; no equivale a análisis de laboratorio ni medición de compactación.</p></section>
     </div>
     {error && <div className="dt-alert" role="alert">{error}</div>}
