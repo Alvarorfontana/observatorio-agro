@@ -1410,7 +1410,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
     depth = nitrogen?.depths?.[0];
   return (
     <div className={"whole ta-shell"+(navCollapsed?" nav-collapsed":"")} data-theme={theme}>
-      <ObsSidebar groups={buildNav(changeView,()=>startDraw("free"),()=>void agentPdf())} active={view} collapsed={navCollapsed} mobileOpen={navOpen} onCollapse={()=>setNavCollapsed(c=>!c)} onCloseMobile={()=>setNavOpen(false)} onHome={onHome}/>
+      <ObsSidebar groups={buildNav(changeView,()=>startDraw("free"),()=>void agentPdf(),()=>{ if (activeVertices.length < 3) { notify("Primero seleccioná un lote completo en el mapa."); changeView("variables"); return; } setVertices(activeVertices); setShowLot3D(true); void loadTerrain(); requestAnimationFrame(() => document.getElementById("dots-lot-3d")?.scrollIntoView({ behavior: "smooth", block: "start" })); })} active={view} collapsed={navCollapsed} mobileOpen={navOpen} onCollapse={()=>setNavCollapsed(c=>!c)} onCloseMobile={()=>setNavOpen(false)} onHome={onHome}/>
       <div className="ta-main">
       <header className="panel ta-header">
         <button className="ta-icon-btn ta-hamburger" onClick={()=>{ if (window.matchMedia("(max-width: 1279px)").matches) setNavOpen(true); else setNavCollapsed(c=>!c); }} aria-label="Menú"><Menu/></button>
