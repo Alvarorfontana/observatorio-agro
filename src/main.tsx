@@ -1464,7 +1464,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
               <button onClick={() => { setSideTab("lote"); startFtw(); }}>Automático</button>
               <button onClick={() => { setSideTab("lote"); startCatastro(); }} title="Tocá la parcela del catastro: Buenos Aires, Córdoba, Salta, Neuquén, Gualeguaychú, Paraguay y Brasil">Parcela del catastro</button>
               <button className="primary" onClick={() => void pdf()} disabled={pdfBusy}><FileText className="icon" />{pdfBusy ? "Generando…" : "Informe PDF"}</button>
-              {l && <button className="primary" onClick={() => changeView("territorio-3d")} title="Abrir el modelo tridimensional del lote seleccionado">Ver lote en 3D <Mountain className="icon" /></button>}
+              {l && <button className="primary" onClick={() => changeView("territorio-3d")} title="Abrir el modelo tridimensional del lote seleccionado">Ver lote en 3D</button>}
               {l && <button onClick={() => void campoPdf()} disabled={pdfBusy} title="Lomas, planos y bajos del campo, con un código QR para llevar el mapa al celular (funciona sin señal)">Informe de campo + mapa para el celular</button>}
             </div>
           </section>;
