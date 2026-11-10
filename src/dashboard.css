@@ -957,3 +957,11 @@
 .herd-mvlist>div{display:grid;grid-template-columns:auto auto 1fr auto;gap:2px 8px;align-items:center;font-size:12px;padding:5px 8px;border:1px solid var(--ta-border,#333);border-radius:6px}
 .herd-mvlist small{grid-column:1/4;color:var(--ta-text-3,#8d8d8d)}
 .herd-mvlist button{grid-row:1/3;grid-column:4;background:none;border:0;color:var(--ta-text-3,#8d8d8d);font-size:16px;cursor:pointer}
+
+
+/* Primary access to the 3D terrain workspace */
+.ta-3d-launch{display:inline-flex;align-items:center;justify-content:center;gap:7px;white-space:nowrap;border:1px solid var(--ta-accent,#3dbda1);background:var(--ta-layer-2,#18332f);color:var(--ta-text,#edf8f4);border-radius:9px;padding:9px 12px;font:700 12px/1.2 inherit;cursor:pointer;box-shadow:0 0 0 1px rgba(61,189,161,.12)}
+.ta-3d-launch:hover{filter:brightness(1.12);transform:translateY(-1px)}
+.ta-menu-item.is-3d-entry{border:1px solid rgba(61,189,161,.42);background:rgba(61,189,161,.10);font-weight:750}
+.ta-menu-item.is-3d-entry .ta-menu-icon{color:var(--ta-accent,#3dbda1)}
+@media(max-width:760px){.ta-3d-launch{padding:8px 9px;font-size:11px}.ta-header .live{display:none}}
