@@ -1,13 +1,15 @@
-# DOTS v3.0 — integración de visión artificial, territorio 3D y diagnóstico de suelos
+# DOTS v3.0 — módulos adicionales de visión artificial, territorio 3D y diagnóstico de suelos
 
 **Rama:** `feat/dots-vision-suelos-territorio`  
 **Base:** `main`  
 **Alcance geográfico:** Argentina, Brasil, Uruguay y Paraguay.  
-**Estado:** diseño de integración versionado; todavía no declara modelos operativos ni despliega servicios.
+**Estado:** diseño de integración versionado; todavía no declara modelos operativos ni despliega servicios. **Modalidad obligatoria: ampliación aditiva; no reemplazar, reescribir, retirar ni alterar el comportamiento de los módulos DOTS existentes.**
 
-## Objetivo
+## Objetivo y regla de preservación
 
-Incorporar las tres líneas identificadas en la revisión: (1) detección y seguimiento de ganado con YOLO26 + BoT-SORT, (2) visualización geoespacial 3D inspirada en las capacidades de OSIRIS, y (3) diagnóstico agronómico de riesgo de compactación del suelo basado en mediciones y evidencia científica sobre respuestas radiculares.
+Incorporar las tres líneas identificadas en la revisión como módulos nuevos, aislados e integrados al menú y al flujo existente. **No modificar la lógica, fuentes, pantallas, rutas, cálculos, estilos ni contratos de los módulos actuales**, salvo los puntos mínimos de conexión necesarios para mostrar los módulos nuevos. No refactorizar ni migrar módulos existentes como parte de esta entrega. Cada ampliación debe poder retirarse sin afectar las funciones previas.
+
+Las tres líneas identificadas en la revisión son: (1) detección y seguimiento de ganado con YOLO26 + BoT-SORT, (2) visualización geoespacial 3D inspirada en las capacidades de OSIRIS, y (3) diagnóstico agronómico de riesgo de compactación del suelo basado en mediciones y evidencia científica sobre respuestas radiculares.
 
 La integración debe reutilizar la arquitectura existente de DOTS (React/Leaflet/ECharts y API Python/Flask), no crear un segundo Observatorio ni reemplazar el visor actual sin una prueba comparativa.
 
@@ -91,8 +93,9 @@ Ficha por lote y mapa de riesgo/limitaciones físicas solo cuando existan sufici
 ### Validación
 Contrastar las estimaciones con mediciones de penetrómetro, densidad aparente e infiltración georreferenciadas. Documentar profundidad, humedad al medir, protocolo, fecha y laboratorio/equipo.
 
-## Integración con la plataforma existente
+## Integración con la plataforma existente (sólo aditiva)
 
+- Preservación: los módulos, rutas, capas, cálculos, APIs y pantallas actuales permanecen intactos. La nueva funcionalidad se incorpora en componentes, servicios, endpoints y rutas propios; los cambios al menú/router se limitan a añadir accesos y puntos de montaje.
 - Frontend: nuevos paneles dentro de DOTS; mantener React, Leaflet y ECharts. MapLibre queda en prototipo aislado hasta superar comparación funcional y de rendimiento.
 - API: Flask existente; endpoints nuevos bajo prefijo `/api/dots/` solo después de definir autenticación, límites, esquemas y pruebas.
 - Procesamiento: tareas externas asíncronas para inferencia de video y cálculos geoespaciales pesados.
@@ -107,7 +110,7 @@ Contrastar las estimaciones con mediciones de penetrómetro, densidad aparente e
 3. **Prototipo de terreno 3D:** comparar MapLibre con Leaflet en una cuenca argentina y un lote, con DEM real y atribución.
 4. **Ficha de suelos:** definir esquema de observaciones de campo y cálculo transparente; sin puntuación hasta tener datos y validación.
 5. **Integración UI/API:** conectar solo componentes que hayan pasado pruebas y revisión de seguridad/licencias.
-6. **Revisión:** pruebas automatizadas, verificación de fuentes reales y revisión visual en escritorio/móvil. PR separado; nunca desplegar automáticamente desde esta rama.
+6. **Revisión:** pruebas automatizadas, verificación de fuentes reales y revisión visual en escritorio/móvil. Comprobar explícitamente que no haya regresiones en los módulos preexistentes. PR separado; nunca desplegar automáticamente desde esta rama.
 
 ## Estado de certificación
 
