@@ -43,6 +43,9 @@ jobs:
           python-version: "3.11"
       - name: Avisar por Telegram
         env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          AVISOS_FROM: ${{ secrets.AVISOS_FROM }}
+          CONTROL_EMAIL: ${{ secrets.CONTROL_EMAIL }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CONTROL_CHAT_ID }}
           RUN_NAME: ${{ github.event.workflow_run.name }}

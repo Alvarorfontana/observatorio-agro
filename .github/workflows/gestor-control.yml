@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       modo:
-        description: "informe completo o sólo prueba de Telegram"
+        description: "informe completo o sólo prueba de correo y Telegram"
         type: choice
         options: [informe, prueba]
         default: informe
@@ -39,6 +39,9 @@ jobs:
       - name: Armar y mandar el informe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          AVISOS_FROM: ${{ secrets.AVISOS_FROM }}
+          CONTROL_EMAIL: ${{ secrets.CONTROL_EMAIL }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CONTROL_CHAT_ID }}
         run: |

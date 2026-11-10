@@ -283,6 +283,35 @@ def telegram(texto):
     return f"enviado ({len(partes)} mensaje{'s' if len(partes) > 1 else ''})"
 
 
+def correo(texto, asunto):
+    """Manda el informe por mail con Resend (plan gratuito). La dirección va en el secreto CONTROL_EMAIL,
+    nunca en el código: el repositorio es público."""
+    key, dest = os.environ.get("RESEND_API_KEY"), os.environ.get("CONTROL_EMAIL")
+    if not key or not dest:
+        falta = [n for n, v in (("RESEND_API_KEY", key), ("CONTROL_EMAIL", dest)) if not v]
+        return "sin configurar: falta " + " y ".join(falta)
+    sender = os.environ.get("AVISOS_FROM") or "DOTS Campo <onboarding@resend.dev>"
+    import html as _h
+    cuerpo = ('<div style="font-family:Arial,sans-serif;font-size:14px;color:#101828">'
+              '<pre style="font-family:Consolas,Menlo,monospace;font-size:13px;white-space:pre-wrap">'
+              + _h.escape(texto) + "</pre></div>")
+    try:
+        r = requests.post("https://api.resend.com/emails", timeout=30,
+                          headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
+                          json={"from": sender, "to": [d.strip() for d in dest.split(",") if d.strip()],
+                                "subject": asunto, "html": cuerpo, "text": texto})
+    except Exception as e:
+        return f"falló ({type(e).__name__})"
+    if r.ok:
+        return "enviado"
+    detalle = ""
+    try:
+        detalle = r.json().get("message", "")
+    except Exception:
+        pass
+    return f"falló: HTTP {r.status_code} {detalle[:200]}"
+
+
 def issue(texto):
     if not TOKEN:
         return "sin token"
@@ -323,17 +352,19 @@ def informe():
     txt += ["", "SITIO WEB"] + seccion_sitio()
     txt += ["", "ESTADO DE CADA GESTOR"] + g_lin
     txt += ["", "FRESCURA DE LOS DATOS"] + d_lin
-    txt += ["", "CANALES", "  " + tg_diag, "",
+    txt += ["", "CANALES", "  Correo: por Resend al secreto CONTROL_EMAIL.", "  " + tg_diag, "",
             "Fuentes: GitHub Actions y rama datos del repositorio observatorio-agro. Los valores son los últimos guardados por cada tarea; no se completan datos faltantes."]
     texto = "\n".join(txt)
     print(texto)
     avisos = fichas.get("control", {}).get("avisos", {})
     r_tg = telegram(texto) if avisos.get("telegram", True) and tg_ok else ("no enviado: " + tg_diag)
-    r_is = issue(texto + f"\n\nTelegram: {r_tg}") if avisos.get("github_issue", True) else "desactivado"
-    print(f"\nTelegram: {r_tg}\nIssue: {r_is}")
+    asunto = f"DOTS · Informe de gestores {hoy[:10]}" + (f" · {len(problemas)} para revisar" if problemas else " · todo en orden")
+    r_ma = correo(texto, asunto) if avisos.get("correo", True) else "desactivado"
+    r_is = issue(texto + f"\n\nCorreo: {r_ma}\nTelegram: {r_tg}") if avisos.get("github_issue", True) else "desactivado"
+    print(f"\nCorreo: {r_ma}\nTelegram: {r_tg}\nIssue: {r_is}")
     os.makedirs("data", exist_ok=True)
     with open("data/control.json", "w", encoding="utf-8") as f:
-        json.dump({"generado": AHORA.isoformat(), "problemas": problemas, "telegram": r_tg, "issue": r_is, "texto": texto}, f, ensure_ascii=False, indent=1)
+        json.dump({"generado": AHORA.isoformat(), "problemas": problemas, "correo": r_ma, "telegram": r_tg, "issue": r_is, "texto": texto}, f, ensure_ascii=False, indent=1)
 
 
 def falla():
@@ -343,11 +374,14 @@ def falla():
     estado = "se cortó por tiempo" if res == "timed_out" else "falló"
     texto = f"DOTS · AVISO DEL GESTOR DE CONTROL\n\nLa tarea «{nombre}» {estado} ({fecha_ar(AHORA.isoformat())}, hora argentina).\nDetalle: {url}"
     print(texto)
+    print("Correo:", correo(texto, f"DOTS · Falló «{nombre}»"))
     ok, diag = telegram_diagnostico()
     print("Telegram:", telegram(texto) if ok else diag)
 
 
 def prueba():
+    print("Correo:", correo("DOTS · Prueba del gestor de Control.\nSi recibís este mail, el informe diario te va a llegar acá.",
+                            "DOTS · Prueba del gestor de Control"))
     ok, diag = telegram_diagnostico()
     print(diag)
     if ok:
