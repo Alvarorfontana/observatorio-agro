@@ -265,8 +265,7 @@ def advisor_block(asesor):
                        'subtitle': 'Índice 0 a 100 por día de pronóstico', 'unit': '/100',
                        'labels': [str(r['date'])[8:10] + '/' + str(r['date'])[5:7] for r in enfer['rows']],
                        'series': [{'name': 'Riesgo', 'values': [_f(r.get('risk')) for r in enfer['rows']]}]})
-    return {'cards': cards, 'charts': charts,
-        'vegetation_interpretation': vegetation_interpretation(ndvi, nser), 'lectura': str(data.get('lectura') or '')}
+    return {'cards': cards, 'charts': charts, 'lectura': str(data.get('lectura') or '')}
 
 
 def exec_summary(d):
@@ -617,6 +616,7 @@ def build_data(result, name='Lote DOTS', extras=None):
                      'reference': str(m.get('reference', '')), 'reading': str(m.get('reading', '')), 'tone': metric_tone(m)}
                     for m in result.get('metrics') or []],
         'charts': charts,
+        'vegetation_interpretation': vegetation_interpretation(ndvi, nser),
         'advisor': advisor, 'exec_summary': exec_text,
         'indices': irows,
         'indices_head': ['Índice', str(indices.get('last_year', 'Último año')), 'Promedio', 'Diferencia'],
