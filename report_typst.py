@@ -163,9 +163,37 @@ def _dm(d):
     return f'{d[8:10]}/{d[5:7]}' if len(d) >= 10 else '—'
 
 
-def more_cards(extras):
-    """Lecturas del lote calculadas en el panel con Earth Engine y el perfil de suelo: cada una entra solo si vino con dato."""
+def soilgrids_card(raw):
+    """Propiedades SoilGrids recibidas por el motor: estimación espacial, nunca análisis de laboratorio."""
+    source = (raw or {}).get('suelo_completo') or {}
+    payload = source.get('payload') or {}
+    data = payload.get('data') or {}
+    layers = ((data.get('properties') or {}).get('layers') or [])
+    labels = {'nitrogen': 'Nitrógeno total', 'clay': 'Arcilla', 'sand': 'Arena', 'silt': 'Limo',
+              'soc': 'Carbono orgánico', 'phh2o': 'pH en agua', 'bdod': 'Densidad aparente'}
+    facts = []
+    for layer in layers:
+        name = labels.get(layer.get('name'), str(layer.get('name') or 'Propiedad'))
+        unit = ((layer.get('unit_measure') or {}).get('mapped_units')
+                or (layer.get('unit_measure') or {}).get('target_units') or '')
+        for depth in (layer.get('depths') or [])[:3]:
+            value = (depth.get('values') or {}).get('mean')
+            if value is not None:
+                facts.append([f"{name} · {depth.get('label') or 'profundidad no informada'}",
+                              f"{num(value, 2)} {unit}".strip()])
+    if not facts:
+        return None
+    return {'title': 'Propiedades del suelo · SoilGrids', 'facts': facts[:12],
+            'note': 'ISRIC SoilGrids: estimaciones modeladas por grilla y profundidad para el entorno del punto consultado. No equivalen a un muestreo ni a un análisis de laboratorio del lote.' ,
+            'credit': 'propiedades del suelo: ISRIC SoilGrids'}
+
+
+def more_cards(extras, raw=None):
+    """Lecturas del lote calculadas por fuentes disponibles: cada tarjeta entra solo si recibió datos."""
     out = []
+    sg = soilgrids_card(raw)
+    if sg:
+        out.append(sg)
     rh = extras.get('riesgo') or {}
     if rh.get('zones'):
         out.append({'title': 'Lomas, planos y bajos', 'facts': [[z['name'], f"{num(z.get('pct'), 0)} % · {num(z.get('ha'), 0)} ha"] for z in rh['zones'] if (_f(z.get('pct')) or 0) >= 0.5]
@@ -602,7 +630,7 @@ def build_data(result, name='Lote DOTS', extras=None):
                                   ['Caminos dentro del lote', f"{num((ck.get('caminos_lote') or 0) + (ck.get('rutas_lote') or 0))} km"],
                                   ['Construcciones en el lote', num(en.get('construcciones_lote'), 0)], ['Construcciones a 2 km', num(en.get('construcciones_2km'), 0)]],
                         'note': f"Overture Maps (OpenStreetMap, Microsoft, Google y otros), versión {en.get('release', '—')}. Pueden faltar caminos internos o galpones nuevos."}
-    lot_more = more_cards(extras)
+    lot_more = more_cards(extras, result.get('raw') or {})
     nl_series = [r for r in (ndvi.get('series') or []) if r.get('status') == 'válida' and r.get('ndvi_mean') is not None]
     week = week_outlook(nmean, nl_series, bal, _f(rain and rain.get('value')), _f(et and et.get('value')), thiv, fo)
     thumb = extras.get('_thumb') if '_thumb' in extras else satellite_thumb(poly)
