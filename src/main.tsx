@@ -29,6 +29,7 @@ import {
   Plus,
   Minus,
   Menu,
+  Mountain,
 } from "lucide-react";
 import "./styles.css";
 import "./dashboard.css";
@@ -447,7 +448,10 @@ function Observatory({onHome}:{onHome:()=>void}) {
   const [point, setPoint] = useState<Point>([-28.507, -59.043]),
     [coords, setCoords] = useState(["-28.507", "-59.043"]),
     [sources, setSources] = useState<Record<string, Source>>({}),
-    [view, setView] = useState("variables"),
+    [view, setView] = useState(() => {
+      const requested = new URLSearchParams(window.location.search).get("vista");
+      return ["/modelo-3d", "/territorio-3d"].includes(window.location.pathname) || requested === "territorio-3d" ? "territorio-3d" : "variables";
+    }),
     [years, setYears] = useState(30),
     [inaSeries,setInaSeries] = useState("22"),
     [usgsSite,setUsgsSite] = useState(""),
@@ -943,6 +947,10 @@ function Observatory({onHome}:{onHome:()=>void}) {
     // Reusing an old payload after changing polygon was a functional bug in earlier versions.
     setView(key);
     setSideTab("datos");
+    if (key === "territorio-3d") {
+      if (vertices.length >= 3 && terrainRef.current?.key !== lotKey) void loadTerrain();
+      return;
+    }
     if (key === "copernicus") return;
     if (key === "riesgo-hidrico") { void load("suelos-50mil"); }
     if (key === "satelite-lote") { if (vertices.length >= 3) ["ndvi-anomalia", "etr-lote", "heladas-satelite"].forEach(k => void load(k)); else notify("Dibujá o elegí el lote: la anomalía, el consumo de agua y las heladas se calculan sobre el polígono."); return; }
@@ -952,7 +960,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
   // Enlace directo a una consulta: /observatorio?vista=ndvi abre esa vista (lo usa la página /funciones)
   useEffect(() => {
     const v = new URLSearchParams(window.location.search).get("vista");
-    if (v && ((SOURCES as any[]).some(x => x[0] === v) || ["riesgo-hidrico", "copernicus", "satelite-lote"].includes(v))) changeView(v);
+    if (v && ((SOURCES as any[]).some(x => x[0] === v) || ["riesgo-hidrico", "copernicus", "satelite-lote", "territorio-3d"].includes(v))) changeView(v);
   }, []);
   const addFieldMarker = (type = markerType) => {
     if (!mapRef.current) return;
@@ -1418,6 +1426,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
           </b>
           <span>WGS84</span>
         </div>
+        <button type="button" className="ta-3d-launch" onClick={() => changeView("territorio-3d")} title="Abrir el modelo 3D del terreno del lote seleccionado"><Mountain size={16}/> Modelo 3D del terreno</button>
         <button className="theme-toggle" onClick={()=>setTheme(t=>t==="oscuro"?"claro":"oscuro")} title="Cambiar entre tema claro y oscuro" aria-label="Cambiar tema">{theme==="oscuro"?"Claro":"Oscuro"}</button>
         <button className={"ta-bell"+(alertsData?.alerts?.some((a:any)=>a.level==="alta")?" hot":alertsData?.alerts?.length?" warm":"")} onClick={()=>{setView("alertas");void loadAlerts();}} title="Alertas del lote">
           <TriangleAlert/>{alertsData?.alerts?.length ? <b>{alertsData.alerts.length}</b> : null}
@@ -2710,13 +2719,14 @@ function Brand(){return <SiteLink to="/" className="site-brand"><img className="
 function PublicHeader({onDemo}:{onDemo:()=>void}){return <header className="site-header"><Brand/><nav aria-label="Navegación principal">
   <SiteLink to="/" className="nav-highlight">Inicio</SiteLink>
   <SiteLink to="/observatorio">Observatorio</SiteLink>
+  <SiteLink to="/modelo-3d">Modelo 3D</SiteLink>
   <SiteLink to="/simulador-ambiental">Simulador</SiteLink>
   <SiteLink to="/el-nino">Clima y agua</SiteLink>
   <SiteLink to="/modulos">Informes</SiteLink>
   <details className="nav-more"><summary>Más módulos</summary><div aria-label="Módulos DOTS ordenados por función">
     <SiteLink to="/funciones">Todo lo que hace DOTS</SiteLink>
     <strong>01 · Observatorio y producción</strong>
-    <SiteLink to="/observatorio">Mapa principal · parcelas e informes</SiteLink><SiteLink to="/cultivos">Cultivos y rendimiento</SiteLink><SiteLink to="/agricultura-precision">Agricultura de precisión</SiteLink>
+    <SiteLink to="/observatorio">Mapa principal · parcelas e informes</SiteLink><SiteLink to="/cultivos">Cultivos y rendimiento</SiteLink><SiteLink to="/agricultura-precision">Agricultura de precisión</SiteLink><SiteLink to="/modelo-3d">Modelo 3D del terreno</SiteLink>
     <strong>02 · Clima y agua</strong>
     <SiteLink to="/el-nino">Clima regional · El Niño</SiteLink><SiteLink to="/simulador-ambiental">Simulador ambiental · ENSO y NASA POWER</SiteLink><SiteLink to="/nino-crecidas">Crecidas e inundaciones</SiteLink><SiteLink to="/alertas">Alertas hidrológicas</SiteLink><a href="/poblacion">Población y riesgo</a>
     <strong>03 · Satélites y datos</strong>
@@ -2727,7 +2737,7 @@ function PublicHeader({onDemo}:{onDemo:()=>void}){return <header className="site
 </nav><div className="site-head-actions"><SiteLink to="/alertas" className="alert-btn">⚠ Alertas</SiteLink><SiteLink to="/acceso" className="ghost-link">Ingresar</SiteLink><button className="demo-btn" onClick={onDemo}>Abrir Observatorio →</button>
   <details className="nav-mobile"><summary aria-label="Menú">☰</summary><div>
     <button className="nav-mobile-demo" onClick={onDemo}>Abrir Observatorio →</button>
-    {([["/que-es-dots","Qué es DOTS"],["/caso-bella-vista","Ejemplo: caso Bella Vista"],["/el-nino","Mi región: El Niño"],["/simulador-ambiental","Simulador ambiental · Sudamérica"],["/alertas","Alertas de crecidas"],["/nino-crecidas","El Niño y crecidas"],["/focos","Fuego, rayos y heladas"],["/agricultura-precision","Agricultura de precisión"],["/radar","Radar Sentinel-1 e informe PDF"],["/cultivos","Cultivos y rinde"],["/libre-deforestacion","Vender a Europa"],["/poblacion","Población y riesgo"],["/informes","Informes"],["/panel","Panel regional"],["/modulos","Módulos"],["/guia","Cómo funciona"],["/capas","Capas del mapa"],["/tecnologia","Fuentes"],["/conexiones","APIs"],["/casos","Casos"],["/contacto","Contacto"],["/acceso","Ingresar"]] as [string,string][]).map(([to,l])=>(to==="/poblacion"||to==="/radar"||to==="/agricultura-precision"||to==="/informes")?<a key={to} href={to}>{l}</a>:<SiteLink key={to} to={to}>{l}</SiteLink>)}
+    {([["/que-es-dots","Qué es DOTS"],["/caso-bella-vista","Ejemplo: caso Bella Vista"],["/el-nino","Mi región: El Niño"],["/simulador-ambiental","Simulador ambiental · Sudamérica"],["/alertas","Alertas de crecidas"],["/nino-crecidas","El Niño y crecidas"],["/focos","Fuego, rayos y heladas"],["/agricultura-precision","Agricultura de precisión"],["/modelo-3d","Modelo 3D del terreno"],["/radar","Radar Sentinel-1 e informe PDF"],["/cultivos","Cultivos y rinde"],["/libre-deforestacion","Vender a Europa"],["/poblacion","Población y riesgo"],["/informes","Informes"],["/panel","Panel regional"],["/modulos","Módulos"],["/guia","Cómo funciona"],["/capas","Capas del mapa"],["/tecnologia","Fuentes"],["/conexiones","APIs"],["/casos","Casos"],["/contacto","Contacto"],["/acceso","Ingresar"]] as [string,string][]).map(([to,l])=>(to==="/poblacion"||to==="/radar"||to==="/agricultura-precision"||to==="/informes")?<a key={to} href={to}>{l}</a>:<SiteLink key={to} to={to}>{l}</SiteLink>)}
   </div></details></div></header>}
 const sourceGroups=[
  ["ARGENTINA",["CONAE · SAOCOM","SMN","INA"]],
@@ -3546,9 +3556,11 @@ function SiteFooter(){return <footer className="site-footer"><Brand/><p>DOTS · 
 
 function App(){
   const [path,setPath]=useState(window.location.pathname);
-  const [inside,setInside]=useState(path==="/observatorio"||path==="/demo");
-  useEffect(()=>{const h=()=>{setPath(window.location.pathname);setInside(window.location.pathname==="/observatorio"||window.location.pathname==="/demo")};addEventListener("popstate",h);return()=>removeEventListener("popstate",h)},[]);
+  const isObservatoryPath=(p:string)=>["/observatorio","/demo","/modelo-3d","/territorio-3d"].includes(p);
+  const [inside,setInside]=useState(()=>isObservatoryPath(window.location.pathname));
+  useEffect(()=>{const h=()=>{const p=window.location.pathname;setPath(p);setInside(isObservatoryPath(p))};addEventListener("popstate",h);return()=>removeEventListener("popstate",h)},[]);
   const openDemo=()=>{history.pushState({},"","/observatorio");setPath("/observatorio");setInside(true);window.scrollTo(0,0)};
+  const openModel3D=()=>{history.pushState({},"","/modelo-3d");setPath("/modelo-3d");setInside(true);window.scrollTo(0,0)};
   const home=()=>{history.pushState({},"","/");setPath("/");setInside(false);window.scrollTo(0,0)};
   if(inside)return <Observatory onHome={home}/>;
   if(path==="/simulador-ambiental")return <div className="public-site"><PublicHeader onDemo={openDemo}/><main style={{maxWidth:1800,margin:"24px auto",padding:"0 20px"}}><h1>Simulador ambiental · América del Sur</h1><p>Explorá El Niño y La Niña, crecidas e inundaciones, capas satelitales y variables climáticas. Para ver las capas sobre el mapa y delimitar un área, abrí el Observatorio.</p><button className="demo-btn" onClick={openDemo}>Abrir mapa principal · parcelas e informes →</button><EnvironmentalWorkspace/></main></div>;
