@@ -866,6 +866,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
   const [sideTab, setSideTab] = useState<"lote" | "datos" | "asistente">("lote");
   const [srcQuery, setSrcQuery] = useState("");
   const [mainView, setMainView] = useState<"mapa" | "tablero">(() => { try { return localStorage.getItem("dots-vista") === "mapa" ? "mapa" : "tablero"; } catch { return "tablero"; } });
+  const [showLot3D, setShowLot3D] = useState(false);
   useEffect(() => { try { localStorage.setItem("dots-vista", mainView); } catch {} if (mainView === "mapa") setTimeout(() => mapRef.current?.invalidateSize(), 50); }, [mainView]);
   const [theme, setTheme] = useState<"oscuro" | "claro">(() => { try { return localStorage.getItem("dots-theme") === "claro" ? "claro" : "oscuro"; } catch { return "oscuro"; } });
   useEffect(() => { try { localStorage.setItem("dots-theme", theme); } catch {} }, [theme]);
@@ -944,7 +945,6 @@ function Observatory({onHome}:{onHome:()=>void}) {
     setView(key);
     setSideTab("datos");
     if (key === "copernicus") return;
-    if (key === "territorio-3d") { if (vertices.length >= 3) void loadTerrain(); else notify("Primero seleccioná o dibujá un lote para abrir su modelo 3D."); return; }
     if (key === "riesgo-hidrico") { void load("suelos-50mil"); }
     if (key === "satelite-lote") { if (vertices.length >= 3) ["ndvi-anomalia", "etr-lote", "heladas-satelite"].forEach(k => void load(k)); else notify("Dibujá o elegí el lote: la anomalía, el consumo de agua y las heladas se calculan sobre el polígono."); return; }
     if (key === "alertas") { void loadAlerts(); } else if (key === "forraje") { void loadForage(); } else if (key === "relieve") { void loadTerrain(); } else if (key === "costos") { void loadCosts(); } else if (key === "ganado") { if ((herdAll[herdKey] || []).some(r => Number(r.heads) > 0)) void loadHerd(); } else void load(key);
@@ -1464,7 +1464,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
               <button onClick={() => { setSideTab("lote"); startFtw(); }}>Automático</button>
               <button onClick={() => { setSideTab("lote"); startCatastro(); }} title="Tocá la parcela del catastro: Buenos Aires, Córdoba, Salta, Neuquén, Gualeguaychú, Paraguay y Brasil">Parcela del catastro</button>
               <button className="primary" onClick={() => void pdf()} disabled={pdfBusy}><FileText className="icon" />{pdfBusy ? "Generando…" : "Informe PDF"}</button>
-              {vertices.length >= 3 && <button className="primary" onClick={() => changeView("territorio-3d")} title="Abrir el modelo tridimensional del lote seleccionado">Ver lote en 3D</button>}
+              {vertices.length >= 3 && <button className="primary" onClick={() => { setShowLot3D(true); void loadTerrain(); requestAnimationFrame(() => document.getElementById("dots-lot-3d")?.scrollIntoView({ behavior: "smooth", block: "start" })); }} title="Mostrar el modelo tridimensional debajo del mapa">Ver lote en 3D</button>}
               {l && <button onClick={() => void campoPdf()} disabled={pdfBusy} title="Lomas, planos y bajos del campo, con un código QR para llevar el mapa al celular (funciona sin señal)">Informe de campo + mapa para el celular</button>}
             </div>
           </section>;
@@ -1482,7 +1482,7 @@ function Observatory({onHome}:{onHome:()=>void}) {
             {key:"focos",label:"Focos térmicos",value:sources.firms?.status==="recibido"?String(inside):"—",unit:sources.firms?.status==="recibido"?"en el lote":undefined,hint:sources.firms?.status==="recibido"?`${det.length} en el entorno · NASA FIRMS 3 días`:"Tocá para consultar FIRMS",icon:<Flame/>,tone:sources.firms?.status==="recibido"?(inside>0?"risk":"ok"):"idle",onClick:()=>changeView("firms")},
           ]}/>;
         })()}
-        {view === "territorio-3d" ? <DotsTerritory3D lot={currentLot()} terrainSummary={(sources.relieve?.payload as any)?.data?.lot === lotKey ? (sources.relieve?.payload as any).data : null} onTerrain={() => void loadTerrain()} terrainBusy={sources.relieve?.status === "consultando"} /> : view === "atlas-dot" ? <DotsResearchHub /> : mainView === "tablero" && <section className="db-wrap" aria-label="Tablero del lote">
+        {view === "atlas-dot" ? <DotsResearchHub /> : mainView === "tablero" && <section className="db-wrap" aria-label="Tablero del lote">
           <Suspense fallback={null}><LotDashboard weather={weather} sources={sources as any} thi={thi} hasLot={vertices.length >= 3}
             lot={lots.find(x => x.id === selectedLotId) || null}
             terrain={(sources.relieve?.payload as any)?.data?.lot === lotKey ? (sources.relieve?.payload as any)?.data : null}
@@ -2339,6 +2339,13 @@ function Observatory({onHome}:{onHome:()=>void}) {
         {gibsLayer===WORLDCOVER && <div className="dots-legend wc-legend" aria-label="Leyenda WorldCover">{WORLDCOVER_CLASSES.map(([c,l])=><span key={l}><i style={{background:c}}/>{l}</span>)}</div>}
         <MarkerLegend types={[...fieldMarkers.map((m:any)=>m.type),...waterAssets.map((a:any)=>a.type)]}/>
         </section>
+        {showLot3D && <section id="dots-lot-3d" className="ta-map-card" style={{ gridColumn: "1 / -1", marginTop: 14 }} aria-label="Modelo 3D del lote seleccionado">
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "12px 16px" }}>
+            <div><b>MODELO 3D DEL LOTE SELECCIONADO</b><div className="small">Vista tridimensional del mismo polígono que está marcado en el mapa superior.</div></div>
+            <button onClick={() => setShowLot3D(false)}>Ocultar 3D</button>
+          </div>
+          <DotsTerritory3D key={lotKey} lot={currentLot()} terrainSummary={(sources.relieve?.payload as any)?.data?.lot === lotKey ? (sources.relieve?.payload as any).data : null} onTerrain={() => void loadTerrain()} terrainBusy={sources.relieve?.status === "consultando"} />
+        </section>}
         <aside className="inspector">
           <section className="panel block">
             <div className="row">
