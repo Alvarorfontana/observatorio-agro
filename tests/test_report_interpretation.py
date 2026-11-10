@@ -22,6 +22,20 @@ class VegetationInterpretationTests(unittest.TestCase):
         self.assertIn("no constituye una medición directa", text)
         self.assertIn("rendimiento", text)
 
+    def test_modis_history_is_reported_as_context_not_parcel_level_crop_history(self):
+        chart, note = report_typst.modis_history_chart({
+            "sensor": "MODIS Terra MOD13Q1 (250 m, 16 días)",
+            "series": [
+                {"status": "válida", "datetime": "2022-01-01T00:00:00Z", "ndvi_mean": 0.42},
+                {"status": "sin dato", "datetime": "2022-01-17T00:00:00Z"},
+                {"status": "válida", "datetime": "2026-01-01T00:00:00Z", "ndvi_mean": 0.61},
+            ],
+        })
+        self.assertEqual(chart["series"][0]["values"], [0.42, 0.61])
+        self.assertIn("250 m", chart["subtitle"])
+        self.assertIn("no identifica cultivos ni rotaciones", note)
+        self.assertIn("no debe compararse directamente", note)
+
     def test_comparison_is_explicitly_limited_to_two_observations(self):
         rows = [
             {"status": "válida", "datetime": "2026-09-20T00:00:00Z", "ndvi_mean": 0.51},
