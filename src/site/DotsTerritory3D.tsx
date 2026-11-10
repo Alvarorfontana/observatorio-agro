@@ -177,6 +177,17 @@ export function DotsTerritory3D() {
     const a = document.createElement("a"); a.href = url; a.download = "DOTS-serie-agricola-world-bank.csv"; a.click(); URL.revokeObjectURL(url);
   }
 
+
+  function exportSoilCsv() {
+    const rows: string[][] = [
+      ["propiedad", "unidad", "profundidad", "valor"],
+      ...soil.flatMap(layer => layer.depths.map(d => [layer.name, layer.unit, d.depth, String(d.value ?? "")]))
+    ];
+    const csv = "\\ufeff" + rows.map(r => r.map(v => '"' + v.replaceAll('"', '""') + '"').join(";")).join("\\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const a = document.createElement("a"); a.href = url; a.download = "DOTS-observatorio-suelos.csv"; a.click(); URL.revokeObjectURL(url);
+  }
+
   return <main className="dots-territory">
     <style>{`
       .dots-territory{color:#e7edf2;background:#101a22;padding:22px;border-radius:16px;margin:14px 0;font-family:inherit}
