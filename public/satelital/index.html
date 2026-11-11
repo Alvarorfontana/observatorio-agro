@@ -54,6 +54,10 @@ label.fila input { grid-column: 1 / -1; width: 100%; accent-color: var(--accent)
 .rampa-et { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 11px; color: var(--muted); }
 .texto { font-size: 13px; }
 .texto p { margin: 0 0 6px; }
+.ae-bloque { border: 1px solid var(--accent); border-radius: 6px; padding: 10px 12px; }
+.ae-porque { font-size: 13px; margin: 4px 0 8px; }
+.ae-pop { margin: 8px 0; padding: 6px 8px; border-left: 3px solid; background: rgba(0,0,0,.035); }
+.ae-pop .escala { font-size: 11px; color: #5d665e; margin-top: 2px; }
 .nota { font-size: 12.5px; color: var(--muted); border-left: 3px solid var(--accent); padding-left: 10px; }
 .nota strong { color: var(--fg); font-weight: 600; }
 #estado { font-size: 12px; color: var(--muted); font-family: var(--mono); }
@@ -250,12 +254,17 @@ label.fila input { grid-column: 1 / -1; width: 100%; accent-color: var(--accent)
             <div><b style="color:#d9771a">Media</b><span>Una o dos señales; o un parche grande que pudo ser incendio</span></div>
             <div><b style="color:#b89a12">Baja</b><span>Cambio fuerte de verdor sin señales de riesgo: puede ser manejo del campo</span></div>
           </div>
-          <p class="sub">Segunda opinión AlphaEarth: compara el mapa anual de cobertura del año anterior con el del año siguiente (1 = igual, 0 = otra cobertura). No cambia la gravedad.</p>
+        </div>
+        <div class="grupo ae-bloque">
+          <span class="rotulo">Segunda opinión · AlphaEarth</span>
+          <p class="ae-porque"><strong>Por qué importa.</strong> El NDVI solo dice que bajó el verdor, y eso también pasa con una sequía, una crecida o una pastura castigada. AlphaEarth, de Google DeepMind, resume cada cuadrado de 10 m según qué hay en el suelo (monte, pastura, cultivo, agua). Si eso cambió de un año a otro, el desmonte es real. Es la prueba que separa un desmonte de un mal año.</p>
           <div class="rangos">
-            <div><b>0,90 o más</b><span>Sin cambio de cobertura: la caída de verdor puede ser sequía, pastoreo o manejo</span></div>
-            <div><b>0,70 a 0,90</b><span>Cambio moderado: raleo, desmonte parcial o pastura nueva</span></div>
-            <div><b>Menos de 0,70</b><span>Cambio fuerte: la cobertura es otra, confirma el desmonte o el cambio de uso</span></div>
+            <div><b style="color:#c0392b">Menos de 0,70</b><span><strong>Cambio fuerte</strong> · la cobertura es otra: confirma el desmonte o el cambio de uso</span></div>
+            <div><b style="color:#d9771a">0,70 a 0,90</b><span><strong>Cambio moderado</strong> · raleo, desmonte parcial o pastura nueva</span></div>
+            <div><b style="color:#3f7d4e">0,90 o más</b><span><strong>Sin cambio</strong> · la caída de verdor puede ser sequía, pastoreo o manejo</span></div>
           </div>
+          <p class="sub">Similitud entre el mapa del año anterior y el del año siguiente: 1 es la misma cobertura y 0 es otra cobertura. Umbrales orientativos, sin validar todavía en el terreno: no cambian la gravedad, la acompañan.</p>
+          <p class="sub" id="des-ae-estado"></p>
         </div>
         <div class="texto">
           <p><strong>Cómo se calcula.</strong> No se busca un campo: se resta el verdor de toda la región entre dos ventanas de la misma época del año y los desmontes más grandes aparecen solos. Es el método con el que se ubicó, sin coordenadas, la tala de un centro de datos en Finlandia.</p>
@@ -409,6 +418,14 @@ label.fila input { grid-column: 1 / -1; width: 100%; accent-color: var(--accent)
   var D = { modo: 'recientes', ventana: 'verano', filtro: 'todos', datos: {}, capa: L.featureGroup(), formas: {} };
   var COLOR = { alto: '#c0392b', medio: '#d9771a', bajo: '#e3c440' };
   var NIVEL = { alto: 'Alta', medio: 'Media', bajo: 'Baja' };
+  var AE_COLOR = { 'cambio fuerte': '#c0392b', 'cambio moderado': '#d9771a', 'sin cambio': '#3f7d4e' };
+  function bloqueAE(p, j) {
+    if (!p.alphaearth) return '';
+    var a = p.alphaearth, c = AE_COLOR[a.lectura] || '#555', ae = j.alphaearth || {};
+    return '<div class="ae-pop" style="border-color:' + c + '"><b>AlphaEarth · <span style="color:' + c + '">' + esc(a.lectura) + '</span></b>' +
+      '<div class="mono">Similitud ' + num(a.similitud, 2) + (ae.anio_antes ? ' · ' + ae.anio_antes + ' contra ' + ae.anio_despues : '') + '</div>' +
+      '<div class="escala">Menos de 0,70 fuerte · 0,70 a 0,90 moderado · 0,90 o más sin cambio</div></div>';
+  }
   var RAW = 'https://raw.githubusercontent.com/Alvarorfontana/observatorio-agro/datos/data/';
   function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function num(x, d) { return Number(x).toLocaleString('es-AR', { maximumFractionDigits: d || 0, minimumFractionDigits: d || 0 }); }
@@ -430,7 +447,9 @@ label.fila input { grid-column: 1 / -1; width: 100%; accent-color: var(--accent)
       '<p class="lugar">' + esc(p.tipo.charAt(0).toUpperCase() + p.tipo.slice(1)) + ' · ' + lugarDe(p) + '</p>' +
       '<div><b>' + rangoHa(p.area_ha) + '</b> según el umbral</div>' +
       '<div class="mono">NDVI ' + num(p.ndvi_antes, 2) + ' → ' + num(p.ndvi_despues, 2) + ' (Δ ' + num(p.dndvi, 2) + ')</div>';
-    if (p.senales && p.senales.length) h += '<ul>' + p.senales.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul>';
+    h += bloqueAE(p, j);
+    var otras = (p.senales || []).filter(function (t) { return t.indexOf('AlphaEarth:') !== 0; });
+    if (otras.length) h += '<ul>' + otras.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul>';
     if (p.fotos) {
       var base = RAW + 'desmonte_ndvi/' + encodeURIComponent(j.ventana) + '_' + encodeURIComponent(p.id);
       h += '<div class="fotos"><div><img loading="lazy" src="' + base + '_a.png" alt="Color natural antes"><span>Antes · ' + esc(j.antes.rotulo) + '</span></div>' +
@@ -450,6 +469,8 @@ label.fila input { grid-column: 1 / -1; width: 100%; accent-color: var(--accent)
       estado('Desmontes recientes · sin datos todavía');
       return;
     }
+    var ae = j.alphaearth;
+    $('des-ae-estado').textContent = ae ? 'En esta ventana: mapas ' + ae.anio_antes + ' contra ' + ae.anio_despues + ', ' + ae.parches_evaluados + ' parches evaluados. Fuente: ' + ae.fuente + '.' : 'En esta ventana todavía no hay mapa anual de AlphaEarth que cubra el período «después».';
     var aviso = (j.cobertura && (j.cobertura.fallidas || j.cobertura.sin_tiempo)) ? ' Faltaron ' + (j.cobertura.fallidas + j.cobertura.sin_tiempo) + ' de ' + j.cobertura.celdas + ' celdas: no cubre toda la región.' : '';
     $('des-periodo').innerHTML = 'Antes <b>' + esc(j.antes.rotulo) + '</b> · después <b>' + esc(j.despues.rotulo) + '</b><br>Calculado el ' + fechaCorta(j.generado) + ' · parches desde ' + num(j.metodo.min_ha) + ' ha' + esc(aviso);
 
