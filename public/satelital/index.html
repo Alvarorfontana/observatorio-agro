@@ -264,6 +264,7 @@ label.fila input { grid-column: 1 / -1; width: 100%; accent-color: var(--accent)
             <div><b style="color:#3f7d4e">0,90 o más</b><span><strong>Sin cambio</strong> · la caída de verdor puede ser sequía, pastoreo o manejo</span></div>
           </div>
           <p class="sub">Similitud entre el mapa del año anterior y el del año siguiente: 1 es la misma cobertura y 0 es otra cobertura. Umbrales orientativos, sin validar todavía en el terreno: no cambian la gravedad, la acompañan.</p>
+          <div class="barras" id="des-ae-barras"></div>
           <p class="sub" id="des-ae-estado"></p>
         </div>
         <div class="texto">
@@ -469,7 +470,18 @@ label.fila input { grid-column: 1 / -1; width: 100%; accent-color: var(--accent)
       estado('Desmontes recientes · sin datos todavía');
       return;
     }
-    var ae = j.alphaearth;
+    var ae = j.alphaearth, aeb = $('des-ae-barras');
+    aeb.innerHTML = '';
+    if (ae) {
+      var cnt = { 'cambio fuerte': 0, 'cambio moderado': 0, 'sin cambio': 0 }, evals = 0;
+      j.parches.forEach(function (p) { if (p.alphaearth && p.alphaearth.lectura in cnt) { cnt[p.alphaearth.lectura]++; evals++; } });
+      [['cambio fuerte', 'Fuerte · menos de 0,70'], ['cambio moderado', 'Moderado · 0,70 a 0,90'], ['sin cambio', 'Sin cambio · 0,90 o más']].forEach(function (k) {
+        var pct = evals ? cnt[k[0]] / evals * 100 : 0;
+        aeb.insertAdjacentHTML('beforeend', '<div class="barra"><i style="background:' + AE_COLOR[k[0]] + '"></i><span>' + k[1] + '</span>' +
+          '<div class="pista"><span style="width:' + pct.toFixed(1) + '%;background:' + AE_COLOR[k[0]] + '"></span></div>' +
+          '<span class="num">' + cnt[k[0]] + ' · ' + num(pct) + ' %</span></div>');
+      });
+    }
     $('des-ae-estado').textContent = ae ? 'En esta ventana: mapas ' + ae.anio_antes + ' contra ' + ae.anio_despues + ', ' + ae.parches_evaluados + ' parches evaluados. Fuente: ' + ae.fuente + '.' : 'En esta ventana todavía no hay mapa anual de AlphaEarth que cubra el período «después».';
     var aviso = (j.cobertura && (j.cobertura.fallidas || j.cobertura.sin_tiempo)) ? ' Faltaron ' + (j.cobertura.fallidas + j.cobertura.sin_tiempo) + ' de ' + j.cobertura.celdas + ' celdas: no cubre toda la región.' : '';
     $('des-periodo').innerHTML = 'Antes <b>' + esc(j.antes.rotulo) + '</b> · después <b>' + esc(j.despues.rotulo) + '</b><br>Calculado el ' + fechaCorta(j.generado) + ' · parches desde ' + num(j.metodo.min_ha) + ' ha' + esc(aviso);

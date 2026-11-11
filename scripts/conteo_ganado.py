@@ -192,10 +192,44 @@ def contar_video(ruta, detectar, salida_img):
     if mejor[1] is not None:
         marcar(mejor[1], mejor[2], salida_img)
     res = resumen_video(conteos, len(ids))
+    res["por_cuadro"] = conteos
+    if grafico_video(conteos, salida_img.replace(".jpg", "_grafico.png"), res["distintos_estimados"]):
+        res["grafico"] = os.path.basename(salida_img.replace(".jpg", "_grafico.png"))
     conf = sum(confs) / len(confs) if confs else 0.0
     return {"tipo": "video", "duracion_s": round(total_cuadros / fps, 1) if total_cuadros else None,
             **res, "total": res["distintos_estimados"],
             "por_especie": por_especie(mejor[2]) if mejor[2] is not None else {}, "confianza_media": round(conf, 2)}
+
+
+def grafico_video(conteos, ruta, total):
+    """Animales por cuadro a lo largo del video, con el piso (mínimo), el techo (máximo) y la mediana marcados."""
+    if not conteos:
+        return False
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    lo, hi = min(conteos), max(conteos)
+    med = resumen_video(conteos, 0)["mediana_por_cuadro"]
+    x = list(range(1, len(conteos) + 1))
+    fig, ax = plt.subplots(figsize=(8, 4.2), dpi=120)
+    ax.fill_between(x, lo, hi, color="#d9771a", alpha=.08, label=f"Rango visto: {lo} a {hi}")
+    ax.plot(x, conteos, color="#1f4e3d", lw=1.6, label="Animales en el cuadro")
+    ax.axhline(hi, color="#c0392b", lw=1, ls="--", label=f"Máximo (techo): {hi}")
+    ax.axhline(lo, color="#7a869a", lw=1, ls="--", label=f"Mínimo (piso): {lo}")
+    ax.axhline(med, color="#d9771a", lw=1, ls=":", label=f"Mediana: {med:g}")
+    ax.set_xlabel("Cuadro revisado")
+    ax.set_ylabel("Animales detectados")
+    ax.set_ylim(0, max(hi, total) * 1.15 + 1)
+    ax.set_title(f"Conteo por cuadro · distintos estimados en todo el video: {total}", fontsize=10, loc="left")
+    ax.grid(alpha=.25)
+    ax.legend(fontsize=7.5, loc="upper center", bbox_to_anchor=(0.5, -0.2), ncol=3, frameon=False)
+    for lado in ("top", "right"):
+        ax.spines[lado].set_visible(False)
+    fig.text(0.01, 0.01, "DOTS Campo · RF-DETR Nano (Apache 2.0) · conteo de referencia, no inventario", fontsize=6.5, color="#5d665e")
+    fig.tight_layout(rect=(0, 0.04, 1, 1))
+    fig.savefig(ruta)
+    plt.close(fig)
+    return True
 
 
 def texto_resultado(r):
@@ -206,8 +240,9 @@ def texto_resultado(r):
         lin.append(f"Animales detectados en la foto: {r['total']} ({esp}).")
     else:
         lin.append(f"Animales distintos estimados en el video: {r['total']}.")
-        lin.append(f"Máximo visto en un mismo cuadro: {r['maximo_en_un_cuadro']} · mediana por cuadro: "
-                   f"{r['mediana_por_cuadro']} · cuadros revisados: {r['cuadros']}.")
+        lin.append(f"Piso y techo: entre {r['maximo_en_un_cuadro']} (máximo visto en un mismo cuadro, seguro) y "
+                   f"{r['total']} (distintos según el seguimiento). Mediana por cuadro: {r['mediana_por_cuadro']} · "
+                   f"cuadros revisados: {r['cuadros']}.")
     lin += [f"Confianza media {r['confianza_media']:.2f}".replace(".", ",") + f" ({rot}): {expl}.",
             f"Mosaico (SAHI): {'sí' if r['mosaico'] else 'no'} · umbral {r['umbral']}.",
             "", "Cómo leer la confianza: 0,70 o más alta · 0,50 a 0,70 media · menos de 0,50 baja.",
