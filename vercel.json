@@ -59,7 +59,11 @@
       "destination": "/informes/index.html"
     },
     {
-      "source": "/((?!api/|ftw/|dem/|assets/|poblacion|avisos-widget|campo|radar|agricultura-precision|lente|satelital|nino-diario|informes).*)",
+      "source": "/sensores",
+      "destination": "/sensores/index.html"
+    },
+    {
+      "source": "/((?!api/|ftw/|dem/|assets/|poblacion|avisos-widget|campo|radar|agricultura-precision|lente|satelital|nino-diario|informes|sensores).*)",
       "destination": "/index.html"
     }
   ],

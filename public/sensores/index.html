@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Qué ve cada sensor · DOTS</title>
+<meta name="description" content="Cuántos píxeles ocupa un lote, un camino o una vaca en cada satélite que usa DOTS, y qué puede y qué no puede ver cada fuente.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root { --bg:#f3f4f1; --panel:#fff; --fg:#1b211c; --muted:#5d665e; --line:#d9ddd6; --accent:#b4532a; --chip:#eceee9;
+  --ok:#3f7d4e; --no:#b23a2a; --sans:'IBM Plex Sans',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace; }
+@media (prefers-color-scheme: dark) { :root { --bg:#121512; --panel:#1a1e1a; --fg:#e7ebe5; --muted:#9aa49b; --line:#2f362f;
+  --accent:#e07a4b; --chip:#242a24; --ok:#7fbf8e; --no:#e8836f; color-scheme:dark; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.55 var(--sans); }
+main { max-width:980px; margin:0 auto; padding:32px 20px 60px; }
+a { color:var(--accent); }
+.volver { font-size:13px; }
+h1 { font-size:30px; line-height:1.15; margin:12px 0 8px; }
+h2 { font-size:20px; margin:36px 0 8px; }
+.dek { color:var(--muted); max-width:720px; margin:0 0 8px; }
+.caja { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:16px 18px; }
+.chips { display:flex; flex-wrap:wrap; gap:6px; margin:10px 0 14px; }
+.chips button { font:500 13px var(--sans); background:var(--chip); color:var(--fg); border:1px solid var(--line); border-radius:999px; padding:6px 12px; cursor:pointer; }
+.chips button[aria-pressed="true"] { border-color:var(--accent); color:var(--accent); }
+.fila { display:grid; grid-template-columns:150px 1fr 120px; gap:10px; align-items:center; padding:7px 0; border-top:1px solid var(--line); font-size:13.5px; }
+.fila:first-child { border-top:0; }
+.fila b { font-weight:600; }
+.pista { position:relative; height:16px; background:var(--chip); border-radius:3px; overflow:hidden; }
+.pista span { position:absolute; left:0; top:0; bottom:0; background:var(--accent); border-radius:3px; }
+.pista i { position:absolute; top:-3px; bottom:-3px; width:2px; background:var(--fg); opacity:.55; }
+.num { font-family:var(--mono); font-size:12.5px; text-align:right; font-variant-numeric:tabular-nums; }
+.eje { display:grid; grid-template-columns:150px 1fr 120px; gap:10px; font-family:var(--mono); font-size:11px; color:var(--muted); margin-top:4px; }
+.eje div:nth-child(2) { display:flex; justify-content:space-between; }
+.nota { font-size:13px; color:var(--muted); border-left:3px solid var(--accent); padding-left:10px; margin:12px 0 0; }
+table { width:100%; border-collapse:collapse; font-size:13.5px; }
+th, td { text-align:left; vertical-align:top; padding:9px 8px; border-top:1px solid var(--line); }
+th { font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); font-weight:600; border-top:0; }
+td.m { font-family:var(--mono); font-size:12.5px; white-space:nowrap; }
+.si { color:var(--ok); } .nove { color:var(--no); }
+@media (max-width:640px) { .fila, .eje { grid-template-columns:96px 1fr 84px; } table, thead, tbody, tr, td { display:block; } thead { display:none; }
+  tr { border-top:1px solid var(--line); padding:8px 0; } td { border:0; padding:3px 0; } td.m::before { content:attr(data-et) " "; color:var(--muted); } }
+</style>
+</head>
+<body>
+<main>
+  <a class="volver" href="/satelital">← Panel Satelital</a>
+  <h1>Qué ve cada sensor</h1>
+  <p class="dek">Cada imagen satelital está hecha de cuadraditos (píxeles). Lo que es más chico que un píxel no se ve: se mezcla con lo que tiene alrededor. Elegí un objeto y mirá en cuántos píxeles entra en cada fuente que usa DOTS.</p>
+
+  <div class="caja">
+    <div class="chips" role="group" aria-label="Objeto a medir" id="objetos"></div>
+    <div id="barras"></div>
+    <div class="eje"><div></div><div><span>0,01</span><span>1</span><span>100</span><span>10 mil</span><span>1 millón</span></div><div></div></div>
+    <p class="nota" id="lectura"></p>
+    <p class="nota"><strong>Cómo leerlo.</strong> Menos de 1 píxel: no se ve. De 1 a 10: se nota que hay algo, pero no qué es. De 10 a 100: se distingue la forma. Más de 100: se ve con detalle. La línea marca el píxel entero: a su izquierda el objeto queda escondido.</p>
+  </div>
+
+  <h2>Qué puede y qué no puede ver cada fuente</h2>
+  <p class="dek">Tamaño de píxel, cada cuánto pasa y qué conviene pedirle a cada una. Son los datos que usan los módulos de DOTS.</p>
+  <div class="caja">
+    <table>
+      <thead><tr><th>Fuente</th><th>Píxel</th><th>Cada cuánto</th><th>Sí ve</th><th>No ve</th></tr></thead>
+      <tbody id="tabla"></tbody>
+    </table>
+    <p class="nota"><strong>Límites.</strong> El tamaño de píxel es el mejor caso. Las nubes tapan a los ópticos (Sentinel-2, Landsat, MODIS) y el radar (Sentinel-1) las atraviesa pero no da colores. Los modelos de relieve tienen un error de altura de varios metros, así que una zona «baja» es una señal para revisar, no una mancha de inundación exacta. La población de WorldPop es un modelo, no un censo casa por casa.</p>
+  </div>
+</main>
+<script>
+// Tamaño de píxel en metros y datos de cada fuente
+var FUENTES = [
+  { n: 'Dron', px: 0.03, rev: 'Cuando se vuela', si: 'Animales, personas, surcos, alambrados, daños puntuales', no: 'Una provincia entera, ni todos los días' },
+  { n: 'Sentinel-2', px: 10, rev: 'Cada 5 días', si: 'Verdor de un lote, desmontes, cultivos, agua, quemas grandes', no: 'Animales, caminos de tierra angostos, cuando hay nubes' },
+  { n: 'Sentinel-1 (radar)', px: 10, rev: 'Cada 6 a 12 días', si: 'Agua e inundación aun con nubes, barrios, humedad del suelo', no: 'Colores ni verdor; lee mal en relieve muy quebrado' },
+  { n: 'AlphaEarth', px: 10, rev: 'Un mapa por año', si: 'Si cambió la cobertura de un año a otro (monte, pastura, cultivo)', no: 'Cambios de una semana o de un mes' },
+  { n: 'Landsat 8 y 9', px: 30, rev: 'Cada 8 días (los dos)', si: 'Series largas desde los años 80, temperatura de superficie', no: 'Lotes chicos, detalle de un establecimiento' },
+  { n: 'Relieve (Copernicus / MERIT)', px: 30, px2: 90, rev: 'Fijo', si: 'Zonas bajas, pendientes, por dónde escurre el agua', no: 'Terraplenes y defensas; error de altura de varios metros' },
+  { n: 'WorldPop', px: 100, rev: 'Un mapa por año', si: 'Cuánta gente vive, aproximadamente, en cada hectárea', no: 'Personas reales casa por casa' },
+  { n: 'MODIS', px: 250, px2: 1000, rev: 'Todos los días', si: 'Focos de fuego, temperatura regional, verdor de grandes zonas', no: 'Un campo en particular' },
+  { n: 'GOES-19', px: 500, px2: 2000, rev: 'Cada 10 minutos', si: 'Nubes, tormentas, rayos, heladas a escala regional', no: 'Nada más chico que un pueblo' }
+];
+// Objetos: lado típico en metros (se mide el área como un cuadrado de ese lado)
+var OBJETOS = [
+  { n: 'Una vaca', lado: 2, txt: 'una vaca (unos 2 m de largo)' },
+  { n: 'Un camino rural', lado: 6, txt: 'el ancho de un camino rural de tierra (unos 6 m)' },
+  { n: 'Una manzana urbana', lado: 100, txt: 'una manzana de ciudad (100 m de lado)' },
+  { n: 'Un lote de 100 ha', lado: 1000, txt: 'un lote de 100 hectáreas (1 km de lado)' }
+];
+var actual = 0;
+function fmt(x) {
+  if (x < 0.01) return '< 0,01';
+  if (x < 1) return x.toLocaleString('es-AR', { maximumFractionDigits: 2 });
+  if (x < 100) return x.toLocaleString('es-AR', { maximumFractionDigits: 1 });
+  return Math.round(x).toLocaleString('es-AR');
+}
+function pintar() {
+  var o = OBJETOS[actual], cont = document.getElementById('barras');
+  cont.innerHTML = '';
+  var LO = -2, HI = 6; // de 0,01 a 1.000.000 píxeles, escala logarítmica
+  FUENTES.forEach(function (f) {
+    var px = Math.pow(o.lado / f.px, 2);
+    var pos = (Math.log10(Math.max(px, 1e-2)) - LO) / (HI - LO);
+    var uno = (0 - LO) / (HI - LO);
+    var fila = document.createElement('div'); fila.className = 'fila';
+    fila.innerHTML = '<b>' + f.n + '</b><div class="pista"><span style="width:' + (Math.min(1, Math.max(0.01, pos)) * 100).toFixed(1) + '%;' + (px < 1 ? 'opacity:.35' : '') + '"></span><i style="left:' + (uno * 100) + '%"></i></div>' +
+      '<div class="num">' + fmt(px) + ' px</div>';
+    cont.appendChild(fila);
+  });
+  var s2 = Math.pow(o.lado / 10, 2);
+  document.getElementById('lectura').textContent = 'En Sentinel-2, ' + o.txt + ' ocupa ' + fmt(s2) + ' píxel' + (s2 === 1 ? '' : 'es') + (s2 < 1 ? ': no se ve.' : s2 < 10 ? ': se nota que hay algo, pero no qué es.' : s2 < 100 ? ': se distingue la forma.' : ': se ve con detalle.');
+  document.querySelectorAll('#objetos button').forEach(function (b, i) { b.setAttribute('aria-pressed', String(i === actual)); });
+}
+OBJETOS.forEach(function (o, i) {
+  var b = document.createElement('button'); b.type = 'button'; b.textContent = o.n;
+  b.addEventListener('click', function () { actual = i; pintar(); });
+  document.getElementById('objetos').appendChild(b);
+});
+FUENTES.forEach(function (f) {
+  var tr = document.createElement('tr');
+  var px = f.px2 ? f.px + ' a ' + f.px2.toLocaleString('es-AR') + ' m' : (f.px < 1 ? Math.round(f.px * 100) + ' cm' : f.px + ' m');
+  tr.innerHTML = '<td><b>' + f.n + '</b></td><td class="m" data-et="Píxel:">' + px + '</td><td class="m" data-et="Pasa:">' + f.rev + '</td><td class="si">' + f.si + '</td><td class="nove">' + f.no + '</td>';
+  document.getElementById('tabla').appendChild(tr);
+});
+actual = 0; pintar();
+</script>
+</body>
+</html>
