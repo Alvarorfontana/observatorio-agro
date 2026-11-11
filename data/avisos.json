@@ -4,6 +4,51 @@
    "id": "parana-zarate",
    "place": "Zárate",
    "river": "Paraná",
+   "from": "Normal",
+   "to": "Atención",
+   "up": true,
+   "height": 1.0,
+   "alert": 2,
+   "evac": 2.2,
+   "date": "2026-11-11",
+   "trend_m_day": 0.047,
+   "text": "Zárate (río Paraná): el nivel sube de Normal a Atención. Altura 1,00 m el 2026-11-11; alerta 2,00 m, evacuación 2,20 m. Tendencia +0,05 m por día.",
+   "at": "2026-11-11T17:56+00:00"
+  },
+  {
+   "id": "parana-ituzaingo",
+   "place": "Ituzaingó",
+   "river": "Paraná",
+   "from": "Alerta",
+   "to": "Atención",
+   "up": false,
+   "height": 3.46,
+   "alert": 3.5,
+   "evac": 4,
+   "date": "2026-11-11",
+   "trend_m_day": -0.047,
+   "text": "Ituzaingó (río Paraná): el nivel baja de Alerta a Atención. Altura 3,46 m el 2026-11-11; alerta 3,50 m, evacuación 4,00 m. Tendencia -0,05 m por día.",
+   "at": "2026-11-11T17:56+00:00"
+  },
+  {
+   "id": "parana-diamante",
+   "place": "Diamante",
+   "river": "Paraná",
+   "from": "Alerta",
+   "to": "Evacuación",
+   "up": true,
+   "height": 5.52,
+   "alert": 5.3,
+   "evac": 5.5,
+   "date": "2026-11-11",
+   "trend_m_day": 0.097,
+   "text": "Diamante (río Paraná): el nivel sube de Alerta a Evacuación. Altura 5,52 m el 2026-11-11; alerta 5,30 m, evacuación 5,50 m. Tendencia +0,10 m por día. Seguir las indicaciones de Defensa Civil.",
+   "at": "2026-11-11T17:56+00:00"
+  },
+  {
+   "id": "parana-zarate",
+   "place": "Zárate",
+   "river": "Paraná",
    "from": "Atención",
    "to": "Normal",
    "up": false,
@@ -781,5 +826,5 @@
    "at": "2026-10-15T18:22+00:00"
   }
  ],
- "updated": "2026-11-10T20:52+00:00"
+ "updated": "2026-11-11T17:56+00:00"
 }
