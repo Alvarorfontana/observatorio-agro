@@ -43,4 +43,5 @@ IBM Plex · SIL Open Font License 1.1 (ver `report/fonts/OFL.txt`).
 Copernicus: «Contiene datos modificados de Copernicus Sentinel y del Servicio de Gestión de Emergencias de Copernicus».
 Open-Meteo: datos CC-BY 4.0; la API gratuita es sólo para uso no comercial. ONS Brasil: CC-BY 4.0.
 NOAA y USGS: dominio público. NASA: uso libre con cita. INA: datos públicos del Estado argentino.
+AlphaEarth Foundations Satellite Embedding (colección GOOGLE/SATELLITE_EMBEDDING/V1/ANNUAL): CC-BY 4.0. «The AlphaEarth Foundations Satellite Embedding dataset is produced by Google and Google DeepMind.» Se usa como segunda opinión en Desmontes.
 EarthAlign (MBZUAI · ADIA Lab · UC San Diego): descripciones y metadatos del dataset liberado; ERA5 de Copernicus (CC-BY). Revisar las licencias por fuente antes de un uso comercial.

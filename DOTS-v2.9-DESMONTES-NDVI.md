@@ -39,6 +39,25 @@ Cada parche suma señales que se muestran en su globo:
 Alta: 4 o más. Media: 2 o 3. Baja: menos de 2. Si el 30 % o más figura quemado (MODIS), el parche se marca como
 **posible incendio** y no pasa de media.
 
+## Segunda opinión AlphaEarth
+
+Después de la resta de NDVI, la misma tarea mira cada parche en los mapas anuales de AlphaEarth Foundations
+(Google DeepMind, colección `GOOGLE/SATELLITE_EMBEDDING/V1/ANNUAL`, CC BY 4.0). Cada píxel de 10 m tiene un vector de
+64 números por año que describe su cobertura. Se compara el año en que empieza la ventana «antes» con el último año
+disponible hasta el fin de la ventana «después» (producto escalar promediado en el parche, a 30 m).
+
+| Similitud | Lectura |
+|---|---|
+| 0,90 o más | sin cambio de cobertura: puede ser sequía, pastoreo o manejo |
+| 0,70 a 0,90 | cambio moderado: raleo, desmonte parcial o pastura nueva |
+| menos de 0,70 | cambio fuerte: confirma el desmonte o el cambio de uso |
+
+No suma puntos de gravedad: los umbrales son orientativos y no están validados. Agrega una señal en el globo y el campo
+`alphaearth` en cada parche. Si el último mapa anual todavía no cubre el período «después», no se evalúa. Si el paso
+falla, los parches quedan como estaban (`continue-on-error`).
+
+Archivos: `scripts/alphaearth_desmontes.py` y `tests/test_alphaearth_desmontes.py`.
+
 ## Ley de Bosques
 
 No hay una capa nacional del OTBN que se pueda consultar. Para sumarla, subir a la rama `datos` un archivo

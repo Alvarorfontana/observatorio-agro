@@ -250,11 +250,18 @@ label.fila input { grid-column: 1 / -1; width: 100%; accent-color: var(--accent)
             <div><b style="color:#d9771a">Media</b><span>Una o dos señales; o un parche grande que pudo ser incendio</span></div>
             <div><b style="color:#b89a12">Baja</b><span>Cambio fuerte de verdor sin señales de riesgo: puede ser manejo del campo</span></div>
           </div>
+          <p class="sub">Segunda opinión AlphaEarth: compara el mapa anual de cobertura del año anterior con el del año siguiente (1 = igual, 0 = otra cobertura). No cambia la gravedad.</p>
+          <div class="rangos">
+            <div><b>0,90 o más</b><span>Sin cambio de cobertura: la caída de verdor puede ser sequía, pastoreo o manejo</span></div>
+            <div><b>0,70 a 0,90</b><span>Cambio moderado: raleo, desmonte parcial o pastura nueva</span></div>
+            <div><b>Menos de 0,70</b><span>Cambio fuerte: la cobertura es otra, confirma el desmonte o el cambio de uso</span></div>
+          </div>
         </div>
         <div class="texto">
           <p><strong>Cómo se calcula.</strong> No se busca un campo: se resta el verdor de toda la región entre dos ventanas de la misma época del año y los desmontes más grandes aparecen solos. Es el método con el que se ubicó, sin coordenadas, la tala de un centro de datos en Finlandia.</p>
           <p><strong>Por qué un rango.</strong> Un desmonte no tiene un borde limpio. Caminos, suelo pelado y pilas de rolos se leen distinto que el monte cortado, así que la superficie cambia según el umbral: se informa de mínima a máxima.</p>
           <p class="nota"><strong>Límites.</strong> Es una señal para revisar, no una prueba de desmonte ilegal. Una sequía extrema, una pastura degradada o un incendio también bajan el NDVI. Se descartan agua, cultivos y ciudades, pero conviene mirar las fotos de antes y después de cada parche. La Ley de Bosques solo se evalúa si DOTS tiene cargado el mapa provincial.</p>
+          <p class="nota"><strong>Segunda opinión AlphaEarth.</strong> Google DeepMind publica un mapa por año que resume cada cuadrado de 10 m según su cobertura. Si el parche cambió de cobertura entre un año y otro, el desmonte gana peso; si siguió igual, puede ser sequía. Los rangos son orientativos y todavía no están validados en el terreno. Fuente: AlphaEarth Foundations, Google y Google DeepMind (CC BY 4.0).</p>
         </div>
       </div>
 
