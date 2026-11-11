@@ -1,5 +1,7 @@
 # DOTS · trabajador GPU de visión bovina
 
+> En pausa por costo (RunPod y R2 son pagos). La alternativa gratuita está en `DOTS-v3.0-CONTEO-GANADO.md`: RF-DETR + mosaico SAHI en GitHub Actions.
+
 ## Arquitectura
 
 El navegador carga el video directamente a un bucket privado Cloudflare R2 mediante una URL prefirmada de 15 minutos. Flask (`vision_api.py`) crea un trabajo en RunPod Serverless. El worker descarga el MP4 desde R2, ejecuta YOLO26n (clase COCO `cow`) y BoT-SORT en GPU, y devuelve conteos por fotograma y tracks temporales.

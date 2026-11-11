@@ -1,0 +1,75 @@
+# Conteo de ganado gratis, sin GPU paga: RF-DETR Nano (Apache 2.0) + recorte en mosaico (SAHI) en una máquina común
+# de GitHub Actions. Para fotos de drone o de celular y videos cortos.
+# Uso: Actions → "Conteo de ganado" → Run workflow → pegar el enlace (directo o de Google Drive compartido).
+# El resultado queda en la rama datos (data/conteo_ganado/), en el resumen de la tarea y, si están los secretos
+# RESEND_API_KEY y CONTROL_EMAIL, llega por correo. Ver scripts/conteo_ganado.py y DOTS-v3.0-CONTEO-GANADO.md.
+name: Conteo de ganado
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "Enlace a la foto o el video (Drive: compartir con cualquiera que tenga el enlace)"
+        required: true
+      especie:
+        description: "vaca, oveja, caballo o todas"
+        required: false
+        default: "vaca"
+      mosaico:
+        description: "Recorte en mosaico (SAHI): si para drone o animales lejos, no para fotos de cerca"
+        required: false
+        default: "si"
+      umbral:
+        description: "Confianza mínima (0 a 1)"
+        required: false
+        default: "0.4"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: conteo-ganado
+  cancel-in-progress: false
+
+jobs:
+  conteo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Guardar el modelo entre corridas
+        uses: actions/cache@v4
+        with:
+          path: ~/.roboflow
+          key: rfdetr-nano-coco
+      - name: Instalar (PyTorch para procesador común, sin GPU)
+        run: |
+          pip install --index-url https://download.pytorch.org/whl/cpu torch torchvision
+          pip install rfdetr supervision trackers opencv-python-headless requests
+      - name: Contar
+        env:
+          CONTEO_URL: ${{ github.event.inputs.url }}
+          CONTEO_ESPECIE: ${{ github.event.inputs.especie }}
+          CONTEO_MOSAICO: ${{ github.event.inputs.mosaico }}
+          CONTEO_UMBRAL: ${{ github.event.inputs.umbral }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          CONTROL_EMAIL: ${{ secrets.CONTROL_EMAIL }}
+          AVISOS_FROM: ${{ secrets.AVISOS_FROM }}
+        run: |
+          set -o pipefail
+          python -u scripts/conteo_ganado.py | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Foto marcada para bajar
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: conteo-ganado
+          path: data/conteo_ganado/
+          if-no-files-found: ignore
+          retention-days: 30
+      - name: Guardar en la rama datos (no publica la web)
+        if: success()
+        run: |
+          cp scripts/datos_rama.sh /tmp/datos_rama.sh && bash /tmp/datos_rama.sh guardar "Conteo de ganado $(date -u +%Y-%m-%d\ %H:%M)" data/conteo_ganado

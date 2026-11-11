@@ -27,6 +27,9 @@ OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 - Carbon Design System (IBM) · Apache-2.0 · reglas visuales del tema oscuro, sin copiar componentes.
 - xyzservices (GeoPandas) · BSD-3-Clause · catálogo base de capas del mapa.
 - xclim (Ouranos) · Apache-2.0 · definiciones de índices agroclimáticos; cálculo propio.
+- RF-DETR (Roboflow) · Apache-2.0 · modelo de detección del conteo de ganado (tamaño Nano, pesos COCO).
+- supervision (Roboflow) · MIT · recorte en mosaico (SAHI) y marcado de fotos.
+- trackers (Roboflow) · Apache-2.0 · seguimiento ByteTrack en videos.
 - EarthAlign / MeteoLIP (MBZUAI · ADIA Lab · UC San Diego) - sin licencia declarada en su repositorio; el dataset mezcla fuentes (EM-DAT CC-BY-NC-ND, NOAA dominio público, ERA5 CC-BY). DOTS sólo guarda descripciones y metadatos del dataset liberado y cita la fuente. Ver DOTS-v2.7-EARTHALIGN.md.
 - chirps (rOpenSci) · forma de consultar la API pública ClimateSERV; código propio.
 - Argos Translate (Argos Open Tech) · MIT · traducción en→es offline de las descripciones de EarthAlign; los modelos (OPUS) se usan sin versionar.

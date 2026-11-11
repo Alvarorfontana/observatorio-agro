@@ -206,6 +206,15 @@ def seccion_desmontes():
     if prov:
         top = sorted(prov.items(), key=lambda kv: -(kv[1].get("ha", 0) if isinstance(kv[1], dict) else kv[1] or 0))[:5]
         lin.append("  Provincias: " + ", ".join(f"{k} {v.get('ha', v) if isinstance(v, dict) else v}" for k, v in top))
+    ae = d.get("alphaearth") or {}
+    if ae:
+        cuenta = {}
+        for p in d.get("parches") or []:
+            r = (p.get("alphaearth") or {}).get("lectura")
+            if r:
+                cuenta[r] = cuenta.get(r, 0) + 1
+        lin.append(f"  AlphaEarth {ae.get('anio_antes')} contra {ae.get('anio_despues')}: "
+                   + (", ".join(f"{k} {v}" for k, v in cuenta.items()) or "sin parches evaluados"))
     cob = d.get("cobertura") or {}
     if cob.get("fallidas"):
         lin.append(f"  Ojo: {cob.get('fallidas')} de {cob.get('celdas')} celdas no se pudieron calcular.")
