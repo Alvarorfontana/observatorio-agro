@@ -1,43 +1,112 @@
-/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/google/api_core/_python_version_support.py:254: FutureWarning: You are using a Python version (3.11.17) which Google will stop supporting in new releases of google.api_core once it reaches its end of life (2027-10-24). Please upgrade to the latest Python version, or at least Python 3.12, to continue receiving updates for google.api_core past that date.
-  warnings.warn(message, FutureWarning)
-/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/ee/data.py:335: UserWarning: Your project has exceeded its noncommercial compute quota and is now in restricted mode. Visit https://developers.google.com/earth-engine/guides/noncommercial_tiers#restricted_mode to learn more.
+/opt/hostedtoolcache/Python/3.11.18/x64/lib/python3.11/site-packages/ee/data.py:335: UserWarning: Your project has exceeded its noncommercial compute quota and is now in restricted mode. Visit https://developers.google.com/earth-engine/guides/noncommercial_tiers#restricted_mode to learn more.
   warnings.warn(
-Traceback (most recent call last):
-  File "/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/ee/data.py", line 361, in _execute_cloud_call
-    return call.execute(num_retries=num_retries)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/googleapiclient/_helpers.py", line 130, in positional_wrapper
-    return wrapped(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/googleapiclient/http.py", line 1018, in execute
-    raise HttpError(resp, content, uri=self.uri)
-googleapiclient.errors.HttpError: <HttpError 429 when requesting https://earthengine.googleapis.com/v1/projects/gen-lang-client-0033518419/algorithms?prettyPrint=false&alt=json returned "Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/noncommercial_tiers#restricted_mode". Details: "Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/noncommercial_tiers#restricted_mode">
+/opt/hostedtoolcache/Python/3.11.18/x64/lib/python3.11/site-packages/ee/deprecation.py:215: DeprecationWarning: 
 
-During handling of the above exception, another exception occurred:
+Attention required for FAO/GAUL/2015/level1! You are using a deprecated asset.
+To make sure your code keeps working, please update it.
+This dataset has been superseded by FAO/GAUL/2025/level1
 
-Traceback (most recent call last):
-  File "/home/runner/work/observatorio-agro/observatorio-agro/scripts/enso_satelites.py", line 234, in <module>
-    sys.exit(main())
-             ^^^^^^
-  File "/home/runner/work/observatorio-agro/observatorio-agro/scripts/enso_satelites.py", line 214, in main
-    ee = ee_init()
-         ^^^^^^^^^
-  File "/home/runner/work/observatorio-agro/observatorio-agro/scripts/enso_satelites.py", line 117, in ee_init
-    ee.Initialize(creds, project=os.environ["GOOGLE_CLOUD_PROJECT"])
-  File "/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/ee/_utils.py", line 39, in wrapper
-    return func(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/ee/__init__.py", line 272, in Initialize
-    raise e
-  File "/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/ee/__init__.py", line 254, in Initialize
-    ApiFunction.initialize()
-  File "/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/ee/apifunction.py", line 163, in initialize
-    signatures = data.getAlgorithms()
-                 ^^^^^^^^^^^^^^^^^^^^
-  File "/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/ee/data.py", line 1458, in getAlgorithms
-    return _cloud_api_utils.convert_algorithms(_execute_cloud_call(call))
-                                               ^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/hostedtoolcache/Python/3.11.17/x64/lib/python3.11/site-packages/ee/data.py", line 363, in _execute_cloud_call
-    raise _translate_cloud_exception(e)  # pylint: disable=raise-missing-from
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-ee.ee_exception.EEException: Too Many Requests: Exceeded Earth Engine concurrency limit. Your project is in Restricted Mode. Learn more at https://developers.google.com/earth-engine/guides/noncommercial_tiers#restricted_mode
+Learn more: https://developers.google.com/earth-engine/datasets/catalog/FAO_GAUL_2015_level1
+
+  warnings.warn(warning, category=DeprecationWarning)
+/opt/hostedtoolcache/Python/3.11.18/x64/lib/python3.11/site-packages/ee/data.py:335: UserWarning: Your project has exceeded its noncommercial compute quota and is now in restricted mode. Visit https://developers.google.com/earth-engine/guides/noncommercial_tiers#restricted_mode to learn more.
+  warnings.warn(
+clorofila 2003 listo
+clorofila 2004 listo
+clorofila 2005 listo
+clorofila 2006 listo
+clorofila 2007 listo
+clorofila 2008 listo
+clorofila 2009 listo
+clorofila 2010 listo
+clorofila 2011 listo
+clorofila 2012 listo
+clorofila 2013 listo
+clorofila 2014 listo
+clorofila 2015 listo
+clorofila 2016 listo
+clorofila 2017 listo
+clorofila 2018 listo
+clorofila 2019 listo
+clorofila 2020 listo
+clorofila 2021 listo
+clorofila 2022 listo
+clorofila 2023 listo
+clorofila 2024 listo
+clorofila 2025 listo
+clorofila 2026 listo
+humedad 2015: Reducer.setOutputs: Need 1 output names for Reducer.mean.
+humedad 2015: Reducer.setOutputs: Need 1 output names for Reducer.mean.
+humedad 2015: Reducer.setOutputs: Need 1 output names for Reducer.mean.
+humedad 2015 listo
+humedad 2016: Reducer.setOutputs: Need 1 output names for Reducer.mean.
+humedad 2016: Reducer.setOutputs: Need 1 output names for Reducer.mean.
+humedad 2016: Reducer.setOutputs: Need 1 output names for Reducer.mean.
+humedad 2016 listo
+humedad 2017: Reducer.setOutputs: Need 1 output names for Reducer.mean.
+humedad 2017: Reducer.setOutputs: Need 1 output names for Reducer.mean.
+humedad 2017: Reducer.setOutputs: Need 1 output names for Reducer.mean.
+humedad 2017 listo
+humedad 2018: Reducer.setOutputs: Need 1 output names for Reducer.mean.
+humedad 2018: Reducer.setOutputs: Need 1 output names for Reducer.mean.
+humedad 2018: Reducer.setOutputs: Need 1 output names for Reducer.mean.
+humedad 2018 listo
+humedad 2019: Reducer.setOutputs: Need 1 output names for Reducer.mean.
+humedad 2019: Reducer.setOutputs: Need 1 output names for Reducer.mean.
+humedad 2019: Reducer.setOutputs: Need 1 output names for Reducer.mean.
+humedad 2019 listo
+humedad 2020: Reducer.setOutputs: Need 1 output names for Reducer.mean.
+humedad 2020: Reducer.setOutputs: Need 1 output names for Reducer.mean.
+humedad 2020: Reducer.setOutputs: Need 1 output names for Reducer.mean.
+humedad 2020 listo
+humedad 2021: Reducer.setOutputs: Need 1 output names for Reducer.mean.
+humedad 2021: Reducer.setOutputs: Need 1 output names for Reducer.mean.
+humedad 2021: Reducer.setOutputs: Need 1 output names for Reducer.mean.
+humedad 2021 listo
+humedad 2022: Reducer.setOutputs: Need 1 output names for Reducer.mean.
+humedad 2022: Reducer.setOutputs: Need 1 output names for Reducer.mean.
+humedad 2022: Reducer.setOutputs: Need 1 output names for Reducer.mean.
+humedad 2022 listo
+humedad 2023: Reducer.setOutputs: Need 1 output names for Reducer.mean.
+humedad 2023: Reducer.setOutputs: Need 1 output names for Reducer.mean.
+humedad 2023: Reducer.setOutputs: Need 1 output names for Reducer.mean.
+humedad 2023 listo
+humedad 2024: Reducer.setOutputs: Need 1 output names for Reducer.mean.
+humedad 2024: Reducer.setOutputs: Need 1 output names for Reducer.mean.
+humedad 2024: Reducer.setOutputs: Need 1 output names for Reducer.mean.
+humedad 2024 listo
+humedad 2025: Reducer.setOutputs: Need 1 output names for Reducer.mean.
+humedad 2025: Reducer.setOutputs: Need 1 output names for Reducer.mean.
+humedad 2025: Reducer.setOutputs: Need 1 output names for Reducer.mean.
+humedad 2025 listo
+humedad 2026: Reducer.setOutputs: Need 1 output names for Reducer.mean.
+humedad 2026: Reducer.setOutputs: Need 1 output names for Reducer.mean.
+humedad 2026: Reducer.setOutputs: Need 1 output names for Reducer.mean.
+humedad 2026 listo
+lluvia 2001 listo
+lluvia 2002 listo
+lluvia 2003 listo
+lluvia 2004 listo
+lluvia 2005 listo
+lluvia 2006 listo
+lluvia 2007 listo
+lluvia 2008 listo
+lluvia 2009 listo
+lluvia 2010 listo
+lluvia 2011 listo
+lluvia 2012 listo
+lluvia 2013 listo
+lluvia 2014 listo
+lluvia 2015 listo
+lluvia 2016 listo
+lluvia 2017 listo
+lluvia 2018 listo
+lluvia 2019 listo
+lluvia 2020 listo
+lluvia 2021 listo
+lluvia 2022 listo
+lluvia 2023 listo
+lluvia 2024 listo
+lluvia 2025 listo
+lluvia 2026 listo
+Listo en 41 min · 3 de 3 productos
