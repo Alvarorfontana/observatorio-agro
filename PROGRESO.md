@@ -8,13 +8,17 @@ Las reglas de trabajo están en `CLAUDE.md`. El detalle de cada versión está e
 - Crecidas de la Cuenca del Plata: 34 localidades, avisos cada 2 horas (web, correo, Telegram, ntfy).
 - Población expuesta por localidad (altura sobre el río, WorldPop) y barrios populares por radar (RENABAP).
 - El Niño regional, clima de 30 años, heladas y rayos (GOES), focos de fuego, calor.
-- Panel Satelital: aire, nieve, desmontes (NDVI + segunda opinión AlphaEarth), tormentas. Página `/sensores`.
+- Panel Satelital: aire, nieve, desmontes (NDVI + segunda opinión AlphaEarth + confirmación por radar), tormentas. Página `/sensores`.
 - Panel EUDR / vender a Europa. Lente de Relieve (`/lente`).
 - Gestor de Control: informe y avisos de fallas por correo.
 
 ## Registro
 
 ### 2026-11-12
+- Desmontes: **confirmación por radar Sentinel-1** (banda VH) en cada parche. Separa monte cortado de monte seco:
+  −2 dB o menos confirma · −2 a −1 leve · más de −1 sin cambio. Bloque con rangos y barras en el panel, señal en el
+  globo, mínimo de 3 pasadas por ventana. `scripts/radar_desmontes.py`, paso nuevo en `desmonte-ndvi.yml`. No toca
+  la gravedad: los umbrales son orientativos. Pendiente: validar con los diez primeros parches.
 - **Meteograma 7 días** (Clima avanzado → primera pestaña): toda la semana de la localidad en una lámina, idea tomada
   de los meteogramas de weathermodels.com. Cuatro paneles horarios con el eje de tiempo compartido: temperatura y punto
   de rocío (línea de 0 °C), lluvia y probabilidad, viento y ráfagas (umbral de 15 km/h para pulverizar), nubosidad y
