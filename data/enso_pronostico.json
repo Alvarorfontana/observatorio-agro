@@ -1,19 +1,12 @@
 {
- "actualizado": "2026-11-11T18:52Z",
+ "actualizado": "2026-11-12T19:06Z",
  "cpc": {
   "estado": "recibido",
   "fuente": "NOAA Climate Prediction Center",
   "url": "https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso/roni/probabilities/",
-  "emitido": "2026-10",
+  "emitido": "2026-11",
   "indice": "RONI",
   "probabilidades": [
-   {
-    "season": "SON",
-    "year": null,
-    "la_nina": 0,
-    "neutral": 0,
-    "el_nino": 100
-   },
    {
     "season": "OND",
     "year": null,
@@ -53,28 +46,35 @@
     "season": "MAM",
     "year": null,
     "la_nina": 0,
-    "neutral": 15,
-    "el_nino": 85
+    "neutral": 20,
+    "el_nino": 80
    },
    {
     "season": "AMJ",
     "year": null,
     "la_nina": 1,
-    "neutral": 54,
-    "el_nino": 45
+    "neutral": 61,
+    "el_nino": 38
    },
    {
     "season": "MJJ",
     "year": null,
     "la_nina": 13,
-    "neutral": 70,
-    "el_nino": 17
+    "neutral": 75,
+    "el_nino": 12
+   },
+   {
+    "season": "JJA",
+    "year": null,
+    "la_nina": 33,
+    "neutral": 61,
+    "el_nino": 6
    }
   ],
   "grafico": "https://www.cpc.ncep.noaa.gov/archives/enso/roni/images/2026/enso-probs-current.png",
   "nota": "Probabilidades oficiales de NOAA. Desde febrero de 2026 NOAA clasifica El Niño y La Niña con el RONI (índice relativo), que descuenta el calentamiento general del océano.",
   "alerta": "El Niño Advisory",
-  "sinopsis": "El Niño continues to strengthen, with a strong-to-very strong El Niño likely through January-March 2027 (remaining greater than an 83% chance)."
+  "sinopsis": "El Niño continues to strengthen, with a strong-to-very strong El Niño likely through January-March 2027 (remaining greater than a 79% chance)."
  },
  "ccsr_iri": {
   "estado": "sin dato",
