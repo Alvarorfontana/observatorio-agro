@@ -1,0 +1,62 @@
+# Lugares que revisa el gestor de evacuados (scripts/gestor_evacuados.py).
+# Para sumar o sacar un lugar se edita esta lista: no hace falta tocar código.
+#   nivel: pais | provincia | municipio
+#   rio: el río principal del lugar (sólo para ordenar el informe)
+# El gestor busca partes de la última semana en Google Noticias (RSS público, gratuito y sin clave)
+# con las palabras de cada idioma, y extrae las cifras que aparezcan. No inventa números: todo lo que
+# encuentra queda "a verificar" con su enlace.
+
+idiomas:
+  es:
+    palabras: [evacuados, autoevacuados, desplazados, "familias evacuadas", damnificados]
+    google: {hl: es-419, gl: AR, ceid: "AR:es-419"}
+  es-UY:
+    palabras: [evacuados, autoevacuados, desplazados]
+    google: {hl: es-419, gl: UY, ceid: "UY:es-419"}
+  es-PY:
+    palabras: [evacuados, damnificados, "familias afectadas", albergues]
+    google: {hl: es-419, gl: PY, ceid: "PY:es-419"}
+  pt:
+    palabras: [desabrigados, desalojados, "Defesa Civil"]
+    google: {hl: pt-BR, gl: BR, ceid: "BR:pt-419"}
+
+paises:
+  Argentina:
+    idioma: es
+    nacional: [SINAGIR, "Defensa Civil crecida"]
+    provincias:
+      Misiones: {rio: "Paraná, Uruguay e Iguazú", municipios: [Posadas, Puerto Iguazú, Eldorado, El Soberbio, Puerto Rico, Santa Ana, Andresito]}
+      Corrientes: {rio: "Paraná y Uruguay", municipios: [Corrientes, Ituzaingó, Itatí, Paso de la Patria, Bella Vista, Goya, Esquina, Paso de los Libres, Santo Tomé, Monte Caseros]}
+      Chaco: {rio: "Paraná, Paraguay y Bermejo", municipios: [Resistencia, Barranqueras, Puerto Vilelas, Isla del Cerrito]}
+      Formosa: {rio: "Paraguay y Bermejo", municipios: [Formosa, Clorinda, Alberdi]}
+      Santa Fe: {rio: Paraná, municipios: [Santa Fe, Reconquista, Rosario, San Javier, Helvecia]}
+      Entre Ríos: {rio: "Paraná y Uruguay", municipios: [Paraná, La Paz, Hernandarias, Diamante, Victoria, Concordia, Colón, Concepción del Uruguay, Gualeguaychú]}
+      Buenos Aires: {rio: "Paraná y Delta", municipios: [San Nicolás, San Pedro, Zárate, Campana, Tigre]}
+  Uruguay:
+    idioma: es-UY
+    nacional: [Sinae]
+    provincias:
+      Artigas: {rio: "Uruguay y Cuareim", municipios: [Bella Unión]}
+      Salto: {rio: Uruguay, municipios: []}
+      Paysandú: {rio: Uruguay, municipios: []}
+      Río Negro: {rio: Uruguay, municipios: [Fray Bentos]}
+      Soriano: {rio: "Uruguay y Negro", municipios: [Mercedes]}
+      Colonia: {rio: "Río de la Plata", municipios: []}
+  Paraguay:
+    idioma: es-PY
+    nacional: ["Secretaría de Emergencia Nacional"]
+    provincias:
+      Asunción: {rio: Paraguay, municipios: [Bañado Sur, Bañado Norte]}
+      Ñeembucú: {rio: "Paraguay y Paraná", municipios: [Pilar, Alberdi, Cerrito]}
+      Misiones (PY): {rio: Paraná, municipios: [Ayolas, Yabebyry]}
+      Alto Paraná: {rio: Paraná, municipios: [Ciudad del Este, Presidente Franco]}
+      Itapúa: {rio: Paraná, municipios: [Encarnación]}
+      Concepción: {rio: Paraguay, municipios: []}
+  Brasil:
+    idioma: pt
+    nacional: ["Defesa Civil Nacional enchente"]
+    provincias:
+      Rio Grande do Sul: {rio: "Uruguai, Jacuí y Taquari", municipios: [Uruguaiana, São Borja, Itaqui, Porto Alegre]}
+      Santa Catarina: {rio: "Uruguai e Itajaí", municipios: [Chapecó, Rio do Sul]}
+      Paraná (BR): {rio: "Iguaçu y Paraná", municipios: [União da Vitória, Foz do Iguaçu, Guaíra]}
+      Mato Grosso do Sul: {rio: Paraguai, municipios: [Corumbá, Porto Murtinho]}

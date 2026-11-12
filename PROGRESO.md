@@ -15,6 +15,15 @@ Las reglas de trabajo están en `CLAUDE.md`. El detalle de cada versión está e
 ## Registro
 
 ### 2026-11-12
+- **Gestor de evacuados** (`gestor-evacuados.yml`, lunes 08:41): busca cada semana partes de evacuados,
+  autoevacuados, desplazados, desabrigados y desalojados en 95 lugares de Argentina, Uruguay, Paraguay y Brasil
+  (municipios, provincias o estados y organismos nacionales), en Google Noticias (RSS público, sin clave). Saca las
+  cifras del titular, las deja «a verificar» con su enlace y marca los lugares sin novedades. Guarda en la rama
+  datos (`data/evacuados_partes.json` y un histórico) y manda el informe por correo (Resend) y al issue «Partes de
+  evacuados». Lugares en `gestores/evacuados.yml`. Lo vigila el Gestor de Control. Motivo: ningún país publica una
+  base automática de evacuados; sólo hay partes sueltos de SINAGIR, Defensa Civil, SINAE/Cecoed, SEN y Defesa Civil.
+  Pendiente: correr la primera vez a mano y ajustar las palabras si trae ruido; cargar `CONTROL_EMAIL` y
+  `RESEND_API_KEY` para que llegue el correo.
 - Desmontes: **confirmación por radar Sentinel-1** (banda VH) en cada parche. Separa monte cortado de monte seco:
   −2 dB o menos confirma · −2 a −1 leve · más de −1 sin cambio. Bloque con rangos y barras en el panel, señal en el
   globo, mínimo de 3 pasadas por ventana. `scripts/radar_desmontes.py`, paso nuevo en `desmonte-ndvi.yml`. No toca

@@ -1,0 +1,43 @@
+# Gestor de evacuados: una vez por semana busca partes nuevos de evacuados, autoevacuados, desplazados,
+# desabrigados y desalojados en cada municipio, provincia o estado y país de la Cuenca del Plata
+# (Argentina, Uruguay, Paraguay y Brasil). Guarda en la rama datos y manda el informe por correo y al issue
+# «Partes de evacuados». Lugares en gestores/evacuados.yml. Ver scripts/gestor_evacuados.py.
+name: Gestor de evacuados
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "41 11 * * 1"   # lunes 08:41 de Argentina
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: gestor-evacuados
+  cancel-in-progress: false
+
+jobs:
+  evacuados:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Traer datos de la rama datos
+        run: bash scripts/datos_rama.sh traer
+      - name: Buscar partes y mandar el informe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          AVISOS_FROM: ${{ secrets.AVISOS_FROM }}
+          CONTROL_EMAIL: ${{ secrets.CONTROL_EMAIL }}
+        run: |
+          pip install -q requests pyyaml
+          python scripts/gestor_evacuados.py
+      - name: Guardar en la rama datos (no publica la web)
+        if: always()
+        run: |
+          cp scripts/datos_rama.sh /tmp/datos_rama.sh && bash /tmp/datos_rama.sh guardar "Gestor de evacuados $(date -u +%Y-%m-%d)" data/evacuados_partes.json data/evacuados_historico.json
