@@ -36,11 +36,11 @@ jobs:
 
       - name: Código
         if: env.HAS_TOKEN == 'true'
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       - name: Datos privados (lotes y resultados)
         if: env.HAS_TOKEN == 'true'
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           repository: ${{ env.DOTS_DATA_REPO }}
           token: ${{ secrets.DOTS_DATA_TOKEN }}
@@ -48,7 +48,7 @@ jobs:
 
       - name: Python
         if: env.HAS_TOKEN == 'true'
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.11"
           cache: pip
