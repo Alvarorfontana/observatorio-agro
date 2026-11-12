@@ -1,6 +1,21 @@
 {
  "items": [
   {
+   "id": "uruguay-montecaseros",
+   "place": "Monte Caseros",
+   "river": "Uruguay",
+   "from": "Normal",
+   "to": "Atención",
+   "up": true,
+   "height": 5.6,
+   "alert": 7.5,
+   "evac": 8.5,
+   "date": "2026-11-12",
+   "trend_m_day": 0.22,
+   "text": "Monte Caseros (río Uruguay): el nivel sube de Normal a Atención. Altura 5,60 m el 2026-11-12; alerta 7,50 m, evacuación 8,50 m. Tendencia +0,22 m por día.",
+   "at": "2026-11-12T18:23+00:00"
+  },
+  {
    "id": "parana-zarate",
    "place": "Zárate",
    "river": "Paraná",
@@ -826,5 +841,5 @@
    "at": "2026-10-15T18:22+00:00"
   }
  ],
- "updated": "2026-11-11T17:56+00:00"
+ "updated": "2026-11-12T18:23+00:00"
 }
