@@ -7,8 +7,9 @@ Qué hace:
      (Argentina, Uruguay, Paraguay y Brasil).
   2. Para cada lugar busca en Google Noticias (RSS público, gratuito y sin clave) las notas de los últimos 7 días
      con palabras como «evacuados», «autoevacuados», «desplazados», «desabrigados» o «desalojados». Además busca
-     en el sitio de cada organismo oficial (SINAGIR, gobiernos provinciales, SINAE, SEN, Defesa Civil) y en GDELT,
-     una segunda red de noticias, también gratuita y sin clave.
+     en el sitio de cada organismo oficial (SINAGIR, gobiernos provinciales, SINAE, SEN, Defesa Civil, Cruz Roja), en
+     GDELT, una segunda red de noticias, y en IFRC GO, los datos abiertos de la Federación Internacional de la Cruz
+     Roja. Todo gratuito y sin clave.
   3. Saca las cifras que aparecen en el titular (por ejemplo «468 evacuados», «63 familias»). No calcula ni estima:
      cada parte queda «a verificar» con su medio y su enlace.
   4. Guarda todo en la rama datos (data/evacuados_partes.json y un histórico) y manda el informe por correo
@@ -169,6 +170,45 @@ def url_gdelt(palabras, pais_fuente):
             + f"&mode=artlist&format=json&maxrecords=250&timespan={DIAS}d&sort=datedesc")
 
 
+PALABRAS_IFRC = ("flood", "inund", "enchente", "cheia", "niño", "nino", "crecida")
+
+
+def leer_ifrc(json_texto):
+    """Lee la lista de emergencias de IFRC GO y deja solo las de inundación, con sus cifras oficiales.
+    Si la respuesta no tiene el formato esperado, falla para que el informe lo marque."""
+    j = json.loads(json_texto)
+    if "results" not in j:
+        raise ValueError("formato inesperado de IFRC GO")
+    items = []
+    for e in j["results"]:
+        tipo = ((e.get("dtype") or {}).get("name") or "") if isinstance(e.get("dtype"), dict) else str(e.get("dtype") or "")
+        nombre = e.get("name") or ""
+        if not any(k in (tipo + " " + nombre).lower() for k in PALABRAS_IFRC):
+            continue
+        fecha = None
+        for campo in ("updated_at", "disaster_start_date"):
+            try:
+                fecha = datetime.fromisoformat((e.get(campo) or "").replace("Z", "+00:00"))
+                if fecha.tzinfo is None:
+                    fecha = fecha.replace(tzinfo=timezone.utc)
+                break
+            except ValueError:
+                continue
+        nums = []
+        for campo, que in (("num_displaced", "desplazados"), ("num_affected", "afectados")):
+            v = e.get(campo)
+            if isinstance(v, (int, float)) and v > 0:
+                nums.append({"cifra": int(v), "que": que})
+        items.append({"titulo": nombre, "enlace": f"https://go.ifrc.org/emergencies/{e.get('id')}",
+                      "medio": "IFRC GO", "fecha": fecha, "texto": "", "cifras": nums})
+    return items
+
+
+def url_ifrc(iso3):
+    return ("https://goadmin.ifrc.org/api/v2/event/?format=json&limit=50&ordering=-disaster_start_date"
+            f"&countries__iso3={iso3}")
+
+
 def buscar_lugar(titulo, pais, lus):
     """Para notas de GDELT: el lugar más específico de la lista que aparece en el titular."""
     t = titulo.lower()
@@ -198,6 +238,9 @@ def busquedas(cfg):
     for pais, g in (cfg.get("gdelt") or {}).items():
         out.append({"url": url_gdelt(g["palabras"], g["pais_fuente"]), "leer": leer_gdelt,
                     "lugar": None, "pais": pais, "origen": "prensa", "motor": "GDELT"})
+    for pais, iso3 in (cfg.get("ifrc") or {}).items():
+        out.append({"url": url_ifrc(iso3), "leer": leer_ifrc, "lugar": None, "pais": pais,
+                    "origen": "oficial", "motor": "IFRC GO"})
     return out, lus
 
 
@@ -216,7 +259,7 @@ def juntar(cfg, desde, traer=None):
     partes, vistos, errores, sin_partes, oficiales_sin = [], set(), [], [], []
     lista, lus = busquedas(cfg)
     for b in lista:
-        nombre = b["lugar"]["lugar"] if b["lugar"] else f"GDELT {b['pais']}"
+        nombre = b["lugar"]["lugar"] if b["lugar"] else f"{b['motor']} {b['pais']}"
         try:
             items = b["leer"](traer(b["url"]))
         except Exception as e:
@@ -229,7 +272,7 @@ def juntar(cfg, desde, traer=None):
             clave = re.sub(r"\W+", " ", it["titulo"].lower()).strip()
             if not it["titulo"] or it["enlace"] in vistos or clave in vistos:
                 continue
-            nums = cifras(it["titulo"] + " " + it["texto"])
+            nums = it.get("cifras") or cifras(it["titulo"] + " " + it["texto"])
             if not nums:
                 continue  # sin cifra no es un parte: suele ser una nota de contexto
             lu = b["lugar"] or buscar_lugar(it["titulo"], b["pais"], lus)
@@ -367,7 +410,7 @@ def main():
     os.makedirs(os.path.dirname(SALIDA), exist_ok=True)
     with open(SALIDA, "w", encoding="utf-8") as f:
         json.dump({"actualizado": hasta.strftime("%Y-%m-%dT%H:%MZ"), "desde": desde.strftime("%Y-%m-%d"),
-                   "fuente": "Google Noticias (RSS, incluida la búsqueda en sitios oficiales) y GDELT. Cifras a verificar en cada enlace.",
+                   "fuente": "Google Noticias (RSS, incluida la búsqueda en sitios oficiales), GDELT e IFRC GO. Cifras a verificar en cada enlace.",
                    "partes": partes, "sin_partes": sin_partes, "oficiales_sin_partes": oficiales_sin,
                    "errores": errores},
                   f, ensure_ascii=False, indent=1)

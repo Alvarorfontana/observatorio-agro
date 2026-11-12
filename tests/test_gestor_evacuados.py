@@ -110,3 +110,18 @@ def test_gdelt_asigna_lugar_por_titular_y_oficiales():
 
 def test_gdelt_texto_plano_no_rompe():
     assert ge.leer_gdelt("Your query was too short") == []
+
+
+def test_ifrc_solo_inundaciones_con_cifras():
+    ahora = datetime.now(timezone.utc).isoformat()
+    j = ('{"results":[{"id":7,"name":"Argentina: Floods - Oct 2026","dtype":{"name":"Flood"},"updated_at":"%s",'
+         '"num_affected":12000,"num_displaced":3500},{"id":8,"name":"Argentina: Wildfire","dtype":{"name":"Fire"},'
+         '"updated_at":"%s","num_affected":50}]}') % (ahora, ahora)
+    items = ge.leer_ifrc(j)
+    assert len(items) == 1 and items[0]["enlace"] == "https://go.ifrc.org/emergencies/7"
+    assert {"cifra": 3500, "que": "desplazados"} in items[0]["cifras"]
+
+
+def test_ifrc_formato_raro_falla():
+    with pytest.raises(ValueError):
+        ge.leer_ifrc('{"detail":"Not found"}')

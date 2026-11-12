@@ -23,7 +23,8 @@ Las reglas de trabajo están en `CLAUDE.md`. El detalle de cada versión está e
   evacuados». Lugares en `gestores/evacuados.yml`. Lo vigila el Gestor de Control. Motivo: ningún país publica una
   base automática de evacuados; sólo hay partes sueltos de SINAGIR, Defensa Civil, SINAE/Cecoed, SEN y Defesa Civil.
   También busca por dominio en los sitios de 16 organismos oficiales (SINAGIR, gobiernos provinciales, SINAE, SEN,
-  Defesa Civil) y en GDELT como segunda red; avisa qué organismos no publicaron partes con cifras.
+  Defesa Civil, Cruz Roja Argentina), la Agencia Federal de Emergencias, GDELT como segunda red e IFRC GO (datos
+  abiertos de la Cruz Roja internacional); avisa qué organismos no publicaron partes con cifras.
 - **Página `/evacuados`**: mapa de evacuados de la Cuenca del Plata (último parte por zona, tamaño por personas,
   cuadrados para los lugares que solo informan familias, gris para temporales), evolución de personas y de familias,
   tabla «Quién publica datos y quién no» (14 jurisdicciones: 5 sin parte encontrado), registro de 31 partes

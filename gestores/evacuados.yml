@@ -23,7 +23,7 @@ idiomas:
 paises:
   Argentina:
     idioma: es
-    nacional: [SINAGIR, "Defensa Civil crecida"]
+    nacional: [SINAGIR, "Defensa Civil crecida", "Agencia Federal de Emergencias", "Cruz Roja Argentina"]
     provincias:
       Misiones: {rio: "Paraná, Uruguay e Iguazú", municipios: [Posadas, Puerto Iguazú, Eldorado, El Soberbio, Puerto Rico, Santa Ana, Andresito]}
       Corrientes: {rio: "Paraná y Uruguay", municipios: [Corrientes, Ituzaingó, Itatí, Paso de la Patria, Bella Vista, Goya, Esquina, Paso de los Libres, Santo Tomé, Monte Caseros]}
@@ -74,6 +74,7 @@ oficiales:
     - {organismo: "Municipalidad de Santa Fe", jurisdiccion: Santa Fe, dominio: santafeciudad.gov.ar}
     - {organismo: "Gobierno de Misiones", jurisdiccion: Misiones, dominio: misiones.gob.ar}
     - {organismo: "Gobierno de Formosa", jurisdiccion: Formosa, dominio: formosa.gob.ar}
+    - {organismo: "Cruz Roja Argentina (ONG)", jurisdiccion: Nación, dominio: cruzroja.org.ar}
   Uruguay:
     - {organismo: "SINAE / Presidencia", jurisdiccion: Nación, dominio: gub.uy}
   Paraguay:
@@ -92,3 +93,12 @@ gdelt:
   Uruguay: {pais_fuente: uruguay, palabras: [desplazados, evacuados]}
   Paraguay: {pais_fuente: paraguay, palabras: [damnificados, evacuados]}
   Brasil: {pais_fuente: brazil, palabras: [desabrigados, desalojados]}
+
+# IFRC GO (Federación Internacional de la Cruz Roja, goadmin.ifrc.org): datos abiertos, gratuitos y sin clave.
+# Lista las emergencias de inundación de cada país con sus cifras de afectados y desplazados.
+# Formato a confirmar en la primera corrida: si la API cambia, el informe lo marca como búsqueda fallida.
+ifrc:
+  Argentina: ARG
+  Uruguay: URY
+  Paraguay: PRY
+  Brasil: BRA
