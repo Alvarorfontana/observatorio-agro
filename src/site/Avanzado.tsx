@@ -7,6 +7,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import * as echarts from "echarts/core";
 import { CULTIVOS } from "./Cultivos";
+import { Meteograma } from "./Meteograma";
 import { analizarFrentes, tono as tonoF, HOURLY as F_HOURLY, DAILY as F_DAILY, UMB } from "./frentes";
 
 type Data = Record<string, any>;
@@ -48,13 +49,14 @@ export function lavadoNitratos(p: { lluvia: number[]; et0: number[]; kc: number;
   return { dias, drenaje: drena, nSuelo, nTot, f, nLavado: nTot * f };
 }
 
-const TABS = [["d16", "Pronóstico 16 días"], ["presion", "Presión y frentes"], ["comp", "Comparar localidades"], ["viento", "Viento en altura"], ["tormentas", "Tormentas severas"], ["aire", "Calidad del aire"], ["nitratos", "Lavado de nitratos"]] as const;
+const TABS = [["meteo", "Meteograma 7 días"], ["d16", "Pronóstico 16 días"], ["presion", "Presión y frentes"], ["comp", "Comparar localidades"], ["viento", "Viento en altura"], ["tormentas", "Tormentas severas"], ["aire", "Calidad del aire"], ["nitratos", "Lavado de nitratos"]] as const;
 
 export function Avanzado({ place, cultivo }: { place: Data; cultivo: string }) {
-  const [tab, setTab] = useState("d16");
+  const [tab, setTab] = useState("meteo");
   return <section className="cult-sec cult-avz">
     <h3>Clima avanzado</h3>
     <div className="cult-tabs no-print">{TABS.map(([id, t]) => <button key={id} className={tab === id ? "on" : ""} onClick={() => setTab(id)}>{t}</button>)}</div>
+    {tab === "meteo" && <Meteograma place={place} />}
     {tab === "d16" && <D16 place={place} />}
     {tab === "presion" && <Presion place={place} />}
     {tab === "comp" && <Comparar place={place} />}
