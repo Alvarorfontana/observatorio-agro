@@ -2795,6 +2795,7 @@ function HomeLead({onDemo}:{onDemo:()=>void}){
         <div className="hl-now-heading"><div><span className="hl-now-eyebrow">OBSERVATORIO EN VIVO</span><h2>Ahora en la región</h2><p>Indicadores y accesos a las consultas territoriales</p></div><span className="hl-now-mark" aria-hidden="true">↗</span></div>
         <SiteLink to="/alertas" className="hl-stat"><span>Ríos de la Cuenca del Plata</span><b>{riosTxt}</b><small>{riosSub}</small><em>Fuente: INA y Prefectura Naval</em></SiteLink>
         <SiteLink to="/panel" className="hl-stat"><span>El Niño</span><b>{ninoTxt}</b><small>{ninoSub}</small><em>Fuente: NOAA CPC{nino?.status?` · ${nino.status.es}`:""}</em></SiteLink>
+        <a href="/evacuados" className="hl-stat"><span>Evacuados por la crecida</span><b>Mapa de evacuados de la Cuenca del Plata</b><small>Último parte de cada provincia y país, con su fuente, y qué organismos no publican datos</small><em>Fuente: Defensa Civil, SINAE, SEN y Defesa Civil · relevamiento DOTS</em></a>
         <a href="/poblacion" className="hl-stat"><span>Población y riesgo climático</span><b>¿Cuánta gente vive en la zona afectada?</b><small>Dibujá el área de inundación, sequía o fuego y obtené el informe</small><em>Fuente: WorldPop · Universidad de Southampton</em></a>
         <SiteLink to="/focos" className="hl-stat"><span>Fuego, rayos y heladas</span><b>Focos de calor de hoy</b><small>Cuatro satélites de la NASA, rayos de las últimas 3 horas y heladas de anoche</small><em>Fuente: NASA FIRMS · NOAA GOES-19</em></SiteLink>
         <SiteLink to="/libre-deforestacion" className="hl-stat"><span>Exportar a la Unión Europea</span><b>EUDR desde el 30/12/2026</b><small>Corte de deforestación: 31/12/2020</small><em>Fuente: Reglamento (UE) 2023/1115</em></SiteLink>
@@ -2945,6 +2946,10 @@ function NinoCrecidasPage({onDemo}:{onDemo:()=>void}){
     <PageHero eyebrow="EL NIÑO Y LAS CRECIDAS" title="De un viento en el Pacífico al agua que entra en el pueblo." lead="El Niño ordena la lluvia; la lluvia mueve el río; el río define hasta dónde llega el agua en cada crecida. Acá está la cadena completa: estado oficial del Pacífico, caudales y alturas de la Cuenca del Plata, la amenaza de crecida por período de retorno del JRC y quién vive en zona inundable."/>
     <Suspense fallback={null}><CuencaPanel/></Suspense>
     <Suspense fallback={null}><NinoCrecidas/></Suspense>
+    <section className="about-block"><div className="about-side"><span className="module-num">EVACUADOS</span><h2>Cuánta gente dejó su casa</h2></div><div className="about-text">
+      <p>Mapa y registro de evacuados y autoevacuados en Argentina, Uruguay, Paraguay y Brasil, con la fecha y la fuente de cada cifra. También muestra qué organismos de emergencia no publican partes.</p>
+      <p><a className="module-action-link" href="/evacuados">Ver el mapa de evacuados →</a></p>
+    </div></section>
     <AvisosBox/>
     <section className="demo-call"><div><span className="section-tag">TU CAMPO</span><h2>Bajá de la cuenca a tu potrero.</h2><p>En el Observatorio ves el relieve, los bajos que se anegan y el agua detectada por satélite en tu lote.</p></div><button onClick={onDemo}>Abrir Observatorio →</button></section>
   </main><SiteFooter/></div>;

@@ -1,0 +1,104 @@
+# Lugares que revisa el gestor de evacuados (scripts/gestor_evacuados.py).
+# Para sumar o sacar un lugar se edita esta lista: no hace falta tocar código.
+#   nivel: pais | provincia | municipio
+#   rio: el río principal del lugar (sólo para ordenar el informe)
+# El gestor busca partes de la última semana en Google Noticias (RSS público, gratuito y sin clave)
+# con las palabras de cada idioma, y extrae las cifras que aparezcan. No inventa números: todo lo que
+# encuentra queda "a verificar" con su enlace.
+
+idiomas:
+  es:
+    palabras: [evacuados, autoevacuados, desplazados, "familias evacuadas", damnificados]
+    google: {hl: es-419, gl: AR, ceid: "AR:es-419"}
+  es-UY:
+    palabras: [evacuados, autoevacuados, desplazados]
+    google: {hl: es-419, gl: UY, ceid: "UY:es-419"}
+  es-PY:
+    palabras: [evacuados, damnificados, "familias afectadas", albergues]
+    google: {hl: es-419, gl: PY, ceid: "PY:es-419"}
+  pt:
+    palabras: [desabrigados, desalojados, "Defesa Civil"]
+    google: {hl: pt-BR, gl: BR, ceid: "BR:pt-419"}
+
+paises:
+  Argentina:
+    idioma: es
+    nacional: [SINAGIR, "Defensa Civil crecida", "Agencia Federal de Emergencias", "Cruz Roja Argentina"]
+    provincias:
+      Misiones: {rio: "Paraná, Uruguay e Iguazú", municipios: [Posadas, Puerto Iguazú, Eldorado, El Soberbio, Puerto Rico, Santa Ana, Andresito]}
+      Corrientes: {rio: "Paraná y Uruguay", municipios: [Corrientes, Ituzaingó, Itatí, Paso de la Patria, Bella Vista, Goya, Esquina, Paso de los Libres, Santo Tomé, Monte Caseros]}
+      Chaco: {rio: "Paraná, Paraguay y Bermejo", municipios: [Resistencia, Barranqueras, Puerto Vilelas, Isla del Cerrito]}
+      Formosa: {rio: "Paraguay y Bermejo", municipios: [Formosa, Clorinda, Alberdi]}
+      Santa Fe: {rio: Paraná, municipios: [Santa Fe, Reconquista, Rosario, San Javier, Helvecia]}
+      Entre Ríos: {rio: "Paraná y Uruguay", municipios: [Paraná, La Paz, Hernandarias, Diamante, Victoria, Concordia, Colón, Concepción del Uruguay, Gualeguaychú]}
+      Buenos Aires: {rio: "Paraná y Delta", municipios: [San Nicolás, San Pedro, Zárate, Campana, Tigre]}
+  Uruguay:
+    idioma: es-UY
+    nacional: [Sinae]
+    provincias:
+      Artigas: {rio: "Uruguay y Cuareim", municipios: [Bella Unión]}
+      Salto: {rio: Uruguay, municipios: []}
+      Paysandú: {rio: Uruguay, municipios: []}
+      Río Negro: {rio: Uruguay, municipios: [Fray Bentos]}
+      Soriano: {rio: "Uruguay y Negro", municipios: [Mercedes]}
+      Colonia: {rio: "Río de la Plata", municipios: []}
+  Paraguay:
+    idioma: es-PY
+    nacional: ["Secretaría de Emergencia Nacional"]
+    provincias:
+      Asunción: {rio: Paraguay, municipios: [Bañado Sur, Bañado Norte]}
+      Ñeembucú: {rio: "Paraguay y Paraná", municipios: [Pilar, Alberdi, Cerrito]}
+      Misiones (PY): {rio: Paraná, municipios: [Ayolas, Yabebyry]}
+      Alto Paraná: {rio: Paraná, municipios: [Ciudad del Este, Presidente Franco]}
+      Itapúa: {rio: Paraná, municipios: [Encarnación]}
+      Concepción: {rio: Paraguay, municipios: []}
+  Brasil:
+    idioma: pt
+    nacional: ["Defesa Civil Nacional enchente"]
+    provincias:
+      Rio Grande do Sul: {rio: "Uruguai, Jacuí y Taquari", municipios: [Uruguaiana, São Borja, Itaqui, Porto Alegre]}
+      Santa Catarina: {rio: "Uruguai e Itajaí", municipios: [Chapecó, Rio do Sul]}
+      Paraná (BR): {rio: "Iguaçu y Paraná", municipios: [União da Vitória, Foz do Iguaçu, Guaíra]}
+      Mato Grosso do Sul: {rio: Paraguai, municipios: [Corumbá, Porto Murtinho]}
+
+# Organismos oficiales: además de la búsqueda general, el gestor busca partes publicados en el sitio de cada
+# organismo (búsqueda por dominio en Google Noticias). Si un dominio no trae nada en varias semanas, el informe
+# lo marca: puede ser que el organismo no publique partes o que el dominio haya cambiado.
+oficiales:
+  Argentina:
+    - {organismo: "SINAGIR (Nación)", jurisdiccion: Nación, dominio: argentina.gob.ar}
+    - {organismo: "Gobierno de Corrientes", jurisdiccion: Corrientes, dominio: corrientes.gob.ar}
+    - {organismo: "Gobierno del Chaco", jurisdiccion: Chaco, dominio: chaco.gob.ar}
+    - {organismo: "Gobierno de Entre Ríos", jurisdiccion: Entre Ríos, dominio: entrerios.gov.ar}
+    - {organismo: "Gobierno de Santa Fe", jurisdiccion: Santa Fe, dominio: santafe.gob.ar}
+    - {organismo: "Municipalidad de Santa Fe", jurisdiccion: Santa Fe, dominio: santafeciudad.gov.ar}
+    - {organismo: "Gobierno de Misiones", jurisdiccion: Misiones, dominio: misiones.gob.ar}
+    - {organismo: "Gobierno de Formosa", jurisdiccion: Formosa, dominio: formosa.gob.ar}
+    - {organismo: "Cruz Roja Argentina (ONG)", jurisdiccion: Nación, dominio: cruzroja.org.ar}
+  Uruguay:
+    - {organismo: "SINAE / Presidencia", jurisdiccion: Nación, dominio: gub.uy}
+  Paraguay:
+    - {organismo: "Secretaría de Emergencia Nacional", jurisdiccion: Nación, dominio: sen.gov.py}
+    - {organismo: "Agencia IP (gobierno)", jurisdiccion: Nación, dominio: ip.gov.py}
+  Brasil:
+    - {organismo: "Defesa Civil RS", jurisdiccion: Rio Grande do Sul, dominio: defesacivil.rs.gov.br}
+    - {organismo: "Governo do RS", jurisdiccion: Rio Grande do Sul, dominio: estado.rs.gov.br}
+    - {organismo: "Defesa Civil SC", jurisdiccion: Santa Catarina, dominio: defesacivil.sc.gov.br}
+    - {organismo: "Defesa Civil PR", jurisdiccion: Paraná (BR), dominio: defesacivil.pr.gov.br}
+    - {organismo: "Agência Brasil (gobierno federal)", jurisdiccion: Nación, dominio: agenciabrasil.ebc.com.br}
+
+# GDELT (api.gdeltproject.org, gratuito y sin clave): segunda red de noticias del mundo, por país de origen del medio.
+gdelt:
+  Argentina: {pais_fuente: argentina, palabras: [evacuados, autoevacuados]}
+  Uruguay: {pais_fuente: uruguay, palabras: [desplazados, evacuados]}
+  Paraguay: {pais_fuente: paraguay, palabras: [damnificados, evacuados]}
+  Brasil: {pais_fuente: brazil, palabras: [desabrigados, desalojados]}
+
+# IFRC GO (Federación Internacional de la Cruz Roja, goadmin.ifrc.org): datos abiertos, gratuitos y sin clave.
+# Lista las emergencias de inundación de cada país con sus cifras de afectados y desplazados.
+# Formato a confirmar en la primera corrida: si la API cambia, el informe lo marca como búsqueda fallida.
+ifrc:
+  Argentina: ARG
+  Uruguay: URY
+  Paraguay: PRY
+  Brasil: BRA

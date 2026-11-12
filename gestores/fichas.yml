@@ -38,6 +38,7 @@ vigia:
     - {workflow: avisos.yml, max_horas: 4}
     - {workflow: nino-crecidas.yml, max_horas: 4}
     - {workflow: avisos-nino.yml, max_horas: 30}
+    - {workflow: gestor-evacuados.yml, max_horas: 200}
 
 control:
   nombre: Control
@@ -54,6 +55,7 @@ control:
     data/enso_pronostico.json: 30
     data/rinde_agua.json: 200
     data/enso_tao.json: 120
+    data/evacuados_partes.json: 200
   avisos:
     correo: true          # Resend: secretos RESEND_API_KEY y CONTROL_EMAIL (tu dirección, no va en el código)
     telegram: true        # usa los secretos TELEGRAM_BOT_TOKEN y TELEGRAM_CHAT_ID

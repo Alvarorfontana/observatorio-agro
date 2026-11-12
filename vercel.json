@@ -63,7 +63,11 @@
       "destination": "/sensores/index.html"
     },
     {
-      "source": "/((?!api/|ftw/|dem/|assets/|poblacion|avisos-widget|campo|radar|agricultura-precision|lente|satelital|nino-diario|informes|sensores).*)",
+      "source": "/evacuados",
+      "destination": "/evacuados/index.html"
+    },
+    {
+      "source": "/((?!api/|ftw/|dem/|assets/|poblacion|avisos-widget|campo|radar|agricultura-precision|lente|satelital|nino-diario|informes|sensores|evacuados).*)",
       "destination": "/index.html"
     }
   ],

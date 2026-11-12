@@ -15,6 +15,26 @@ Las reglas de trabajo están en `CLAUDE.md`. El detalle de cada versión está e
 ## Registro
 
 ### 2026-11-12
+- **Gestor de evacuados** (`gestor-evacuados.yml`, lunes 08:41): busca cada semana partes de evacuados,
+  autoevacuados, desplazados, desabrigados y desalojados en 95 lugares de Argentina, Uruguay, Paraguay y Brasil
+  (municipios, provincias o estados y organismos nacionales), en Google Noticias (RSS público, sin clave). Saca las
+  cifras del titular, las deja «a verificar» con su enlace y marca los lugares sin novedades. Guarda en la rama
+  datos (`data/evacuados_partes.json` y un histórico) y manda el informe por correo (Resend) y al issue «Partes de
+  evacuados». Lugares en `gestores/evacuados.yml`. Lo vigila el Gestor de Control. Motivo: ningún país publica una
+  base automática de evacuados; sólo hay partes sueltos de SINAGIR, Defensa Civil, SINAE/Cecoed, SEN y Defesa Civil.
+  También busca por dominio en los sitios de 16 organismos oficiales (SINAGIR, gobiernos provinciales, SINAE, SEN,
+  Defesa Civil, Cruz Roja Argentina), la Agencia Federal de Emergencias, GDELT como segunda red e IFRC GO (datos
+  abiertos de la Cruz Roja internacional); avisa qué organismos no publicaron partes con cifras.
+- **Página `/evacuados`**: mapa de evacuados de la Cuenca del Plata (último parte por zona, tamaño por personas,
+  cuadrados para los lugares que solo informan familias, gris para temporales), evolución de personas y de familias,
+  tabla «Quién publica datos y quién no» (14 jurisdicciones: 5 sin parte encontrado), registro de 31 partes
+  verificados con fuente y CSV, lo que detectó el gestor esta semana «a verificar», rangos de lectura y límites.
+  **Informe por región** (toda la cuenca, país o provincia): último parte por zona y cómo cambió, gráfico, quién
+  publica datos en esa región, partes con fuente, límites; se guarda en PDF o CSV y se comparte con un enlace
+  (`/evacuados#corrientes`). Datos verificados en `public/evacuados/base.json`; lo del gestor se lee de la rama datos. Enlaces desde la portada
+  («Ahora en la región») y desde El Niño y crecidas.
+  Pendiente: correr el gestor la primera vez a mano y ajustar las palabras si trae ruido; pasar a mano al registro
+  los partes que se confirmen; cargar `CONTROL_EMAIL` y `RESEND_API_KEY` para que llegue el correo.
 - Desmontes: **confirmación por radar Sentinel-1** (banda VH) en cada parche. Separa monte cortado de monte seco:
   −2 dB o menos confirma · −2 a −1 leve · más de −1 sin cambio. Bloque con rangos y barras en el panel, señal en el
   globo, mínimo de 3 pasadas por ventana. `scripts/radar_desmontes.py`, paso nuevo en `desmonte-ndvi.yml`. No toca
