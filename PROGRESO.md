@@ -14,6 +14,13 @@ Las reglas de trabajo están en `CLAUDE.md`. El detalle de cada versión está e
 
 ## Registro
 
+### 2026-11-12
+- **Meteograma 7 días** (Clima avanzado → primera pestaña): toda la semana de la localidad en una lámina, idea tomada
+  de los meteogramas de weathermodels.com. Cuatro paneles horarios con el eje de tiempo compartido: temperatura y punto
+  de rocío (línea de 0 °C), lluvia y probabilidad, viento y ráfagas (umbral de 15 km/h para pulverizar), nubosidad y
+  humedad. Tabla diaria con avisos (helada, rocío, ráfagas, lluvia intensa) y rangos de lectura. Open-Meteo, sin clave.
+  `src/site/Meteograma.tsx`.
+
 ### 2026-11-11
 - Desmontes: **segunda opinión AlphaEarth** (mapas anuales de Google DeepMind) en cada parche, con umbrales
   (menos de 0,70 cambio fuerte · 0,70 a 0,90 moderado · 0,90 o más sin cambio), bloque destacado y barras.
