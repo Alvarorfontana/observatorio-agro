@@ -2,7 +2,7 @@ import importlib.util
 import os
 from datetime import datetime, timedelta, timezone
 
-import yaml
+import pytest
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 spec = importlib.util.spec_from_file_location("gestor_evacuados", os.path.join(RAIZ, "scripts", "gestor_evacuados.py"))
@@ -73,6 +73,7 @@ def test_informe_formal_sin_emojis():
 
 
 def test_lista_de_lugares_valida():
+    yaml = pytest.importorskip("yaml")
     with open(os.path.join(RAIZ, "gestores", "evacuados.yml"), encoding="utf-8") as f:
         cfg = yaml.safe_load(f)
     lus = ge.lugares(cfg)

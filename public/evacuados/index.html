@@ -78,7 +78,21 @@ td.fecha { font-family: var(--mono); white-space: nowrap; }
   .rangos div { grid-template-columns: 1fr; gap: 2px; }
   .ocultar-movil { display: none; }
 }
-@media print { .controles, #mapa { display: none; } .bloque { break-inside: avoid; } }
+.informe-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+select { font: 14px var(--sans); color: var(--fg); background: var(--chip); border: 1px solid var(--line); border-radius: 6px; padding: 7px 9px; min-width: 220px; }
+#informe:empty { display: none; }
+#informe { border: 1px solid var(--line); border-radius: 8px; padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+#informe h3 { margin: 0; font-size: 20px; letter-spacing: -0.01em; }
+#informe .meta { font-family: var(--mono); font-size: 12px; color: var(--muted); margin: 0; }
+#informe .resumen { margin: 0; max-width: 78ch; }
+#informe .lienzo { height: 260px; }
+#informe ul { margin: 0; padding-left: 20px; }
+@media print {
+  body.imprimir-informe .wrap > *:not(#bloque-informe) { display: none !important; }
+  body.imprimir-informe #bloque-informe { border: 0; padding: 0; }
+  body.imprimir-informe #bloque-informe > h2, body.imprimir-informe #bloque-informe > p, body.imprimir-informe .informe-form, body.imprimir-informe .no-imprimir { display: none !important; }
+  .controles, #mapa { display: none; } .bloque { break-inside: avoid; }
+}
 </style>
 </head>
 <body>
@@ -104,6 +118,17 @@ td.fecha { font-family: var(--mono); white-space: nowrap; }
       <span><i class="fam" style="width:14px;height:14px;border-color:var(--accent)"></i>solo familias</span>
       <span><i style="width:14px;height:14px;border-color:var(--temporal)"></i>temporal, no crecida de río</span>
     </div>
+  </section>
+
+  <section class="bloque" id="bloque-informe">
+    <h2>Pedir un informe por región</h2>
+    <p>Elegí toda la cuenca, un país o una provincia. El informe junta el último parte, cómo cambió, todos los partes con su fuente y qué organismos publican datos en esa región. Se puede guardar en PDF o bajar en CSV.</p>
+    <div class="informe-form">
+      <label for="sel-region" class="ocultar-movil" style="font-size:13px;color:var(--muted)">Región</label>
+      <select id="sel-region" aria-label="Región del informe"></select>
+      <button type="button" class="btn primario" id="b-informe">Ver informe</button>
+    </div>
+    <div id="informe" aria-live="polite"></div>
   </section>
 
   <div class="dos">
@@ -277,7 +302,7 @@ td.fecha { font-family: var(--mono); white-space: nowrap; }
     g.setOption({
       color: paleta, animation: false,
       textStyle: { fontFamily: 'IBM Plex Sans, system-ui, sans-serif', color: css('--fg') },
-      grid: { left: 52, right: 16, top: 34, bottom: 30 },
+      grid: { left: 52, right: 52, top: 34, bottom: 30 },
       legend: { top: 0, textStyle: { color: css('--muted') } },
       tooltip: { trigger: 'axis', valueFormatter: function (v) { return n(v); } },
       xAxis: { type: 'time', axisLabel: { color: css('--muted'), formatter: '{dd}/{MM}' }, axisLine: { lineStyle: { color: css('--line') } } },
@@ -326,14 +351,15 @@ td.fecha { font-family: var(--mono); white-space: nowrap; }
     };
   }
 
-  function csv() {
+  function csv(lista, nombre) {
+    lista = Array.isArray(lista) ? lista : D.partes;
     var cols = ['fecha', 'pais', 'provincia', 'zona', 'rio', 'total', 'evacuados', 'autoevacuados', 'familias', 'organismo', 'medio', 'enlace', 'nota', 'tipo'];
-    var txt = cols.join(',') + '\n' + D.partes.map(function (p) {
+    var txt = cols.join(',') + '\n' + lista.map(function (p) {
       return cols.map(function (c) { var v = p[c] == null ? '' : String(p[c]); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(',');
     }).join('\n');
     var a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob(['﻿' + txt], { type: 'text/csv;charset=utf-8' }));
-    a.download = 'dots-evacuados-cuenca-del-plata.csv'; a.click();
+    a.download = nombre || 'dots-evacuados-cuenca-del-plata.csv'; a.click();
   }
 
   function gestor(j) {
@@ -354,6 +380,88 @@ td.fecha { font-family: var(--mono); white-space: nowrap; }
     caja.innerHTML = html;
   }
 
+  // ---- Informe por región ----
+  function regiones() {
+    var out = [['cuenca', 'Toda la Cuenca del Plata']];
+    PAISES.slice(1).forEach(function (pa) {
+      if (!D.partes.some(function (p) { return p.pais === pa; })) return;
+      out.push(['pais:' + pa, pa + ' (todo el país)']);
+      var provs = [];
+      D.partes.forEach(function (p) { if (p.pais === pa && provs.indexOf(p.provincia) < 0) provs.push(p.provincia); });
+      provs.sort().forEach(function (pr) { out.push(['prov:' + pa + ':' + pr, '   ' + pr]); });
+    });
+    return out;
+  }
+  function filtrar(region) {
+    if (region === 'cuenca') return D.partes.slice();
+    var x = region.split(':');
+    return D.partes.filter(function (p) { return p.pais === x[1] && (x[0] === 'pais' || p.provincia === x[2]); });
+  }
+  function nombreRegion(region) { var r = regiones().filter(function (x) { return x[0] === region; })[0]; return r ? r[1].trim() : region; }
+  function slug(t) { return t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
+
+  function informe(region) {
+    var partes = filtrar(region).sort(function (a, b) { return a.fecha < b.fecha ? -1 : 1; });
+    var caja = $('informe');
+    if (!partes.length) { caja.innerHTML = '<p>No hay partes verificados para esta región.</p>'; return; }
+    var x = region.split(':');
+    var orgs = D.organismos.filter(function (o) {
+      if (region === 'cuenca') return true;
+      if (o.pais !== x[1]) return false;
+      return x[0] === 'pais' || o.jurisdiccion === x[2] || o.jurisdiccion === 'Nación' || x[2].indexOf(o.jurisdiccion) === 0;
+    });
+    var zonas = {};
+    partes.forEach(function (p) { (zonas[p.zona] = zonas[p.zona] || []).push(p); });
+    var lineas = Object.keys(zonas).map(function (z) {
+      var s = zonas[z], u = s[s.length - 1], prim = s[0];
+      var actual = u.total != null ? n(u.total) + ' personas' : esc(u.familias || '—');
+      var cambio = '';
+      if (s.length > 1 && u.total != null && prim.total != null) {
+        var d = u.total - prim.total;
+        cambio = ' Desde el ' + fechaLarga(prim.fecha) + ' ' + (d > 0 ? 'subió ' + n(d) : d < 0 ? 'bajó ' + n(-d) : 'no cambió') + (d ? ' (' + n(prim.total) + ' → ' + n(u.total) + ')' : '') + '.';
+      }
+      return '<li><b>' + esc(lugar(u)) + ':</b> ' + actual + ' según el parte del ' + fechaLarga(u.fecha) + ' (' + esc(u.organismo) + ').' + cambio +
+        (u.tipo === 'temporal' ? ' Temporal, no crecida de río.' : '') + '</li>';
+    }).join('');
+    var sinParte = orgs.filter(function (o) { return o.estado === 'no'; });
+    var hoy = new Date();
+    var html = '<h3>Informe de evacuados · ' + esc(nombreRegion(region)) + '</h3>' +
+      '<p class="meta">DOTS · Observatorio de la Cuenca del Plata · emitido el ' + hoy.toLocaleDateString('es-AR') + ' · registro verificado al ' + fechaLarga(D.actualizado) + '</p>' +
+      '<p class="resumen">' + partes.length + ' partes verificados entre el ' + fechaLarga(partes[0].fecha) + ' y el ' + fechaLarga(partes[partes.length - 1].fecha) + ', de ' + Object.keys(zonas).length + ' zona' + (Object.keys(zonas).length > 1 ? 's' : '') + '. Las cifras de distintas zonas no se suman porque tienen fechas y formas de contar distintas.</p>' +
+      '<h4 style="margin:4px 0 0">Último parte por zona</h4><ul>' + lineas + '</ul>' +
+      '<div class="lienzo" id="g-informe" role="img" aria-label="Evolución en la región"></div>' +
+      '<h4 style="margin:4px 0 0">Quién publica datos en esta región</h4><ul>' + orgs.map(function (o) {
+        return '<li>' + esc(o.jurisdiccion === 'Nación' ? o.pais : o.jurisdiccion) + ' · ' + esc(o.organismo) + ': <span class="pill ' + o.estado + '">' + ESTADO[o.estado] + '</span> ' + esc(o.detalle) + '</li>';
+      }).join('') + '</ul>' +
+      (sinParte.length ? '<p class="nota"><b>Sin datos públicos:</b> en ' + sinParte.map(function (o) { return esc(o.jurisdiccion === 'Nación' ? o.pais : o.jurisdiccion); }).join(', ') + ' no encontramos partes de evacuados. Puede haber personas fuera de su casa que no figuran en este informe.</p>' : '') +
+      '<h4 style="margin:4px 0 0">Partes y fuentes</h4><div class="tabla-scroll"><table><thead><tr><th>Fecha</th><th>Lugar</th><th>Total</th><th>Evac.</th><th>Autoevac.</th><th>Familias</th><th>Fuente</th></tr></thead><tbody>' +
+      partes.slice().reverse().map(function (p) {
+        return '<tr><td class="fecha">' + fecha(p.fecha) + '</td><td>' + esc(lugar(p)) + '</td><td class="num">' + n(p.total) + '</td><td class="num">' + n(p.evacuados) + '</td><td class="num">' + n(p.autoevacuados) + '</td><td>' + esc(p.familias || '—') + '</td><td><a href="' + esc(p.enlace) + '" target="_blank" rel="noopener">' + esc(p.medio) + '</a></td></tr>';
+      }).join('') + '</tbody></table></div>' +
+      '<p class="nota">Límites: DOTS no cuenta evacuados; junta lo que publican los organismos y la prensa. Evacuado = en un centro del Estado (en Brasil, desabrigado). Autoevacuado = en casa de familiares o amigos (desalojado). Este informe no reemplaza los partes de Defensa Civil.</p>' +
+      '<div class="controles no-imprimir"><button type="button" class="btn primario" id="b-pdf">Guardar el informe en PDF</button><button type="button" class="btn" id="b-csv-region">Bajar estos partes en CSV</button></div>';
+    caja.innerHTML = html;
+    var series = Object.keys(zonas).map(function (z) {
+      var s = zonas[z], conTotal = s.some(function (p) { return p.total != null; });
+      return [lugar(s[0]).split(' · ')[0] + (conTotal ? '' : ' (familias)'), s.map(function (p) { return [p.fecha, p.total != null ? p.total : numFam(p)]; }).filter(function (v) { return v[1] != null; })];
+    }).filter(function (s) { return s[1].length; });
+    if (series.length) grafico('g-informe', series.slice(0, 6)); else $('g-informe').remove();
+    $('b-pdf').onclick = function () { document.body.classList.add('imprimir-informe'); window.print(); setTimeout(function () { document.body.classList.remove('imprimir-informe'); }, 500); };
+    $('b-csv-region').onclick = function () { csv(partes, 'dots-evacuados-' + slug(nombreRegion(region)) + '.csv'); };
+    try { history.replaceState(null, '', '#' + slug(nombreRegion(region))); } catch (e) {}
+  }
+
+  function prepararInforme() {
+    var regs = regiones();
+    $('sel-region').innerHTML = regs.map(function (r) { return '<option value="' + esc(r[0]) + '">' + esc(r[1]).replace(/^ +/, '&nbsp;&nbsp;&nbsp;') + '</option>'; }).join('');
+    $('b-informe').onclick = function () { informe($('sel-region').value); };
+    var h = (location.hash || '').slice(1);
+    if (h) {
+      var r = regs.filter(function (x) { return slug(x[1].trim()) === h; })[0];
+      if (r) { $('sel-region').value = r[0]; informe(r[0]); setTimeout(function () { $('bloque-informe').scrollIntoView(); }, 300); }
+    }
+  }
+
   fetch(BASE, { cache: 'no-cache' }).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) {
     D = j;
     $('estado').textContent = 'Registro verificado al ' + fechaLarga(D.actualizado) + ' · ' + D.partes.length + ' partes de ' + new Set(D.partes.map(function (p) { return p.pais; })).size + ' países.';
@@ -361,7 +469,8 @@ td.fecha { font-family: var(--mono); white-space: nowrap; }
     chips('filtro-mapa', function (p) { filtroMapa = p; dibujarMapa(); }, filtroMapa);
     chips('filtro-tabla', function (p) { filtroTabla = p; tabla(); }, filtroTabla);
     dibujarMapa(); graficos_(); organismos(); tabla();
-    $('b-csv').onclick = csv;
+    $('b-csv').onclick = function () { csv(); };
+    prepararInforme();
   }).catch(function () { $('estado').textContent = 'No se pudo cargar el registro. Probá recargar la página.'; });
 
   fetch(GESTOR, { cache: 'no-cache' }).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(gestor).catch(function () { gestor(null); });

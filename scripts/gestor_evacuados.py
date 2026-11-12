@@ -35,7 +35,6 @@ from email.utils import parsedate_to_datetime
 from urllib.parse import quote, unquote
 
 import requests
-import yaml
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LUGARES = os.path.join(RAIZ, "gestores", "evacuados.yml")
@@ -358,6 +357,7 @@ def guardar_historico(partes):
 
 
 def main():
+    import yaml  # sólo para leer la lista de lugares; así las pruebas corren sin PyYAML
     sin_envio = "--sin-envio" in sys.argv
     with open(LUGARES, encoding="utf-8") as f:
         cfg = yaml.safe_load(f)

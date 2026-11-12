@@ -28,7 +28,9 @@ Las reglas de trabajo están en `CLAUDE.md`. El detalle de cada versión está e
   cuadrados para los lugares que solo informan familias, gris para temporales), evolución de personas y de familias,
   tabla «Quién publica datos y quién no» (14 jurisdicciones: 5 sin parte encontrado), registro de 31 partes
   verificados con fuente y CSV, lo que detectó el gestor esta semana «a verificar», rangos de lectura y límites.
-  Datos verificados en `public/evacuados/base.json`; lo del gestor se lee de la rama datos. Enlaces desde la portada
+  **Informe por región** (toda la cuenca, país o provincia): último parte por zona y cómo cambió, gráfico, quién
+  publica datos en esa región, partes con fuente, límites; se guarda en PDF o CSV y se comparte con un enlace
+  (`/evacuados#corrientes`). Datos verificados en `public/evacuados/base.json`; lo del gestor se lee de la rama datos. Enlaces desde la portada
   («Ahora en la región») y desde El Niño y crecidas.
   Pendiente: correr el gestor la primera vez a mano y ajustar las palabras si trae ruido; pasar a mano al registro
   los partes que se confirmen; cargar `CONTROL_EMAIL` y `RESEND_API_KEY` para que llegue el correo.
