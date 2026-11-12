@@ -6,7 +6,9 @@ Qué hace:
   1. Lee los lugares de gestores/evacuados.yml: países, provincias o estados y municipios de la Cuenca del Plata
      (Argentina, Uruguay, Paraguay y Brasil).
   2. Para cada lugar busca en Google Noticias (RSS público, gratuito y sin clave) las notas de los últimos 7 días
-     con palabras como «evacuados», «autoevacuados», «desplazados», «desabrigados» o «desalojados».
+     con palabras como «evacuados», «autoevacuados», «desplazados», «desabrigados» o «desalojados». Además busca
+     en el sitio de cada organismo oficial (SINAGIR, gobiernos provinciales, SINAE, SEN, Defesa Civil) y en GDELT,
+     una segunda red de noticias, también gratuita y sin clave.
   3. Saca las cifras que aparecen en el titular (por ejemplo «468 evacuados», «63 familias»). No calcula ni estima:
      cada parte queda «a verificar» con su medio y su enlace.
   4. Guarda todo en la rama datos (data/evacuados_partes.json y un histórico) y manda el informe por correo
@@ -30,7 +32,7 @@ import time
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-from urllib.parse import quote
+from urllib.parse import quote, unquote
 
 import requests
 import yaml
@@ -144,8 +146,64 @@ def lugares(cfg):
     return out
 
 
+def leer_gdelt(json_texto):
+    """Lee la respuesta de la API DOC de GDELT y devuelve [{titulo, enlace, medio, fecha}]."""
+    try:
+        j = json.loads(json_texto)
+    except ValueError:
+        return []  # GDELT responde texto plano cuando la consulta no le gusta
+    items = []
+    for a in j.get("articles") or []:
+        fecha = None
+        try:
+            fecha = datetime.strptime(a.get("seendate", ""), "%Y%m%dT%H%M%SZ").replace(tzinfo=timezone.utc)
+        except ValueError:
+            pass
+        items.append({"titulo": html.unescape(a.get("title") or "").strip(), "enlace": a.get("url") or "",
+                      "medio": a.get("domain") or "", "fecha": fecha, "texto": ""})
+    return items
+
+
+def url_gdelt(palabras, pais_fuente):
+    q = "(" + " OR ".join(palabras) + f") sourcecountry:{pais_fuente}"
+    return ("https://api.gdeltproject.org/api/v2/doc/doc?query=" + quote(q)
+            + f"&mode=artlist&format=json&maxrecords=250&timespan={DIAS}d&sort=datedesc")
+
+
+def buscar_lugar(titulo, pais, lus):
+    """Para notas de GDELT: el lugar más específico de la lista que aparece en el titular."""
+    t = titulo.lower()
+    for lu in lus:  # ya vienen del más específico al más general
+        if lu["pais"] == pais and lu["nivel"] != "pais" and re.search(r"\b" + re.escape(lu["lugar"].lower()) + r"\b", t):
+            return lu
+    return {"pais": pais, "provincia": None, "lugar": pais, "nivel": "pais", "rio": None}
+
+
+def busquedas(cfg):
+    """Arma todas las búsquedas: por lugar, por sitio oficial y en GDELT."""
+    out = []
+    lus = lugares(cfg)
+    for lu in lus:
+        idi = cfg["idiomas"][lu["idioma"]]
+        out.append({"url": url_rss(consulta(lu["lugar"], idi["palabras"]), idi["google"]), "leer": leer_rss,
+                    "lugar": lu, "origen": "prensa", "motor": "Google Noticias"})
+    for pais, orgs in (cfg.get("oficiales") or {}).items():
+        idi = cfg["idiomas"][cfg["paises"][pais]["idioma"]]
+        ors = " OR ".join(f'"{x}"' if " " in x else x for x in idi["palabras"])
+        for o in orgs:
+            prov = None if o["jurisdiccion"] == "Nación" else o["jurisdiccion"]
+            lu = {"pais": pais, "provincia": prov, "lugar": o["organismo"], "nivel": "oficial", "rio": None}
+            q = f"site:{o['dominio']} ({ors}) when:{DIAS}d"
+            out.append({"url": url_rss(q, idi["google"]), "leer": leer_rss, "lugar": lu, "origen": "oficial",
+                        "motor": "Google Noticias (sitio oficial)", "dominio": o["dominio"]})
+    for pais, g in (cfg.get("gdelt") or {}).items():
+        out.append({"url": url_gdelt(g["palabras"], g["pais_fuente"]), "leer": leer_gdelt,
+                    "lugar": None, "pais": pais, "origen": "prensa", "motor": "GDELT"})
+    return out, lus
+
+
 def juntar(cfg, desde, traer=None):
-    """Busca cada lugar y arma la lista de partes nuevos (sin repetir enlaces ni titulares)."""
+    """Corre todas las búsquedas y arma la lista de partes nuevos (sin repetir enlaces ni titulares)."""
     s = requests.Session()
     s.headers["User-Agent"] = "DOTS-gestor-evacuados/1.0 (+https://observatorio-agro.vercel.app)"
 
@@ -154,47 +212,53 @@ def juntar(cfg, desde, traer=None):
         r.raise_for_status()
         return r.text
 
+    pausa = PAUSA if traer is None else 0
     traer = traer or traer_http
-    partes, vistos, errores, sin_partes = [], set(), [], []
-    for lu in lugares(cfg):
-        idi = cfg["idiomas"][lu["idioma"]]
-        url = url_rss(consulta(lu["lugar"], idi["palabras"]), idi["google"])
+    partes, vistos, errores, sin_partes, oficiales_sin = [], set(), [], [], []
+    lista, lus = busquedas(cfg)
+    for b in lista:
+        nombre = b["lugar"]["lugar"] if b["lugar"] else f"GDELT {b['pais']}"
         try:
-            items = leer_rss(traer(url))
+            items = b["leer"](traer(b["url"]))
         except Exception as e:
-            errores.append(f"{lu['lugar']} ({lu['pais']}): {type(e).__name__}")
+            errores.append(f"{nombre}: {type(e).__name__}")
             continue
         nuevos = 0
         for it in items:
             if it["fecha"] and it["fecha"] < desde:
                 continue
             clave = re.sub(r"\W+", " ", it["titulo"].lower()).strip()
-            if it["enlace"] in vistos or clave in vistos:
+            if not it["titulo"] or it["enlace"] in vistos or clave in vistos:
                 continue
             nums = cifras(it["titulo"] + " " + it["texto"])
             if not nums:
                 continue  # sin cifra no es un parte: suele ser una nota de contexto
+            lu = b["lugar"] or buscar_lugar(it["titulo"], b["pais"], lus)
             vistos.update({it["enlace"], clave})
             nuevos += 1
             partes.append({
                 "fecha": it["fecha"].strftime("%Y-%m-%d") if it["fecha"] else None,
                 "pais": lu["pais"], "provincia": lu["provincia"], "lugar": lu["lugar"],
-                "nivel": lu["nivel"], "rio": lu["rio"],
+                "nivel": lu["nivel"], "rio": lu.get("rio"), "origen": b["origen"], "motor": b["motor"],
                 "titulo": it["titulo"], "medio": it["medio"], "enlace": it["enlace"],
                 "cifras": nums, "estado": "a verificar",
             })
-        if nuevos == 0 and lu["nivel"] != "pais":
-            sin_partes.append(f"{lu['lugar']} ({lu['pais']})")
-        time.sleep(PAUSA if traer is traer_http else 0)
-    partes.sort(key=lambda p: (p["pais"], p["provincia"] or "", p["fecha"] or ""), reverse=False)
-    return partes, sin_partes, errores
+        if nuevos == 0 and b["lugar"]:
+            if b["origen"] == "oficial":
+                oficiales_sin.append(f"{b['lugar']['lugar']} ({b['dominio']})")
+            elif b["lugar"]["nivel"] != "pais":
+                sin_partes.append(f"{b['lugar']['lugar']} ({b['lugar']['pais']})")
+        if pausa:
+            time.sleep(pausa)
+    partes.sort(key=lambda p: (p["pais"], p["provincia"] or "", p["fecha"] or ""))
+    return partes, sin_partes, oficiales_sin, errores
 
 
 def texto_cifras(nums):
     return ", ".join(f"{n['cifra']:,}".replace(",", ".") + f" {n['que']}" for n in nums)
 
 
-def informe(partes, sin_partes, errores, desde, hasta):
+def informe(partes, sin_partes, errores, desde, hasta, oficiales_sin=()):
     lineas = [
         "DOTS · Partes de evacuados de la Cuenca del Plata",
         f"Semana del {desde:%d/%m/%Y} al {hasta:%d/%m/%Y}",
@@ -218,12 +282,16 @@ def informe(partes, sin_partes, errores, desde, hasta):
             lineas.append(f"{prov or 'Nivel nacional'}:")
             for p in [x for x in del_pais if x["provincia"] == prov]:
                 fecha = datetime.strptime(p["fecha"], "%Y-%m-%d").strftime("%d/%m") if p["fecha"] else "s/f"
-                lineas.append(f"  {fecha} · {p['lugar']} · {texto_cifras(p['cifras'])}")
+                marca = " [sitio oficial]" if p.get("origen") == "oficial" else ""
+                lineas.append(f"  {fecha} · {p['lugar']}{marca} · {texto_cifras(p['cifras'])}")
                 lineas.append(f"         {p['titulo']} ({p['medio'] or 's/medio'})")
                 lineas.append(f"         {p['enlace']}")
     if sin_partes:
         lineas += ["", "Lugares sin partes nuevos con cifras (puede no haber evacuados o no haberse publicado):",
                    "  " + ", ".join(sin_partes)]
+    if oficiales_sin:
+        lineas += ["", "Organismos oficiales sin partes con cifras en su sitio esta semana:",
+                   "  " + "; ".join(oficiales_sin)]
     if errores:
         lineas += ["", "Búsquedas que fallaron:", "  " + "; ".join(errores)]
     lineas += ["", "Para sumar lugares: gestores/evacuados.yml. Planilla de seguimiento: hoja «Partes»."]
@@ -295,15 +363,16 @@ def main():
         cfg = yaml.safe_load(f)
     hasta = datetime.now(timezone.utc)
     desde = hasta - timedelta(days=DIAS)
-    partes, sin_partes, errores = juntar(cfg, desde)
+    partes, sin_partes, oficiales_sin, errores = juntar(cfg, desde)
     os.makedirs(os.path.dirname(SALIDA), exist_ok=True)
     with open(SALIDA, "w", encoding="utf-8") as f:
         json.dump({"actualizado": hasta.strftime("%Y-%m-%dT%H:%MZ"), "desde": desde.strftime("%Y-%m-%d"),
-                   "fuente": "Google Noticias (RSS). Cifras a verificar en cada enlace.",
-                   "partes": partes, "sin_partes": sin_partes, "errores": errores},
+                   "fuente": "Google Noticias (RSS, incluida la búsqueda en sitios oficiales) y GDELT. Cifras a verificar en cada enlace.",
+                   "partes": partes, "sin_partes": sin_partes, "oficiales_sin_partes": oficiales_sin,
+                   "errores": errores},
                   f, ensure_ascii=False, indent=1)
     total = guardar_historico(partes)
-    texto = informe(partes, sin_partes, errores, desde, hasta)
+    texto = informe(partes, sin_partes, errores, desde, hasta, oficiales_sin)
     print(texto)
     print(f"\nHistórico: {total} partes guardados.")
     if sin_envio:
@@ -311,7 +380,7 @@ def main():
     asunto = f"DOTS · Partes de evacuados {hasta:%d/%m/%Y} · {len(partes)} nuevos"
     print("Correo:", correo(texto, asunto))
     print("Issue:", issue(texto))
-    total_lugares = len(lugares(cfg))
+    total_lugares = len(busquedas(cfg)[0])
     if len(errores) > total_lugares / 2:
         sys.exit(f"Fallaron {len(errores)} de {total_lugares} búsquedas.")
 

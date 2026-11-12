@@ -52,7 +52,7 @@ def test_juntar_filtra_viejas_sin_cifras_y_repetidas():
         "paises": {"Argentina": {"idioma": "es", "nacional": [],
                                  "provincias": {"Corrientes": {"rio": "Paraná", "municipios": ["Goya"]}}}},
     }
-    partes, sin_partes, errores = ge.juntar(cfg, ahora - timedelta(days=7), traer=lambda url: xml)
+    partes, sin_partes, oficiales_sin, errores = ge.juntar(cfg, ahora - timedelta(days=7), traer=lambda url: xml)
     assert errores == []
     assert len(partes) == 1  # la vieja y la que no tiene cifras quedan afuera; la repetida en la provincia también
     p = partes[0]
@@ -80,3 +80,32 @@ def test_lista_de_lugares_valida():
     assert all(l["idioma"] in cfg["idiomas"] for l in lus)
     niveles = [l["nivel"] for l in lus]
     assert niveles.index("provincia") > niveles.index("municipio")
+
+
+GDELT = """{"articles":[{"url":"https://diario.com.py/x","title":"Pilar: 320 familias evacuadas por la crecida",
+"seendate":"%s","domain":"diario.com.py","sourcecountry":"Paraguay"},
+{"url":"https://diario.com.py/y","title":"Clima en Paraguay","seendate":"%s","domain":"diario.com.py"}]}"""
+
+
+def test_gdelt_asigna_lugar_por_titular_y_oficiales():
+    ahora = datetime.now(timezone.utc)
+    sd = ahora.strftime("%Y%m%dT%H%M%SZ")
+    cfg = {
+        "idiomas": {"es-PY": {"palabras": ["evacuados"], "google": {"hl": "es-419", "gl": "PY", "ceid": "PY:es-419"}}},
+        "paises": {"Paraguay": {"idioma": "es-PY", "nacional": [],
+                                "provincias": {"Ñeembucú": {"rio": "Paraguay", "municipios": ["Pilar"]}}}},
+        "oficiales": {"Paraguay": [{"organismo": "SEN", "jurisdiccion": "Nación", "dominio": "sen.gov.py"}]},
+        "gdelt": {"Paraguay": {"pais_fuente": "paraguay", "palabras": ["evacuados"]}},
+    }
+    vacio = "<rss><channel></channel></rss>"
+    traer = lambda url: (GDELT % (sd, sd)) if "gdeltproject" in url else vacio
+    partes, sin_partes, oficiales_sin, errores = ge.juntar(cfg, ahora - timedelta(days=7), traer=traer)
+    assert errores == []
+    assert len(partes) == 1 and partes[0]["lugar"] == "Pilar" and partes[0]["motor"] == "GDELT"
+    assert {"cifra": 320, "que": "familias"} in partes[0]["cifras"]
+    assert oficiales_sin == ["SEN (sen.gov.py)"]
+    assert any("site:sen.gov.py" in ge.unquote(b["url"]) for b in ge.busquedas(cfg)[0])
+
+
+def test_gdelt_texto_plano_no_rompe():
+    assert ge.leer_gdelt("Your query was too short") == []

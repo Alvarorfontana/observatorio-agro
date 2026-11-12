@@ -60,3 +60,35 @@ paises:
       Santa Catarina: {rio: "Uruguai e Itajaí", municipios: [Chapecó, Rio do Sul]}
       Paraná (BR): {rio: "Iguaçu y Paraná", municipios: [União da Vitória, Foz do Iguaçu, Guaíra]}
       Mato Grosso do Sul: {rio: Paraguai, municipios: [Corumbá, Porto Murtinho]}
+
+# Organismos oficiales: además de la búsqueda general, el gestor busca partes publicados en el sitio de cada
+# organismo (búsqueda por dominio en Google Noticias). Si un dominio no trae nada en varias semanas, el informe
+# lo marca: puede ser que el organismo no publique partes o que el dominio haya cambiado.
+oficiales:
+  Argentina:
+    - {organismo: "SINAGIR (Nación)", jurisdiccion: Nación, dominio: argentina.gob.ar}
+    - {organismo: "Gobierno de Corrientes", jurisdiccion: Corrientes, dominio: corrientes.gob.ar}
+    - {organismo: "Gobierno del Chaco", jurisdiccion: Chaco, dominio: chaco.gob.ar}
+    - {organismo: "Gobierno de Entre Ríos", jurisdiccion: Entre Ríos, dominio: entrerios.gov.ar}
+    - {organismo: "Gobierno de Santa Fe", jurisdiccion: Santa Fe, dominio: santafe.gob.ar}
+    - {organismo: "Municipalidad de Santa Fe", jurisdiccion: Santa Fe, dominio: santafeciudad.gov.ar}
+    - {organismo: "Gobierno de Misiones", jurisdiccion: Misiones, dominio: misiones.gob.ar}
+    - {organismo: "Gobierno de Formosa", jurisdiccion: Formosa, dominio: formosa.gob.ar}
+  Uruguay:
+    - {organismo: "SINAE / Presidencia", jurisdiccion: Nación, dominio: gub.uy}
+  Paraguay:
+    - {organismo: "Secretaría de Emergencia Nacional", jurisdiccion: Nación, dominio: sen.gov.py}
+    - {organismo: "Agencia IP (gobierno)", jurisdiccion: Nación, dominio: ip.gov.py}
+  Brasil:
+    - {organismo: "Defesa Civil RS", jurisdiccion: Rio Grande do Sul, dominio: defesacivil.rs.gov.br}
+    - {organismo: "Governo do RS", jurisdiccion: Rio Grande do Sul, dominio: estado.rs.gov.br}
+    - {organismo: "Defesa Civil SC", jurisdiccion: Santa Catarina, dominio: defesacivil.sc.gov.br}
+    - {organismo: "Defesa Civil PR", jurisdiccion: Paraná (BR), dominio: defesacivil.pr.gov.br}
+    - {organismo: "Agência Brasil (gobierno federal)", jurisdiccion: Nación, dominio: agenciabrasil.ebc.com.br}
+
+# GDELT (api.gdeltproject.org, gratuito y sin clave): segunda red de noticias del mundo, por país de origen del medio.
+gdelt:
+  Argentina: {pais_fuente: argentina, palabras: [evacuados, autoevacuados]}
+  Uruguay: {pais_fuente: uruguay, palabras: [desplazados, evacuados]}
+  Paraguay: {pais_fuente: paraguay, palabras: [damnificados, evacuados]}
+  Brasil: {pais_fuente: brazil, palabras: [desabrigados, desalojados]}
