@@ -267,11 +267,24 @@ label.fila input { grid-column: 1 / -1; width: 100%; accent-color: var(--accent)
           <div class="barras" id="des-ae-barras"></div>
           <p class="sub" id="des-ae-estado"></p>
         </div>
+        <div class="grupo ae-bloque">
+          <span class="rotulo">Confirmación por radar · Sentinel-1</span>
+          <p class="ae-porque"><strong>Por qué importa.</strong> El NDVI mide verdor; el radar mide estructura: cuánta señal rebota en troncos, ramas y copas. Si el monte se cortó, la señal cae. Si solo se secó por una sequía o una helada, casi no cambia. Además el radar ve a través de las nubes y de noche.</p>
+          <div class="rangos">
+            <div><b style="color:#c0392b">−2 dB o menos</b><span><strong>Confirma</strong> · la estructura del monte se perdió: refuerza el desmonte</span></div>
+            <div><b style="color:#d9771a">−2 a −1 dB</b><span><strong>Cambio leve</strong> · raleo, desmonte parcial o suelo más seco</span></div>
+            <div><b style="color:#3f7d4e">Más de −1 dB</b><span><strong>Sin cambio</strong> · el monte sigue en pie: puede ser sequía, helada o pastoreo</span></div>
+          </div>
+          <p class="sub">Diferencia de la señal VH (polarización cruzada, en decibeles) entre las dos ventanas. Monte denso ronda −11 a −14 dB; pastura y suelo desnudo, −16 a −22 dB. Se usa la mediana de todas las pasadas y se pide un mínimo de tres por ventana. Umbrales orientativos, sin validar todavía en el terreno: no cambian la gravedad, la acompañan.</p>
+          <div class="barras" id="des-rd-barras"></div>
+          <p class="sub" id="des-rd-estado"></p>
+        </div>
         <div class="texto">
           <p><strong>Cómo se calcula.</strong> No se busca un campo: se resta el verdor de toda la región entre dos ventanas de la misma época del año y los desmontes más grandes aparecen solos. Es el método con el que se ubicó, sin coordenadas, la tala de un centro de datos en Finlandia.</p>
           <p><strong>Por qué un rango.</strong> Un desmonte no tiene un borde limpio. Caminos, suelo pelado y pilas de rolos se leen distinto que el monte cortado, así que la superficie cambia según el umbral: se informa de mínima a máxima.</p>
           <p class="nota"><strong>Límites.</strong> Es una señal para revisar, no una prueba de desmonte ilegal. Una sequía extrema, una pastura degradada o un incendio también bajan el NDVI. Se descartan agua, cultivos y ciudades, pero conviene mirar las fotos de antes y después de cada parche. La Ley de Bosques solo se evalúa si DOTS tiene cargado el mapa provincial.</p>
           <p class="nota"><strong>Segunda opinión AlphaEarth.</strong> Google DeepMind publica un mapa por año que resume cada cuadrado de 10 m según su cobertura. Si el parche cambió de cobertura entre un año y otro, el desmonte gana peso; si siguió igual, puede ser sequía. Los rangos son orientativos y todavía no están validados en el terreno. Fuente: AlphaEarth Foundations, Google y Google DeepMind (CC BY 4.0).</p>
+          <p class="nota"><strong>Confirmación por radar.</strong> Sentinel-1 (Copernicus/ESA), banda VH, 10 m, una pasada cada pocos días. Límites: un suelo muy mojado o recién arado mueve la señal; los rolos y troncos apilados después de un desmonte pueden subirla por unas semanas; en el relieve fuerte la geometría del satélite pesa. Por eso es una señal más, no un veredicto.</p>
         </div>
       </div>
 
@@ -427,6 +440,14 @@ label.fila input { grid-column: 1 / -1; width: 100%; accent-color: var(--accent)
       '<div class="mono">Similitud ' + num(a.similitud, 2) + (ae.anio_antes ? ' · ' + ae.anio_antes + ' contra ' + ae.anio_despues : '') + '</div>' +
       '<div class="escala">Menos de 0,70 fuerte · 0,70 a 0,90 moderado · 0,90 o más sin cambio</div></div>';
   }
+  var RD_COLOR = { 'confirma': '#c0392b', 'cambio leve': '#d9771a', 'sin cambio': '#3f7d4e' };
+  function bloqueRadar(p) {
+    if (!p.radar) return '';
+    var r = p.radar, c = RD_COLOR[r.lectura] || '#555';
+    return '<div class="ae-pop" style="border-color:' + c + '"><b>Radar Sentinel-1 · <span style="color:' + c + '">' + esc(r.lectura) + '</span></b>' +
+      '<div class="mono">VH ' + num(r.vh_antes, 1) + ' → ' + num(r.vh_despues, 1) + ' dB (Δ ' + num(r.delta_db, 1) + ')</div>' +
+      '<div class="escala">−2 dB o menos confirma · −2 a −1 leve · más de −1 sin cambio</div></div>';
+  }
   var RAW = 'https://raw.githubusercontent.com/Alvarorfontana/observatorio-agro/datos/data/';
   function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function num(x, d) { return Number(x).toLocaleString('es-AR', { maximumFractionDigits: d || 0, minimumFractionDigits: d || 0 }); }
@@ -449,7 +470,8 @@ label.fila input { grid-column: 1 / -1; width: 100%; accent-color: var(--accent)
       '<div><b>' + rangoHa(p.area_ha) + '</b> según el umbral</div>' +
       '<div class="mono">NDVI ' + num(p.ndvi_antes, 2) + ' → ' + num(p.ndvi_despues, 2) + ' (Δ ' + num(p.dndvi, 2) + ')</div>';
     h += bloqueAE(p, j);
-    var otras = (p.senales || []).filter(function (t) { return t.indexOf('AlphaEarth:') !== 0; });
+    h += bloqueRadar(p);
+    var otras = (p.senales || []).filter(function (t) { return t.indexOf('AlphaEarth:') !== 0 && t.indexOf('Radar:') !== 0; });
     if (otras.length) h += '<ul>' + otras.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul>';
     if (p.fotos) {
       var base = RAW + 'desmonte_ndvi/' + encodeURIComponent(j.ventana) + '_' + encodeURIComponent(p.id);
@@ -482,6 +504,19 @@ label.fila input { grid-column: 1 / -1; width: 100%; accent-color: var(--accent)
           '<span class="num">' + cnt[k[0]] + ' · ' + num(pct) + ' %</span></div>');
       });
     }
+    var rd = j.radar, rdb = $('des-rd-barras');
+    rdb.innerHTML = '';
+    if (rd) {
+      var rc = { 'confirma': 0, 'cambio leve': 0, 'sin cambio': 0 }, rev = 0;
+      j.parches.forEach(function (p) { if (p.radar && p.radar.lectura in rc) { rc[p.radar.lectura]++; rev++; } });
+      [['confirma', 'Confirma · ≤ −2 dB'], ['cambio leve', 'Leve · −2 a −1'], ['sin cambio', 'Sin cambio · > −1']].forEach(function (k) {
+        var pct = rev ? rc[k[0]] / rev * 100 : 0;
+        rdb.insertAdjacentHTML('beforeend', '<div class="barra"><i style="background:' + RD_COLOR[k[0]] + '"></i><span>' + k[1] + '</span>' +
+          '<div class="pista"><span style="width:' + pct.toFixed(1) + '%;background:' + RD_COLOR[k[0]] + '"></span></div>' +
+          '<span class="num">' + rc[k[0]] + ' · ' + num(pct) + ' %</span></div>');
+      });
+    }
+    $('des-rd-estado').textContent = rd ? 'En esta ventana: ' + rd.parches_evaluados + ' parches evaluados con al menos ' + rd.min_pasadas + ' pasadas por ventana. Fuente: ' + rd.fuente + '.' : 'Esta ventana todavía no tiene confirmación por radar: se calcula en la próxima corrida.';
     $('des-ae-estado').textContent = ae ? 'En esta ventana: mapas ' + ae.anio_antes + ' contra ' + ae.anio_despues + ', ' + ae.parches_evaluados + ' parches evaluados. Fuente: ' + ae.fuente + '.' : 'En esta ventana todavía no hay mapa anual de AlphaEarth que cubra el período «después».';
     var aviso = (j.cobertura && (j.cobertura.fallidas || j.cobertura.sin_tiempo)) ? ' Faltaron ' + (j.cobertura.fallidas + j.cobertura.sin_tiempo) + ' de ' + j.cobertura.celdas + ' celdas: no cubre toda la región.' : '';
     $('des-periodo').innerHTML = 'Antes <b>' + esc(j.antes.rotulo) + '</b> · después <b>' + esc(j.despues.rotulo) + '</b><br>Calculado el ' + fechaCorta(j.generado) + ' · parches desde ' + num(j.metodo.min_ha) + ' ha' + esc(aviso);

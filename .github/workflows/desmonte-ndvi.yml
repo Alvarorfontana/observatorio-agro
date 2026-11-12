@@ -79,6 +79,17 @@ jobs:
         run: |
           set -o pipefail
           python -u scripts/alphaearth_desmontes.py 2>&1 | tee -a "data/desmonte_ndvi_${DESMONTE_VENTANA}.log"
+      # Confirmación por radar Sentinel-1 (VH): separa monte cortado de monte seco. Si falla, los parches quedan igual.
+      - name: Confirmación por radar Sentinel-1
+        continue-on-error: true
+        timeout-minutes: 30
+        env:
+          GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT }}
+          GOOGLE_APPLICATION_CREDENTIALS_JSON: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}
+          DESMONTE_VENTANA: ${{ steps.v.outputs.ventana }}
+        run: |
+          set -o pipefail
+          python -u scripts/radar_desmontes.py 2>&1 | tee -a "data/desmonte_ndvi_${DESMONTE_VENTANA}.log"
       - name: Guardar en la rama datos (no publica la web)
         if: always()
         run: |

@@ -58,6 +58,28 @@ falla, los parches quedan como estaban (`continue-on-error`).
 
 Archivos: `scripts/alphaearth_desmontes.py` y `tests/test_alphaearth_desmontes.py`.
 
+## Confirmación por radar Sentinel-1
+
+El NDVI mide verdor; el radar mide estructura. La banda VH de Sentinel-1 (polarización cruzada) rebota en troncos,
+ramas y copas: si el monte se cortó, cae; si solo se secó por sequía o helada, casi no cambia. Tampoco depende de
+las nubes ni del sol. Se toma la mediana de todas las pasadas de cada ventana (baja el moteado del radar) y el promedio
+dentro del parche, a 30 m. Hacen falta al menos 3 pasadas por ventana.
+
+| Diferencia de VH (después − antes) | Lectura |
+|---|---|
+| −2 dB o menos | confirma: la estructura del monte se perdió |
+| −2 a −1 dB | cambio leve: raleo, desmonte parcial o suelo más seco |
+| más de −1 dB | sin cambio: el monte sigue en pie, puede ser sequía, helada o pastoreo |
+
+Como referencia, monte denso ronda −11 a −14 dB y pastura o suelo desnudo −16 a −22 dB. Igual que AlphaEarth, no suma
+puntos de gravedad: los umbrales son orientativos. Agrega una señal en el globo y el campo `radar` en cada parche. Si
+el paso falla, los parches quedan como estaban (`continue-on-error`).
+
+Límites propios: un suelo muy mojado o recién arado mueve la señal; los rolos y troncos apilados después de un desmonte
+pueden subirla por unas semanas; en relieve fuerte pesa la geometría del satélite.
+
+Archivos: `scripts/radar_desmontes.py` y `tests/test_radar_desmontes.py`.
+
 ## Ley de Bosques
 
 No hay una capa nacional del OTBN que se pueda consultar. Para sumarla, subir a la rama `datos` un archivo
