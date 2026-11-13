@@ -1,11 +1,11 @@
 {
- "updated": "2026-11-13T09:45+00:00",
+ "updated": "2026-11-13T17:54+00:00",
  "version": 1,
  "fuente": "https://observatorio-agro.vercel.app",
  "niveles": {
   "Normal": 8,
-  "Atención": 8,
-  "Alerta": 4,
+  "Atención": 9,
+  "Alerta": 3,
   "Evacuación": 6
  },
  "peor": {
@@ -13,7 +13,7 @@
   "place": "Santa Fe · Paraná",
   "river": "Paraná",
   "level": "Evacuación",
-  "height": 5.49
+  "height": 5.58
  },
  "alertas": [
   {
@@ -53,12 +53,6 @@
    "level": "Evacuación"
   },
   {
-   "id": "parana-bellavista",
-   "place": "Bella Vista",
-   "river": "Paraná",
-   "level": "Alerta"
-  },
-  {
    "id": "uruguay-libres",
    "place": "Paso de los Libres",
    "river": "Uruguay",
@@ -71,9 +65,9 @@
    "level": "Alerta"
   },
   {
-   "id": "iguazu-cataratas",
-   "place": "Puerto Iguazú · Cataratas",
-   "river": "Iguazú",
+   "id": "parana-bellavista",
+   "place": "Bella Vista",
+   "river": "Paraná",
    "level": "Alerta"
   }
  ],
@@ -85,7 +79,7 @@
  "enviado_el": null,
  "pdf_el": "2026-11-13T09:45+00:00",
  "newsletter": {
-  "subject": "DOTS · El Niño y crecidas · 13/11/2026 09:45 UTC",
+  "subject": "DOTS · El Niño y crecidas · 13/11/2026 17:54 UTC",
   "bytes": 6207
  }
 }
