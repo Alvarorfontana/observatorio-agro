@@ -17,17 +17,17 @@
  "parana-diamante": {
   "level": "Evacuación"
  },
- "parana-bellavista": {
-  "level": "Alerta"
- },
  "uruguay-libres": {
   "level": "Alerta"
  },
  "parana-corrientes": {
   "level": "Alerta"
  },
- "iguazu-cataratas": {
+ "parana-bellavista": {
   "level": "Alerta"
+ },
+ "iguazu-cataratas": {
+  "level": "Atención"
  },
  "parana-ituzaingo": {
   "level": "Atención"
@@ -35,13 +35,13 @@
  "parana-posadas": {
   "level": "Atención"
  },
- "uruguay-santotome": {
-  "level": "Atención"
- },
  "parana-rosario": {
   "level": "Atención"
  },
  "paraguay-humaita": {
+  "level": "Atención"
+ },
+ "parana-sannicolas": {
   "level": "Atención"
  },
  "uruguay-montecaseros": {
@@ -59,7 +59,7 @@
  "uruguay-concordia": {
   "level": "Normal"
  },
- "parana-sannicolas": {
+ "uruguay-santotome": {
   "level": "Normal"
  },
  "uruguay-colon": {
