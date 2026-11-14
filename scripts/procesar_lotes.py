@@ -55,10 +55,10 @@ def area_ha(geom_lonlat):
     return g.area / 10000
 
 
-def find_scene(bbox, today=None):
+def find_scene(bbox, today=None, lookback=LOOKBACK_DAYS):
     from pystac_client import Client
     today = today or datetime.now(timezone.utc)
-    start = (today - timedelta(days=LOOKBACK_DAYS)).strftime("%Y-%m-%d")
+    start = (today - timedelta(days=lookback)).strftime("%Y-%m-%d")
     search = Client.open(STAC).search(
         collections=["sentinel-2-l2a"], bbox=bbox, datetime=f"{start}/{today:%Y-%m-%d}",
         query={"eo:cloud_cover": {"lt": MAX_CLOUD}}, max_items=30)
@@ -174,7 +174,7 @@ def water_in_lot(vec_path, lot_geom):
     return round(total, 2), len(parts), simplified
 
 
-def process_lot(lot, out_dir, today=None):
+def process_lot(lot, out_dir, today=None, prev=None):
     vertices = lot["vertices"]
     geom = lot_polygon(vertices)
     bbox = lot_bbox(vertices)
@@ -187,18 +187,26 @@ def process_lot(lot, out_dir, today=None):
         vec = segment(stack, tmp)
         water_ha, count, polys = water_in_lot(vec, geom)
         nd = ndvi_mean(stack, geom)
+        anom, bases = None, (prev or {}).get("bases")
+        if os.environ.get("DOTS_ANOMALIA") != "0":
+            try:
+                import anomalia_lote
+                anom, bases = anomalia_lote.run(geom, bbox, stack, item.properties["datetime"][:10], prev, find_scene, read_stack)
+            except Exception as e:
+                anom = {"status": "sin dato", "reason": type(e).__name__}
     lot_ha = area_ha(geom)
     return {"status": "recibido", "scene": {"id": item.id, "date": item.properties["datetime"][:10],
                                             "cloud_pct": round(item.properties.get("eo:cloud_cover") or 0, 1)},
             "water_ha": water_ha, "water_pct": round(water_ha / lot_ha * 100, 2) if lot_ha else None,
             "water_bodies": count, "water_geojson": {"type": "FeatureCollection", "features": [{"type": "Feature", "properties": {}, "geometry": g} for g in polys]},
-            "ndvi_mean": nd, "lot_ha": round(lot_ha, 1)}
+            "ndvi_mean": nd, "lot_ha": round(lot_ha, 1), "anomalia": anom, "bases": bases}
 
 
 def merge_history(prev, res, run_date):
     hist = list((prev or {}).get("history") or [])
     if res.get("status") == "recibido":
-        row = {"run": run_date, "scene_date": res["scene"]["date"], "water_ha": res["water_ha"], "ndvi": res["ndvi_mean"]}
+        row = {"run": run_date, "scene_date": res["scene"]["date"], "water_ha": res["water_ha"], "ndvi": res["ndvi_mean"],
+               "lswi": (res.get("anomalia") or {}).get("lswi"), "z": (res.get("anomalia") or {}).get("z")}
         hist = [h for h in hist if h.get("scene_date") != row["scene_date"]] + [row]
     return hist[-HISTORY_MAX:]
 
@@ -240,20 +248,20 @@ def main(data_dir):
         path = os.path.join(out_dir, f"{lid}.json")
         prev = json.load(open(path)) if os.path.exists(path) else None
         try:
-            res = process_lot(lot, out_dir)
+            res = process_lot(lot, out_dir, prev=prev)
         except Exception as e:  # una falla no detiene al resto
             res = {"status": "sin dato", "reason": type(e).__name__}
         res["history"] = merge_history(prev, res, run_date)
         if res["status"] != "recibido" and prev and prev.get("status") == "recibido":
             # se conserva el último resultado válido, marcado como anterior
-            keep = {k: prev[k] for k in ("scene", "water_ha", "water_pct", "water_bodies", "water_geojson", "ndvi_mean", "lot_ha") if k in prev}
+            keep = {k: prev[k] for k in ("scene", "water_ha", "water_pct", "water_bodies", "water_geojson", "ndvi_mean", "lot_ha", "anomalia", "bases") if k in prev}
             res.update(keep); res["stale"] = True
         env = entorno(lot, prev, ov_state)
         if env:
             res["entorno"] = env
-        res.update({"id": lid, "updated": run_date, "method": "Sentinel-2 L2A (Earth Search) · geoai.segment_water (OmniWaterMask) · NDVI medio en el lote"})
+        res.update({"id": lid, "updated": run_date, "method": "Sentinel-2 L2A (Earth Search) · geoai.segment_water (OmniWaterMask) · NDVI medio en el lote · anomalía NDVI/LSWI contra años anteriores"})
         json.dump(res, open(path, "w"), ensure_ascii=False)
-        index[lid] = {"updated": run_date, "status": res["status"], "water_ha": res.get("water_ha"), "scene_date": (res.get("scene") or {}).get("date")}
+        index[lid] = {"updated": run_date, "status": res["status"], "water_ha": res.get("water_ha"), "scene_date": (res.get("scene") or {}).get("date"), "estres": (res.get("anomalia") or {}).get("nivel")}
         ok += res["status"] == "recibido"; fail += res["status"] != "recibido"
         time.sleep(0.5)
     json.dump({"updated": run_date, "lotes": index}, open(os.path.join(out_dir, "index.json"), "w"), ensure_ascii=False)

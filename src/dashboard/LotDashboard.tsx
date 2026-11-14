@@ -273,6 +273,30 @@ export function LotDashboard({ weather, sources, lot, thi, terrain, onLoad, onTe
           button={hasLot && cloudOn && !hasKey ? "Ir a guardar lotes" : undefined} onClick={onCloud} />}
       </Card>
 
+      {/* Fila 6b: alerta temprana de estrés hídrico (procesamiento semanal) */}
+      <Card span={16} title="Alerta temprana de estrés hídrico" sub="Procesamiento semanal · Sentinel-2 · NDVI (verdor) y LSWI (agua en la hoja) del lote contra la misma época de años anteriores · orientativo">
+        {water?.anomalia?.status === "recibido" ? (() => {
+          const a: Data = water.anomalia;
+          const col = a.nivel === "fuerte" ? "#f04438" : a.nivel === "moderada" ? "#fdb022" : "#32d583";
+          const pos = (z: number | null) => z == null ? null : Math.max(0, Math.min(100, (z + 3) / 6 * 100));
+          return <div>
+            <div className="verdict" style={{ borderLeft: `4px solid ${col}`, paddingLeft: 10 }}><b>Estrés {a.nivel === "normal" ? "no detectado" : a.nivel}</b> · {a.texto}</div>
+            <dl className="db-facts db-facts-4">
+              <div><dt>LSWI hoy / normal</dt><dd>{fmt(a.lswi, 2)} / {fmt(a.lswi_normal, 2)}</dd></div>
+              <div><dt>NDVI hoy / normal</dt><dd>{fmt(a.ndvi, 2)} / {fmt(a.ndvi_normal, 2)}</dd></div>
+              <div><dt>Desvío (peor)</dt><dd>{fmt(a.z, 1)}</dd></div>
+              <div><dt>Años comparados</dt><dd>{fmt(a.years, 0)}</dd></div>
+            </dl>
+            <div aria-label="Rangos de lectura del desvío" style={{ position: "relative", height: 14, borderRadius: 4, margin: "10px 0 4px",
+              background: "linear-gradient(90deg,#f04438 0 25%,#fdb022 25% 37.5%,#32d583 37.5% 100%)" }}>
+              {[["LSWI", a.z_lswi], ["NDVI", a.z_ndvi]].map(([n, z]) => pos(z as number) == null ? null :
+                <span key={n as string} title={`${n}: ${fmt(z as number, 1)}`} style={{ position: "absolute", left: `${pos(z as number)}%`, top: -3, width: 3, height: 20, background: "#111", transform: "translateX(-50%)" }} />)}
+            </div>
+            <p className="db-note">Rangos de lectura del desvío (cuántas veces se aparta de lo habitual en esa época): menos de −1,5 fuerte · −1,5 a −0,75 moderado · más de −0,75 normal. Escala de −3 a +3. Si el LSWI baja antes que el NDVI, es la señal temprana: suele adelantarse semanas. Límites: necesita al menos 3 años despejados en la misma época; no distingue sequía de cosecha, rotación o cambio de cultivo; las nubes pueden dejar semanas sin dato. No está validado en el terreno.</p>
+          </div>;
+        })() : <Empty text={!hasLot ? "Seleccioná un lote para ver la alerta." : water?.anomalia?.status === "sin base" ? `Todavía sin comparación: ${water.anomalia.reason}` : water?.status === "recibido" ? "La alerta aparece desde el próximo procesamiento semanal." : "La alerta sale del procesamiento semanal: guardá el lote en la nube y esperá al próximo lunes."} />}
+      </Card>
+
       {/* Fila 7: trazabilidad */}
       <Card span={16} title="Fuentes consultadas" sub={`${statusRows.filter(([, s]) => s.status === "recibido").length} con respuesta válida · ${statusRows.filter(([, s]) => s.status === "sin dato").length} sin dato · ningún faltante se reemplaza`}>
         <div className="db-table-wrap"><table className="db-table">

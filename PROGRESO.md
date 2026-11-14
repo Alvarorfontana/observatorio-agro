@@ -14,6 +14,14 @@ Las reglas de trabajo están en `CLAUDE.md`. El detalle de cada versión está e
 
 ## Registro
 
+### 2026-11-14
+- **Alerta temprana de estrés hídrico por lote** (idea tomada de quantag, código propio). En el procesamiento semanal,
+  cada lote compara su NDVI y su LSWI (agua en la hoja) con la misma época (±15 días) de hasta 5 años anteriores.
+  Rangos: desvío menor a −1,5 fuerte · −1,5 a −0,75 moderado · mayor a −0,75 normal. Si baja el LSWI antes que el
+  NDVI lo marca como señal temprana. La base se calcula una vez por semana del año y queda guardada en el lote.
+  `scripts/anomalia_lote.py`, tarjeta nueva en el tablero del lote. Orientativo. `DOTS_ANOMALIA=0` lo apaga.
+  Pendiente: validar con lotes que hayan tenido sequía conocida (campaña 2022/23).
+
 ### 2026-11-12
 - Desmontes: **confirmación por radar Sentinel-1** (banda VH) en cada parche. Separa monte cortado de monte seco:
   −2 dB o menos confirma · −2 a −1 leve · más de −1 sin cambio. Bloque con rangos y barras en el panel, señal en el
