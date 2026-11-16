@@ -1,0 +1,2100 @@
+{
+ "generado": "2026-11-16T18:18:29.876658Z",
+ "fuente": "Sentinel-1 RTC (ESA Copernicus, procesado por Microsoft Planetary Computer), polarización VV",
+ "tipo": "medición satelital procesada; clasificación orientativa sin validar en terreno",
+ "metodo": "Filtro Lee 5×5 · fondo por píxel con recorte sigma (3σ, mediana y MAD) sobre pasadas de la misma órbita, excluidos los últimos 30 días · desvío z · umbral de agua Otsu · apertura 3×3 · regiones conectadas (8 vecinos), mínimo 1 ha · Hampel sobre la serie de % de agua",
+ "resolucion_m": 20,
+ "rangos": {
+  "intensidad": {
+   "fuerte": "z medio ≤ −5",
+   "moderada": "−5 a −4",
+   "leve": "−4 a −3"
+  },
+  "agua_nueva": "hoy bajo el umbral de agua, fondo sobre el umbral y z ≤ −3"
+ },
+ "limites": [
+  "No ve agua bajo monte, pajonal o cultivos altos densos",
+  "No mide profundidad ni caudal",
+  "Puede confundir sombra de radar, asfalto o suelo muy liso con agua",
+  "Una pasada cada 6 a 12 días: puede perder anegamientos cortos",
+  "Píxel de 20 m: manchas menores a 1 ha no se informan"
+ ],
+ "zonas": [
+  {
+   "zona": "Corrientes (capital)",
+   "estado": "ok",
+   "centro": [
+    -58.83,
+    -27.47
+   ],
+   "bbox": [
+    -58.93,
+    -27.57,
+    -58.73,
+    -27.37
+   ],
+   "orbita": "descending/68",
+   "fecha_actual": "2026-11-13T09:12:39.051615Z",
+   "fondo_fechas": [
+    "2025-10-18",
+    "2025-11-05",
+    "2025-11-29",
+    "2025-12-11",
+    "2025-12-29",
+    "2026-01-16",
+    "2026-02-03",
+    "2026-02-21",
+    "2026-03-11",
+    "2026-03-29",
+    "2026-05-22",
+    "2026-06-16",
+    "2026-07-28",
+    "2026-09-02",
+    "2026-10-08"
+   ],
+   "fondo_pasadas_min": 0,
+   "umbral_db": -18.0,
+   "umbral_metodo": "fijo −18 dB (la escena no tiene dos modos claros)",
+   "resumen": {
+    "pixeles_validos": 5342,
+    "agua_hoy_ha": 0.0,
+    "agua_habitual_ha": 0.0,
+    "agua_nueva_ha": 0,
+    "manchas": 0
+   },
+   "manchas": [],
+   "manchas_total": 0,
+   "serie": [
+    {
+     "fecha": "2025-10-18",
+     "agua_pct": 0.0,
+     "rara": false
+    },
+    {
+     "fecha": "2025-11-05",
+     "agua_pct": 0.0,
+     "rara": false
+    },
+    {
+     "fecha": "2025-11-29",
+     "agua_pct": 0.0,
+     "rara": false
+    },
+    {
+     "fecha": "2025-12-11",
+     "agua_pct": 0.0,
+     "rara": false
+    },
+    {
+     "fecha": "2025-12-29",
+     "agua_pct": 0.04,
+     "rara": false
+    },
+    {
+     "fecha": "2026-01-16",
+     "agua_pct": 0.0,
+     "rara": false
+    },
+    {
+     "fecha": "2026-02-03",
+     "agua_pct": 0.0,
+     "rara": false
+    },
+    {
+     "fecha": "2026-02-21",
+     "agua_pct": 0.0,
+     "rara": false
+    },
+    {
+     "fecha": "2026-03-11",
+     "agua_pct": 0.0,
+     "rara": false
+    },
+    {
+     "fecha": "2026-03-29",
+     "agua_pct": 0.0,
+     "rara": false
+    },
+    {
+     "fecha": "2026-05-22",
+     "agua_pct": 0.0,
+     "rara": false
+    },
+    {
+     "fecha": "2026-06-16",
+     "agua_pct": 0.0,
+     "rara": false
+    },
+    {
+     "fecha": "2026-07-28",
+     "agua_pct": 0.0,
+     "rara": false
+    },
+    {
+     "fecha": "2026-09-02",
+     "agua_pct": 0.0,
+     "rara": false
+    },
+    {
+     "fecha": "2026-10-08",
+     "agua_pct": 0.0,
+     "rara": false
+    },
+    {
+     "fecha": "2026-11-13",
+     "agua_pct": 0.0,
+     "rara": false
+    }
+   ]
+  },
+  {
+   "zona": "Santa Lucía",
+   "estado": "ok",
+   "centro": [
+    -59.1,
+    -28.99
+   ],
+   "bbox": [
+    -59.2,
+    -29.09,
+    -59.0,
+    -28.89
+   ],
+   "orbita": "descending/68",
+   "fecha_actual": "2026-11-13T09:13:04.051904Z",
+   "fondo_fechas": [
+    "2025-10-18",
+    "2025-11-11",
+    "2025-12-11",
+    "2026-01-04",
+    "2026-01-28",
+    "2026-02-21",
+    "2026-03-17",
+    "2026-04-10",
+    "2026-05-16",
+    "2026-06-04",
+    "2026-06-28",
+    "2026-07-28",
+    "2026-08-21",
+    "2026-09-14",
+    "2026-10-08"
+   ],
+   "fondo_pasadas_min": 0,
+   "umbral_db": -13.81,
+   "umbral_metodo": "Otsu sobre la última pasada",
+   "resumen": {
+    "pixeles_validos": 1016233,
+    "agua_hoy_ha": 2551.3,
+    "agua_habitual_ha": 1704.6,
+    "agua_nueva_ha": 323.2,
+    "manchas": 54
+   },
+   "manchas": [
+    {
+     "id": 27,
+     "pixeles": 2294,
+     "superficie_ha": 91.76,
+     "z_medio": -5.43,
+     "z_pico": -9.55,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.13668,
+      -28.92379
+     ]
+    },
+    {
+     "id": 30,
+     "pixeles": 482,
+     "superficie_ha": 19.28,
+     "z_medio": -5.19,
+     "z_pico": -8.82,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.17647,
+      -28.95514
+     ]
+    },
+    {
+     "id": 56,
+     "pixeles": 340,
+     "superficie_ha": 13.6,
+     "z_medio": -5.95,
+     "z_pico": -10.45,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.18101,
+      -28.99937
+     ]
+    },
+    {
+     "id": 1,
+     "pixeles": 333,
+     "superficie_ha": 13.32,
+     "z_medio": -4.48,
+     "z_pico": -6.7,
+     "intensidad": "moderada",
+     "centroide": [
+      -59.05703,
+      -28.89035
+     ]
+    },
+    {
+     "id": 63,
+     "pixeles": 305,
+     "superficie_ha": 12.2,
+     "z_medio": -4.58,
+     "z_pico": -7.41,
+     "intensidad": "moderada",
+     "centroide": [
+      -59.05225,
+      -29.00839
+     ]
+    },
+    {
+     "id": 57,
+     "pixeles": 265,
+     "superficie_ha": 10.6,
+     "z_medio": -4.49,
+     "z_pico": -8.3,
+     "intensidad": "moderada",
+     "centroide": [
+      -59.05806,
+      -29.00262
+     ]
+    },
+    {
+     "id": 78,
+     "pixeles": 238,
+     "superficie_ha": 9.52,
+     "z_medio": -4.69,
+     "z_pico": -9.91,
+     "intensidad": "moderada",
+     "centroide": [
+      -59.18594,
+      -29.04674
+     ]
+    },
+    {
+     "id": 31,
+     "pixeles": 228,
+     "superficie_ha": 9.12,
+     "z_medio": -7.8,
+     "z_pico": -12.2,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.1702,
+      -28.95399
+     ]
+    },
+    {
+     "id": 32,
+     "pixeles": 221,
+     "superficie_ha": 8.84,
+     "z_medio": -6.16,
+     "z_pico": -10.68,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.18365,
+      -28.96324
+     ]
+    },
+    {
+     "id": 22,
+     "pixeles": 220,
+     "superficie_ha": 8.8,
+     "z_medio": -5.24,
+     "z_pico": -7.9,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.13096,
+      -28.91662
+     ]
+    },
+    {
+     "id": 46,
+     "pixeles": 215,
+     "superficie_ha": 8.6,
+     "z_medio": -5.98,
+     "z_pico": -10.39,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.18793,
+      -28.98468
+     ]
+    },
+    {
+     "id": 90,
+     "pixeles": 183,
+     "superficie_ha": 7.32,
+     "z_medio": -3.86,
+     "z_pico": -6.29,
+     "intensidad": "leve",
+     "centroide": [
+      -59.18747,
+      -29.05985
+     ]
+    },
+    {
+     "id": 35,
+     "pixeles": 175,
+     "superficie_ha": 7.0,
+     "z_medio": -7.8,
+     "z_pico": -11.21,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.18575,
+      -28.9694
+     ]
+    },
+    {
+     "id": 53,
+     "pixeles": 165,
+     "superficie_ha": 6.6,
+     "z_medio": -5.61,
+     "z_pico": -9.16,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.18348,
+      -28.99586
+     ]
+    },
+    {
+     "id": 38,
+     "pixeles": 161,
+     "superficie_ha": 6.44,
+     "z_medio": -5.72,
+     "z_pico": -8.41,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.17723,
+      -28.97116
+     ]
+    },
+    {
+     "id": 11,
+     "pixeles": 138,
+     "superficie_ha": 5.52,
+     "z_medio": -5.37,
+     "z_pico": -7.71,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.1242,
+      -28.91055
+     ]
+    },
+    {
+     "id": 20,
+     "pixeles": 113,
+     "superficie_ha": 4.52,
+     "z_medio": -4.3,
+     "z_pico": -5.75,
+     "intensidad": "moderada",
+     "centroide": [
+      -59.1265,
+      -28.91529
+     ]
+    },
+    {
+     "id": 39,
+     "pixeles": 106,
+     "superficie_ha": 4.24,
+     "z_medio": -8.22,
+     "z_pico": -10.46,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.1836,
+      -28.97531
+     ]
+    },
+    {
+     "id": 87,
+     "pixeles": 106,
+     "superficie_ha": 4.24,
+     "z_medio": -4.46,
+     "z_pico": -6.56,
+     "intensidad": "moderada",
+     "centroide": [
+      -59.18692,
+      -29.05655
+     ]
+    },
+    {
+     "id": 68,
+     "pixeles": 98,
+     "superficie_ha": 3.92,
+     "z_medio": -4.37,
+     "z_pico": -6.38,
+     "intensidad": "moderada",
+     "centroide": [
+      -59.05516,
+      -29.00844
+     ]
+    },
+    {
+     "id": 18,
+     "pixeles": 93,
+     "superficie_ha": 3.72,
+     "z_medio": -4.76,
+     "z_pico": -5.93,
+     "intensidad": "moderada",
+     "centroide": [
+      -59.12494,
+      -28.91363
+     ]
+    },
+    {
+     "id": 51,
+     "pixeles": 87,
+     "superficie_ha": 3.48,
+     "z_medio": -5.59,
+     "z_pico": -10.14,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.18807,
+      -28.99467
+     ]
+    },
+    {
+     "id": 101,
+     "pixeles": 83,
+     "superficie_ha": 3.32,
+     "z_medio": -6.09,
+     "z_pico": -9.32,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.07694,
+      -29.08715
+     ]
+    },
+    {
+     "id": 7,
+     "pixeles": 82,
+     "superficie_ha": 3.28,
+     "z_medio": -5.72,
+     "z_pico": -8.53,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.12251,
+      -28.90683
+     ]
+    },
+    {
+     "id": 92,
+     "pixeles": 77,
+     "superficie_ha": 3.08,
+     "z_medio": -3.66,
+     "z_pico": -5.6,
+     "intensidad": "leve",
+     "centroide": [
+      -59.18642,
+      -29.06114
+     ]
+    },
+    {
+     "id": 13,
+     "pixeles": 68,
+     "superficie_ha": 2.72,
+     "z_medio": -3.69,
+     "z_pico": -5.67,
+     "intensidad": "leve",
+     "centroide": [
+      -59.11067,
+      -28.91115
+     ]
+    },
+    {
+     "id": 33,
+     "pixeles": 68,
+     "superficie_ha": 2.72,
+     "z_medio": -7.45,
+     "z_pico": -10.16,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.17235,
+      -28.96289
+     ]
+    },
+    {
+     "id": 80,
+     "pixeles": 62,
+     "superficie_ha": 2.48,
+     "z_medio": -4.85,
+     "z_pico": -7.76,
+     "intensidad": "moderada",
+     "centroide": [
+      -59.18368,
+      -29.04819
+     ]
+    },
+    {
+     "id": 28,
+     "pixeles": 60,
+     "superficie_ha": 2.4,
+     "z_medio": -5.79,
+     "z_pico": -9.7,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.16714,
+      -28.93908
+     ]
+    },
+    {
+     "id": 25,
+     "pixeles": 58,
+     "superficie_ha": 2.32,
+     "z_medio": -4.79,
+     "z_pico": -7.28,
+     "intensidad": "moderada",
+     "centroide": [
+      -59.11517,
+      -28.91818
+     ]
+    }
+   ],
+   "manchas_total": 54,
+   "serie": [
+    {
+     "fecha": "2025-10-18",
+     "agua_pct": 4.23,
+     "rara": false
+    },
+    {
+     "fecha": "2025-11-11",
+     "agua_pct": 4.9,
+     "rara": false
+    },
+    {
+     "fecha": "2025-12-11",
+     "agua_pct": 4.09,
+     "rara": false
+    },
+    {
+     "fecha": "2026-01-04",
+     "agua_pct": 4.57,
+     "rara": false
+    },
+    {
+     "fecha": "2026-01-28",
+     "agua_pct": 4.59,
+     "rara": false
+    },
+    {
+     "fecha": "2026-02-21",
+     "agua_pct": 4.14,
+     "rara": false
+    },
+    {
+     "fecha": "2026-03-17",
+     "agua_pct": 6.04,
+     "rara": true
+    },
+    {
+     "fecha": "2026-04-10",
+     "agua_pct": 4.15,
+     "rara": false
+    },
+    {
+     "fecha": "2026-05-16",
+     "agua_pct": 4.11,
+     "rara": false
+    },
+    {
+     "fecha": "2026-06-04",
+     "agua_pct": 4.02,
+     "rara": false
+    },
+    {
+     "fecha": "2026-06-28",
+     "agua_pct": 4.72,
+     "rara": false
+    },
+    {
+     "fecha": "2026-07-28",
+     "agua_pct": 4.46,
+     "rara": false
+    },
+    {
+     "fecha": "2026-08-21",
+     "agua_pct": 5.35,
+     "rara": false
+    },
+    {
+     "fecha": "2026-09-14",
+     "agua_pct": 6.55,
+     "rara": false
+    },
+    {
+     "fecha": "2026-10-08",
+     "agua_pct": 5.08,
+     "rara": false
+    },
+    {
+     "fecha": "2026-11-13",
+     "agua_pct": 6.28,
+     "rara": false
+    }
+   ]
+  },
+  {
+   "zona": "Bella Vista",
+   "estado": "ok",
+   "centro": [
+    -59.04,
+    -28.51
+   ],
+   "bbox": [
+    -59.14,
+    -28.61,
+    -58.94,
+    -28.41
+   ],
+   "orbita": "descending/68",
+   "fecha_actual": "2026-11-13T09:13:04.051904Z",
+   "fondo_fechas": [
+    "2025-10-18",
+    "2025-11-11",
+    "2025-12-11",
+    "2026-01-04",
+    "2026-01-28",
+    "2026-02-21",
+    "2026-03-17",
+    "2026-04-10",
+    "2026-05-16",
+    "2026-06-04",
+    "2026-06-28",
+    "2026-07-28",
+    "2026-08-21",
+    "2026-09-14",
+    "2026-10-08"
+   ],
+   "fondo_pasadas_min": 0,
+   "umbral_db": -13.54,
+   "umbral_metodo": "Otsu sobre la última pasada",
+   "resumen": {
+    "pixeles_validos": 522071,
+    "agua_hoy_ha": 1116.6,
+    "agua_habitual_ha": 551.2,
+    "agua_nueva_ha": 432.7,
+    "manchas": 26
+   },
+   "manchas": [
+    {
+     "id": 24,
+     "pixeles": 4877,
+     "superficie_ha": 195.08,
+     "z_medio": -7.67,
+     "z_pico": -12.85,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.01375,
+      -28.45284
+     ]
+    },
+    {
+     "id": 18,
+     "pixeles": 2764,
+     "superficie_ha": 110.56,
+     "z_medio": -7.91,
+     "z_pico": -14.87,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.00736,
+      -28.43514
+     ]
+    },
+    {
+     "id": 8,
+     "pixeles": 1469,
+     "superficie_ha": 58.76,
+     "z_medio": -6.23,
+     "z_pico": -11.09,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.00246,
+      -28.42013
+     ]
+    },
+    {
+     "id": 25,
+     "pixeles": 147,
+     "superficie_ha": 5.88,
+     "z_medio": -6.52,
+     "z_pico": -9.26,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.01019,
+      -28.44202
+     ]
+    },
+    {
+     "id": 11,
+     "pixeles": 130,
+     "superficie_ha": 5.2,
+     "z_medio": -5.66,
+     "z_pico": -9.76,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.00806,
+      -28.42345
+     ]
+    },
+    {
+     "id": 5,
+     "pixeles": 126,
+     "superficie_ha": 5.04,
+     "z_medio": -5.85,
+     "z_pico": -8.69,
+     "intensidad": "fuerte",
+     "centroide": [
+      -58.9964,
+      -28.41417
+     ]
+    },
+    {
+     "id": 34,
+     "pixeles": 120,
+     "superficie_ha": 4.8,
+     "z_medio": -6.05,
+     "z_pico": -8.71,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.02454,
+      -28.47363
+     ]
+    },
+    {
+     "id": 41,
+     "pixeles": 113,
+     "superficie_ha": 4.52,
+     "z_medio": -4.38,
+     "z_pico": -6.49,
+     "intensidad": "moderada",
+     "centroide": [
+      -59.05985,
+      -28.58826
+     ]
+    },
+    {
+     "id": 20,
+     "pixeles": 112,
+     "superficie_ha": 4.48,
+     "z_medio": -4.99,
+     "z_pico": -6.85,
+     "intensidad": "moderada",
+     "centroide": [
+      -59.00129,
+      -28.42934
+     ]
+    },
+    {
+     "id": 7,
+     "pixeles": 111,
+     "superficie_ha": 4.44,
+     "z_medio": -5.98,
+     "z_pico": -7.99,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.00413,
+      -28.41389
+     ]
+    },
+    {
+     "id": 32,
+     "pixeles": 94,
+     "superficie_ha": 3.76,
+     "z_medio": -6.45,
+     "z_pico": -8.62,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.01163,
+      -28.46277
+     ]
+    },
+    {
+     "id": 15,
+     "pixeles": 93,
+     "superficie_ha": 3.72,
+     "z_medio": -7.43,
+     "z_pico": -10.88,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.0061,
+      -28.42612
+     ]
+    },
+    {
+     "id": 26,
+     "pixeles": 87,
+     "superficie_ha": 3.48,
+     "z_medio": -7.36,
+     "z_pico": -10.81,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.00175,
+      -28.44279
+     ]
+    },
+    {
+     "id": 33,
+     "pixeles": 77,
+     "superficie_ha": 3.08,
+     "z_medio": -6.44,
+     "z_pico": -8.96,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.02122,
+      -28.47122
+     ]
+    },
+    {
+     "id": 39,
+     "pixeles": 71,
+     "superficie_ha": 2.84,
+     "z_medio": -4.18,
+     "z_pico": -5.59,
+     "intensidad": "moderada",
+     "centroide": [
+      -58.97025,
+      -28.50191
+     ]
+    },
+    {
+     "id": 27,
+     "pixeles": 58,
+     "superficie_ha": 2.32,
+     "z_medio": -8.43,
+     "z_pico": -12.15,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.00193,
+      -28.44514
+     ]
+    },
+    {
+     "id": 37,
+     "pixeles": 55,
+     "superficie_ha": 2.2,
+     "z_medio": -5.65,
+     "z_pico": -7.62,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.00833,
+      -28.49691
+     ]
+    },
+    {
+     "id": 3,
+     "pixeles": 46,
+     "superficie_ha": 1.84,
+     "z_medio": -6.78,
+     "z_pico": -8.66,
+     "intensidad": "fuerte",
+     "centroide": [
+      -58.99388,
+      -28.41088
+     ]
+    },
+    {
+     "id": 46,
+     "pixeles": 44,
+     "superficie_ha": 1.76,
+     "z_medio": -4.65,
+     "z_pico": -5.99,
+     "intensidad": "moderada",
+     "centroide": [
+      -59.06237,
+      -28.61017
+     ]
+    },
+    {
+     "id": 40,
+     "pixeles": 38,
+     "superficie_ha": 1.52,
+     "z_medio": -6.08,
+     "z_pico": -8.75,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.00234,
+      -28.54447
+     ]
+    },
+    {
+     "id": 2,
+     "pixeles": 35,
+     "superficie_ha": 1.4,
+     "z_medio": -8.36,
+     "z_pico": -10.18,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.00459,
+      -28.41016
+     ]
+    },
+    {
+     "id": 19,
+     "pixeles": 35,
+     "superficie_ha": 1.4,
+     "z_medio": -6.01,
+     "z_pico": -7.94,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.00417,
+      -28.42772
+     ]
+    },
+    {
+     "id": 45,
+     "pixeles": 35,
+     "superficie_ha": 1.4,
+     "z_medio": -4.08,
+     "z_pico": -5.79,
+     "intensidad": "moderada",
+     "centroide": [
+      -59.06314,
+      -28.60843
+     ]
+    },
+    {
+     "id": 28,
+     "pixeles": 29,
+     "superficie_ha": 1.16,
+     "z_medio": -8.9,
+     "z_pico": -11.57,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.00386,
+      -28.44724
+     ]
+    },
+    {
+     "id": 16,
+     "pixeles": 27,
+     "superficie_ha": 1.08,
+     "z_medio": -6.38,
+     "z_pico": -8.47,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.00108,
+      -28.42603
+     ]
+    },
+    {
+     "id": 9,
+     "pixeles": 25,
+     "superficie_ha": 1.0,
+     "z_medio": -8.78,
+     "z_pico": -10.7,
+     "intensidad": "fuerte",
+     "centroide": [
+      -58.99507,
+      -28.41905
+     ]
+    }
+   ],
+   "manchas_total": 26,
+   "serie": [
+    {
+     "fecha": "2025-10-18",
+     "agua_pct": 7.27,
+     "rara": true
+    },
+    {
+     "fecha": "2025-11-11",
+     "agua_pct": 2.69,
+     "rara": false
+    },
+    {
+     "fecha": "2025-12-11",
+     "agua_pct": 2.21,
+     "rara": false
+    },
+    {
+     "fecha": "2026-01-04",
+     "agua_pct": 2.56,
+     "rara": false
+    },
+    {
+     "fecha": "2026-01-28",
+     "agua_pct": 2.6,
+     "rara": false
+    },
+    {
+     "fecha": "2026-02-21",
+     "agua_pct": 3.67,
+     "rara": true
+    },
+    {
+     "fecha": "2026-03-17",
+     "agua_pct": 6.01,
+     "rara": true
+    },
+    {
+     "fecha": "2026-04-10",
+     "agua_pct": 2.44,
+     "rara": false
+    },
+    {
+     "fecha": "2026-05-16",
+     "agua_pct": 2.66,
+     "rara": false
+    },
+    {
+     "fecha": "2026-06-04",
+     "agua_pct": 2.77,
+     "rara": false
+    },
+    {
+     "fecha": "2026-06-28",
+     "agua_pct": 3.56,
+     "rara": false
+    },
+    {
+     "fecha": "2026-07-28",
+     "agua_pct": 3.23,
+     "rara": false
+    },
+    {
+     "fecha": "2026-08-21",
+     "agua_pct": 5.93,
+     "rara": false
+    },
+    {
+     "fecha": "2026-09-14",
+     "agua_pct": 7.19,
+     "rara": false
+    },
+    {
+     "fecha": "2026-10-08",
+     "agua_pct": 4.32,
+     "rara": false
+    },
+    {
+     "fecha": "2026-11-13",
+     "agua_pct": 5.35,
+     "rara": false
+    }
+   ]
+  },
+  {
+   "zona": "Goya",
+   "estado": "ok",
+   "centro": [
+    -59.26,
+    -29.14
+   ],
+   "bbox": [
+    -59.36,
+    -29.24,
+    -59.16,
+    -29.04
+   ],
+   "orbita": "descending/68",
+   "fecha_actual": "2026-11-13T09:13:04.051904Z",
+   "fondo_fechas": [
+    "2025-10-18",
+    "2025-11-11",
+    "2025-12-11",
+    "2026-01-04",
+    "2026-01-28",
+    "2026-02-21",
+    "2026-03-17",
+    "2026-04-10",
+    "2026-05-16",
+    "2026-06-04",
+    "2026-06-28",
+    "2026-07-28",
+    "2026-08-21",
+    "2026-09-14",
+    "2026-10-08"
+   ],
+   "fondo_pasadas_min": 0,
+   "umbral_db": -18.0,
+   "umbral_metodo": "fijo −18 dB (la escena no tiene dos modos claros)",
+   "resumen": {
+    "pixeles_validos": 432156,
+    "agua_hoy_ha": 247.3,
+    "agua_habitual_ha": 216.3,
+    "agua_nueva_ha": 14.2,
+    "manchas": 2
+   },
+   "manchas": [
+    {
+     "id": 1,
+     "pixeles": 202,
+     "superficie_ha": 8.08,
+     "z_medio": -7.24,
+     "z_pico": -8.91,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.21587,
+      -29.07165
+     ]
+    },
+    {
+     "id": 2,
+     "pixeles": 154,
+     "superficie_ha": 6.16,
+     "z_medio": -7.42,
+     "z_pico": -9.23,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.21455,
+      -29.07968
+     ]
+    }
+   ],
+   "manchas_total": 2,
+   "serie": [
+    {
+     "fecha": "2025-10-18",
+     "agua_pct": 0.73,
+     "rara": false
+    },
+    {
+     "fecha": "2025-11-11",
+     "agua_pct": 1.57,
+     "rara": false
+    },
+    {
+     "fecha": "2025-12-11",
+     "agua_pct": 1.35,
+     "rara": false
+    },
+    {
+     "fecha": "2026-01-04",
+     "agua_pct": 0.2,
+     "rara": false
+    },
+    {
+     "fecha": "2026-01-28",
+     "agua_pct": 1.32,
+     "rara": true
+    },
+    {
+     "fecha": "2026-02-21",
+     "agua_pct": 0.32,
+     "rara": false
+    },
+    {
+     "fecha": "2026-03-17",
+     "agua_pct": 0.27,
+     "rara": false
+    },
+    {
+     "fecha": "2026-04-10",
+     "agua_pct": 0.36,
+     "rara": false
+    },
+    {
+     "fecha": "2026-05-16",
+     "agua_pct": 0.94,
+     "rara": false
+    },
+    {
+     "fecha": "2026-06-04",
+     "agua_pct": 1.23,
+     "rara": false
+    },
+    {
+     "fecha": "2026-06-28",
+     "agua_pct": 1.69,
+     "rara": false
+    },
+    {
+     "fecha": "2026-07-28",
+     "agua_pct": 1.74,
+     "rara": false
+    },
+    {
+     "fecha": "2026-08-21",
+     "agua_pct": 1.83,
+     "rara": false
+    },
+    {
+     "fecha": "2026-09-14",
+     "agua_pct": 1.41,
+     "rara": false
+    },
+    {
+     "fecha": "2026-10-08",
+     "agua_pct": 1.18,
+     "rara": false
+    },
+    {
+     "fecha": "2026-11-13",
+     "agua_pct": 1.43,
+     "rara": false
+    }
+   ]
+  },
+  {
+   "zona": "Esquina",
+   "estado": "ok",
+   "centro": [
+    -59.53,
+    -30.01
+   ],
+   "bbox": [
+    -59.63,
+    -30.11,
+    -59.43,
+    -29.91
+   ],
+   "orbita": "descending/68",
+   "fecha_actual": "2026-11-13T09:13:29.052195Z",
+   "fondo_fechas": [
+    "2025-10-18",
+    "2025-11-11",
+    "2025-12-11",
+    "2026-01-04",
+    "2026-01-28",
+    "2026-02-21",
+    "2026-03-17",
+    "2026-04-10",
+    "2026-05-16",
+    "2026-06-04",
+    "2026-06-28",
+    "2026-07-28",
+    "2026-08-21",
+    "2026-09-14",
+    "2026-10-08"
+   ],
+   "fondo_pasadas_min": 0,
+   "umbral_db": -18.0,
+   "umbral_metodo": "fijo −18 dB (la escena no tiene dos modos claros)",
+   "resumen": {
+    "pixeles_validos": 485708,
+    "agua_hoy_ha": 276.4,
+    "agua_habitual_ha": 285.2,
+    "agua_nueva_ha": 0,
+    "manchas": 0
+   },
+   "manchas": [],
+   "manchas_total": 0,
+   "serie": [
+    {
+     "fecha": "2025-10-18",
+     "agua_pct": 1.34,
+     "rara": false
+    },
+    {
+     "fecha": "2025-11-11",
+     "agua_pct": 1.18,
+     "rara": false
+    },
+    {
+     "fecha": "2025-12-11",
+     "agua_pct": 0.7,
+     "rara": false
+    },
+    {
+     "fecha": "2026-01-04",
+     "agua_pct": 0.65,
+     "rara": false
+    },
+    {
+     "fecha": "2026-01-28",
+     "agua_pct": 0.82,
+     "rara": false
+    },
+    {
+     "fecha": "2026-02-21",
+     "agua_pct": 0.81,
+     "rara": false
+    },
+    {
+     "fecha": "2026-03-17",
+     "agua_pct": 0.81,
+     "rara": false
+    },
+    {
+     "fecha": "2026-04-10",
+     "agua_pct": 1.2,
+     "rara": false
+    },
+    {
+     "fecha": "2026-05-16",
+     "agua_pct": 1.52,
+     "rara": false
+    },
+    {
+     "fecha": "2026-06-04",
+     "agua_pct": 1.44,
+     "rara": false
+    },
+    {
+     "fecha": "2026-06-28",
+     "agua_pct": 2.16,
+     "rara": false
+    },
+    {
+     "fecha": "2026-07-28",
+     "agua_pct": 1.68,
+     "rara": false
+    },
+    {
+     "fecha": "2026-08-21",
+     "agua_pct": 3.38,
+     "rara": true
+    },
+    {
+     "fecha": "2026-09-14",
+     "agua_pct": 2.05,
+     "rara": false
+    },
+    {
+     "fecha": "2026-10-08",
+     "agua_pct": 1.52,
+     "rara": false
+    },
+    {
+     "fecha": "2026-11-13",
+     "agua_pct": 1.42,
+     "rara": false
+    }
+   ]
+  },
+  {
+   "zona": "Ituzaingó",
+   "estado": "ok",
+   "centro": [
+    -56.69,
+    -27.59
+   ],
+   "bbox": [
+    -56.79,
+    -27.69,
+    -56.59,
+    -27.49
+   ],
+   "orbita": "descending/68",
+   "fecha_actual": "2026-11-13T09:12:39.051615Z",
+   "fondo_fechas": [
+    "2025-10-18",
+    "2025-11-05",
+    "2025-11-29",
+    "2025-12-11",
+    "2025-12-29",
+    "2026-01-16",
+    "2026-02-03",
+    "2026-02-21",
+    "2026-03-11",
+    "2026-03-29",
+    "2026-05-22",
+    "2026-06-16",
+    "2026-07-28",
+    "2026-09-02",
+    "2026-10-08"
+   ],
+   "fondo_pasadas_min": 2,
+   "umbral_db": -13.54,
+   "umbral_metodo": "Otsu sobre la última pasada",
+   "resumen": {
+    "pixeles_validos": 1092845,
+    "agua_hoy_ha": 7405.6,
+    "agua_habitual_ha": 6430.2,
+    "agua_nueva_ha": 135.7,
+    "manchas": 31
+   },
+   "manchas": [
+    {
+     "id": 31,
+     "pixeles": 519,
+     "superficie_ha": 20.76,
+     "z_medio": -5.01,
+     "z_pico": -8.65,
+     "intensidad": "fuerte",
+     "centroide": [
+      -56.76943,
+      -27.58066
+     ]
+    },
+    {
+     "id": 33,
+     "pixeles": 474,
+     "superficie_ha": 18.96,
+     "z_medio": -5.08,
+     "z_pico": -10.12,
+     "intensidad": "fuerte",
+     "centroide": [
+      -56.75519,
+      -27.5829
+     ]
+    },
+    {
+     "id": 34,
+     "pixeles": 269,
+     "superficie_ha": 10.76,
+     "z_medio": -6.17,
+     "z_pico": -10.45,
+     "intensidad": "fuerte",
+     "centroide": [
+      -56.76363,
+      -27.58332
+     ]
+    },
+    {
+     "id": 42,
+     "pixeles": 201,
+     "superficie_ha": 8.04,
+     "z_medio": -5.14,
+     "z_pico": -7.37,
+     "intensidad": "fuerte",
+     "centroide": [
+      -56.75095,
+      -27.58758
+     ]
+    },
+    {
+     "id": 43,
+     "pixeles": 200,
+     "superficie_ha": 8.0,
+     "z_medio": -4.8,
+     "z_pico": -7.54,
+     "intensidad": "moderada",
+     "centroide": [
+      -56.74,
+      -27.58728
+     ]
+    },
+    {
+     "id": 38,
+     "pixeles": 179,
+     "superficie_ha": 7.16,
+     "z_medio": -5.27,
+     "z_pico": -7.92,
+     "intensidad": "fuerte",
+     "centroide": [
+      -56.76076,
+      -27.58538
+     ]
+    },
+    {
+     "id": 3,
+     "pixeles": 128,
+     "superficie_ha": 5.12,
+     "z_medio": -7.07,
+     "z_pico": -11.75,
+     "intensidad": "fuerte",
+     "centroide": [
+      -56.70141,
+      -27.50619
+     ]
+    },
+    {
+     "id": 24,
+     "pixeles": 115,
+     "superficie_ha": 4.6,
+     "z_medio": -4.57,
+     "z_pico": -8.2,
+     "intensidad": "moderada",
+     "centroide": [
+      -56.70103,
+      -27.57151
+     ]
+    },
+    {
+     "id": 23,
+     "pixeles": 114,
+     "superficie_ha": 4.56,
+     "z_medio": -4.9,
+     "z_pico": -8.8,
+     "intensidad": "moderada",
+     "centroide": [
+      -56.69842,
+      -27.56893
+     ]
+    },
+    {
+     "id": 46,
+     "pixeles": 111,
+     "superficie_ha": 4.44,
+     "z_medio": -3.94,
+     "z_pico": -5.95,
+     "intensidad": "leve",
+     "centroide": [
+      -56.73538,
+      -27.58799
+     ]
+    },
+    {
+     "id": 39,
+     "pixeles": 100,
+     "superficie_ha": 4.0,
+     "z_medio": -4.33,
+     "z_pico": -7.28,
+     "intensidad": "moderada",
+     "centroide": [
+      -56.73293,
+      -27.58503
+     ]
+    },
+    {
+     "id": 25,
+     "pixeles": 73,
+     "superficie_ha": 2.92,
+     "z_medio": -4.81,
+     "z_pico": -7.05,
+     "intensidad": "moderada",
+     "centroide": [
+      -56.74824,
+      -27.57144
+     ]
+    },
+    {
+     "id": 2,
+     "pixeles": 72,
+     "superficie_ha": 2.88,
+     "z_medio": -5.96,
+     "z_pico": -10.91,
+     "intensidad": "fuerte",
+     "centroide": [
+      -56.77539,
+      -27.49527
+     ]
+    },
+    {
+     "id": 30,
+     "pixeles": 67,
+     "superficie_ha": 2.68,
+     "z_medio": -5.34,
+     "z_pico": -7.33,
+     "intensidad": "fuerte",
+     "centroide": [
+      -56.75709,
+      -27.57668
+     ]
+    },
+    {
+     "id": 16,
+     "pixeles": 66,
+     "superficie_ha": 2.64,
+     "z_medio": -5.78,
+     "z_pico": -9.42,
+     "intensidad": "fuerte",
+     "centroide": [
+      -56.7583,
+      -27.56041
+     ]
+    },
+    {
+     "id": 8,
+     "pixeles": 61,
+     "superficie_ha": 2.44,
+     "z_medio": -5.06,
+     "z_pico": -6.87,
+     "intensidad": "fuerte",
+     "centroide": [
+      -56.69971,
+      -27.54235
+     ]
+    },
+    {
+     "id": 55,
+     "pixeles": 61,
+     "superficie_ha": 2.44,
+     "z_medio": -6.0,
+     "z_pico": -9.53,
+     "intensidad": "fuerte",
+     "centroide": [
+      -56.7801,
+      -27.6067
+     ]
+    },
+    {
+     "id": 48,
+     "pixeles": 57,
+     "superficie_ha": 2.28,
+     "z_medio": -6.64,
+     "z_pico": -10.25,
+     "intensidad": "fuerte",
+     "centroide": [
+      -56.76616,
+      -27.59177
+     ]
+    },
+    {
+     "id": 52,
+     "pixeles": 55,
+     "superficie_ha": 2.2,
+     "z_medio": -6.37,
+     "z_pico": -7.92,
+     "intensidad": "fuerte",
+     "centroide": [
+      -56.65287,
+      -27.59877
+     ]
+    },
+    {
+     "id": 17,
+     "pixeles": 54,
+     "superficie_ha": 2.16,
+     "z_medio": -4.8,
+     "z_pico": -6.74,
+     "intensidad": "moderada",
+     "centroide": [
+      -56.72443,
+      -27.56237
+     ]
+    },
+    {
+     "id": 40,
+     "pixeles": 53,
+     "superficie_ha": 2.12,
+     "z_medio": -5.63,
+     "z_pico": -10.22,
+     "intensidad": "fuerte",
+     "centroide": [
+      -56.75155,
+      -27.58561
+     ]
+    },
+    {
+     "id": 60,
+     "pixeles": 52,
+     "superficie_ha": 2.08,
+     "z_medio": -6.09,
+     "z_pico": -8.96,
+     "intensidad": "fuerte",
+     "centroide": [
+      -56.73355,
+      -27.61305
+     ]
+    },
+    {
+     "id": 44,
+     "pixeles": 44,
+     "superficie_ha": 1.76,
+     "z_medio": -5.13,
+     "z_pico": -7.32,
+     "intensidad": "fuerte",
+     "centroide": [
+      -56.74523,
+      -27.58724
+     ]
+    },
+    {
+     "id": 57,
+     "pixeles": 40,
+     "superficie_ha": 1.6,
+     "z_medio": -5.22,
+     "z_pico": -6.21,
+     "intensidad": "fuerte",
+     "centroide": [
+      -56.66654,
+      -27.60897
+     ]
+    },
+    {
+     "id": 11,
+     "pixeles": 38,
+     "superficie_ha": 1.52,
+     "z_medio": -4.2,
+     "z_pico": -6.73,
+     "intensidad": "moderada",
+     "centroide": [
+      -56.72461,
+      -27.55399
+     ]
+    },
+    {
+     "id": 1,
+     "pixeles": 36,
+     "superficie_ha": 1.44,
+     "z_medio": -4.5,
+     "z_pico": -7.25,
+     "intensidad": "moderada",
+     "centroide": [
+      -56.76527,
+      -27.49351
+     ]
+    },
+    {
+     "id": 22,
+     "pixeles": 35,
+     "superficie_ha": 1.4,
+     "z_medio": -5.49,
+     "z_pico": -7.49,
+     "intensidad": "fuerte",
+     "centroide": [
+      -56.78684,
+      -27.56812
+     ]
+    },
+    {
+     "id": 50,
+     "pixeles": 35,
+     "superficie_ha": 1.4,
+     "z_medio": -4.28,
+     "z_pico": -6.44,
+     "intensidad": "moderada",
+     "centroide": [
+      -56.75143,
+      -27.59683
+     ]
+    },
+    {
+     "id": 54,
+     "pixeles": 30,
+     "superficie_ha": 1.2,
+     "z_medio": -5.36,
+     "z_pico": -10.83,
+     "intensidad": "fuerte",
+     "centroide": [
+      -56.71896,
+      -27.60044
+     ]
+    },
+    {
+     "id": 21,
+     "pixeles": 28,
+     "superficie_ha": 1.12,
+     "z_medio": -4.88,
+     "z_pico": -7.64,
+     "intensidad": "moderada",
+     "centroide": [
+      -56.74424,
+      -27.56789
+     ]
+    }
+   ],
+   "manchas_total": 31,
+   "serie": [
+    {
+     "fecha": "2025-10-18",
+     "agua_pct": 21.22,
+     "rara": false
+    },
+    {
+     "fecha": "2025-11-05",
+     "agua_pct": 16.83,
+     "rara": false
+    },
+    {
+     "fecha": "2025-11-29",
+     "agua_pct": 14.35,
+     "rara": false
+    },
+    {
+     "fecha": "2025-12-11",
+     "agua_pct": 14.84,
+     "rara": false
+    },
+    {
+     "fecha": "2025-12-29",
+     "agua_pct": 19.08,
+     "rara": true
+    },
+    {
+     "fecha": "2026-01-16",
+     "agua_pct": 14.48,
+     "rara": false
+    },
+    {
+     "fecha": "2026-02-03",
+     "agua_pct": 14.67,
+     "rara": false
+    },
+    {
+     "fecha": "2026-02-21",
+     "agua_pct": 14.21,
+     "rara": false
+    },
+    {
+     "fecha": "2026-03-11",
+     "agua_pct": 16.39,
+     "rara": true
+    },
+    {
+     "fecha": "2026-03-29",
+     "agua_pct": 14.69,
+     "rara": false
+    },
+    {
+     "fecha": "2026-05-22",
+     "agua_pct": 14.76,
+     "rara": false
+    },
+    {
+     "fecha": "2026-06-16",
+     "agua_pct": 14.88,
+     "rara": false
+    },
+    {
+     "fecha": "2026-07-28",
+     "agua_pct": 19.32,
+     "rara": false
+    },
+    {
+     "fecha": "2026-09-02",
+     "agua_pct": 17.81,
+     "rara": false
+    },
+    {
+     "fecha": "2026-10-08",
+     "agua_pct": 16.4,
+     "rara": false
+    },
+    {
+     "fecha": "2026-11-13",
+     "agua_pct": 16.94,
+     "rara": false
+    }
+   ]
+  },
+  {
+   "zona": "Paso de los Libres",
+   "estado": "ok",
+   "centro": [
+    -57.09,
+    -29.71
+   ],
+   "bbox": [
+    -57.19,
+    -29.81,
+    -56.99,
+    -29.61
+   ],
+   "orbita": "descending/170",
+   "fecha_actual": "2026-11-14T09:05:31.305560Z",
+   "fondo_fechas": [
+    "2025-10-13",
+    "2025-11-06",
+    "2025-11-30",
+    "2025-12-30",
+    "2026-01-23",
+    "2026-02-16",
+    "2026-03-12",
+    "2026-04-17",
+    "2026-05-11",
+    "2026-05-29",
+    "2026-06-16",
+    "2026-07-11",
+    "2026-08-16",
+    "2026-09-09",
+    "2026-10-15"
+   ],
+   "fondo_pasadas_min": 2,
+   "umbral_db": -18.0,
+   "umbral_metodo": "fijo −18 dB (la escena no tiene dos modos claros)",
+   "resumen": {
+    "pixeles_validos": 0,
+    "agua_hoy_ha": 0.0,
+    "agua_habitual_ha": 0.0,
+    "agua_nueva_ha": 0,
+    "manchas": 0
+   },
+   "manchas": [],
+   "manchas_total": 0,
+   "serie": [
+    {
+     "fecha": "2025-10-13",
+     "agua_pct": 3.58,
+     "rara": true
+    },
+    {
+     "fecha": "2025-11-06",
+     "agua_pct": 7.63,
+     "rara": false
+    },
+    {
+     "fecha": "2025-11-30",
+     "agua_pct": 7.53,
+     "rara": false
+    },
+    {
+     "fecha": "2025-12-30",
+     "agua_pct": 8.37,
+     "rara": false
+    },
+    {
+     "fecha": "2026-01-23",
+     "agua_pct": 5.93,
+     "rara": false
+    },
+    {
+     "fecha": "2026-02-16",
+     "agua_pct": 6.73,
+     "rara": false
+    },
+    {
+     "fecha": "2026-03-12",
+     "agua_pct": 7.84,
+     "rara": false
+    },
+    {
+     "fecha": "2026-04-17",
+     "agua_pct": 6.89,
+     "rara": false
+    },
+    {
+     "fecha": "2026-05-11",
+     "agua_pct": 8.55,
+     "rara": false
+    },
+    {
+     "fecha": "2026-05-29",
+     "agua_pct": 8.28,
+     "rara": false
+    },
+    {
+     "fecha": "2026-06-16",
+     "agua_pct": 8.3,
+     "rara": false
+    },
+    {
+     "fecha": "2026-07-11",
+     "agua_pct": 8.71,
+     "rara": false
+    },
+    {
+     "fecha": "2026-08-16",
+     "agua_pct": 9.43,
+     "rara": false
+    },
+    {
+     "fecha": "2026-09-09",
+     "agua_pct": 8.71,
+     "rara": false
+    },
+    {
+     "fecha": "2026-10-15",
+     "agua_pct": 18.61,
+     "rara": true
+    },
+    {
+     "fecha": "2026-11-14",
+     "agua_pct": 0.0,
+     "rara": false
+    }
+   ]
+  },
+  {
+   "zona": "Mercedes",
+   "estado": "ok",
+   "centro": [
+    -58.08,
+    -29.18
+   ],
+   "bbox": [
+    -58.18,
+    -29.28,
+    -57.98,
+    -29.08
+   ],
+   "orbita": "descending/68",
+   "fecha_actual": "2026-11-13T09:13:04.051904Z",
+   "fondo_fechas": [
+    "2025-10-18",
+    "2025-11-11",
+    "2025-12-11",
+    "2026-01-04",
+    "2026-01-28",
+    "2026-02-21",
+    "2026-03-17",
+    "2026-04-10",
+    "2026-05-16",
+    "2026-06-04",
+    "2026-06-28",
+    "2026-07-28",
+    "2026-08-21",
+    "2026-09-14",
+    "2026-10-08"
+   ],
+   "fondo_pasadas_min": 2,
+   "umbral_db": -18.0,
+   "umbral_metodo": "fijo −18 dB (la escena no tiene dos modos claros)",
+   "resumen": {
+    "pixeles_validos": 1073592,
+    "agua_hoy_ha": 1.8,
+    "agua_habitual_ha": 2.1,
+    "agua_nueva_ha": 0,
+    "manchas": 0
+   },
+   "manchas": [],
+   "manchas_total": 0,
+   "serie": [
+    {
+     "fecha": "2025-10-18",
+     "agua_pct": 0.0,
+     "rara": false
+    },
+    {
+     "fecha": "2025-11-11",
+     "agua_pct": 0.0,
+     "rara": false
+    },
+    {
+     "fecha": "2025-12-11",
+     "agua_pct": 0.01,
+     "rara": false
+    },
+    {
+     "fecha": "2026-01-04",
+     "agua_pct": 0.0,
+     "rara": false
+    },
+    {
+     "fecha": "2026-01-28",
+     "agua_pct": 0.02,
+     "rara": false
+    },
+    {
+     "fecha": "2026-02-21",
+     "agua_pct": 0.0,
+     "rara": false
+    },
+    {
+     "fecha": "2026-03-17",
+     "agua_pct": 0.03,
+     "rara": false
+    },
+    {
+     "fecha": "2026-04-10",
+     "agua_pct": 0.01,
+     "rara": false
+    },
+    {
+     "fecha": "2026-05-16",
+     "agua_pct": 0.01,
+     "rara": false
+    },
+    {
+     "fecha": "2026-06-04",
+     "agua_pct": 0.0,
+     "rara": false
+    },
+    {
+     "fecha": "2026-06-28",
+     "agua_pct": 0.02,
+     "rara": false
+    },
+    {
+     "fecha": "2026-07-28",
+     "agua_pct": 0.01,
+     "rara": false
+    },
+    {
+     "fecha": "2026-08-21",
+     "agua_pct": 0.03,
+     "rara": false
+    },
+    {
+     "fecha": "2026-09-14",
+     "agua_pct": 0.01,
+     "rara": false
+    },
+    {
+     "fecha": "2026-10-08",
+     "agua_pct": 0.0,
+     "rara": false
+    },
+    {
+     "fecha": "2026-11-13",
+     "agua_pct": 0.0,
+     "rara": false
+    }
+   ]
+  }
+ ]
+}
