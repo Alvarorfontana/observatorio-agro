@@ -1,11 +1,11 @@
 {
- "updated": "2026-11-16T06:51+00:00",
+ "updated": "2026-11-16T18:41+00:00",
  "version": 1,
  "fuente": "https://observatorio-agro.vercel.app",
  "niveles": {
-  "Normal": 8,
+  "Normal": 9,
   "Atención": 9,
-  "Alerta": 3,
+  "Alerta": 2,
   "Evacuación": 6
  },
  "peor": {
@@ -13,7 +13,7 @@
   "place": "Santa Fe · Paraná",
   "river": "Paraná",
   "level": "Evacuación",
-  "height": 5.64
+  "height": 5.69
  },
  "alertas": [
   {
@@ -35,6 +35,12 @@
    "level": "Evacuación"
   },
   {
+   "id": "parana-diamante",
+   "place": "Diamante",
+   "river": "Paraná",
+   "level": "Evacuación"
+  },
+  {
    "id": "parana-esquina",
    "place": "Esquina",
    "river": "Paraná",
@@ -43,12 +49,6 @@
   {
    "id": "parana-lapaz",
    "place": "La Paz",
-   "river": "Paraná",
-   "level": "Evacuación"
-  },
-  {
-   "id": "parana-diamante",
-   "place": "Diamante",
    "river": "Paraná",
    "level": "Evacuación"
   },
@@ -63,12 +63,6 @@
    "place": "Corrientes",
    "river": "Paraná",
    "level": "Alerta"
-  },
-  {
-   "id": "uruguay-libres",
-   "place": "Paso de los Libres",
-   "river": "Uruguay",
-   "level": "Alerta"
   }
  ],
  "enso": {
@@ -77,9 +71,9 @@
   "oni": 2.46
  },
  "enviado_el": null,
- "pdf_el": "2026-11-15T09:37+00:00",
+ "pdf_el": "2026-11-16T18:41+00:00",
  "newsletter": {
-  "subject": "DOTS · El Niño y crecidas · 16/11/2026 06:51 UTC",
+  "subject": "DOTS · El Niño y crecidas · 16/11/2026 18:41 UTC",
   "bytes": 6207
  }
 }
