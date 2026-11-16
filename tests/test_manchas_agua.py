@@ -169,3 +169,22 @@ def test_une_tramos_del_mismo_dia_y_exige_cobertura(tmp_path, monkeypatch):
         an.main()
     z = json.loads((tmp_path / "anegamientos.json").read_text(encoding="utf-8"))["zonas"][0]
     assert z["estado"] == "cobertura insuficiente"
+
+
+def test_elige_la_orbita_que_cubre_el_recuadro():
+    pytest.importorskip("shapely")
+    import anegamientos as an
+    bbox = (-59.0, -28.0, -58.8, -27.8)
+    roza = {"type": "Polygon", "coordinates": [[[-60, -29], [-58.98, -29], [-58.98, -27], [-60, -27], [-60, -29]]]}
+    cubre = {"type": "Polygon", "coordinates": [[[-59.5, -29], [-58, -29], [-58, -27], [-59.5, -27], [-59.5, -29]]]}
+    escenas = []
+    for m in range(1, 9):
+        escenas += [{"id": f"a{m}", "geometry": roza, "assets": {"vv": {}},
+                     "properties": {"datetime": f"2026-{m:02d}-10T09:30:00Z", "sat:orbit_state": "descending",
+                                    "sat:relative_orbit": 68}},
+                    {"id": f"b{m}", "geometry": cubre, "assets": {"vv": {}},
+                     "properties": {"datetime": f"2026-{m:02d}-08T09:30:00Z", "sat:orbit_state": "ascending",
+                                    "sat:relative_orbit": 170}}]
+    orbita, pasadas = an.elegir_orbita(escenas, bbox)
+    assert orbita == "ascending/170" and len(pasadas) == 8
+    assert an.cobertura_huella(pasadas[-1], bbox) == pytest.approx(1.0)

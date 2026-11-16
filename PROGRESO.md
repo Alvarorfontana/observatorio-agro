@@ -26,7 +26,8 @@ Las reglas de trabajo están en `CLAUDE.md`. El detalle de cada versión está e
   Primera corrida real: el recuadro de Corrientes capital y Paso de los Libres caía en el borde entre dos tramos de
   la misma pasada y daba cero agua. Corregido: se unen todos los tramos del día, la zona no se informa si la pasada
   cubre menos del 60 % del recuadro, cada píxel necesita 5 pasadas de fondo y Otsu solo vale entre −24 y −15 dB
-  (más arriba confunde suelo mojado con agua; si no, −18 dB fijo).
+  (más arriba confunde suelo mojado con agua; si no, −18 dB fijo). Cada zona elige la órbita cuya huella cubre
+  el recuadro: algunas franjas lo rozan sin cubrirlo.
   Pendiente: panel en el sitio con mapa, rangos y límites; validar contra GFM y la crecida conocida más reciente.
 
 ### 2026-11-14
