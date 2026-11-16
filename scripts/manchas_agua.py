@@ -15,7 +15,7 @@ llevados a la Tierra. Código propio, solo numpy y scipy, sin red.
 
 Rangos de lectura (orientativos, sin validar en terreno):
   z medio de la mancha   ≤ −5 fuerte · −5 a −4 moderada · −4 a −3 leve
-  Umbral de agua VV      Otsu sobre la escena; si no hay dos modos, −18 dB fijo.
+  Umbral de agua VV      Otsu sobre la escena, aceptado entre −24 y −15 dB; si no, −18 dB fijo.
 Límites: no ve agua bajo monte o pajonal denso, no mide profundidad, puede confundir
 sombra de radar o suelo muy liso con agua. Píxel mínimo útil: 20 m.
 """
@@ -29,6 +29,8 @@ MAD_A_SIGMA = 1.4826          # convierte la desviación absoluta mediana en un 
 UMBRAL_AGUA_DB = -18.0
 Z_UMBRAL = -3.0
 SIGMA_PISO_DB = 1.0           # el fondo nunca se considera más estable que 1 dB
+# Otsu solo se acepta en el rango habitual del agua abierta en VV; más arriba confunde suelo mojado
+OTSU_MIN_DB, OTSU_MAX_DB = -24.0, -15.0
 
 
 # --------------------------------------------------------------------------- 1. speckle
@@ -67,6 +69,12 @@ def sigma_recortado(pila, sigma=3.0, iteraciones=5, eje=0):
     de `sigma` desvíos de la mediana y se recalcula. Devuelve (mediana, sigma, n_usados).
     """
     datos = np.array(pila, dtype="float64", copy=True)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)   # píxeles sin ninguna pasada válida
+        return _sigma_recortado(datos, sigma, iteraciones, eje)
+
+
+def _sigma_recortado(datos, sigma, iteraciones, eje):
     for _ in range(iteraciones):
         med = np.nanmedian(datos, axis=eje, keepdims=True)
         mad = np.nanmedian(np.abs(datos - med), axis=eje, keepdims=True)
@@ -75,10 +83,8 @@ def sigma_recortado(pila, sigma=3.0, iteraciones=5, eje=0):
         if not np.any(fuera):
             break
         datos[fuera] = np.nan
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", RuntimeWarning)   # píxeles sin ninguna pasada válida
-        med = np.nanmedian(datos, axis=eje)
-        sd = MAD_A_SIGMA * np.nanmedian(np.abs(datos - np.expand_dims(med, eje)), axis=eje)
+    med = np.nanmedian(datos, axis=eje)
+    sd = MAD_A_SIGMA * np.nanmedian(np.abs(datos - np.expand_dims(med, eje)), axis=eje)
     n = np.sum(np.isfinite(datos), axis=eje)
     return med, sd, n
 
@@ -108,7 +114,7 @@ def umbral_otsu(db, rango=(-35.0, 0.0), bins=128, min_pixeles=500):
     i = int(np.argmax(entre))
     t = float(centros[i])
     # sin dos clases representadas (cada lado < 2 %) el umbral no es confiable
-    if w[i] < 0.02 or w[i] > 0.98 or not (-26.0 <= t <= -12.0):
+    if w[i] < 0.02 or w[i] > 0.98 or not (OTSU_MIN_DB <= t <= OTSU_MAX_DB):
         return None
     return round(t, 2)
 

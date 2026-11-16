@@ -119,3 +119,53 @@ def test_cadena_completa_con_pasadas_sinteticas(tmp_path, monkeypatch):
     assert z["serie"][-1]["fecha"] == "2026-11-10"
     geo = json.loads((tmp_path / "anegamientos.geojson").read_text(encoding="utf-8"))
     assert len(geo["features"]) == 1 and geo["features"][0]["properties"]["zona"] == "Goya"
+
+
+def test_otsu_fuera_de_rango_vuelve_a_none():
+    # dos modos, pero el corte cae en −13 dB (suelo mojado contra suelo seco): no se acepta como agua
+    mezcla = np.concatenate([RNG.normal(-15, 0.8, 4000), RNG.normal(-10, 0.8, 6000)])
+    assert ma.umbral_otsu(mezcla) is None
+
+
+def _escenas_dia(fecha, tramos=1, orbita=10):
+    return [{"id": f"{fecha}-{t}", "tramo": t, "properties": {"datetime": f"{fecha}T09:30:0{t}Z",
+             "sat:orbit_state": "descending", "sat:relative_orbit": orbita}, "assets": {"vv": {}}}
+            for t in range(tramos)]
+
+
+def test_une_tramos_del_mismo_dia_y_exige_cobertura(tmp_path, monkeypatch):
+    """El recuadro cae en el borde entre dos tramos: sin unirlos, cada uno cubre la mitad."""
+    pytest.importorskip("rasterio")
+    pytest.importorskip("pyproj")
+    pytest.importorskip("shapely")
+    import json
+    import anegamientos as an
+    fechas = [f"2026-{m:02d}-05" for m in range(1, 11)] + ["2026-11-10"]
+    escenas = [e for f in fechas for e in _escenas_dia(f, tramos=2)]
+    monkeypatch.setattr(an, "buscar", lambda bbox, dias: escenas)
+
+    def leer(escena, transform, ancho, alto):
+        db = np.full((alto, ancho), -9.0)
+        db[:, :60] = -23.0
+        mitad = alto // 2
+        if escena["tramo"] == 0:
+            db[mitad:, :] = np.nan
+        else:
+            db[:mitad, :] = np.nan
+        return 10 ** (db / 10)
+
+    monkeypatch.setattr(an, "leer_vv", leer)
+    monkeypatch.setattr(an, "SALIDA", tmp_path)
+    monkeypatch.setenv("ANEG_ZONAS", "Corrientes (capital)")
+    an.main()
+    z = json.loads((tmp_path / "anegamientos.json").read_text(encoding="utf-8"))["zonas"][0]
+    assert z["estado"] == "ok" and z["cobertura"] > 0.99
+    assert z["resumen"]["agua_habitual_ha"] > 0
+
+    # si el último día solo trae un tramo (media zona), no se informa
+    escenas[:] = [e for e in escenas if not (e["properties"]["datetime"].startswith("2026-11-10") and e["tramo"] == 1)]
+    monkeypatch.setattr(an, "SALIDA", tmp_path)
+    with pytest.raises(SystemExit):
+        an.main()
+    z = json.loads((tmp_path / "anegamientos.json").read_text(encoding="utf-8"))["zonas"][0]
+    assert z["estado"] == "cobertura insuficiente"

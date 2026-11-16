@@ -23,8 +23,11 @@ Las reglas de trabajo están en `CLAUDE.md`. El detalle de cada versión está e
   Rangos: z medio ≤ −5 fuerte · −5 a −4 moderada · −4 a −3 leve; mínimo 1 ha. Sentinel-1 RTC de Planetary Computer,
   gratis y sin secretos. `scripts/manchas_agua.py` (núcleo), `scripts/anegamientos.py`, `anegamientos.yml`.
   Salida liviana en la rama datos: `data/anegamientos.json` y `.geojson`. Orientativo.
-  Pendiente: primera corrida real; panel en el sitio con mapa, rangos y límites; validar contra GFM y la crecida
-  conocida más reciente.
+  Primera corrida real: el recuadro de Corrientes capital y Paso de los Libres caía en el borde entre dos tramos de
+  la misma pasada y daba cero agua. Corregido: se unen todos los tramos del día, la zona no se informa si la pasada
+  cubre menos del 60 % del recuadro, cada píxel necesita 5 pasadas de fondo y Otsu solo vale entre −24 y −15 dB
+  (más arriba confunde suelo mojado con agua; si no, −18 dB fijo).
+  Pendiente: panel en el sitio con mapa, rangos y límites; validar contra GFM y la crecida conocida más reciente.
 
 ### 2026-11-14
 - **Alerta temprana de estrés hídrico por lote** (idea tomada de quantag, código propio). En el procesamiento semanal,
