@@ -48,4 +48,6 @@ Open-Meteo: datos CC-BY 4.0; la API gratuita es sólo para uso no comercial. ONS
 NOAA y USGS: dominio público. NASA: uso libre con cita. INA: datos públicos del Estado argentino.
 AlphaEarth Foundations Satellite Embedding (colección GOOGLE/SATELLITE_EMBEDDING/V1/ANNUAL): CC-BY 4.0. «The AlphaEarth Foundations Satellite Embedding dataset is produced by Google and Google DeepMind.» Se usa como segunda opinión en Desmontes.
 Sentinel-1 GRD (colección COPERNICUS/S1_GRD de Earth Engine): banda VH, 10 m, modo IW, una pasada cada pocos días; datos Copernicus de libre uso con la cita de arriba. Se usa en barrios populares por radar y como confirmación por radar en Desmontes.
+
+Sentinel-1 RTC (colección `sentinel-1-rtc` de Microsoft Planetary Computer, catálogo STAC público y gratuito, sin clave): banda VV con corrección radiométrica de terreno, 10 m remuestreado a 20 m, una pasada cada 6 a 12 días por órbita. Datos Copernicus de libre uso con la cita de arriba; procesamiento RTC de Microsoft con licencia CC BY 4.0. Se usa en Anegamientos (`scripts/anegamientos.py`).
 EarthAlign (MBZUAI · ADIA Lab · UC San Diego): descripciones y metadatos del dataset liberado; ERA5 de Copernicus (CC-BY). Revisar las licencias por fuente antes de un uso comercial.
