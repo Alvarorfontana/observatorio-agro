@@ -63,8 +63,23 @@ def buscar(bbox, dias):
     return r.json().get("features", [])
 
 
-def elegir_orbita(escenas):
-    """Agrupa por órbita relativa y dirección; elige la que tenga la pasada más reciente y más historia."""
+def cobertura_huella(pasada, bbox):
+    """Fracción del recuadro que cubren las huellas (geometría STAC) de los tramos de una pasada."""
+    from shapely.geometry import box, shape
+    from shapely.ops import unary_union
+    geoms = [shape(e["geometry"]) for e in pasada if e.get("geometry")]
+    if not geoms:
+        return 1.0      # sin huella en el catálogo: se decide después, al leer
+    caja = box(*bbox)
+    return unary_union(geoms).intersection(caja).area / caja.area
+
+
+def elegir_orbita(escenas, bbox=None):
+    """Agrupa por órbita relativa y dirección, una pasada por día con todos sus tramos.
+
+    Elige la órbita cuya última pasada cubre de verdad el recuadro (huella ≥ COBERTURA_MIN) y tiene
+    historia suficiente; entre esas, la más reciente. Una franja puede rozar el recuadro sin cubrirlo.
+    """
     grupos = {}
     for s in escenas:
         p = s.get("properties", {})
@@ -74,16 +89,18 @@ def elegir_orbita(escenas):
         grupos.setdefault(clave, []).append(s)
     if not grupos:
         return None, []
-    # primero las órbitas con historia suficiente; entre ellas, la de pasada más reciente
-    clave, lista = max(grupos.items(),
-                       key=lambda kv: (len(kv[1]) >= 6,
-                                       max(x["properties"]["datetime"] for x in kv[1])[:10], len(kv[1])))
-    # una pasada por día, con TODOS sus tramos: el satélite corta la franja en escenas contiguas
-    # y un recuadro puede caer justo en el borde entre dos
-    por_dia = {}
-    for s in sorted(lista, key=lambda s: s["properties"]["datetime"]):
-        por_dia.setdefault(s["properties"]["datetime"][:10], []).append(s)
-    return f"{clave[0]}/{clave[1]}", [por_dia[d] for d in sorted(por_dia)]
+    candidatas = []
+    for clave, lista in grupos.items():
+        # el satélite corta la franja en tramos contiguos: un recuadro puede caer entre dos
+        por_dia = {}
+        for s in sorted(lista, key=lambda s: s["properties"]["datetime"]):
+            por_dia.setdefault(s["properties"]["datetime"][:10], []).append(s)
+        pasadas = [por_dia[d] for d in sorted(por_dia)]
+        cubre = cobertura_huella(pasadas[-1], bbox) if bbox else 1.0
+        candidatas.append(((len(pasadas) >= 6, cubre >= COBERTURA_MIN, _fecha(pasadas[-1])[:10], len(pasadas)),
+                           f"{clave[0]}/{clave[1]}", pasadas))
+    _, nombre, pasadas = max(candidatas, key=lambda c: (c[0][0] and c[0][1], c[0][1], c[0][2], c[0][3]))
+    return nombre, pasadas
 
 
 def _fecha(pasada):
@@ -144,7 +161,7 @@ def analizar_zona(nombre, lon, lat, dias, fondo_max):
     from shapely.ops import transform as stransform
 
     bbox = (lon - MEDIO_LADO, lat - MEDIO_LADO, lon + MEDIO_LADO, lat + MEDIO_LADO)
-    orbita, escenas = elegir_orbita(buscar(bbox, dias))
+    orbita, escenas = elegir_orbita(buscar(bbox, dias), bbox)
     if len(escenas) < 6:
         return {"zona": nombre, "estado": "sin datos suficientes",
                 "detalle": f"{len(escenas)} pasadas de una misma órbita en {dias} días (mínimo 6)"}, []
