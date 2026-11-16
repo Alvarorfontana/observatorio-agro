@@ -1,21 +1,31 @@
 Zona Corrientes (capital)…
-  cobertura insuficiente: la última pasada cubre el 0% del recuadro (mínimo 60%)
+/home/runner/work/observatorio-agro/observatorio-agro/scripts/anegamientos.py:231: DeprecationWarning: The 'shapely.ops.transform()' function is deprecated. Use 'shapely.transform()' or 'shapely.transform_coordseq()' instead. See https://shapely.readthedocs.io/en/latest/manual.html#shapely.ops.transform for more details.
+  g = stransform(a_wgs_xy, shape(geom)).simplify(0.0002, preserve_topology=True)
+  ok: {'pixeles_validos': 1089149, 'agua_hoy_ha': 1547.2, 'agua_habitual_ha': 478.4, 'agua_nueva_ha': 140.5, 'manchas': 42}
 Zona Santa Lucía…
-/home/runner/work/observatorio-agro/observatorio-agro/scripts/anegamientos.py:214: DeprecationWarning: The 'shapely.ops.transform()' function is deprecated. Use 'shapely.transform()' or 'shapely.transform_coordseq()' instead. See https://shapely.readthedocs.io/en/latest/manual.html#shapely.ops.transform for more details.
+/home/runner/work/observatorio-agro/observatorio-agro/scripts/anegamientos.py:231: DeprecationWarning: The 'shapely.ops.transform()' function is deprecated. Use 'shapely.transform()' or 'shapely.transform_coordseq()' instead. See https://shapely.readthedocs.io/en/latest/manual.html#shapely.ops.transform for more details.
   g = stransform(a_wgs_xy, shape(geom)).simplify(0.0002, preserve_topology=True)
   ok: {'pixeles_validos': 1015065, 'agua_hoy_ha': 1123.4, 'agua_habitual_ha': 978.4, 'agua_nueva_ha': 34.4, 'manchas': 13}
 Zona Bella Vista…
-  cobertura insuficiente: la última pasada cubre el 48% del recuadro (mínimo 60%)
+/home/runner/work/observatorio-agro/observatorio-agro/scripts/anegamientos.py:231: DeprecationWarning: The 'shapely.ops.transform()' function is deprecated. Use 'shapely.transform()' or 'shapely.transform_coordseq()' instead. See https://shapely.readthedocs.io/en/latest/manual.html#shapely.ops.transform for more details.
+  g = stransform(a_wgs_xy, shape(geom)).simplify(0.0002, preserve_topology=True)
+  ok: {'pixeles_validos': 1078788, 'agua_hoy_ha': 1394.8, 'agua_habitual_ha': 468.9, 'agua_nueva_ha': 136.5, 'manchas': 36}
 Zona Goya…
-  cobertura insuficiente: la última pasada cubre el 40% del recuadro (mínimo 60%)
+/home/runner/work/observatorio-agro/observatorio-agro/scripts/anegamientos.py:231: DeprecationWarning: The 'shapely.ops.transform()' function is deprecated. Use 'shapely.transform()' or 'shapely.transform_coordseq()' instead. See https://shapely.readthedocs.io/en/latest/manual.html#shapely.ops.transform for more details.
+  g = stransform(a_wgs_xy, shape(geom)).simplify(0.0002, preserve_topology=True)
+  ok: {'pixeles_validos': 1071525, 'agua_hoy_ha': 3132.6, 'agua_habitual_ha': 1008.0, 'agua_nueva_ha': 727.9, 'manchas': 108}
 Zona Esquina…
-  cobertura insuficiente: la última pasada cubre el 46% del recuadro (mínimo 60%)
+/home/runner/work/observatorio-agro/observatorio-agro/scripts/anegamientos.py:231: DeprecationWarning: The 'shapely.ops.transform()' function is deprecated. Use 'shapely.transform()' or 'shapely.transform_coordseq()' instead. See https://shapely.readthedocs.io/en/latest/manual.html#shapely.ops.transform for more details.
+  g = stransform(a_wgs_xy, shape(geom)).simplify(0.0002, preserve_topology=True)
+  ok: {'pixeles_validos': 1059627, 'agua_hoy_ha': 4570.5, 'agua_habitual_ha': 468.3, 'agua_nueva_ha': 900.9, 'manchas': 152}
 Zona Ituzaingó…
-/home/runner/work/observatorio-agro/observatorio-agro/scripts/anegamientos.py:214: DeprecationWarning: The 'shapely.ops.transform()' function is deprecated. Use 'shapely.transform()' or 'shapely.transform_coordseq()' instead. See https://shapely.readthedocs.io/en/latest/manual.html#shapely.ops.transform for more details.
+/home/runner/work/observatorio-agro/observatorio-agro/scripts/anegamientos.py:231: DeprecationWarning: The 'shapely.ops.transform()' function is deprecated. Use 'shapely.transform()' or 'shapely.transform_coordseq()' instead. See https://shapely.readthedocs.io/en/latest/manual.html#shapely.ops.transform for more details.
   g = stransform(a_wgs_xy, shape(geom)).simplify(0.0002, preserve_topology=True)
   ok: {'pixeles_validos': 1092607, 'agua_hoy_ha': 4153.9, 'agua_habitual_ha': 2415.8, 'agua_nueva_ha': 169.6, 'manchas': 34}
 Zona Paso de los Libres…
-  cobertura insuficiente: la última pasada cubre el 0% del recuadro (mínimo 60%)
+/home/runner/work/observatorio-agro/observatorio-agro/scripts/anegamientos.py:231: DeprecationWarning: The 'shapely.ops.transform()' function is deprecated. Use 'shapely.transform()' or 'shapely.transform_coordseq()' instead. See https://shapely.readthedocs.io/en/latest/manual.html#shapely.ops.transform for more details.
+  g = stransform(a_wgs_xy, shape(geom)).simplify(0.0002, preserve_topology=True)
+  ok: {'pixeles_validos': 1070026, 'agua_hoy_ha': 400.5, 'agua_habitual_ha': 2847.8, 'agua_nueva_ha': 8.9, 'manchas': 2}
 Zona Mercedes…
   ok: {'pixeles_validos': 1073442, 'agua_hoy_ha': 1.8, 'agua_habitual_ha': 2.1, 'agua_nueva_ha': 0, 'manchas': 0}
-Listo: 3/8 zonas, 43 manchas en el mapa.
+Listo: 8/8 zonas, 165 manchas en el mapa.
