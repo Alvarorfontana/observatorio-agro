@@ -38,8 +38,9 @@ export function buildNav(go: (k: string) => void, draw: () => void, pdf: () => v
       { key: "suelo", label: "Suelo y nitrógeno", icon: <CircleDot />, onClick: () => go("suelo") },
       { key: "ganado", label: "Ganado", icon: <Beef />, onClick: () => go("ganado") },
     ]},
-    { title: "Historia y territorio", items: [
-      { key: "atlas-dot", label: "Atlas agrícola e informes", icon: <BookOpen />, onClick: () => go("atlas-dot") },
+    { title: "Investigación y territorio", items: [
+      { key: "atlas-lab", label: "ATLAS LAB · Investigación", icon: <BookOpen />, onClick: () => go("atlas-lab") },
+      { key: "atlas-dot", label: "Atlas agrícola e informes", icon: <Globe2 />, onClick: () => go("atlas-dot") },
     ]},
     { title: "Bosque y exportación", items: [
       { key: "sustentabilidad", label: "Bosque y deforestación", icon: <Trees />, onClick: () => go("sustentabilidad") },
