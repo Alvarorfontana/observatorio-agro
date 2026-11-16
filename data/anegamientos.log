@@ -1,45 +1,21 @@
 Zona Corrientes (capital)…
-/home/runner/work/observatorio-agro/observatorio-agro/scripts/manchas_agua.py:71: RuntimeWarning: All-NaN slice encountered
-  med = np.nanmedian(datos, axis=eje, keepdims=True)
-/home/runner/work/observatorio-agro/observatorio-agro/scripts/manchas_agua.py:72: RuntimeWarning: All-NaN slice encountered
-  mad = np.nanmedian(np.abs(datos - med), axis=eje, keepdims=True)
-  ok: {'pixeles_validos': 5342, 'agua_hoy_ha': 0.0, 'agua_habitual_ha': 0.0, 'agua_nueva_ha': 0, 'manchas': 0}
+  cobertura insuficiente: la última pasada cubre el 0% del recuadro (mínimo 60%)
 Zona Santa Lucía…
-/home/runner/work/observatorio-agro/observatorio-agro/scripts/manchas_agua.py:71: RuntimeWarning: All-NaN slice encountered
-  med = np.nanmedian(datos, axis=eje, keepdims=True)
-/home/runner/work/observatorio-agro/observatorio-agro/scripts/manchas_agua.py:72: RuntimeWarning: All-NaN slice encountered
-  mad = np.nanmedian(np.abs(datos - med), axis=eje, keepdims=True)
-/home/runner/work/observatorio-agro/observatorio-agro/scripts/anegamientos.py:187: DeprecationWarning: The 'shapely.ops.transform()' function is deprecated. Use 'shapely.transform()' or 'shapely.transform_coordseq()' instead. See https://shapely.readthedocs.io/en/latest/manual.html#shapely.ops.transform for more details.
+/home/runner/work/observatorio-agro/observatorio-agro/scripts/anegamientos.py:214: DeprecationWarning: The 'shapely.ops.transform()' function is deprecated. Use 'shapely.transform()' or 'shapely.transform_coordseq()' instead. See https://shapely.readthedocs.io/en/latest/manual.html#shapely.ops.transform for more details.
   g = stransform(a_wgs_xy, shape(geom)).simplify(0.0002, preserve_topology=True)
-  ok: {'pixeles_validos': 1016233, 'agua_hoy_ha': 2551.3, 'agua_habitual_ha': 1704.6, 'agua_nueva_ha': 323.2, 'manchas': 54}
+  ok: {'pixeles_validos': 1015065, 'agua_hoy_ha': 1123.4, 'agua_habitual_ha': 978.4, 'agua_nueva_ha': 34.4, 'manchas': 13}
 Zona Bella Vista…
-/home/runner/work/observatorio-agro/observatorio-agro/scripts/manchas_agua.py:71: RuntimeWarning: All-NaN slice encountered
-  med = np.nanmedian(datos, axis=eje, keepdims=True)
-/home/runner/work/observatorio-agro/observatorio-agro/scripts/manchas_agua.py:72: RuntimeWarning: All-NaN slice encountered
-  mad = np.nanmedian(np.abs(datos - med), axis=eje, keepdims=True)
-/home/runner/work/observatorio-agro/observatorio-agro/scripts/anegamientos.py:187: DeprecationWarning: The 'shapely.ops.transform()' function is deprecated. Use 'shapely.transform()' or 'shapely.transform_coordseq()' instead. See https://shapely.readthedocs.io/en/latest/manual.html#shapely.ops.transform for more details.
-  g = stransform(a_wgs_xy, shape(geom)).simplify(0.0002, preserve_topology=True)
-  ok: {'pixeles_validos': 522071, 'agua_hoy_ha': 1116.6, 'agua_habitual_ha': 551.2, 'agua_nueva_ha': 432.7, 'manchas': 26}
+  cobertura insuficiente: la última pasada cubre el 48% del recuadro (mínimo 60%)
 Zona Goya…
-/home/runner/work/observatorio-agro/observatorio-agro/scripts/manchas_agua.py:71: RuntimeWarning: All-NaN slice encountered
-  med = np.nanmedian(datos, axis=eje, keepdims=True)
-/home/runner/work/observatorio-agro/observatorio-agro/scripts/manchas_agua.py:72: RuntimeWarning: All-NaN slice encountered
-  mad = np.nanmedian(np.abs(datos - med), axis=eje, keepdims=True)
-/home/runner/work/observatorio-agro/observatorio-agro/scripts/anegamientos.py:187: DeprecationWarning: The 'shapely.ops.transform()' function is deprecated. Use 'shapely.transform()' or 'shapely.transform_coordseq()' instead. See https://shapely.readthedocs.io/en/latest/manual.html#shapely.ops.transform for more details.
-  g = stransform(a_wgs_xy, shape(geom)).simplify(0.0002, preserve_topology=True)
-  ok: {'pixeles_validos': 432156, 'agua_hoy_ha': 247.3, 'agua_habitual_ha': 216.3, 'agua_nueva_ha': 14.2, 'manchas': 2}
+  cobertura insuficiente: la última pasada cubre el 40% del recuadro (mínimo 60%)
 Zona Esquina…
-/home/runner/work/observatorio-agro/observatorio-agro/scripts/manchas_agua.py:71: RuntimeWarning: All-NaN slice encountered
-  med = np.nanmedian(datos, axis=eje, keepdims=True)
-/home/runner/work/observatorio-agro/observatorio-agro/scripts/manchas_agua.py:72: RuntimeWarning: All-NaN slice encountered
-  mad = np.nanmedian(np.abs(datos - med), axis=eje, keepdims=True)
-  ok: {'pixeles_validos': 485708, 'agua_hoy_ha': 276.4, 'agua_habitual_ha': 285.2, 'agua_nueva_ha': 0, 'manchas': 0}
+  cobertura insuficiente: la última pasada cubre el 46% del recuadro (mínimo 60%)
 Zona Ituzaingó…
-/home/runner/work/observatorio-agro/observatorio-agro/scripts/anegamientos.py:187: DeprecationWarning: The 'shapely.ops.transform()' function is deprecated. Use 'shapely.transform()' or 'shapely.transform_coordseq()' instead. See https://shapely.readthedocs.io/en/latest/manual.html#shapely.ops.transform for more details.
+/home/runner/work/observatorio-agro/observatorio-agro/scripts/anegamientos.py:214: DeprecationWarning: The 'shapely.ops.transform()' function is deprecated. Use 'shapely.transform()' or 'shapely.transform_coordseq()' instead. See https://shapely.readthedocs.io/en/latest/manual.html#shapely.ops.transform for more details.
   g = stransform(a_wgs_xy, shape(geom)).simplify(0.0002, preserve_topology=True)
-  ok: {'pixeles_validos': 1092845, 'agua_hoy_ha': 7405.6, 'agua_habitual_ha': 6430.2, 'agua_nueva_ha': 135.7, 'manchas': 31}
+  ok: {'pixeles_validos': 1092607, 'agua_hoy_ha': 4153.9, 'agua_habitual_ha': 2415.8, 'agua_nueva_ha': 169.6, 'manchas': 34}
 Zona Paso de los Libres…
-  ok: {'pixeles_validos': 0, 'agua_hoy_ha': 0.0, 'agua_habitual_ha': 0.0, 'agua_nueva_ha': 0, 'manchas': 0}
+  cobertura insuficiente: la última pasada cubre el 0% del recuadro (mínimo 60%)
 Zona Mercedes…
-  ok: {'pixeles_validos': 1073592, 'agua_hoy_ha': 1.8, 'agua_habitual_ha': 2.1, 'agua_nueva_ha': 0, 'manchas': 0}
-Listo: 8/8 zonas, 88 manchas en el mapa.
+  ok: {'pixeles_validos': 1073442, 'agua_hoy_ha': 1.8, 'agua_habitual_ha': 2.1, 'agua_nueva_ha': 0, 'manchas': 0}
+Listo: 3/8 zonas, 43 manchas en el mapa.
