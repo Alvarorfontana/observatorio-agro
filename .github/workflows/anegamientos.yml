@@ -1,0 +1,47 @@
+# Anegamientos en Corrientes: manchas de agua nueva con radar Sentinel-1 (métodos de astronomía llevados a la Tierra).
+# Cada semana compara la última pasada de radar con el «fondo» de cada píxel y cataloga las manchas.
+# Gratis y sin secretos: Sentinel-1 RTC de Microsoft Planetary Computer.
+# Guarda en la rama datos: no publica la web.
+name: Anegamientos (radar Sentinel-1)
+
+on:
+  workflow_dispatch:
+    inputs:
+      zonas:
+        description: "Zonas separadas por coma (ej. Goya,Esquina). Vacío = todas"
+        required: false
+        default: ""
+  schedule:
+    - cron: "23 10 * * 3"    # miércoles
+
+permissions:
+  contents: write
+
+concurrency:
+  group: anegamientos
+  cancel-in-progress: false
+
+jobs:
+  anegamientos:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Instalar
+        run: pip install numpy scipy rasterio pyproj shapely requests planetary-computer
+      - name: Detectar manchas de agua nueva
+        timeout-minutes: 100
+        env:
+          ANEG_ZONAS: ${{ github.event.inputs.zonas || '' }}
+        run: |
+          mkdir -p data
+          set -o pipefail
+          python -u scripts/anegamientos.py 2>&1 | tee data/anegamientos.log
+      - name: Guardar en la rama datos (no publica la web)
+        if: always()
+        run: |
+          cp scripts/datos_rama.sh /tmp/datos_rama.sh && bash /tmp/datos_rama.sh guardar "Anegamientos $(date -u +%Y-%m-%d)" \
+            data/anegamientos.json data/anegamientos.geojson data/anegamientos.log

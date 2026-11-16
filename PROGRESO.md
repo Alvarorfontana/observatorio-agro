@@ -14,6 +14,18 @@ Las reglas de trabajo están en `CLAUDE.md`. El detalle de cada versión está e
 
 ## Registro
 
+### 2026-11-16
+- **Anegamientos en Corrientes con métodos de astronomía** (idea: cómo se separa una galaxia del fondo del cielo).
+  Cada miércoles, en 8 zonas ribereñas (capital, Santa Lucía, Bella Vista, Goya, Esquina, Ituzaingó, Paso de los
+  Libres, Mercedes): filtro Lee contra el speckle, «fondo» de cada píxel con recorte sigma sobre las pasadas del último
+  año (sin los últimos 30 días), desvío z de la última pasada, umbral Otsu, apertura 3×3 y catálogo de manchas por
+  regiones conectadas (superficie, centroide, intensidad). Hampel marca fechas raras en la serie de % de agua.
+  Rangos: z medio ≤ −5 fuerte · −5 a −4 moderada · −4 a −3 leve; mínimo 1 ha. Sentinel-1 RTC de Planetary Computer,
+  gratis y sin secretos. `scripts/manchas_agua.py` (núcleo), `scripts/anegamientos.py`, `anegamientos.yml`.
+  Salida liviana en la rama datos: `data/anegamientos.json` y `.geojson`. Orientativo.
+  Pendiente: primera corrida real; panel en el sitio con mapa, rangos y límites; validar contra GFM y la crecida
+  conocida más reciente.
+
 ### 2026-11-14
 - **Alerta temprana de estrés hídrico por lote** (idea tomada de quantag, código propio). En el procesamiento semanal,
   cada lote compara su NDVI y su LSWI (agua en la hoja) con la misma época (±15 días) de hasta 5 años anteriores.
