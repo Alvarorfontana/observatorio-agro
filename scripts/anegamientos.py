@@ -18,6 +18,7 @@ Todo es orientativo: sin validar en terreno.
 import json
 import os
 import sys
+import warnings
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -31,6 +32,8 @@ RES_M = 20
 CRS_UTM = "EPSG:32721"          # UTM 21 S: cubre toda Corrientes
 SALIDA = Path("data")
 MAX_MANCHAS = 30
+COBERTURA_MIN = 0.6           # la última pasada tiene que cubrir al menos el 60 % del recuadro
+FONDO_MIN = 5                 # pasadas válidas mínimas por píxel para armar su fondo
 
 # Recuadros de ~20 × 20 km sobre localidades ribereñas y bajos de Corrientes (lon, lat centro)
 ZONAS = {
@@ -75,12 +78,16 @@ def elegir_orbita(escenas):
     clave, lista = max(grupos.items(),
                        key=lambda kv: (len(kv[1]) >= 6,
                                        max(x["properties"]["datetime"] for x in kv[1])[:10], len(kv[1])))
-    lista.sort(key=lambda s: s["properties"]["datetime"])
-    # una pasada por día (las escenas contiguas del mismo día se repiten en el borde)
+    # una pasada por día, con TODOS sus tramos: el satélite corta la franja en escenas contiguas
+    # y un recuadro puede caer justo en el borde entre dos
     por_dia = {}
-    for s in lista:
-        por_dia.setdefault(s["properties"]["datetime"][:10], s)
+    for s in sorted(lista, key=lambda s: s["properties"]["datetime"]):
+        por_dia.setdefault(s["properties"]["datetime"][:10], []).append(s)
     return f"{clave[0]}/{clave[1]}", [por_dia[d] for d in sorted(por_dia)]
+
+
+def _fecha(pasada):
+    return pasada[0]["properties"]["datetime"]
 
 
 def grilla(lon, lat):
@@ -91,6 +98,20 @@ def grilla(lon, lat):
     x0, x1, y0, y1 = min(xs), max(xs), min(ys), max(ys)
     ancho, alto = int((x1 - x0) // RES_M), int((y1 - y0) // RES_M)
     return from_origin(x0, y1, RES_M, RES_M), ancho, alto
+
+
+def leer_pasada(pasada, transform, ancho, alto):
+    """Une los tramos de un mismo día (promedio donde se superponen)."""
+    capas = [leer_vv(e, transform, ancho, alto) for e in pasada]
+    if len(capas) == 1:
+        return capas[0]
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
+        return np.nanmean(np.stack(capas), axis=0)
+
+
+def cobertura(arr):
+    return float(np.isfinite(arr).mean()) if arr.size else 0.0
 
 
 def leer_vv(escena, transform, ancho, alto):
@@ -108,7 +129,7 @@ def leer_vv(escena, transform, ancho, alto):
 
 
 def fondo_espaciado(escenas, corte, maximo):
-    previas = [s for s in escenas if s["properties"]["datetime"] < corte]
+    previas = [s for s in escenas if _fecha(s) < corte]
     if len(previas) <= maximo:
         return previas
     idx = np.linspace(0, len(previas) - 1, maximo).round().astype(int)
@@ -128,7 +149,7 @@ def analizar_zona(nombre, lon, lat, dias, fondo_max):
         return {"zona": nombre, "estado": "sin datos suficientes",
                 "detalle": f"{len(escenas)} pasadas de una misma órbita en {dias} días (mínimo 6)"}, []
     actual = escenas[-1]
-    f_actual = actual["properties"]["datetime"]
+    f_actual = _fecha(actual)
     corte = _iso(datetime.fromisoformat(f_actual.replace("Z", "+00:00")) - timedelta(days=30))
     previas = fondo_espaciado(escenas, corte, fondo_max)
     if len(previas) < 5:
@@ -142,26 +163,32 @@ def analizar_zona(nombre, lon, lat, dias, fondo_max):
         x, y = xy(transform, f, c)   # centro del píxel
         return a_wgs.transform(x, y)
 
-    hoy_db = ma.a_db(ma.filtro_lee(leer_vv(actual, transform, ancho, alto)))
+    hoy_db = ma.a_db(ma.filtro_lee(leer_pasada(actual, transform, ancho, alto)))
+    cob = cobertura(hoy_db)
+    if cob < COBERTURA_MIN:
+        return {"zona": nombre, "estado": "cobertura insuficiente", "fecha_actual": f_actual,
+                "detalle": f"la última pasada cubre el {cob:.0%} del recuadro (mínimo {COBERTURA_MIN:.0%})"}, []
     pila = []
     serie = []
     for s in previas:
         try:
-            db = ma.a_db(ma.filtro_lee(leer_vv(s, transform, ancho, alto)))
+            db = ma.a_db(ma.filtro_lee(leer_pasada(s, transform, ancho, alto)))
         except Exception as e:  # una pasada que no se puede leer no frena la zona
-            print(f"  {nombre}: no se pudo leer {s['id']}: {e}")
+            print(f"  {nombre}: no se pudo leer {_fecha(s)[:10]}: {e}")
             continue
         pila.append(db)
-        serie.append((s["properties"]["datetime"][:10], db))
+        if cobertura(db) >= COBERTURA_MIN:     # la serie solo con pasadas comparables
+            serie.append((_fecha(s)[:10], db))
     if len(pila) < 5:
         return {"zona": nombre, "estado": "sin datos suficientes", "detalle": "pasadas ilegibles"}, []
 
     umbral = ma.umbral_otsu(hoy_db)
     metodo_umbral = "Otsu sobre la última pasada"
     if umbral is None:
-        umbral, metodo_umbral = ma.UMBRAL_AGUA_DB, "fijo −18 dB (la escena no tiene dos modos claros)"
+        umbral, metodo_umbral = ma.UMBRAL_AGUA_DB, "fijo −18 dB (Otsu sin dos modos claros o fuera de −24 a −15 dB)"
 
     med, sd, n = ma.sigma_recortado(np.stack(pila))
+    med = np.where(n >= FONDO_MIN, med, np.nan)   # sin historia suficiente, el píxel no se juzga
     manchas, etiquetas, resumen = ma.detectar_manchas(hoy_db, med, sd, RES_M * RES_M, umbral_db=umbral,
                                                       a_lonlat=a_lonlat)
 
@@ -193,8 +220,7 @@ def analizar_zona(nombre, lon, lat, dias, fondo_max):
         m.pop("fila_col", None)
         m.pop("caja", None)
     return {"zona": nombre, "estado": "ok", "centro": [lon, lat], "bbox": [round(b, 3) for b in bbox],
-            "orbita": orbita, "fecha_actual": f_actual, "fondo_fechas": [s["properties"]["datetime"][:10] for s in previas],
-            "fondo_pasadas_min": int(np.nanmin(n)) if n.size else 0,
+            "orbita": orbita, "fecha_actual": f_actual, "fondo_fechas": [_fecha(s)[:10] for s in previas], "cobertura": round(cob, 3),
             "umbral_db": umbral, "umbral_metodo": metodo_umbral,
             "resumen": resumen, "manchas": manchas[:MAX_MANCHAS], "manchas_total": len(manchas),
             "serie": serie_json}, features
@@ -231,6 +257,7 @@ def main():
                     "Puede confundir sombra de radar, asfalto o suelo muy liso con agua",
                     "Una pasada cada 6 a 12 días: puede perder anegamientos cortos",
                     "Píxel de 20 m: manchas menores a 1 ha no se informan"],
+        "cobertura_minima": COBERTURA_MIN,
         "zonas": resultados,
     }
     (SALIDA / "anegamientos.json").write_text(json.dumps(salida, ensure_ascii=False, indent=1), encoding="utf-8")
