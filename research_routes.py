@@ -173,6 +173,18 @@ def lot_costs():
     except ValueError as e: return jsonify({'status':'sin dato','error':str(e)}),400
     except Exception as e: return jsonify({'status':'sin dato','error':'No se pudieron calcular costos y logística','type':type(e).__name__}),502
 
+@research_api.get('/anegamientos')
+def anegamientos_radar():
+    """Manchas de agua nueva por radar Sentinel-1 (tarea semanal), cruzadas con el último estado del INA."""
+    import datastore, anegamientos_api as an
+    data=an.armar(datastore.load('anegamientos.json'),datastore.load('avisos.json'))
+    if not data:
+        return jsonify(status='sin dato',error='Todavía no hay corrida: lanzar la tarea «Anegamientos (radar Sentinel-1)» en GitHub Actions.'),200
+    geo=datastore.load('anegamientos.geojson') or {'type':'FeatureCollection','features':[]}
+    r=jsonify(status='recibido',data=data,geojson=geo)
+    r.headers['Cache-Control']='public, s-maxage=3600'
+    return r
+
 @research_api.post('/avisos/suscribir')
 def avisos_subscribe():
     try: return jsonify(avw.subscribe(request.get_json(silent=True) or {}))

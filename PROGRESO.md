@@ -28,7 +28,12 @@ Las reglas de trabajo están en `CLAUDE.md`. El detalle de cada versión está e
   cubre menos del 60 % del recuadro, cada píxel necesita 5 pasadas de fondo y Otsu solo vale entre −24 y −15 dB
   (más arriba confunde suelo mojado con agua; si no, −18 dB fijo). Cada zona elige la órbita cuya huella cubre
   el recuadro: algunas franjas lo rozan sin cubrirlo.
-  Pendiente: panel en el sitio con mapa, rangos y límites; validar contra GFM y la crecida conocida más reciente.
+  Página **`/anegamientos`** (menú «Más módulos» y menú del celular): mapa satelital con recuadros y manchas, tabla
+  por zona con el último estado del INA y si coincide (regla en `anegamientos_api.py`, ruta
+  `/api/fuentes/anegamientos`), barras de agua habitual/hoy/nueva, serie con fechas raras, rangos y límites.
+  Validación 16/11: coinciden 6 zonas con escala del INA; Paso de los Libres no (menos de la mitad del agua habitual
+  con el Uruguay en atención: posible viento sobre el río), queda marcada «en revisión».
+  Pendiente: revisar Paso de los Libres (probar polarización VH o descartar pasadas con viento); validar contra GFM.
 
 ### 2026-11-14
 - **Alerta temprana de estrés hídrico por lote** (idea tomada de quantag, código propio). En el procesamiento semanal,
