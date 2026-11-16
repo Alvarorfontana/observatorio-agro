@@ -64,6 +64,7 @@ import { RindeAgua } from "./site/RindeAgua";
 import { CasoBellaVista } from "./site/CasoBellaVista";
 import { Focos } from "./site/Focos";
 const NdviExtra = lazy(() => import("./site/NdviExtra").then(m => ({ default: m.NdviExtra })));
+const Anegamientos = lazy(() => import("./site/Anegamientos").then(m => ({ default: m.Anegamientos })));
 const NinoCrecidas = lazy(() => import("./site/NinoCrecidas").then(m => ({ default: m.NinoCrecidas })));
 import { readLotFile, lotsToGeoJSON, lotsToKML, type DxfCrs, type DxfUnits } from "./dashboard/lotFiles";
 type Data = Record<string, any>;
@@ -2740,7 +2741,7 @@ function PublicHeader({onDemo}:{onDemo:()=>void}){return <header className="site
     <strong>01 · Observatorio y producción</strong>
     <SiteLink to="/observatorio">Mapa principal · parcelas e informes</SiteLink><SiteLink to="/cultivos">Cultivos y rendimiento</SiteLink><SiteLink to="/agricultura-precision">Agricultura de precisión</SiteLink><SiteLink to="/modelo-3d">Modelo 3D del terreno</SiteLink>
     <strong>02 · Clima y agua</strong>
-    <SiteLink to="/el-nino">Clima regional · El Niño</SiteLink><SiteLink to="/simulador-ambiental">Simulador ambiental · ENSO y NASA POWER</SiteLink><SiteLink to="/nino-crecidas">Crecidas e inundaciones</SiteLink><SiteLink to="/alertas">Alertas hidrológicas</SiteLink><a href="/poblacion">Población y riesgo</a>
+    <SiteLink to="/el-nino">Clima regional · El Niño</SiteLink><SiteLink to="/simulador-ambiental">Simulador ambiental · ENSO y NASA POWER</SiteLink><SiteLink to="/nino-crecidas">Crecidas e inundaciones</SiteLink><SiteLink to="/anegamientos">Anegamientos por radar</SiteLink><SiteLink to="/alertas">Alertas hidrológicas</SiteLink><a href="/poblacion">Población y riesgo</a>
     <strong>03 · Satélites y datos</strong>
     <SiteLink to="/radar">Radar Sentinel-1</SiteLink><SiteLink to="/focos">Fuego y heladas</SiteLink><SiteLink to="/capas">Capas del mapa</SiteLink><SiteLink to="/copernicus">Copernicus · nuevas herramientas</SiteLink><SiteLink to="/panel">Panel regional</SiteLink>
     <strong>04 · Informes y documentación</strong>
@@ -2749,7 +2750,7 @@ function PublicHeader({onDemo}:{onDemo:()=>void}){return <header className="site
 </nav><div className="site-head-actions"><SiteLink to="/alertas" className="alert-btn">⚠ Alertas</SiteLink><SiteLink to="/acceso" className="ghost-link">Ingresar</SiteLink><button className="demo-btn" onClick={onDemo}>Abrir Observatorio →</button>
   <details className="nav-mobile"><summary aria-label="Menú">☰</summary><div>
     <button className="nav-mobile-demo" onClick={onDemo}>Abrir Observatorio →</button>
-    {([["/que-es-dots","Qué es DOTS"],["/caso-bella-vista","Ejemplo: caso Bella Vista"],["/el-nino","Mi región: El Niño"],["/simulador-ambiental","Simulador ambiental · Sudamérica"],["/alertas","Alertas de crecidas"],["/nino-crecidas","El Niño y crecidas"],["/focos","Fuego, rayos y heladas"],["/agricultura-precision","Agricultura de precisión"],["/modelo-3d","Modelo 3D del terreno"],["/radar","Radar Sentinel-1 e informe PDF"],["/cultivos","Cultivos y rinde"],["/libre-deforestacion","Vender a Europa"],["/poblacion","Población y riesgo"],["/informes","Informes"],["/panel","Panel regional"],["/modulos","Módulos"],["/guia","Cómo funciona"],["/capas","Capas del mapa"],["/tecnologia","Fuentes"],["/conexiones","APIs"],["/casos","Casos"],["/contacto","Contacto"],["/acceso","Ingresar"]] as [string,string][]).map(([to,l])=>(to==="/poblacion"||to==="/radar"||to==="/agricultura-precision"||to==="/informes")?<a key={to} href={to}>{l}</a>:<SiteLink key={to} to={to}>{l}</SiteLink>)}
+    {([["/que-es-dots","Qué es DOTS"],["/caso-bella-vista","Ejemplo: caso Bella Vista"],["/el-nino","Mi región: El Niño"],["/simulador-ambiental","Simulador ambiental · Sudamérica"],["/alertas","Alertas de crecidas"],["/nino-crecidas","El Niño y crecidas"],["/anegamientos","Anegamientos por radar"],["/focos","Fuego, rayos y heladas"],["/agricultura-precision","Agricultura de precisión"],["/modelo-3d","Modelo 3D del terreno"],["/radar","Radar Sentinel-1 e informe PDF"],["/cultivos","Cultivos y rinde"],["/libre-deforestacion","Vender a Europa"],["/poblacion","Población y riesgo"],["/informes","Informes"],["/panel","Panel regional"],["/modulos","Módulos"],["/guia","Cómo funciona"],["/capas","Capas del mapa"],["/tecnologia","Fuentes"],["/conexiones","APIs"],["/casos","Casos"],["/contacto","Contacto"],["/acceso","Ingresar"]] as [string,string][]).map(([to,l])=>(to==="/poblacion"||to==="/radar"||to==="/agricultura-precision"||to==="/informes")?<a key={to} href={to}>{l}</a>:<SiteLink key={to} to={to}>{l}</SiteLink>)}
   </div></details></div></header>}
 const sourceGroups=[
  ["ARGENTINA",["CONAE · SAOCOM","SMN","INA"]],
@@ -2935,6 +2936,16 @@ function AlertsPage({onDemo}:{onDemo:()=>void}){
     <Suspense fallback={null}><CuencaPanel/></Suspense>
     <AvisosBox/>
     <section className="demo-call"><div><span className="section-tag">TU CAMPO</span><h2>Bajá de la cuenca a tu potrero.</h2><p>En el Observatorio ves el relieve, los bajos que se anegan y el agua detectada por satélite en tu lote.</p></div><button onClick={onDemo}>Abrir Observatorio →</button></section>
+  </main><SiteFooter/></div>;
+}
+
+// Anegamientos por radar: manchas de agua nueva en Corrientes (tarea semanal), cruzadas con el INA.
+function AnegamientosPage({onDemo}:{onDemo:()=>void}){
+  useEffect(()=>{document.title="Anegamientos por radar · DOTS";},[]);
+  return <div className="public-site"><PublicHeader onDemo={onDemo}/><main className="inner regional-panel alerts-page">
+    <PageHero eyebrow="ANEGAMIENTOS POR RADAR" title="Dónde hay agua que normalmente no está." lead="Cada semana el radar Sentinel-1 mira ocho zonas ribereñas de Corrientes, atraviesa las nubes y compara cada punto con su propio último año. Las manchas de agua nueva se miden en hectáreas y se contrastan con la altura del río que publica el INA."/>
+    <Suspense fallback={null}><Anegamientos/></Suspense>
+    <AvisosBox/>
   </main><SiteFooter/></div>;
 }
 
@@ -3587,6 +3598,7 @@ function App(){
   if(path==="/panel")return <RegionalPanel onDemo={openDemo}/>;
   if(path==="/alertas")return <AlertsPage onDemo={openDemo}/>;
   if(path==="/nino-crecidas")return <NinoCrecidasPage onDemo={openDemo}/>;
+  if(path==="/anegamientos")return <AnegamientosPage onDemo={openDemo}/>;
   if(path==="/cultivos")return <CultivosPage onDemo={openDemo}/>;
   if(path==="/caso-bella-vista")return <CasoPage onDemo={openDemo}/>;
   if(path==="/focos")return <FocosPage onDemo={openDemo}/>;
