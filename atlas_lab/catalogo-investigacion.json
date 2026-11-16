@@ -1,0 +1,272 @@
+{
+  "schema_version": "1.0.0",
+  "organization": "ATLAS LAB",
+  "status": "catalog_only",
+  "principles": [
+    "reuse_existing_connectors",
+    "provenance_required",
+    "no_synthetic_observations",
+    "separate_observation_forecast_and_model",
+    "validate_before_publication"
+  ],
+  "groups": [
+    {
+      "id": "G01",
+      "name": "Espectroscopia y Teledetección",
+      "topics": [
+        "multispectral",
+        "hyperspectral",
+        "spectral-signatures",
+        "water-quality",
+        "snow-ice",
+        "minerals"
+      ],
+      "reuse": [
+        "spectral_indices.json",
+        "spectral.py"
+      ],
+      "sources": [
+        "CONAE",
+        "ESA Copernicus Sentinel-2",
+        "USGS Landsat",
+        "NASA MODIS"
+      ],
+      "status": "reuse_and_extend"
+    },
+    {
+      "id": "G02",
+      "name": "Geodesia, LIDAR e Interferometría",
+      "topics": [
+        "DEM",
+        "lidar",
+        "InSAR",
+        "ground-deformation",
+        "altimetry",
+        "3d-terrain"
+      ],
+      "reuse": [
+        "GeoTIFF/DEM utilities",
+        "GIS geometry utilities"
+      ],
+      "sources": [
+        "IGN",
+        "CONAE SAOCOM",
+        "ESA Sentinel-1",
+        "NASA ICESat-2"
+      ],
+      "status": "partial_capability_new_adapters_required"
+    },
+    {
+      "id": "G03",
+      "name": "Hidrología y Oceanografía",
+      "topics": [
+        "inland-water",
+        "ocean-color",
+        "sea-surface-temperature",
+        "salinity",
+        "sediment",
+        "coastal-change"
+      ],
+      "reuse": [
+        "ina_a5.py",
+        "water_balance.py",
+        "research_connectors.py"
+      ],
+      "sources": [
+        "INA",
+        "Copernicus Marine",
+        "NASA Ocean Color",
+        "NOAA"
+      ],
+      "status": "reuse_and_extend"
+    },
+    {
+      "id": "G04",
+      "name": "Clima y Ciencias Atmosféricas",
+      "topics": [
+        "meteorology",
+        "radiation",
+        "aerosols",
+        "greenhouse-gases",
+        "extremes",
+        "climate-change"
+      ],
+      "reuse": [
+        "research_connectors.py",
+        "climate_indices.py",
+        "water_balance.py"
+      ],
+      "sources": [
+        "SMN",
+        "ERA5",
+        "CHIRPS",
+        "NASA POWER",
+        "NOAA"
+      ],
+      "status": "reuse_and_extend"
+    },
+    {
+      "id": "G05",
+      "name": "Geología y Recursos Minerales",
+      "topics": [
+        "geomorphology",
+        "mineral-mapping",
+        "lithology",
+        "alteration",
+        "surface-change"
+      ],
+      "reuse": [
+        "spectral.py",
+        "spectral_indices.json",
+        "DEM utilities"
+      ],
+      "sources": [
+        "SEGEMAR",
+        "CONAE",
+        "USGS",
+        "EnMAP"
+      ],
+      "status": "new_domain_validation_required"
+    },
+    {
+      "id": "G06",
+      "name": "Ciudades e Infraestructura",
+      "topics": [
+        "urban-heat",
+        "urban-growth",
+        "imperviousness",
+        "infrastructure-risk",
+        "subsidence"
+      ],
+      "reuse": [
+        "GIS",
+        "population-exposure",
+        "hazard modules",
+        "thermal remote sensing catalog"
+      ],
+      "sources": [
+        "IGN",
+        "INDEC-compatible geodata",
+        "Landsat",
+        "Sentinel-1",
+        "NASA"
+      ],
+      "status": "reuse_and_extend"
+    },
+    {
+      "id": "G07",
+      "name": "Inteligencia Artificial y Modelización",
+      "topics": [
+        "classification",
+        "anomaly-detection",
+        "hydrodynamic-models",
+        "uncertainty",
+        "simulation"
+      ],
+      "reuse": [
+        "Flask/Python services",
+        "Agentic engine",
+        "existing data pipelines"
+      ],
+      "sources": [
+        "Validated datasets from G01-G09"
+      ],
+      "status": "shared_cross_cutting"
+    },
+    {
+      "id": "G08",
+      "name": "Hidrología Fluvial y Análisis de Cuencas",
+      "topics": [
+        "river-stage",
+        "discharge",
+        "flood-extent",
+        "channel-change",
+        "sediment",
+        "wetlands",
+        "basin-modeling"
+      ],
+      "reuse": [
+        "ina_a5.py",
+        "scripts/anegamientos.py",
+        "manchas_agua.py",
+        "water_balance.py",
+        "GFM/JRC connectors"
+      ],
+      "sources": [
+        "INA A5",
+        "CONAE",
+        "Copernicus GFM",
+        "Sentinel-1 RTC",
+        "JRC"
+      ],
+      "status": "reuse_validate_and_extend"
+    },
+    {
+      "id": "G09",
+      "name": "Glaciología, Criósfera y Dinámica del Hielo",
+      "topics": [
+        "glacier-area",
+        "surface-velocity",
+        "mass-balance",
+        "snow-cover",
+        "melt",
+        "ice-thickness",
+        "glacial-lakes",
+        "meltwater-runoff"
+      ],
+      "reuse": [
+        "spectral.py",
+        "spectral_indices.json",
+        "climate_indices.py",
+        "water_balance.py",
+        "DEM utilities"
+      ],
+      "sources": [
+        "IANIGLA Inventario Nacional de Glaciares",
+        "CONAE",
+        "Sentinel-1",
+        "Sentinel-2",
+        "Landsat",
+        "NASA ICESat-2",
+        "GRACE-FO",
+        "NSIDC"
+      ],
+      "status": "new_domain_reuse_shared_core"
+    }
+  ],
+  "shared_contract": {
+    "status": [
+      "ok",
+      "sin_dato",
+      "parcial",
+      "error"
+    ],
+    "required": [
+      "data",
+      "consulted_at",
+      "source_url",
+      "scope",
+      "organism"
+    ],
+    "provenance_fields": [
+      "product",
+      "acquired_at",
+      "resolution",
+      "method",
+      "license",
+      "quality_flags"
+    ]
+  },
+  "source_status_policy": {
+    "operational": "successful_recent_live_test",
+    "reference": "catalogued_not_connected",
+    "experimental": "implemented_not_validated",
+    "blocked": "credentials_or_license_required"
+  },
+  "no_automatic_claims": [
+    "a listed provider is not necessarily connected",
+    "a successful synthetic test does not validate real-world detection",
+    "a forecast is not an observation",
+    "a satellite-derived classification is not field-verified ground truth"
+  ]
+}
