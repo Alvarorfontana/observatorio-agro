@@ -2,6 +2,51 @@
 
 ATLAS LAB organiza líneas de investigación científica y desarrollo tecnológico sobre la Tierra. No reemplaza DOTS Campo ni los observatorios existentes: reutiliza sus conectores, servicios y datos mediante contratos compartidos.
 
+## Diferencia institucional y funcional: ATLAS LAB dentro de Observatorio DOT
+
+**Observatorio DOT** es la plataforma de observación, consulta y comunicación: mantiene mapas, tableros, monitoreo, series, informes y productos dirigidos a usuarios. Sus unidades incluyen DOTS Campo, Observatorio Territorial, Observatorio Meteorológico e Hidrología y Riesgos.
+
+**ATLAS LAB** es la unidad transversal de investigación aplicada y desarrollo tecnológico. Su trabajo es formular preguntas, evaluar fuentes, diseñar métodos, desarrollar algoritmos, medir incertidumbre, validar resultados y transferir capacidades aprobadas a los módulos de DOT.
+
+| ATLAS LAB | Observatorio DOT |
+|---|---|
+| Investiga fenómenos y métodos | Monitorea variables y territorios |
+| Diseña y prueba algoritmos | Ejecuta productos aceptados |
+| Compara con referencias independientes | Presenta mapas, indicadores y series |
+| Documenta errores e incertidumbre | Comunica estados, fechas y limitaciones |
+| Desarrolla prototipos y pilotos | Opera funciones y servicios para usuarios |
+| Transfiere métodos con criterios de aceptación | Mantiene los productos en seguimiento |
+
+ATLAS LAB **no** es un décimo observatorio, no duplica los paneles de DOT, no reemplaza el backend ni crea una infraestructura paralela. Tampoco implica acreditación académica, afiliación o aval de los organismos citados.
+
+### Líneas y profundidad de investigación
+
+Los nueve grupos cubren: (G01) espectroscopia, reflectancia, firmas multibanda y teledetección; (G02) geodesia, DEM, LIDAR, altimetría e InSAR; (G03) hidrología continental, calidad de agua y oceanografía; (G04) climatología, extremos, ENSO, radiación y atmósfera; (G05) geomorfología, litología, alteración y recursos minerales; (G06) expansión urbana, isla de calor, infraestructura y exposición; (G07) IA, clasificación, anomalías, modelos físicos e incertidumbre; (G08) dinámica fluvial, cuencas, humedales, caudales, crecidas y anegamientos; (G09) glaciares, nieve, hielo, balance de masa, lagos glaciares y criósfera.
+
+Cada grupo debe mantener ficha de misión, preguntas de investigación, métodos, fuentes, módulos reutilizados, productos esperados, limitaciones, responsable técnico y estado de madurez. El catálogo de fuentes es una cartera de investigación, no una afirmación de conexión activa.
+
+### Fuentes prioritarias y reglas de incorporación
+
+Argentina: CONAE, IANIGLA-CONICET, INA/SNIH, SMN, IGN y SEGEMAR. Internacionales: ESA/Copernicus, NASA Earthdata, USGS, NOAA, ECMWF, CHIRPS, JRC Global Surface Water, Microsoft Planetary Computer y NSIDC.
+
+Para cada conjunto se registra productor, colección, identificador de producto, URL de acceso, licencia, atribución, resolución, cobertura, período, frecuencia, fecha de actualización, formato, restricciones, método de procesamiento y calidad. No se guardan credenciales en el catálogo ni en el frontend.
+
+### Ciclo de transferencia
+
+Un método pasa de ATLAS LAB a un módulo operativo solo cuando existe: (1) definición de variable y clase; (2) datos y licencia identificados; (3) procesamiento reproducible y versionado; (4) pruebas unitarias y de contrato; (5) comparación con referencia independiente; (6) métricas, incertidumbre y casos de fallo documentados; (7) criterios de monitoreo y reversión.
+
+Estados obligatorios: `operativo_verificado`, `experimental`, `referencia_catalogada`, `pendiente` o `bloqueado`. Un pipeline que ejecuta no equivale a un método validado.
+
+### Piloto Corrientes: alcance real
+
+El detector existente procesa escenas Sentinel-1 RTC y genera geometrías candidatas de manchas de agua. La clase detectada es **agua nueva / cambio respecto de un fondo temporal**, no necesariamente toda el agua superficial. La evaluación debe comparar esa clase con una referencia que represente la misma definición, en la misma grilla, CRS y período. Una máscara de agua permanente o total no es una referencia equivalente.
+
+El pipeline y el evaluador son componentes experimentales. La aprobación de CI prueba controles de software, no precisión geográfica. Hasta completar escenas reales revisadas y métricas por evento, no publicar el resultado como inundación confirmada ni como desempeño validado.
+
+### Arquitectura compartida
+
+Mantener Flask/Python como backend y Vite/React como frontend. ATLAS LAB reutiliza conectores, almacenamiento, cachés, cartografía, contratos y módulos de DOT. Los nuevos servicios deben integrarse al núcleo actual, con APIs y dependencias solo cuando una necesidad comprobada lo justifique. La interfaz de ATLAS LAB es una sección de investigación dentro del mismo producto, no una aplicación separada.
+
 ## Principios
 
 1. **Reutilizar antes de integrar:** auditar módulos, endpoints, cachés y fuentes existentes antes de crear otro conector.
