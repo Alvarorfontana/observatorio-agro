@@ -5,10 +5,10 @@
  "parana-goya": {
   "level": "Evacuación"
  },
- "parana-reconquista": {
+ "parana-diamante": {
   "level": "Evacuación"
  },
- "parana-diamante": {
+ "parana-reconquista": {
   "level": "Evacuación"
  },
  "parana-esquina": {
@@ -21,7 +21,7 @@
   "level": "Alerta"
  },
  "parana-corrientes": {
-  "level": "Alerta"
+  "level": "Atención"
  },
  "parana-rosario": {
   "level": "Atención"
@@ -38,13 +38,7 @@
  "uruguay-cdeluruguay": {
   "level": "Atención"
  },
- "uruguay-montecaseros": {
-  "level": "Atención"
- },
  "uruguay-colon": {
-  "level": "Atención"
- },
- "parana-ituzaingo": {
   "level": "Atención"
  },
  "parana-zarate": {
@@ -59,10 +53,16 @@
  "uruguay-concordia": {
   "level": "Normal"
  },
+ "uruguay-montecaseros": {
+  "level": "Normal"
+ },
  "parana-eldorado": {
   "level": "Normal"
  },
  "parana-sanpedro": {
+  "level": "Normal"
+ },
+ "parana-ituzaingo": {
   "level": "Normal"
  },
  "paraguay-formosa": {
