@@ -1,5 +1,5 @@
 {
- "generado": "2026-11-16T18:36:08.021246Z",
+ "generado": "2026-11-18T19:04:24.501557Z",
  "fuente": "Sentinel-1 RTC (ESA Copernicus, procesado por Microsoft Planetary Computer), polarización VV",
  "tipo": "medición satelital procesada; clasificación orientativa sin validar en terreno",
  "metodo": "Filtro Lee 5×5 · fondo por píxel con recorte sigma (3σ, mediana y MAD) sobre pasadas de la misma órbita, excluidos los últimos 30 días · desvío z · umbral de agua Otsu · apertura 3×3 · regiones conectadas (8 vecinos), mínimo 1 ha · Hampel sobre la serie de % de agua",
