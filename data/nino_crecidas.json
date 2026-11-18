@@ -1,10 +1,10 @@
 {
- "updated": "2026-11-18T07:44+00:00",
+ "updated": "2026-11-18T17:22+00:00",
  "version": 1,
  "fuente": "https://observatorio-agro.vercel.app",
  "niveles": {
-  "Normal": 11,
-  "Atención": 8,
+  "Normal": 13,
+  "Atención": 6,
   "Alerta": 1,
   "Evacuación": 6
  },
@@ -29,14 +29,14 @@
    "level": "Evacuación"
   },
   {
-   "id": "parana-diamante",
-   "place": "Diamante",
+   "id": "parana-reconquista",
+   "place": "Reconquista",
    "river": "Paraná",
    "level": "Evacuación"
   },
   {
-   "id": "parana-reconquista",
-   "place": "Reconquista",
+   "id": "parana-diamante",
+   "place": "Diamante",
    "river": "Paraná",
    "level": "Evacuación"
   },
@@ -65,9 +65,9 @@
   "oni": 2.46
  },
  "enviado_el": null,
- "pdf_el": "2026-11-17T13:39+00:00",
+ "pdf_el": "2026-11-18T17:22+00:00",
  "newsletter": {
-  "subject": "DOTS · El Niño y crecidas · 18/11/2026 07:44 UTC",
+  "subject": "DOTS · El Niño y crecidas · 18/11/2026 17:22 UTC",
   "bytes": 6211
  }
 }
