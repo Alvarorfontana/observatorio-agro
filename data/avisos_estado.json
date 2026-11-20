@@ -5,17 +5,17 @@
  "parana-diamante": {
   "level": "Evacuación"
  },
- "parana-goya": {
-  "level": "Evacuación"
- },
  "parana-reconquista": {
-  "level": "Evacuación"
- },
- "parana-esquina": {
   "level": "Evacuación"
  },
  "parana-lapaz": {
   "level": "Evacuación"
+ },
+ "parana-goya": {
+  "level": "Alerta"
+ },
+ "parana-esquina": {
+  "level": "Alerta"
  },
  "parana-bellavista": {
   "level": "Atención"
@@ -23,16 +23,13 @@
  "parana-rosario": {
   "level": "Atención"
  },
- "parana-corrientes": {
-  "level": "Atención"
- },
  "parana-posadas": {
   "level": "Atención"
  },
- "parana-sannicolas": {
+ "parana-corrientes": {
   "level": "Atención"
  },
- "uruguay-libres": {
+ "parana-sannicolas": {
   "level": "Atención"
  },
  "uruguay-cdeluruguay": {
@@ -47,25 +44,28 @@
  "parana-sanpedro": {
   "level": "Normal"
  },
- "uruguay-concordia": {
-  "level": "Normal"
- },
  "parana-ituzaingo": {
-  "level": "Normal"
- },
- "uruguay-colon": {
   "level": "Normal"
  },
  "parana-eldorado": {
   "level": "Normal"
  },
+ "uruguay-libres": {
+  "level": "Normal"
+ },
+ "uruguay-colon": {
+  "level": "Normal"
+ },
  "paraguay-formosa": {
   "level": "Normal"
  },
- "uruguay-montecaseros": {
+ "uruguay-concordia": {
   "level": "Normal"
  },
  "uruguay-santotome": {
+  "level": "Normal"
+ },
+ "uruguay-montecaseros": {
   "level": "Normal"
  },
  "paraguay-asuncion": {
