@@ -1,5 +1,5 @@
 {
- "actualizado": "2026-11-19T19:37Z",
+ "actualizado": "2026-11-20T19:14Z",
  "cpc": {
   "estado": "recibido",
   "fuente": "NOAA Climate Prediction Center",
@@ -81,15 +81,15 @@
   "fuente": "CCSR/IRI · Universidad de Columbia",
   "url": "https://forecast.ccsr.columbia.edu/forecasts/enso/forecast",
   "probabilidades": [],
-  "emitido": "2026-10",
+  "emitido": "2026-11",
   "motivo": "no se encontró la tabla de probabilidades",
   "modelos": {
-   "dinamicos": 16,
+   "dinamicos": 15,
    "estadisticos": 11
   },
   "graficos": {
-   "probabilidades": "https://ensoforecast.iri.columbia.edu/figure3_plot/2026/10",
-   "intensidad": "https://ensoforecast.iri.columbia.edu/strength_plot/2026/10"
+   "probabilidades": "https://ensoforecast.iri.columbia.edu/figure3_plot/2026/11",
+   "intensidad": "https://ensoforecast.iri.columbia.edu/strength_plot/2026/11"
   }
  },
  "mei": {
