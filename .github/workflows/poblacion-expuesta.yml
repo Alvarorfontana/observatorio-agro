@@ -1,0 +1,44 @@
+# Población expuesta a crecidas en cada localidad ribereña (Google Earth Engine: MERIT Hydro HAND + WorldPop).
+# A pedido y una vez por semana. Guarda en la rama datos: no publica la web.
+name: Población expuesta por localidad
+
+on:
+  workflow_dispatch:
+    inputs:
+      localidades:
+        description: "Ids separados por coma (vacío = todas)"
+        required: false
+        default: ""
+  schedule:
+    - cron: "17 7 * * 1"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: poblacion-expuesta
+  cancel-in-progress: false
+
+jobs:
+  poblacion:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Traer datos de la rama datos
+        run: bash scripts/datos_rama.sh traer
+      - name: Calcular población cerca del río
+        env:
+          GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT }}
+          GOOGLE_APPLICATION_CREDENTIALS_JSON: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}
+          LOCALIDADES: ${{ github.event.inputs.localidades }}
+        run: |
+          pip install -r requirements.txt
+          python -u scripts/poblacion_expuesta.py data/poblacion_expuesta.json "$LOCALIDADES"
+      - name: Guardar en la rama datos (no publica la web)
+        if: success()
+        run: |
+          cp scripts/datos_rama.sh /tmp/datos_rama.sh && bash /tmp/datos_rama.sh guardar "Población expuesta $(date -u +%Y-%m-%d)" data/poblacion_expuesta.json
