@@ -1,0 +1,452 @@
+{
+ "updated": "2026-11-21T01:35Z",
+ "source": "MERIT Hydro HAND v1.0.1 (90 m) y WorldPop 2020 (100 m) vía Google Earth Engine",
+ "nota": "Exposición estimada por altura sobre el río en 15 km a la redonda. No es mancha de inundación ni conteo de evacuados.",
+ "places": [
+  {
+   "radius_km": 15.0,
+   "total": 70755,
+   "under5_total": 6119,
+   "over65_total": 7488,
+   "bands": [
+    {
+     "up_to_m": 1,
+     "people": 42116,
+     "under5": 3642,
+     "over65": 4459
+    },
+    {
+     "up_to_m": 2,
+     "people": 55463,
+     "under5": 4796,
+     "over65": 5871
+    },
+    {
+     "up_to_m": 3,
+     "people": 59856,
+     "under5": 5176,
+     "over65": 6336
+    },
+    {
+     "up_to_m": 5,
+     "people": 64055,
+     "under5": 5540,
+     "over65": 6779
+    },
+    {
+     "up_to_m": 10,
+     "people": 69042,
+     "under5": 5971,
+     "over65": 7307
+    }
+   ],
+   "scenarios": [
+    {
+     "key": "alert",
+     "label": "Nivel de alerta",
+     "level_m": 5.2,
+     "rise_m": 2.97,
+     "band_m": 3,
+     "people": 59856,
+     "under5": 5176,
+     "over65": 6336
+    },
+    {
+     "key": "evac",
+     "label": "Nivel de evacuación",
+     "level_m": 5.7,
+     "rise_m": 3.47,
+     "band_m": 5,
+     "people": 64055,
+     "under5": 5540,
+     "over65": 6779
+    }
+   ],
+   "id": "parana-goya",
+   "place": "Goya",
+   "river": "Paraná",
+   "lat": -29.14,
+   "lon": -59.3,
+   "levels": {
+    "alert": 5.2,
+    "evac": 5.7,
+    "low": 2.23
+   },
+   "sources": [
+    "MERIT Hydro (Yamazaki et al., 2019) · CC BY-NC 4.0 / ODbL",
+    "WorldPop 2020 · CC BY 4.0"
+   ]
+  },
+  {
+   "radius_km": 15.0,
+   "total": 56060,
+   "under5_total": 4557,
+   "over65_total": 5340,
+   "bands": [
+    {
+     "up_to_m": 1,
+     "people": 17365,
+     "under5": 1412,
+     "over65": 1655
+    },
+    {
+     "up_to_m": 2,
+     "people": 28039,
+     "under5": 2280,
+     "over65": 2671
+    },
+    {
+     "up_to_m": 3,
+     "people": 35169,
+     "under5": 2859,
+     "over65": 3350
+    },
+    {
+     "up_to_m": 5,
+     "people": 43417,
+     "under5": 3530,
+     "over65": 4136
+    },
+    {
+     "up_to_m": 10,
+     "people": 54675,
+     "under5": 4445,
+     "over65": 5208
+    }
+   ],
+   "scenarios": [
+    {
+     "key": "alert",
+     "label": "Nivel de alerta",
+     "level_m": 5.1,
+     "rise_m": 2.92,
+     "band_m": 3,
+     "people": 35169,
+     "under5": 2859,
+     "over65": 3350
+    },
+    {
+     "key": "evac",
+     "label": "Nivel de evacuación",
+     "level_m": 5.3,
+     "rise_m": 3.12,
+     "band_m": 5,
+     "people": 43417,
+     "under5": 3530,
+     "over65": 4136
+    }
+   ],
+   "id": "parana-reconquista",
+   "place": "Reconquista",
+   "river": "Paraná",
+   "lat": -29.24,
+   "lon": -59.58,
+   "levels": {
+    "alert": 5.1,
+    "evac": 5.3,
+    "low": 2.18
+   },
+   "sources": [
+    "MERIT Hydro (Yamazaki et al., 2019) · CC BY-NC 4.0 / ODbL",
+    "WorldPop 2020 · CC BY 4.0"
+   ]
+  },
+  {
+   "radius_km": 15.0,
+   "total": 19292,
+   "under5_total": 1730,
+   "over65_total": 1852,
+   "bands": [
+    {
+     "up_to_m": 1,
+     "people": 7427,
+     "under5": 666,
+     "over65": 714
+    },
+    {
+     "up_to_m": 2,
+     "people": 10919,
+     "under5": 979,
+     "over65": 1050
+    },
+    {
+     "up_to_m": 3,
+     "people": 13021,
+     "under5": 1167,
+     "over65": 1252
+    },
+    {
+     "up_to_m": 5,
+     "people": 14789,
+     "under5": 1326,
+     "over65": 1421
+    },
+    {
+     "up_to_m": 10,
+     "people": 16448,
+     "under5": 1475,
+     "over65": 1580
+    }
+   ],
+   "scenarios": [
+    {
+     "key": "alert",
+     "label": "Nivel de alerta",
+     "level_m": 5,
+     "rise_m": 2.8,
+     "band_m": 3,
+     "people": 13021,
+     "under5": 1167,
+     "over65": 1252
+    },
+    {
+     "key": "evac",
+     "label": "Nivel de evacuación",
+     "level_m": 5.4,
+     "rise_m": 3.2,
+     "band_m": 5,
+     "people": 14789,
+     "under5": 1326,
+     "over65": 1421
+    }
+   ],
+   "id": "parana-esquina",
+   "place": "Esquina",
+   "river": "Paraná",
+   "lat": -30.01,
+   "lon": -59.55,
+   "levels": {
+    "alert": 5,
+    "evac": 5.4,
+    "low": 2.2
+   },
+   "sources": [
+    "MERIT Hydro (Yamazaki et al., 2019) · CC BY-NC 4.0 / ODbL",
+    "WorldPop 2020 · CC BY 4.0"
+   ]
+  },
+  {
+   "radius_km": 15.0,
+   "total": 20861,
+   "under5_total": 1744,
+   "over65_total": 2117,
+   "bands": [
+    {
+     "up_to_m": 1,
+     "people": 1782,
+     "under5": 150,
+     "over65": 180
+    },
+    {
+     "up_to_m": 2,
+     "people": 2750,
+     "under5": 232,
+     "over65": 278
+    },
+    {
+     "up_to_m": 3,
+     "people": 3610,
+     "under5": 304,
+     "over65": 365
+    },
+    {
+     "up_to_m": 5,
+     "people": 5725,
+     "under5": 481,
+     "over65": 580
+    },
+    {
+     "up_to_m": 10,
+     "people": 10384,
+     "under5": 870,
+     "over65": 1053
+    }
+   ],
+   "scenarios": [
+    {
+     "key": "alert",
+     "label": "Nivel de alerta",
+     "level_m": 5.8,
+     "rise_m": 3.42,
+     "band_m": 5,
+     "people": 5725,
+     "under5": 481,
+     "over65": 580
+    },
+    {
+     "key": "evac",
+     "label": "Nivel de evacuación",
+     "level_m": 6.15,
+     "rise_m": 3.77,
+     "band_m": 5,
+     "people": 5725,
+     "under5": 481,
+     "over65": 580
+    }
+   ],
+   "id": "parana-lapaz",
+   "place": "La Paz",
+   "river": "Paraná",
+   "lat": -30.74,
+   "lon": -59.65,
+   "levels": {
+    "alert": 5.8,
+    "evac": 6.15,
+    "low": 2.38
+   },
+   "sources": [
+    "MERIT Hydro (Yamazaki et al., 2019) · CC BY-NC 4.0 / ODbL",
+    "WorldPop 2020 · CC BY 4.0"
+   ]
+  },
+  {
+   "radius_km": 15.0,
+   "total": 257038,
+   "under5_total": 19262,
+   "over65_total": 31289,
+   "bands": [
+    {
+     "up_to_m": 1,
+     "people": 36845,
+     "under5": 2772,
+     "over65": 4478
+    },
+    {
+     "up_to_m": 2,
+     "people": 58680,
+     "under5": 4417,
+     "over65": 7131
+    },
+    {
+     "up_to_m": 3,
+     "people": 76047,
+     "under5": 5724,
+     "over65": 9242
+    },
+    {
+     "up_to_m": 5,
+     "people": 104099,
+     "under5": 7830,
+     "over65": 12654
+    },
+    {
+     "up_to_m": 10,
+     "people": 151662,
+     "under5": 11390,
+     "over65": 18446
+    }
+   ],
+   "scenarios": [
+    {
+     "key": "alert",
+     "label": "Nivel de alerta",
+     "level_m": 4.7,
+     "rise_m": 3.09,
+     "band_m": 5,
+     "people": 104099,
+     "under5": 7830,
+     "over65": 12654
+    },
+    {
+     "key": "evac",
+     "label": "Nivel de evacuación",
+     "level_m": 5,
+     "rise_m": 3.39,
+     "band_m": 5,
+     "people": 104099,
+     "under5": 7830,
+     "over65": 12654
+    }
+   ],
+   "id": "parana-santafe",
+   "place": "Santa Fe · Paraná",
+   "river": "Paraná",
+   "lat": -31.7,
+   "lon": -60.55,
+   "levels": {
+    "alert": 4.7,
+    "evac": 5,
+    "low": 1.61
+   },
+   "sources": [
+    "MERIT Hydro (Yamazaki et al., 2019) · CC BY-NC 4.0 / ODbL",
+    "WorldPop 2020 · CC BY 4.0"
+   ]
+  },
+  {
+   "radius_km": 15.0,
+   "total": 19857,
+   "under5_total": 1384,
+   "over65_total": 2850,
+   "bands": [
+    {
+     "up_to_m": 1,
+     "people": 1841,
+     "under5": 129,
+     "over65": 264
+    },
+    {
+     "up_to_m": 2,
+     "people": 2596,
+     "under5": 181,
+     "over65": 373
+    },
+    {
+     "up_to_m": 3,
+     "people": 3428,
+     "under5": 239,
+     "over65": 492
+    },
+    {
+     "up_to_m": 5,
+     "people": 4996,
+     "under5": 349,
+     "over65": 717
+    },
+    {
+     "up_to_m": 10,
+     "people": 8654,
+     "under5": 604,
+     "over65": 1242
+    }
+   ],
+   "scenarios": [
+    {
+     "key": "alert",
+     "label": "Nivel de alerta",
+     "level_m": 5.3,
+     "rise_m": 2.9,
+     "band_m": 3,
+     "people": 3428,
+     "under5": 239,
+     "over65": 492
+    },
+    {
+     "key": "evac",
+     "label": "Nivel de evacuación",
+     "level_m": 5.5,
+     "rise_m": 3.1,
+     "band_m": 5,
+     "people": 4996,
+     "under5": 349,
+     "over65": 717
+    }
+   ],
+   "id": "parana-diamante",
+   "place": "Diamante",
+   "river": "Paraná",
+   "lat": -32.07,
+   "lon": -60.64,
+   "levels": {
+    "alert": 5.3,
+    "evac": 5.5,
+    "low": 2.4
+   },
+   "sources": [
+    "MERIT Hydro (Yamazaki et al., 2019) · CC BY-NC 4.0 / ODbL",
+    "WorldPop 2020 · CC BY 4.0"
+   ]
+  }
+ ],
+ "fallas": []
+}
