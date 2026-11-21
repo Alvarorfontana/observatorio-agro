@@ -8,13 +8,13 @@
  "parana-reconquista": {
   "level": "Evacuación"
  },
- "parana-lapaz": {
-  "level": "Evacuación"
- },
  "parana-goya": {
   "level": "Alerta"
  },
  "parana-esquina": {
+  "level": "Alerta"
+ },
+ "parana-lapaz": {
   "level": "Alerta"
  },
  "parana-bellavista": {
@@ -32,9 +32,6 @@
  "parana-sannicolas": {
   "level": "Atención"
  },
- "uruguay-cdeluruguay": {
-  "level": "Atención"
- },
  "iguazu-cataratas": {
   "level": "Normal"
  },
@@ -47,22 +44,25 @@
  "parana-ituzaingo": {
   "level": "Normal"
  },
- "parana-eldorado": {
-  "level": "Normal"
- },
  "uruguay-libres": {
   "level": "Normal"
  },
- "uruguay-colon": {
+ "parana-eldorado": {
   "level": "Normal"
  },
  "paraguay-formosa": {
+  "level": "Normal"
+ },
+ "uruguay-cdeluruguay": {
   "level": "Normal"
  },
  "uruguay-concordia": {
   "level": "Normal"
  },
  "uruguay-santotome": {
+  "level": "Normal"
+ },
+ "uruguay-colon": {
   "level": "Normal"
  },
  "uruguay-montecaseros": {
