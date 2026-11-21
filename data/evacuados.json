@@ -1,0 +1,280 @@
+{
+ "actualizado": "2026-11-21T02:04Z",
+ "fuente": "OPS/PAHO · Monitoreo de Amenazas Naturales (resume partes oficiales de cada país)",
+ "nota": "Cifras tal como las informó cada organismo. DOTS no estima evacuados; un día sin parte queda sin dato.",
+ "ultimo_por_pais": {
+  "Brasil": {
+   "fecha_informe": "2026-11-18",
+   "pais": "Brasil",
+   "texto": "Brasil El 18 de noviembre del 2026, medios de comunicación informaron que las lluvias intensas, inundaciones y tormentas severas en el estado de Minas Gerais, Brasil, habían causado dos defunciones y afectado a aproximadamente 289.000 personas, de las cuales 1.500 se encontraban desplazadas y 93 alojadas en refugios.",
+   "cifras": [
+    {
+     "cantidad": 289000,
+     "unidad": "personas"
+    }
+   ],
+   "organismo": null,
+   "fuente": "OPS · Monitoreo de Amenazas Naturales",
+   "url": "https://www.paho.org/es/monitoreo-amenazas-naturales/monitoreo-amenazas-naturales-18-noviembre-2026"
+  },
+  "Argentina": {
+   "fecha_informe": "2026-11-18",
+   "pais": "Argentina",
+   "texto": "Un total de 2.047 personas de 586 hogares permanecían evacuadas, incluidas 164 personas de 62 familias alojadas en refugios provinciales.",
+   "cifras": [
+    {
+     "cantidad": 2047,
+     "unidad": "personas"
+    },
+    {
+     "cantidad": 586,
+     "unidad": "hogares"
+    },
+    {
+     "cantidad": 164,
+     "unidad": "personas"
+    },
+    {
+     "cantidad": 62,
+     "unidad": "familias"
+    }
+   ],
+   "organismo": null,
+   "fuente": "OPS · Monitoreo de Amenazas Naturales",
+   "url": "https://www.paho.org/es/monitoreo-amenazas-naturales/monitoreo-amenazas-naturales-18-noviembre-2026"
+  }
+ },
+ "partes": [
+  {
+   "fecha_informe": "2026-11-18",
+   "pais": "Brasil",
+   "texto": "Brasil El 18 de noviembre del 2026, medios de comunicación informaron que las lluvias intensas, inundaciones y tormentas severas en el estado de Minas Gerais, Brasil, habían causado dos defunciones y afectado a aproximadamente 289.000 personas, de las cuales 1.500 se encontraban desplazadas y 93 alojadas en refugios.",
+   "cifras": [
+    {
+     "cantidad": 289000,
+     "unidad": "personas"
+    }
+   ],
+   "organismo": null,
+   "fuente": "OPS · Monitoreo de Amenazas Naturales",
+   "url": "https://www.paho.org/es/monitoreo-amenazas-naturales/monitoreo-amenazas-naturales-18-noviembre-2026"
+  },
+  {
+   "fecha_informe": "2026-11-18",
+   "pais": "Argentina",
+   "texto": "Un total de 2.047 personas de 586 hogares permanecían evacuadas, incluidas 164 personas de 62 familias alojadas en refugios provinciales.",
+   "cifras": [
+    {
+     "cantidad": 2047,
+     "unidad": "personas"
+    },
+    {
+     "cantidad": 586,
+     "unidad": "hogares"
+    },
+    {
+     "cantidad": 164,
+     "unidad": "personas"
+    },
+    {
+     "cantidad": 62,
+     "unidad": "familias"
+    }
+   ],
+   "organismo": null,
+   "fuente": "OPS · Monitoreo de Amenazas Naturales",
+   "url": "https://www.paho.org/es/monitoreo-amenazas-naturales/monitoreo-amenazas-naturales-18-noviembre-2026"
+  },
+  {
+   "fecha_informe": "2026-11-18",
+   "pais": "Argentina",
+   "texto": "A pesar del descenso de los niveles de los ríos, la población afectada permanecía desplazada y continuaba requiriendo asistencia.",
+   "cifras": [],
+   "organismo": null,
+   "fuente": "OPS · Monitoreo de Amenazas Naturales",
+   "url": "https://www.paho.org/es/monitoreo-amenazas-naturales/monitoreo-amenazas-naturales-18-noviembre-2026"
+  },
+  {
+   "fecha_informe": "2026-11-16",
+   "pais": "Argentina",
+   "texto": "Argentina (Actualización) El 16 de noviembre del 2026, medios de comunicación que citaron a la Agencia Federal de Emergencias (AFE) informaron que 4.547 personas fueron evacuadas y autoevacuadas en 26 localidades de las provincias de Chaco, Corrientes, Santa Fe y Entre Ríos debido a la crecida del río Paraná.",
+   "cifras": [
+    {
+     "cantidad": 4547,
+     "unidad": "personas"
+    }
+   ],
+   "organismo": "Agencia Federal de Emergencias",
+   "fuente": "OPS · Monitoreo de Amenazas Naturales",
+   "url": "https://www.paho.org/es/monitoreo-amenazas-naturales/monitoreo-amenazas-naturales-16-noviembre-2026"
+  },
+  {
+   "fecha_informe": "2026-11-16",
+   "pais": "Argentina",
+   "texto": "En la ciudad de Paraná, Entre Ríos, Protección Civil informó que alrededor de 50 personas permanecen en viviendas inundadas, donde reciben asistencia y evaluación médica, y que una mujer embarazada fue evacuada de emergencia de la zona inundada de Bajada Grande.",
+   "cifras": [
+    {
+     "cantidad": 50,
+     "unidad": "personas"
+    }
+   ],
+   "organismo": "Protección Civil",
+   "fuente": "OPS · Monitoreo de Amenazas Naturales",
+   "url": "https://www.paho.org/es/monitoreo-amenazas-naturales/monitoreo-amenazas-naturales-16-noviembre-2026"
+  },
+  {
+   "fecha_informe": "2026-11-11",
+   "pais": "Argentina",
+   "texto": "Argentina (Actualización) El 11 de noviembre del 2026, informes de prensa que citaron el boletín diario oficial del Gobierno de Chaco señalaron que 2.242 personas de 633 hogares habían sido evacuadas o autoevacuadas en los municipios de la provincia bajo alerta por emergencia hídrica, sin cambios respecto al informe anterior.",
+   "cifras": [
+    {
+     "cantidad": 2242,
+     "unidad": "personas"
+    },
+    {
+     "cantidad": 633,
+     "unidad": "hogares"
+    }
+   ],
+   "organismo": "Gobierno de Chaco señalaron que 2",
+   "fuente": "OPS · Monitoreo de Amenazas Naturales",
+   "url": "https://www.paho.org/es/monitoreo-amenazas-naturales/monitoreo-amenazas-naturales-11-noviembre-2026"
+  },
+  {
+   "fecha_informe": "2026-11-11",
+   "pais": "Argentina",
+   "texto": "Puerto Vilelas continúa bajo alerta roja y concentra 664 personas evacuadas y 689 que abandonaron sus viviendas por sus propios medios.",
+   "cifras": [
+    {
+     "cantidad": 664,
+     "unidad": "personas"
+    }
+   ],
+   "organismo": null,
+   "fuente": "OPS · Monitoreo de Amenazas Naturales",
+   "url": "https://www.paho.org/es/monitoreo-amenazas-naturales/monitoreo-amenazas-naturales-11-noviembre-2026"
+  },
+  {
+   "fecha_informe": "2026-11-11",
+   "pais": "Argentina",
+   "texto": "En la provincia de Entre Ríos, la Municipalidad de Paraná informó que la crecida del río Paraná ha comenzado a inundar viviendas en la zona costera de Bajada Grande, con 15 familias evacuadas, entre 40 y 50 personas autoevacuadas y entre 30 y 40 residentes adicionales que permanecen en viviendas inundadas;",
+   "cifras": [
+    {
+     "cantidad": 15,
+     "unidad": "familias"
+    },
+    {
+     "cantidad": 50,
+     "unidad": "personas"
+    }
+   ],
+   "organismo": "Municipalidad de Paraná informó que la crecida del río Paraná ha comenzado a inundar viviendas en la zona costera de Bajada Grande",
+   "fuente": "OPS · Monitoreo de Amenazas Naturales",
+   "url": "https://www.paho.org/es/monitoreo-amenazas-naturales/monitoreo-amenazas-naturales-11-noviembre-2026"
+  },
+  {
+   "fecha_informe": "2026-11-10",
+   "pais": "Brasil",
+   "texto": "En Rio Grande do Sul, tres personas resultaron heridas y aproximadamente 1.500 viviendas sufrieron daños en Bento Gonçalves, mientras que 42 personas fueron desplazadas y cuatro permanecían en albergues en todo el estado.",
+   "cifras": [
+    {
+     "cantidad": 42,
+     "unidad": "personas"
+    }
+   ],
+   "organismo": null,
+   "fuente": "OPS · Monitoreo de Amenazas Naturales",
+   "url": "https://www.paho.org/es/monitoreo-amenazas-naturales/monitoreo-amenazas-naturales-10-noviembre-2026"
+  },
+  {
+   "fecha_informe": "2026-11-10",
+   "pais": "Brasil",
+   "texto": "En Santa Catarina, 278 personas permanecían en albergues y 75 fueron desplazadas, con aproximadamente 580 viviendas afectadas en Rio do Sul y 11 municipios que declararon el estado de emergencia.",
+   "cifras": [
+    {
+     "cantidad": 278,
+     "unidad": "personas"
+    }
+   ],
+   "organismo": null,
+   "fuente": "OPS · Monitoreo de Amenazas Naturales",
+   "url": "https://www.paho.org/es/monitoreo-amenazas-naturales/monitoreo-amenazas-naturales-10-noviembre-2026"
+  },
+  {
+   "fecha_informe": "2026-11-09",
+   "pais": "Brasil",
+   "texto": "Según la autoridad estatal de protección civil, 126 municipios registraron daños relacionados con las tormentas, de los cuales 62 declararon el estado de emergencia, con 6.423 viviendas dañadas o afectadas, 557 personas desplazadas, 100 personas alojadas en refugios públicos y dos defunciones confirmadas.",
+   "cifras": [
+    {
+     "cantidad": 557,
+     "unidad": "personas"
+    },
+    {
+     "cantidad": 100,
+     "unidad": "personas"
+    }
+   ],
+   "organismo": null,
+   "fuente": "OPS · Monitoreo de Amenazas Naturales",
+   "url": "https://www.paho.org/es/monitoreo-amenazas-naturales/monitoreo-amenazas-naturales-9-noviembre-2026"
+  },
+  {
+   "fecha_informe": "2026-11-09",
+   "pais": "Brasil",
+   "texto": "Brasil (Actualización) El 7 de noviembre del 2026, la Defensa Civil del estado de Santa Catarina notificó que las lluvias intensas registradas ese mismo día provocaron inundaciones, crecidas repentinas, deslizamientos de tierra y daños a la infraestructura en 40 municipios de 12 regiones administrativas, con 768 viviendas afectadas, 218 personas damnificadas alojadas en refugios públicos y 44 personas desplazadas.",
+   "cifras": [
+    {
+     "cantidad": 218,
+     "unidad": "personas"
+    },
+    {
+     "cantidad": 44,
+     "unidad": "personas"
+    }
+   ],
+   "organismo": "Defensa Civil",
+   "fuente": "OPS · Monitoreo de Amenazas Naturales",
+   "url": "https://www.paho.org/es/monitoreo-amenazas-naturales/monitoreo-amenazas-naturales-9-noviembre-2026"
+  }
+ ],
+ "dias_revisados": [
+  "2026-11-20",
+  "2026-11-19",
+  "2026-11-18",
+  "2026-11-16",
+  "2026-11-13",
+  "2026-11-11",
+  "2026-11-10",
+  "2026-11-09"
+ ],
+ "dias_sin_parte": [
+  {
+   "fecha": "2026-11-21",
+   "motivo": "HTTP 404"
+  },
+  {
+   "fecha": "2026-11-17",
+   "motivo": "HTTP 404"
+  },
+  {
+   "fecha": "2026-11-15",
+   "motivo": "HTTP 404"
+  },
+  {
+   "fecha": "2026-11-14",
+   "motivo": "HTTP 404"
+  },
+  {
+   "fecha": "2026-11-12",
+   "motivo": "HTTP 404"
+  },
+  {
+   "fecha": "2026-11-08",
+   "motivo": "HTTP 404"
+  },
+  {
+   "fecha": "2026-11-07",
+   "motivo": "HTTP 404"
+  }
+ ]
+}
