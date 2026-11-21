@@ -91,3 +91,11 @@ Las reglas de trabajo están en `CLAUDE.md`. El detalle de cada versión está e
 - Desmontes: las 132 celdas fallaron porque Earth Engine pasó la cuenta a «modo restringido» (se superó la cuota
   no comercial) y rechazó pedidos simultáneos. Se bajó de 6 a 3 pedidos a la vez y se agregó una segunda vuelta,
   de a una celda con pausas, para las que fallen.
+
+## 2026-11-20 · Gestor de evacuados
+- Nuevo `scripts/evacuados.py` y workflow `evacuados.yml` (todos los días y a pedido): lee el «Monitoreo de Amenazas
+  Naturales» diario de la OPS, que resume los partes oficiales (Agencia Federal de Emergencias, Defensas Civiles, SEN
+  de Paraguay, SINAE de Uruguay, Defesa Civil de Brasil), y guarda en `data/evacuados.json` los párrafos de Argentina,
+  Paraguay, Uruguay y Brasil con cifras, organismo y enlace. DOTS no estima: un día sin parte queda sin dato.
+- El informe diario del Control suma la sección «Evacuados · partes oficiales».
+- Pendiente: página /evacuados con mapa y la lista de organismos que no publican; sumar fuentes provinciales directas.

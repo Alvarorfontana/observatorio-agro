@@ -1,0 +1,40 @@
+# Evacuados: partes oficiales de Argentina, Paraguay, Uruguay y Brasil, leídos del monitoreo diario de la OPS.
+# Todos los días y a pedido. Guarda en la rama datos: no publica la web.
+name: Evacuados (partes oficiales)
+
+on:
+  workflow_dispatch:
+    inputs:
+      dias:
+        description: "Días hacia atrás a revisar"
+        required: false
+        default: "10"
+  schedule:
+    - cron: "47 14 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: evacuados
+  cancel-in-progress: false
+
+jobs:
+  evacuados:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Traer datos de la rama datos
+        run: bash scripts/datos_rama.sh traer
+      - name: Leer partes de evacuados
+        run: |
+          pip install requests
+          python -u scripts/evacuados.py data/evacuados.json "${{ github.event.inputs.dias || '10' }}"
+      - name: Guardar en la rama datos (no publica la web)
+        if: success()
+        run: |
+          cp scripts/datos_rama.sh /tmp/datos_rama.sh && bash /tmp/datos_rama.sh guardar "Evacuados $(date -u +%Y-%m-%d)" data/evacuados.json
