@@ -169,7 +169,9 @@ def seccion_nino():
     if mei:
         lineas.append("  MEI.v2 último: " + ", ".join(f"{k} {v}" for k, v in mei.items()))
     iri = d.get("ccsr_iri") or {}
-    if iri.get("estado") != "recibido":
+    if iri.get("resumen"):
+        lineas.append(f"  IRI Columbia ({iri.get('emitido', 's/f')}, texto original): {iri['resumen']}")
+    elif iri.get("estado") != "recibido":
         lineas.append(f"  IRI Columbia: sin dato ({iri.get('motivo', 'no respondió')}).")
     n34 = leer_dato("data/nino34_diario.json")
     if isinstance(n34, dict):
@@ -366,7 +368,8 @@ def informe():
     texto = "\n".join(txt)
     print(texto)
     avisos = fichas.get("control", {}).get("avisos", {})
-    r_tg = telegram(texto) if avisos.get("telegram", True) and tg_ok else ("no enviado: " + tg_diag)
+    r_tg = ("desactivado en gestores/fichas.yml" if not avisos.get("telegram", True)
+            else telegram(texto) if tg_ok else ("no enviado: " + tg_diag))
     asunto = f"DOTS · Informe de gestores {hoy[:10]}" + (f" · {len(problemas)} para revisar" if problemas else " · todo en orden")
     r_ma = correo(texto, asunto) if avisos.get("correo", True) else "desactivado"
     r_is = issue(texto + f"\n\nCorreo: {r_ma}\nTelegram: {r_tg}") if avisos.get("github_issue", True) else "desactivado"

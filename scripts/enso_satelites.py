@@ -188,7 +188,7 @@ def serie_anio(ee, col, p, regiones, anio, hasta):
         img = sub.mean()
         if p is PRODUCTOS["lluvia"]:
             img = img.multiply(24 * calendar.monthrange(y, m)[1])          # mm/h → mm del mes
-        res = img.reduceRegions(collection=regiones, reducer=red.setOutputs(bandas) if len(bandas) > 1 else red,
+        res = img.reduceRegions(collection=regiones, reducer=red,  # con varias bandas, Earth Engine nombra cada salida como su banda
                                 scale=p["escala"], tileScale=4).getInfo()
         for f in res["features"]:
             pr = f["properties"]

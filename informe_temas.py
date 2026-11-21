@@ -56,7 +56,10 @@ def summary(block):
     try:
         if tid == 'nino':
             ph = d.get('phase') or {}
-            out = [f"Fase: {ph.get('es') or ph.get('en') or 'sin dato'}"]
+            fase = ph.get('es') or ph.get('en') or ph.get('phase')
+            if fase and ph.get('strength'):
+                fase = f"{fase} {ph['strength'].lower()}"
+            out = [f"Fase: {fase or 'sin dato'}"]
             for k, lab in (('oni', 'ONI'), ('roni', 'RONI'), ('weekly', 'Niño 3.4 semanal')):
                 v = d.get(k) or {}
                 an = v.get('anom', v.get('nino34'))
