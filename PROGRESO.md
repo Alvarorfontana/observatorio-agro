@@ -72,3 +72,8 @@ Las reglas de trabajo están en `CLAUDE.md`. El detalle de cada versión está e
 - [ ] Afinar RF-DETR con fotos de rodeos argentinos (gratis en Colab).
 - [ ] «Avisame» por localidad: suscripción por correo a una sola localidad, no a las 34.
 - [ ] Idea: superficie de agua en embalses y lagunas (Sentinel-2 + Sentinel-1) contra el promedio histórico.
+
+## 2026-11-20 · Población expuesta en todas las localidades ribereñas
+- Nuevo `scripts/poblacion_expuesta.py` y workflow `poblacion-expuesta.yml` (a pedido y los lunes): corre el cálculo de población cerca del río (MERIT Hydro HAND + WorldPop 2020, 15 km) para cada estación de la Cuenca del Plata y guarda `data/poblacion_expuesta.json` en la rama datos.
+- Antes solo se calculaba para la localidad del digest (Corrientes).
+- Pendiente: mostrarlo en la web y en el digest de El Niño y crecidas.
