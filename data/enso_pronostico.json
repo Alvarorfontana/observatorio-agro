@@ -1,5 +1,5 @@
 {
- "actualizado": "2026-11-20T19:14Z",
+ "actualizado": "2026-11-21T18:11Z",
  "cpc": {
   "estado": "recibido",
   "fuente": "NOAA Climate Prediction Center",
@@ -77,12 +77,13 @@
   "sinopsis": "El Niño continues to strengthen, with a strong-to-very strong El Niño likely through January-March 2027 (remaining greater than a 79% chance)."
  },
  "ccsr_iri": {
-  "estado": "sin dato",
+  "estado": "recibido (texto)",
   "fuente": "CCSR/IRI · Universidad de Columbia",
   "url": "https://forecast.ccsr.columbia.edu/forecasts/enso/forecast",
   "probabilidades": [],
   "emitido": "2026-11",
-  "motivo": "no se encontró la tabla de probabilidades",
+  "motivo": "Columbia publica las probabilidades en texto, no en tabla; se guarda el párrafo original.",
+  "resumen": "To generate the CCSR/IRI objective ENSO probability outlook, forecasts from the 26 currently available models (15 dynamical and 11 statistical) in the plume are combined into an equally weighted multi-model average of Niño 3.4 SST anomalies. A Gaussian error distribution is then applied to the ensemble-mean forecast, with its width determined by the expected forecast skill for each season and lead time. Higher skill produces a narrower distribution and greater confidence, while lower skill broadens the range of possible outcomes. Probabilities are calculated for the standard ENSO categories: El Niño (≥ +0.5°C), ENSO-neutral (−0.5°C to +0.5°C), and La Niña (≤ −0.5°C). The latest objective outlook assigns a 100% probability of El Niño from NDJ 2026/27 through MAM 2027, providing exceptionally high confidence that El Niño will persist throughout boreal winter and spring. Thereafter, the pro",
   "modelos": {
    "dinamicos": 15,
    "estadisticos": 11
