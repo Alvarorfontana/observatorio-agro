@@ -153,6 +153,22 @@ def seccion_crecidas():
     return lineas
 
 
+def seccion_evacuados():
+    d = leer_dato("data/evacuados.json") or {}
+    ult = d.get("ultimo_por_pais") or {}
+    if not ult:
+        return ["  Sin partes de evacuados en los últimos días (fuente: OPS, que resume los partes oficiales)."]
+    lin = []
+    for pais in ("Argentina", "Paraguay", "Uruguay", "Brasil"):
+        p = ult.get(pais)
+        if not p:
+            continue
+        org = f" · {p['organismo']}" if p.get("organismo") else ""
+        lin.append(f"  {pais} ({p['fecha_informe']}{org}): {p['texto']}")
+        lin.append(f"    Fuente: {p['url']}")
+    return lin
+
+
 def seccion_nino():
     d = leer_dato("data/enso_pronostico.json") or {}
     lineas = []
@@ -356,6 +372,7 @@ def informe():
     txt.append("  Todo funcionó con normalidad." if not problemas else f"  {len(problemas)} punto(s) para revisar:")
     txt += [f"  - {p}" for p in problemas]
     txt += ["", "CRECIDAS · CUENCA DEL PLATA"] + seccion_crecidas()
+    txt += ["", "EVACUADOS · PARTES OFICIALES"] + seccion_evacuados()
     txt += ["", "EL NIÑO"] + seccion_nino()
     txt += ["", "HELADAS · GOES-19"] + seccion_heladas()
     txt += ["", "DESMONTES · NDVI SENTINEL-2"] + seccion_desmontes()

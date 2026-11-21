@@ -19,6 +19,7 @@ recolector:
     - {workflow: normales-cuenca.yml, max_horas: 30}
     - {workflow: focos-historia.yml}
     - {workflow: renabap-localidades.yml}
+    - {workflow: evacuados.yml, max_horas: 30}
 
 calculador:
   nombre: Calculador
@@ -48,6 +49,7 @@ control:
     - {workflow: ci.yml}
   # Datos de la rama "datos" que se consideran viejos si no se actualizan en ese plazo (horas)
   datos_frescos:
+    data/evacuados.json: 30
     data/avisos_pulso.json: 6   # la hora de la última revisión; avisos_estado.json sólo cambia si cambia un nivel
     data/nino_crecidas.json: 12
     data/goes_heladas.json: 30
