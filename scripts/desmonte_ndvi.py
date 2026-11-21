@@ -29,6 +29,7 @@ import json
 import math
 import os
 import sys
+import re
 import time
 import unicodedata
 from datetime import date, datetime, timedelta, timezone
@@ -46,7 +47,7 @@ SCALE = 20                    # m: banda roja/NIR llevadas a la grilla de 20 m d
 MIN_HA = float(os.environ.get("DESMONTE_MIN_HA", "10"))
 MAX_PARCHES = int(os.environ.get("DESMONTE_MAX", "80"))
 MAX_FOTOS = int(os.environ.get("DESMONTE_FOTOS", "24"))
-WORKERS = int(os.environ.get("DESMONTE_WORKERS", "6"))
+WORKERS = int(os.environ.get("DESMONTE_WORKERS", "3"))  # con 6 se pasa el límite de pedidos simultáneos de Earth Engine
 BUDGET_MIN = float(os.environ.get("DESMONTE_MINUTOS", "280"))   # corta a tiempo para guardar lo calculado
 
 NDVI_ANTES_MIN = 0.55          # antes había vegetación densa
@@ -489,6 +490,28 @@ def main():
             break
     pool.shutdown(wait=False, cancel_futures=True)
     sin_tiempo = len(celdas) - hechas
+
+    # Segunda vuelta, de a una y con pausas, para las celdas que Earth Engine rechazó por exceso de pedidos
+    if fallidas and (time.time() - t0) / 60 < BUDGET_MIN:
+        print(f"Reintento de {len(fallidas)} celdas, de a una…")
+        quedan = []
+        for i, c in enumerate(fallidas, 1):
+            if (time.time() - t0) / 60 > BUDGET_MIN:
+                quedan += fallidas[i - 1:]
+                break
+            for espera in (5, 20, 60):
+                try:
+                    crudos += parches_de_celda(ee, cand, medidas, c)
+                    break
+                except Exception as ex:
+                    if not re.search(r"Too Many Requests|concurrency|429|quota", str(ex), re.I):
+                        quedan.append(c)
+                        break
+                    time.sleep(espera)
+            else:
+                quedan.append(c)
+        print(f"Reintento: {len(fallidas) - len(quedan)} recuperadas, {len(quedan)} siguen con error.")
+        fallidas = quedan
 
     # Un desmonte que cruza el borde de dos celdas llega partido: se unen las partes que se tocan
     crudos = unir_bordes(crudos)

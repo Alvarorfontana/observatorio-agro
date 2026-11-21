@@ -87,3 +87,7 @@ Las reglas de trabajo están en `CLAUDE.md`. El detalle de cada versión está e
 - Atmósfera ENSO: si el OLR o la presión de NOAA PSL dejan de actualizarse, se completan con los índices del CPC.
 - Pendiente: tabla de IRI Columbia (la página arma la tabla en el navegador), 132 celdas de desmontes sin calcular,
   clorofila MODIS frenada en 2025-11, y que GitHub demora las tareas programadas (disparo externo con cron-job.org).
+- Columbia (CCSR/IRI) dejó de publicar la tabla de probabilidades: ahora se guarda el párrafo original con los porcentajes.
+- Desmontes: las 132 celdas fallaron porque Earth Engine pasó la cuenta a «modo restringido» (se superó la cuota
+  no comercial) y rechazó pedidos simultáneos. Se bajó de 6 a 3 pedidos a la vez y se agregó una segunda vuelta,
+  de a una celda con pausas, para las que fallen.

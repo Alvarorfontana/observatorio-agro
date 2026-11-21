@@ -169,7 +169,9 @@ def seccion_nino():
     if mei:
         lineas.append("  MEI.v2 último: " + ", ".join(f"{k} {v}" for k, v in mei.items()))
     iri = d.get("ccsr_iri") or {}
-    if iri.get("estado") != "recibido":
+    if iri.get("resumen"):
+        lineas.append(f"  IRI Columbia ({iri.get('emitido', 's/f')}, texto original): {iri['resumen']}")
+    elif iri.get("estado") != "recibido":
         lineas.append(f"  IRI Columbia: sin dato ({iri.get('motivo', 'no respondió')}).")
     n34 = leer_dato("data/nino34_diario.json")
     if isinstance(n34, dict):

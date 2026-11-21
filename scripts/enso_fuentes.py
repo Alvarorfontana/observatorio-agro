@@ -122,6 +122,16 @@ def cpc():
     return out
 
 
+def resumen_probabilidades(text, largo=900):
+    """Párrafo de «ENSO Probabilities Forecast» de la página de Columbia, si trae porcentajes."""
+    flat = " ".join(text.split())
+    m = re.search(r"ENSO Probabilit\w*(?: Forecast)?\s*(.{40,%d}?%%.*?)(?=\s(?:Plume|ENSO Plume|Strength|Model|Download|Figure)\b|$)" % largo, flat)
+    if not m:
+        return None
+    frag = m.group(1)[:largo].strip()
+    return frag if re.search(r"\d{1,3}\s*%", frag) else None
+
+
 def ccsr():
     now = datetime.now(timezone.utc)
     out = {"estado": "sin dato", "fuente": "CCSR/IRI · Universidad de Columbia", "url": CCSR, "probabilidades": []}
@@ -133,6 +143,13 @@ def ccsr():
             out["estado"] = "recibido"
         except ValueError as exc:
             out["motivo"] = str(exc)
+            # Desde fines de 2026 Columbia publica las probabilidades en un párrafo, no en tabla: se guarda ese
+            # párrafo tal cual (en inglés, con su fuente) para no perder el dato.
+            resumen = resumen_probabilidades(text)
+            if resumen:
+                out["resumen"] = resumen
+                out["estado"] = "recibido (texto)"
+                out["motivo"] = "Columbia publica las probabilidades en texto, no en tabla; se guarda el párrafo original."
         m = re.search(r"(\d{1,2})\s+(?:dynamical)[^\n]{0,40}?(\d{1,2})\s+statistical", text, re.I)
         if m:
             out["modelos"] = {"dinamicos": int(m.group(1)), "estadisticos": int(m.group(2))}
