@@ -37,7 +37,11 @@ jobs:
         run: |
           pip install requests
           python scripts/avisos.py
+      - name: Anotar la hora de la revisión (aunque no haya cambios de nivel)
+        if: success()
+        run: |
+          mkdir -p data && printf '{"revisado": "%s"}\n' "$(date -u +%Y-%m-%dT%H:%MZ)" > data/avisos_pulso.json
       - name: Guardar en la rama datos (no publica la web)
         if: always()
         run: |
-          cp scripts/datos_rama.sh /tmp/datos_rama.sh && bash /tmp/datos_rama.sh guardar "Avisos de crecidas $(date -u +%Y-%m-%d\ %H:%M)" data/avisos_estado.json data/avisos.json
+          cp scripts/datos_rama.sh /tmp/datos_rama.sh && bash /tmp/datos_rama.sh guardar "Avisos de crecidas $(date -u +%Y-%m-%d\ %H:%M)" data/avisos_estado.json data/avisos.json data/avisos_pulso.json

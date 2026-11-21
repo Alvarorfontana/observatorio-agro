@@ -84,13 +84,13 @@ def enso():
 
 def newsletter(nombre):
     r = check(HTTP.get(f'{SITE}/api/fuentes/newsletter-temas',
-                       params={'temas': ','.join(TEMAS), 'nombre': nombre, 'lat': LAT, 'lon': LON}, timeout=180), expect='html')
+                       params={'temas': ','.join(TEMAS), 'nombre': nombre, 'lat': LAT, 'lon': LON, 'cuenca': '1'}, timeout=180), expect='html')
     return r.text
 
 
 def pdf_snapshot():
     r = HTTP.post(f'{SITE}/api/fuentes/informe-temas',
-                      json={'temas': TEMAS, 'nombre': 'El Niño y crecidas', 'lat': LAT, 'lon': LON}, timeout=180)
+                      json={'temas': TEMAS, 'nombre': 'El Niño y crecidas', 'lat': LAT, 'lon': LON, 'cuenca': '1'}, timeout=180)
     return r.content if r.ok and r.content[:5] == b'%PDF-' else None
 
 

@@ -63,7 +63,8 @@ def _crecidas(lat, lon, p):
     import cuenca
     lat, lon = _coords(lat, lon, p)
     d = cuenca.rivers()
-    sid = (p or {}).get('localidad') or (near if (near := nearest_station(lat, lon)) else None)
+    toda = str((p or {}).get('cuenca', '')).lower() in ('1', 'true', 'si', 'sí')
+    sid = (p or {}).get('localidad') or (None if toda else nearest_station(lat, lon))
     if sid:
         d = {**d, 'stations': [s for s in d.get('stations', []) if s['id'] == sid], 'focus': sid}
     return _env(d, cuenca.FLOOD, 'Crecidas: caudal GloFAS y alturas/niveles oficiales del INA',

@@ -77,3 +77,13 @@ Las reglas de trabajo están en `CLAUDE.md`. El detalle de cada versión está e
 - Nuevo `scripts/poblacion_expuesta.py` y workflow `poblacion-expuesta.yml` (a pedido y los lunes): corre el cálculo de población cerca del río (MERIT Hydro HAND + WorldPop 2020, 15 km) para cada estación de la Cuenca del Plata y guarda `data/poblacion_expuesta.json` en la rama datos.
 - Antes solo se calculaba para la localidad del digest (Corrientes).
 - Pendiente: mostrarlo en la web y en el digest de El Niño y crecidas.
+## 2026-11-20 · Arreglos de gestores y del digest de El Niño y crecidas
+- Digest: la fase de El Niño salía «sin dato» (se leía un campo que no existe); ahora muestra fase e intensidad.
+- Digest: el tema crecidas se filtraba a la estación más cercana a Corrientes (1 puerto); con `cuenca=1` trae todas.
+- Avisos: cada corrida guarda `data/avisos_pulso.json` con la hora de revisión; el Control mira ese archivo (antes daba
+  «viejo» cuando simplemente no había cambios de nivel).
+- Telegram desactivado en `gestores/fichas.yml`: los avisos van por correo (Resend).
+- El Niño por satélite: la humedad del suelo (SMAP) nunca se calculaba por un error del reductor con dos bandas.
+- Atmósfera ENSO: si el OLR o la presión de NOAA PSL dejan de actualizarse, se completan con los índices del CPC.
+- Pendiente: tabla de IRI Columbia (la página arma la tabla en el navegador), 132 celdas de desmontes sin calcular,
+  clorofila MODIS frenada en 2025-11, y que GitHub demora las tareas programadas (disparo externo con cron-job.org).
