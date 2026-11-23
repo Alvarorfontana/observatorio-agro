@@ -29,9 +29,6 @@
  "parana-corrientes": {
   "level": "Atención"
  },
- "uruguay-colon": {
-  "level": "Atención"
- },
  "parana-sannicolas": {
   "level": "Atención"
  },
@@ -44,9 +41,6 @@
  "parana-sanpedro": {
   "level": "Normal"
  },
- "parana-ituzaingo": {
-  "level": "Normal"
- },
  "uruguay-libres": {
   "level": "Normal"
  },
@@ -56,16 +50,22 @@
  "paraguay-formosa": {
   "level": "Normal"
  },
+ "uruguay-concordia": {
+  "level": "Normal"
+ },
+ "parana-ituzaingo": {
+  "level": "Normal"
+ },
  "uruguay-santotome": {
   "level": "Normal"
  },
- "uruguay-concordia": {
+ "uruguay-montecaseros": {
   "level": "Normal"
  },
  "uruguay-cdeluruguay": {
   "level": "Normal"
  },
- "uruguay-montecaseros": {
+ "uruguay-colon": {
   "level": "Normal"
  },
  "paraguay-asuncion": {
