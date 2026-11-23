@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-21T01:35Z",
+ "updated": "2026-11-23T19:15Z",
  "source": "MERIT Hydro HAND v1.0.1 (90 m) y WorldPop 2020 (100 m) vía Google Earth Engine",
  "nota": "Exposición estimada por altura sobre el río en 15 km a la redonda. No es mancha de inundación ni conteo de evacuados.",
  "places": [
@@ -442,6 +442,1861 @@
     "evac": 5.5,
     "low": 2.4
    },
+   "sources": [
+    "MERIT Hydro (Yamazaki et al., 2019) · CC BY-NC 4.0 / ODbL",
+    "WorldPop 2020 · CC BY 4.0"
+   ]
+  },
+  {
+   "radius_km": 15.0,
+   "total": 18625,
+   "under5_total": 2290,
+   "over65_total": 864,
+   "bands": [
+    {
+     "up_to_m": 1,
+     "people": 1768,
+     "under5": 218,
+     "over65": 81
+    },
+    {
+     "up_to_m": 2,
+     "people": 1957,
+     "under5": 241,
+     "over65": 90
+    },
+    {
+     "up_to_m": 3,
+     "people": 2343,
+     "under5": 288,
+     "over65": 109
+    },
+    {
+     "up_to_m": 5,
+     "people": 3227,
+     "under5": 397,
+     "over65": 149
+    },
+    {
+     "up_to_m": 10,
+     "people": 5418,
+     "under5": 668,
+     "over65": 249
+    }
+   ],
+   "scenarios": [
+    {
+     "key": "alert",
+     "label": "Nivel de alerta",
+     "level_m": 10.5,
+     "rise_m": 10.34,
+     "band_m": 10,
+     "people": 5418,
+     "under5": 668,
+     "over65": 249
+    },
+    {
+     "key": "evac",
+     "label": "Nivel de evacuación",
+     "level_m": 13.5,
+     "rise_m": 13.34,
+     "band_m": 10,
+     "people": 5418,
+     "under5": 668,
+     "over65": 249
+    }
+   ],
+   "id": "iguazu-andresito",
+   "place": "Andresito",
+   "river": "Iguazú",
+   "lat": -25.58,
+   "lon": -53.99,
+   "levels": {
+    "alert": 10.5,
+    "evac": 13.5,
+    "low": 0.16
+   },
+   "sources": [
+    "MERIT Hydro (Yamazaki et al., 2019) · CC BY-NC 4.0 / ODbL",
+    "WorldPop 2020 · CC BY 4.0"
+   ]
+  },
+  {
+   "radius_km": 15.0,
+   "total": 4562,
+   "under5_total": 408,
+   "over65_total": 279,
+   "bands": [
+    {
+     "up_to_m": 1,
+     "people": 414,
+     "under5": 38,
+     "over65": 25
+    },
+    {
+     "up_to_m": 2,
+     "people": 499,
+     "under5": 46,
+     "over65": 30
+    },
+    {
+     "up_to_m": 3,
+     "people": 602,
+     "under5": 56,
+     "over65": 36
+    },
+    {
+     "up_to_m": 5,
+     "people": 823,
+     "under5": 77,
+     "over65": 49
+    },
+    {
+     "up_to_m": 10,
+     "people": 1284,
+     "under5": 119,
+     "over65": 77
+    }
+   ],
+   "scenarios": [
+    {
+     "key": "alert",
+     "label": "Nivel de alerta",
+     "level_m": 25,
+     "rise_m": 15.6,
+     "band_m": 10,
+     "people": 1284,
+     "under5": 119,
+     "over65": 77
+    },
+    {
+     "key": "evac",
+     "label": "Nivel de evacuación",
+     "level_m": 28,
+     "rise_m": 18.6,
+     "band_m": 10,
+     "people": 1284,
+     "under5": 119,
+     "over65": 77
+    }
+   ],
+   "id": "iguazu-cataratas",
+   "place": "Puerto Iguazú · Cataratas",
+   "river": "Iguazú",
+   "lat": -25.6,
+   "lon": -54.38,
+   "levels": {
+    "alert": 25,
+    "evac": 28,
+    "low": 9.4
+   },
+   "sources": [
+    "MERIT Hydro (Yamazaki et al., 2019) · CC BY-NC 4.0 / ODbL",
+    "WorldPop 2020 · CC BY 4.0"
+   ]
+  },
+  {
+   "radius_km": 15.0,
+   "total": 94562,
+   "under5_total": 9603,
+   "over65_total": 7372,
+   "bands": [
+    {
+     "up_to_m": 1,
+     "people": 5631,
+     "under5": 573,
+     "over65": 436
+    },
+    {
+     "up_to_m": 2,
+     "people": 6145,
+     "under5": 625,
+     "over65": 476
+    },
+    {
+     "up_to_m": 3,
+     "people": 7107,
+     "under5": 723,
+     "over65": 552
+    },
+    {
+     "up_to_m": 5,
+     "people": 9193,
+     "under5": 934,
+     "over65": 716
+    },
+    {
+     "up_to_m": 10,
+     "people": 15852,
+     "under5": 1609,
+     "over65": 1238
+    }
+   ],
+   "scenarios": [
+    {
+     "key": "alert",
+     "label": "Nivel de alerta",
+     "level_m": 23,
+     "rise_m": 15.5,
+     "band_m": 10,
+     "people": 15852,
+     "under5": 1609,
+     "over65": 1238
+    },
+    {
+     "key": "evac",
+     "label": "Nivel de evacuación",
+     "level_m": 25,
+     "rise_m": 17.5,
+     "band_m": 10,
+     "people": 15852,
+     "under5": 1609,
+     "over65": 1238
+    }
+   ],
+   "id": "parana-eldorado",
+   "place": "Eldorado",
+   "river": "Paraná",
+   "lat": -26.4,
+   "lon": -54.69,
+   "levels": {
+    "alert": 23,
+    "evac": 25,
+    "low": 7.5
+   },
+   "sources": [
+    "MERIT Hydro (Yamazaki et al., 2019) · CC BY-NC 4.0 / ODbL",
+    "WorldPop 2020 · CC BY 4.0"
+   ]
+  },
+  {
+   "radius_km": 15.0,
+   "total": 482042,
+   "under5_total": 46286,
+   "over65_total": 36176,
+   "bands": [
+    {
+     "up_to_m": 1,
+     "people": 45835,
+     "under5": 4413,
+     "over65": 3421
+    },
+    {
+     "up_to_m": 2,
+     "people": 62276,
+     "under5": 6002,
+     "over65": 4639
+    },
+    {
+     "up_to_m": 3,
+     "people": 81392,
+     "under5": 7844,
+     "over65": 6063
+    },
+    {
+     "up_to_m": 5,
+     "people": 116755,
+     "under5": 11251,
+     "over65": 8700
+    },
+    {
+     "up_to_m": 10,
+     "people": 190406,
+     "under5": 18282,
+     "over65": 14290
+    }
+   ],
+   "scenarios": [
+    {
+     "key": "alert",
+     "label": "Nivel de alerta",
+     "level_m": 11,
+     "rise_m": 1.2,
+     "band_m": 2,
+     "people": 62276,
+     "under5": 6002,
+     "over65": 4639
+    },
+    {
+     "key": "evac",
+     "label": "Nivel de evacuación",
+     "level_m": 12,
+     "rise_m": 2.2,
+     "band_m": 3,
+     "people": 81392,
+     "under5": 7844,
+     "over65": 6063
+    }
+   ],
+   "id": "parana-posadas",
+   "place": "Posadas",
+   "river": "Paraná",
+   "lat": -27.36,
+   "lon": -55.9,
+   "levels": {
+    "alert": 11,
+    "evac": 12,
+    "low": 9.8
+   },
+   "sources": [
+    "MERIT Hydro (Yamazaki et al., 2019) · CC BY-NC 4.0 / ODbL",
+    "WorldPop 2020 · CC BY 4.0"
+   ]
+  },
+  {
+   "radius_km": 15.0,
+   "total": 15501,
+   "under5_total": 1407,
+   "over65_total": 1248,
+   "bands": [
+    {
+     "up_to_m": 1,
+     "people": 5306,
+     "under5": 481,
+     "over65": 429
+    },
+    {
+     "up_to_m": 2,
+     "people": 7674,
+     "under5": 695,
+     "over65": 620
+    },
+    {
+     "up_to_m": 3,
+     "people": 9192,
+     "under5": 834,
+     "over65": 741
+    },
+    {
+     "up_to_m": 5,
+     "people": 11301,
+     "under5": 1025,
+     "over65": 911
+    },
+    {
+     "up_to_m": 10,
+     "people": 13057,
+     "under5": 1184,
+     "over65": 1055
+    }
+   ],
+   "scenarios": [
+    {
+     "key": "alert",
+     "label": "Nivel de alerta",
+     "level_m": 3.5,
+     "rise_m": 2.69,
+     "band_m": 3,
+     "people": 9192,
+     "under5": 834,
+     "over65": 741
+    },
+    {
+     "key": "evac",
+     "label": "Nivel de evacuación",
+     "level_m": 4,
+     "rise_m": 3.19,
+     "band_m": 5,
+     "people": 11301,
+     "under5": 1025,
+     "over65": 911
+    }
+   ],
+   "id": "parana-ituzaingo",
+   "place": "Ituzaingó",
+   "river": "Paraná",
+   "lat": -27.58,
+   "lon": -56.69,
+   "levels": {
+    "alert": 3.5,
+    "evac": 4,
+    "low": 0.81
+   },
+   "sources": [
+    "MERIT Hydro (Yamazaki et al., 2019) · CC BY-NC 4.0 / ODbL",
+    "WorldPop 2020 · CC BY 4.0"
+   ]
+  },
+  {
+   "radius_km": 15.0,
+   "total": 546561,
+   "under5_total": 43174,
+   "over65_total": 46390,
+   "bands": [
+    {
+     "up_to_m": 1,
+     "people": 203034,
+     "under5": 16098,
+     "over65": 17247
+    },
+    {
+     "up_to_m": 2,
+     "people": 338888,
+     "under5": 26845,
+     "over65": 28783
+    },
+    {
+     "up_to_m": 3,
+     "people": 413799,
+     "under5": 32754,
+     "over65": 35139
+    },
+    {
+     "up_to_m": 5,
+     "people": 480462,
+     "under5": 37997,
+     "over65": 40791
+    },
+    {
+     "up_to_m": 10,
+     "people": 521769,
+     "under5": 41239,
+     "over65": 44291
+    }
+   ],
+   "scenarios": [
+    {
+     "key": "alert",
+     "label": "Nivel de alerta",
+     "level_m": 6.5,
+     "rise_m": 4.67,
+     "band_m": 5,
+     "people": 480462,
+     "under5": 37997,
+     "over65": 40791
+    },
+    {
+     "key": "evac",
+     "label": "Nivel de evacuación",
+     "level_m": 7,
+     "rise_m": 5.17,
+     "band_m": 10,
+     "people": 521769,
+     "under5": 41239,
+     "over65": 44291
+    }
+   ],
+   "id": "parana-corrientes",
+   "place": "Corrientes",
+   "river": "Paraná",
+   "lat": -27.46,
+   "lon": -58.85,
+   "levels": {
+    "alert": 6.5,
+    "evac": 7,
+    "low": 1.83
+   },
+   "sources": [
+    "MERIT Hydro (Yamazaki et al., 2019) · CC BY-NC 4.0 / ODbL",
+    "WorldPop 2020 · CC BY 4.0"
+   ]
+  },
+  {
+   "radius_km": 15.0,
+   "total": 29101,
+   "under5_total": 2494,
+   "over65_total": 2422,
+   "bands": [
+    {
+     "up_to_m": 1,
+     "people": 5825,
+     "under5": 498,
+     "over65": 487
+    },
+    {
+     "up_to_m": 2,
+     "people": 9828,
+     "under5": 841,
+     "over65": 820
+    },
+    {
+     "up_to_m": 3,
+     "people": 14116,
+     "under5": 1209,
+     "over65": 1177
+    },
+    {
+     "up_to_m": 5,
+     "people": 19856,
+     "under5": 1701,
+     "over65": 1654
+    },
+    {
+     "up_to_m": 10,
+     "people": 23495,
+     "under5": 2013,
+     "over65": 1956
+    }
+   ],
+   "scenarios": [
+    {
+     "key": "alert",
+     "label": "Nivel de alerta",
+     "level_m": 6,
+     "rise_m": 3,
+     "band_m": 3,
+     "people": 14116,
+     "under5": 1209,
+     "over65": 1177
+    },
+    {
+     "key": "evac",
+     "label": "Nivel de evacuación",
+     "level_m": 6.4,
+     "rise_m": 3.4,
+     "band_m": 5,
+     "people": 19856,
+     "under5": 1701,
+     "over65": 1654
+    }
+   ],
+   "id": "parana-bellavista",
+   "place": "Bella Vista",
+   "river": "Paraná",
+   "lat": -28.51,
+   "lon": -59.05,
+   "levels": {
+    "alert": 6,
+    "evac": 6.4,
+    "low": 3
+   },
+   "sources": [
+    "MERIT Hydro (Yamazaki et al., 2019) · CC BY-NC 4.0 / ODbL",
+    "WorldPop 2020 · CC BY 4.0"
+   ]
+  },
+  {
+   "radius_km": 15.0,
+   "total": 762708,
+   "under5_total": 53282,
+   "over65_total": 106868,
+   "bands": [
+    {
+     "up_to_m": 1,
+     "people": 270950,
+     "under5": 18929,
+     "over65": 37963
+    },
+    {
+     "up_to_m": 2,
+     "people": 424489,
+     "under5": 29655,
+     "over65": 59477
+    },
+    {
+     "up_to_m": 3,
+     "people": 519118,
+     "under5": 36265,
+     "over65": 72738
+    },
+    {
+     "up_to_m": 5,
+     "people": 629064,
+     "under5": 43945,
+     "over65": 88144
+    },
+    {
+     "up_to_m": 10,
+     "people": 713812,
+     "under5": 49867,
+     "over65": 100016
+    }
+   ],
+   "scenarios": [
+    {
+     "key": "alert",
+     "label": "Nivel de alerta",
+     "level_m": 5,
+     "rise_m": 3.36,
+     "band_m": 5,
+     "people": 629064,
+     "under5": 43945,
+     "over65": 88144
+    },
+    {
+     "key": "evac",
+     "label": "Nivel de evacuación",
+     "level_m": 5.25,
+     "rise_m": 3.61,
+     "band_m": 5,
+     "people": 629064,
+     "under5": 43945,
+     "over65": 88144
+    }
+   ],
+   "id": "parana-rosario",
+   "place": "Rosario",
+   "river": "Paraná",
+   "lat": -32.95,
+   "lon": -60.62,
+   "levels": {
+    "alert": 5,
+    "evac": 5.25,
+    "low": 1.64
+   },
+   "sources": [
+    "MERIT Hydro (Yamazaki et al., 2019) · CC BY-NC 4.0 / ODbL",
+    "WorldPop 2020 · CC BY 4.0"
+   ]
+  },
+  {
+   "radius_km": 15.0,
+   "total": 150609,
+   "under5_total": 10900,
+   "over65_total": 20141,
+   "bands": [
+    {
+     "up_to_m": 1,
+     "people": 35547,
+     "under5": 2577,
+     "over65": 4760
+    },
+    {
+     "up_to_m": 2,
+     "people": 61952,
+     "under5": 4484,
+     "over65": 8280
+    },
+    {
+     "up_to_m": 3,
+     "people": 83224,
+     "under5": 6022,
+     "over65": 11118
+    },
+    {
+     "up_to_m": 5,
+     "people": 111408,
+     "under5": 8063,
+     "over65": 14880
+    },
+    {
+     "up_to_m": 10,
+     "people": 134529,
+     "under5": 9736,
+     "over65": 17985
+    }
+   ],
+   "scenarios": [
+    {
+     "key": "alert",
+     "label": "Nivel de alerta",
+     "level_m": 4.2,
+     "rise_m": 2.85,
+     "band_m": 3,
+     "people": 83224,
+     "under5": 6022,
+     "over65": 11118
+    },
+    {
+     "key": "evac",
+     "label": "Nivel de evacuación",
+     "level_m": 5,
+     "rise_m": 3.65,
+     "band_m": 5,
+     "people": 111408,
+     "under5": 8063,
+     "over65": 14880
+    }
+   ],
+   "id": "parana-sannicolas",
+   "place": "San Nicolás",
+   "river": "Paraná",
+   "lat": -33.33,
+   "lon": -60.2,
+   "levels": {
+    "alert": 4.2,
+    "evac": 5,
+    "low": 1.35
+   },
+   "sources": [
+    "MERIT Hydro (Yamazaki et al., 2019) · CC BY-NC 4.0 / ODbL",
+    "WorldPop 2020 · CC BY 4.0"
+   ]
+  },
+  {
+   "radius_km": 15.0,
+   "total": 45612,
+   "under5_total": 3818,
+   "over65_total": 5413,
+   "bands": [
+    {
+     "up_to_m": 1,
+     "people": 13349,
+     "under5": 1115,
+     "over65": 1588
+    },
+    {
+     "up_to_m": 2,
+     "people": 21740,
+     "under5": 1818,
+     "over65": 2583
+    },
+    {
+     "up_to_m": 3,
+     "people": 26282,
+     "under5": 2198,
+     "over65": 3122
+    },
+    {
+     "up_to_m": 5,
+     "people": 31280,
+     "under5": 2617,
+     "over65": 3714
+    },
+    {
+     "up_to_m": 10,
+     "people": 38359,
+     "under5": 3210,
+     "over65": 4553
+    }
+   ],
+   "scenarios": [
+    {
+     "key": "alert",
+     "label": "Nivel de alerta",
+     "level_m": 3.4,
+     "rise_m": 2.56,
+     "band_m": 3,
+     "people": 26282,
+     "under5": 2198,
+     "over65": 3122
+    },
+    {
+     "key": "evac",
+     "label": "Nivel de evacuación",
+     "level_m": 3.6,
+     "rise_m": 2.76,
+     "band_m": 3,
+     "people": 26282,
+     "under5": 2198,
+     "over65": 3122
+    }
+   ],
+   "id": "parana-sanpedro",
+   "place": "San Pedro",
+   "river": "Paraná",
+   "lat": -33.68,
+   "lon": -59.65,
+   "levels": {
+    "alert": 3.4,
+    "evac": 3.6,
+    "low": 0.84
+   },
+   "sources": [
+    "MERIT Hydro (Yamazaki et al., 2019) · CC BY-NC 4.0 / ODbL",
+    "WorldPop 2020 · CC BY 4.0"
+   ]
+  },
+  {
+   "radius_km": 15.0,
+   "total": 146713,
+   "under5_total": 12314,
+   "over65_total": 16559,
+   "bands": [
+    {
+     "up_to_m": 1,
+     "people": 42867,
+     "under5": 3606,
+     "over65": 4890
+    },
+    {
+     "up_to_m": 2,
+     "people": 65302,
+     "under5": 5491,
+     "over65": 7437
+    },
+    {
+     "up_to_m": 3,
+     "people": 78286,
+     "under5": 6579,
+     "over65": 8889
+    },
+    {
+     "up_to_m": 5,
+     "people": 98832,
+     "under5": 8300,
+     "over65": 11183
+    },
+    {
+     "up_to_m": 10,
+     "people": 126455,
+     "under5": 10612,
+     "over65": 14262
+    }
+   ],
+   "scenarios": [
+    {
+     "key": "alert",
+     "label": "Nivel de alerta",
+     "level_m": 2,
+     "rise_m": 1.75,
+     "band_m": 2,
+     "people": 65302,
+     "under5": 5491,
+     "over65": 7437
+    },
+    {
+     "key": "evac",
+     "label": "Nivel de evacuación",
+     "level_m": 2.2,
+     "rise_m": 1.95,
+     "band_m": 2,
+     "people": 65302,
+     "under5": 5491,
+     "over65": 7437
+    }
+   ],
+   "id": "parana-zarate",
+   "place": "Zárate",
+   "river": "Paraná",
+   "lat": -34.09,
+   "lon": -59.02,
+   "levels": {
+    "alert": 2,
+    "evac": 2.2,
+    "low": 0.25
+   },
+   "sources": [
+    "MERIT Hydro (Yamazaki et al., 2019) · CC BY-NC 4.0 / ODbL",
+    "WorldPop 2020 · CC BY 4.0"
+   ]
+  },
+  {
+   "radius_km": 15.0,
+   "total": 182,
+   "under5_total": 19,
+   "over65_total": 11,
+   "bands": [
+    {
+     "up_to_m": 1,
+     "people": 101,
+     "under5": 10,
+     "over65": 6
+    },
+    {
+     "up_to_m": 2,
+     "people": 140,
+     "under5": 14,
+     "over65": 9
+    },
+    {
+     "up_to_m": 3,
+     "people": 157,
+     "under5": 16,
+     "over65": 10
+    },
+    {
+     "up_to_m": 5,
+     "people": 172,
+     "under5": 18,
+     "over65": 11
+    },
+    {
+     "up_to_m": 10,
+     "people": 182,
+     "under5": 19,
+     "over65": 11
+    }
+   ],
+   "scenarios": [],
+   "id": "paraguay-bahianegra",
+   "place": "Bahía Negra",
+   "river": "Paraguay",
+   "lat": -20.23,
+   "lon": -58.17,
+   "levels": null,
+   "sources": [
+    "MERIT Hydro (Yamazaki et al., 2019) · CC BY-NC 4.0 / ODbL",
+    "WorldPop 2020 · CC BY 4.0"
+   ]
+  },
+  {
+   "radius_km": 15.0,
+   "total": 68792,
+   "under5_total": 7550,
+   "over65_total": 5237,
+   "bands": [
+    {
+     "up_to_m": 1,
+     "people": 15570,
+     "under5": 1707,
+     "over65": 1182
+    },
+    {
+     "up_to_m": 2,
+     "people": 27082,
+     "under5": 2971,
+     "over65": 2058
+    },
+    {
+     "up_to_m": 3,
+     "people": 35609,
+     "under5": 3907,
+     "over65": 2708
+    },
+    {
+     "up_to_m": 5,
+     "people": 47883,
+     "under5": 5254,
+     "over65": 3643
+    },
+    {
+     "up_to_m": 10,
+     "people": 61603,
+     "under5": 6760,
+     "over65": 4689
+    }
+   ],
+   "scenarios": [],
+   "id": "paraguay-concepcion",
+   "place": "Concepción",
+   "river": "Paraguay",
+   "lat": -23.41,
+   "lon": -57.45,
+   "levels": null,
+   "sources": [
+    "MERIT Hydro (Yamazaki et al., 2019) · CC BY-NC 4.0 / ODbL",
+    "WorldPop 2020 · CC BY 4.0"
+   ]
+  },
+  {
+   "radius_km": 15.0,
+   "total": 1175188,
+   "under5_total": 98656,
+   "over65_total": 90476,
+   "bands": [
+    {
+     "up_to_m": 1,
+     "people": 130876,
+     "under5": 11125,
+     "over65": 10397
+    },
+    {
+     "up_to_m": 2,
+     "people": 179737,
+     "under5": 15257,
+     "over65": 14377
+    },
+    {
+     "up_to_m": 3,
+     "people": 231864,
+     "under5": 19664,
+     "over65": 18436
+    },
+    {
+     "up_to_m": 5,
+     "people": 329573,
+     "under5": 27876,
+     "over65": 25974
+    },
+    {
+     "up_to_m": 10,
+     "people": 540912,
+     "under5": 45565,
+     "over65": 42182
+    }
+   ],
+   "scenarios": [
+    {
+     "key": "alert",
+     "label": "Nivel de alerta",
+     "level_m": 5.35,
+     "rise_m": 3.95,
+     "band_m": 5,
+     "people": 329573,
+     "under5": 27876,
+     "over65": 25974
+    },
+    {
+     "key": "evac",
+     "label": "Nivel de evacuación",
+     "level_m": 6,
+     "rise_m": 4.6,
+     "band_m": 5,
+     "people": 329573,
+     "under5": 27876,
+     "over65": 25974
+    }
+   ],
+   "id": "paraguay-asuncion",
+   "place": "Asunción",
+   "river": "Paraguay",
+   "lat": -25.28,
+   "lon": -57.65,
+   "levels": {
+    "alert": 5.35,
+    "evac": 6,
+    "low": 1.4
+   },
+   "sources": [
+    "MERIT Hydro (Yamazaki et al., 2019) · CC BY-NC 4.0 / ODbL",
+    "WorldPop 2020 · CC BY 4.0"
+   ]
+  },
+  {
+   "radius_km": 15.0,
+   "total": 216981,
+   "under5_total": 17524,
+   "over65_total": 17163,
+   "bands": [
+    {
+     "up_to_m": 1,
+     "people": 89028,
+     "under5": 7187,
+     "over65": 7018
+    },
+    {
+     "up_to_m": 2,
+     "people": 140347,
+     "under5": 11328,
+     "over65": 11060
+    },
+    {
+     "up_to_m": 3,
+     "people": 163826,
+     "under5": 13224,
+     "over65": 12915
+    },
+    {
+     "up_to_m": 5,
+     "people": 183082,
+     "under5": 14781,
+     "over65": 14449
+    },
+    {
+     "up_to_m": 10,
+     "people": 208855,
+     "under5": 16867,
+     "over65": 16515
+    }
+   ],
+   "scenarios": [
+    {
+     "key": "alert",
+     "label": "Nivel de alerta",
+     "level_m": 7.8,
+     "rise_m": 6.2,
+     "band_m": 10,
+     "people": 208855,
+     "under5": 16867,
+     "over65": 16515
+    },
+    {
+     "key": "evac",
+     "label": "Nivel de evacuación",
+     "level_m": 8.3,
+     "rise_m": 6.7,
+     "band_m": 10,
+     "people": 208855,
+     "under5": 16867,
+     "over65": 16515
+    }
+   ],
+   "id": "paraguay-formosa",
+   "place": "Formosa · Alberdi",
+   "river": "Paraguay",
+   "lat": -26.18,
+   "lon": -58.16,
+   "levels": {
+    "alert": 7.8,
+    "evac": 8.3,
+    "low": 1.6
+   },
+   "sources": [
+    "MERIT Hydro (Yamazaki et al., 2019) · CC BY-NC 4.0 / ODbL",
+    "WorldPop 2020 · CC BY 4.0"
+   ]
+  },
+  {
+   "radius_km": 15.0,
+   "total": 30343,
+   "under5_total": 2531,
+   "over65_total": 2909,
+   "bands": [
+    {
+     "up_to_m": 1,
+     "people": 12399,
+     "under5": 1035,
+     "over65": 1188
+    },
+    {
+     "up_to_m": 2,
+     "people": 18327,
+     "under5": 1529,
+     "over65": 1757
+    },
+    {
+     "up_to_m": 3,
+     "people": 21169,
+     "under5": 1766,
+     "over65": 2029
+    },
+    {
+     "up_to_m": 5,
+     "people": 25133,
+     "under5": 2097,
+     "over65": 2409
+    },
+    {
+     "up_to_m": 10,
+     "people": 29364,
+     "under5": 2450,
+     "over65": 2815
+    }
+   ],
+   "scenarios": [],
+   "id": "paraguay-pilar",
+   "place": "Pilar",
+   "river": "Paraguay",
+   "lat": -26.86,
+   "lon": -58.32,
+   "levels": null,
+   "sources": [
+    "MERIT Hydro (Yamazaki et al., 2019) · CC BY-NC 4.0 / ODbL",
+    "WorldPop 2020 · CC BY 4.0"
+   ]
+  },
+  {
+   "radius_km": 15.0,
+   "total": 4362,
+   "under5_total": 354,
+   "over65_total": 436,
+   "bands": [
+    {
+     "up_to_m": 1,
+     "people": 2682,
+     "under5": 218,
+     "over65": 267
+    },
+    {
+     "up_to_m": 2,
+     "people": 3458,
+     "under5": 281,
+     "over65": 345
+    },
+    {
+     "up_to_m": 3,
+     "people": 3778,
+     "under5": 307,
+     "over65": 378
+    },
+    {
+     "up_to_m": 5,
+     "people": 4089,
+     "under5": 332,
+     "over65": 409
+    },
+    {
+     "up_to_m": 10,
+     "people": 4316,
+     "under5": 351,
+     "over65": 431
+    }
+   ],
+   "scenarios": [],
+   "id": "paraguay-humaita",
+   "place": "Humaitá",
+   "river": "Paraguay",
+   "lat": -27.07,
+   "lon": -58.52,
+   "levels": {
+    "alert": 6.5,
+    "evac": 7,
+    "low": null
+   },
+   "sources": [
+    "MERIT Hydro (Yamazaki et al., 2019) · CC BY-NC 4.0 / ODbL",
+    "WorldPop 2020 · CC BY 4.0"
+   ]
+  },
+  {
+   "radius_km": 15.0,
+   "total": 18265,
+   "under5_total": 2090,
+   "over65_total": 1118,
+   "bands": [
+    {
+     "up_to_m": 1,
+     "people": 4808,
+     "under5": 549,
+     "over65": 296
+    },
+    {
+     "up_to_m": 2,
+     "people": 7891,
+     "under5": 902,
+     "over65": 485
+    },
+    {
+     "up_to_m": 3,
+     "people": 9938,
+     "under5": 1136,
+     "over65": 610
+    },
+    {
+     "up_to_m": 5,
+     "people": 12036,
+     "under5": 1376,
+     "over65": 740
+    },
+    {
+     "up_to_m": 10,
+     "people": 14947,
+     "under5": 1711,
+     "over65": 915
+    }
+   ],
+   "scenarios": [],
+   "id": "bermejo-embarcacion",
+   "place": "Embarcación",
+   "river": "Bermejo",
+   "lat": -23.21,
+   "lon": -64.1,
+   "levels": null,
+   "sources": [
+    "MERIT Hydro (Yamazaki et al., 2019) · CC BY-NC 4.0 / ODbL",
+    "WorldPop 2020 · CC BY 4.0"
+   ]
+  },
+  {
+   "radius_km": 15.0,
+   "total": 24549,
+   "under5_total": 2308,
+   "over65_total": 2211,
+   "bands": [
+    {
+     "up_to_m": 1,
+     "people": 8368,
+     "under5": 786,
+     "over65": 751
+    },
+    {
+     "up_to_m": 2,
+     "people": 14439,
+     "under5": 1357,
+     "over65": 1299
+    },
+    {
+     "up_to_m": 3,
+     "people": 18201,
+     "under5": 1711,
+     "over65": 1640
+    },
+    {
+     "up_to_m": 5,
+     "people": 22073,
+     "under5": 2076,
+     "over65": 1990
+    },
+    {
+     "up_to_m": 10,
+     "people": 24440,
+     "under5": 2298,
+     "over65": 2202
+    }
+   ],
+   "scenarios": [],
+   "id": "bermejo-elcolorado",
+   "place": "El Colorado",
+   "river": "Bermejo",
+   "lat": -26.31,
+   "lon": -59.37,
+   "levels": null,
+   "sources": [
+    "MERIT Hydro (Yamazaki et al., 2019) · CC BY-NC 4.0 / ODbL",
+    "WorldPop 2020 · CC BY 4.0"
+   ]
+  },
+  {
+   "radius_km": 15.0,
+   "total": 17554,
+   "under5_total": 1754,
+   "over65_total": 1219,
+   "bands": [
+    {
+     "up_to_m": 1,
+     "people": 1421,
+     "under5": 140,
+     "over65": 102
+    },
+    {
+     "up_to_m": 2,
+     "people": 1565,
+     "under5": 155,
+     "over65": 112
+    },
+    {
+     "up_to_m": 3,
+     "people": 1698,
+     "under5": 167,
+     "over65": 123
+    },
+    {
+     "up_to_m": 5,
+     "people": 2243,
+     "under5": 222,
+     "over65": 159
+    },
+    {
+     "up_to_m": 10,
+     "people": 3705,
+     "under5": 369,
+     "over65": 260
+    }
+   ],
+   "scenarios": [],
+   "id": "uruguay-soberbio",
+   "place": "El Soberbio",
+   "river": "Uruguay",
+   "lat": -27.3,
+   "lon": -54.2,
+   "levels": {
+    "alert": null,
+    "evac": null,
+    "low": null
+   },
+   "sources": [
+    "MERIT Hydro (Yamazaki et al., 2019) · CC BY-NC 4.0 / ODbL",
+    "WorldPop 2020 · CC BY 4.0"
+   ]
+  },
+  {
+   "radius_km": 15.0,
+   "total": 13740,
+   "under5_total": 856,
+   "over65_total": 1820,
+   "bands": [
+    {
+     "up_to_m": 1,
+     "people": 779,
+     "under5": 45,
+     "over65": 110
+    },
+    {
+     "up_to_m": 2,
+     "people": 895,
+     "under5": 51,
+     "over65": 127
+    },
+    {
+     "up_to_m": 3,
+     "people": 1027,
+     "under5": 59,
+     "over65": 145
+    },
+    {
+     "up_to_m": 5,
+     "people": 1338,
+     "under5": 76,
+     "over65": 191
+    },
+    {
+     "up_to_m": 10,
+     "people": 2223,
+     "under5": 126,
+     "over65": 317
+    }
+   ],
+   "scenarios": [],
+   "id": "uruguay-albaposse",
+   "place": "Alba Posse",
+   "river": "Uruguay",
+   "lat": -27.57,
+   "lon": -54.68,
+   "levels": null,
+   "sources": [
+    "MERIT Hydro (Yamazaki et al., 2019) · CC BY-NC 4.0 / ODbL",
+    "WorldPop 2020 · CC BY 4.0"
+   ]
+  },
+  {
+   "radius_km": 15.0,
+   "total": 73376,
+   "under5_total": 5303,
+   "over65_total": 8237,
+   "bands": [
+    {
+     "up_to_m": 1,
+     "people": 4727,
+     "under5": 413,
+     "over65": 438
+    },
+    {
+     "up_to_m": 2,
+     "people": 7894,
+     "under5": 697,
+     "over65": 723
+    },
+    {
+     "up_to_m": 3,
+     "people": 10934,
+     "under5": 960,
+     "over65": 1007
+    },
+    {
+     "up_to_m": 5,
+     "people": 16658,
+     "under5": 1420,
+     "over65": 1590
+    },
+    {
+     "up_to_m": 10,
+     "people": 31945,
+     "under5": 2537,
+     "over65": 3290
+    }
+   ],
+   "scenarios": [
+    {
+     "key": "alert",
+     "label": "Nivel de alerta",
+     "level_m": 11.5,
+     "rise_m": 10.18,
+     "band_m": 10,
+     "people": 31945,
+     "under5": 2537,
+     "over65": 3290
+    },
+    {
+     "key": "evac",
+     "label": "Nivel de evacuación",
+     "level_m": 12.5,
+     "rise_m": 11.18,
+     "band_m": 10,
+     "people": 31945,
+     "under5": 2537,
+     "over65": 3290
+    }
+   ],
+   "id": "uruguay-santotome",
+   "place": "Santo Tomé",
+   "river": "Uruguay",
+   "lat": -28.55,
+   "lon": -56.04,
+   "levels": {
+    "alert": 11.5,
+    "evac": 12.5,
+    "low": 1.32
+   },
+   "sources": [
+    "MERIT Hydro (Yamazaki et al., 2019) · CC BY-NC 4.0 / ODbL",
+    "WorldPop 2020 · CC BY 4.0"
+   ]
+  },
+  {
+   "radius_km": 15.0,
+   "total": 137239,
+   "under5_total": 11074,
+   "over65_total": 12573,
+   "bands": [
+    {
+     "up_to_m": 1,
+     "people": 11168,
+     "under5": 928,
+     "over65": 1009
+    },
+    {
+     "up_to_m": 2,
+     "people": 16840,
+     "under5": 1412,
+     "over65": 1515
+    },
+    {
+     "up_to_m": 3,
+     "people": 23981,
+     "under5": 2008,
+     "over65": 2159
+    },
+    {
+     "up_to_m": 5,
+     "people": 38575,
+     "under5": 3217,
+     "over65": 3480
+    },
+    {
+     "up_to_m": 10,
+     "people": 74729,
+     "under5": 6197,
+     "over65": 6759
+    }
+   ],
+   "scenarios": [
+    {
+     "key": "alert",
+     "label": "Nivel de alerta",
+     "level_m": 7.5,
+     "rise_m": 6.6,
+     "band_m": 10,
+     "people": 74729,
+     "under5": 6197,
+     "over65": 6759
+    },
+    {
+     "key": "evac",
+     "label": "Nivel de evacuación",
+     "level_m": 8.5,
+     "rise_m": 7.6,
+     "band_m": 10,
+     "people": 74729,
+     "under5": 6197,
+     "over65": 6759
+    }
+   ],
+   "id": "uruguay-libres",
+   "place": "Paso de los Libres",
+   "river": "Uruguay",
+   "lat": -29.71,
+   "lon": -57.08,
+   "levels": {
+    "alert": 7.5,
+    "evac": 8.5,
+    "low": 0.9
+   },
+   "sources": [
+    "MERIT Hydro (Yamazaki et al., 2019) · CC BY-NC 4.0 / ODbL",
+    "WorldPop 2020 · CC BY 4.0"
+   ]
+  },
+  {
+   "radius_km": 15.0,
+   "total": 33818,
+   "under5_total": 2270,
+   "over65_total": 4614,
+   "bands": [
+    {
+     "up_to_m": 1,
+     "people": 2517,
+     "under5": 192,
+     "over65": 318
+    },
+    {
+     "up_to_m": 2,
+     "people": 4312,
+     "under5": 334,
+     "over65": 538
+    },
+    {
+     "up_to_m": 3,
+     "people": 6620,
+     "under5": 505,
+     "over65": 834
+    },
+    {
+     "up_to_m": 5,
+     "people": 11971,
+     "under5": 899,
+     "over65": 1518
+    },
+    {
+     "up_to_m": 10,
+     "people": 25109,
+     "under5": 1772,
+     "over65": 3310
+    }
+   ],
+   "scenarios": [
+    {
+     "key": "alert",
+     "label": "Nivel de alerta",
+     "level_m": 7.5,
+     "rise_m": 6.7,
+     "band_m": 10,
+     "people": 25109,
+     "under5": 1772,
+     "over65": 3310
+    },
+    {
+     "key": "evac",
+     "label": "Nivel de evacuación",
+     "level_m": 8.5,
+     "rise_m": 7.7,
+     "band_m": 10,
+     "people": 25109,
+     "under5": 1772,
+     "over65": 3310
+    }
+   ],
+   "id": "uruguay-montecaseros",
+   "place": "Monte Caseros",
+   "river": "Uruguay",
+   "lat": -30.25,
+   "lon": -57.64,
+   "levels": {
+    "alert": 7.5,
+    "evac": 8.5,
+    "low": 0.8
+   },
+   "sources": [
+    "MERIT Hydro (Yamazaki et al., 2019) · CC BY-NC 4.0 / ODbL",
+    "WorldPop 2020 · CC BY 4.0"
+   ]
+  },
+  {
+   "radius_km": 15.0,
+   "total": 224242,
+   "under5_total": 18803,
+   "over65_total": 26368,
+   "bands": [
+    {
+     "up_to_m": 1,
+     "people": 17480,
+     "under5": 1465,
+     "over65": 2052
+    },
+    {
+     "up_to_m": 2,
+     "people": 25634,
+     "under5": 2160,
+     "over65": 2984
+    },
+    {
+     "up_to_m": 3,
+     "people": 34052,
+     "under5": 2875,
+     "over65": 3951
+    },
+    {
+     "up_to_m": 5,
+     "people": 53509,
+     "under5": 4527,
+     "over65": 6190
+    },
+    {
+     "up_to_m": 10,
+     "people": 107027,
+     "under5": 9078,
+     "over65": 12328
+    }
+   ],
+   "scenarios": [
+    {
+     "key": "alert",
+     "label": "Nivel de alerta",
+     "level_m": 11,
+     "rise_m": 10.12,
+     "band_m": 10,
+     "people": 107027,
+     "under5": 9078,
+     "over65": 12328
+    },
+    {
+     "key": "evac",
+     "label": "Nivel de evacuación",
+     "level_m": 12.5,
+     "rise_m": 11.62,
+     "band_m": 10,
+     "people": 107027,
+     "under5": 9078,
+     "over65": 12328
+    }
+   ],
+   "id": "uruguay-concordia",
+   "place": "Concordia · Salto",
+   "river": "Uruguay",
+   "lat": -31.39,
+   "lon": -58.02,
+   "levels": {
+    "alert": 11,
+    "evac": 12.5,
+    "low": 0.88
+   },
+   "sources": [
+    "MERIT Hydro (Yamazaki et al., 2019) · CC BY-NC 4.0 / ODbL",
+    "WorldPop 2020 · CC BY 4.0"
+   ]
+  },
+  {
+   "radius_km": 15.0,
+   "total": 119790,
+   "under5_total": 9364,
+   "over65_total": 16112,
+   "bands": [
+    {
+     "up_to_m": 1,
+     "people": 9845,
+     "under5": 775,
+     "over65": 1307
+    },
+    {
+     "up_to_m": 2,
+     "people": 14707,
+     "under5": 1161,
+     "over65": 1945
+    },
+    {
+     "up_to_m": 3,
+     "people": 21191,
+     "under5": 1668,
+     "over65": 2815
+    },
+    {
+     "up_to_m": 5,
+     "people": 33919,
+     "under5": 2671,
+     "over65": 4505
+    },
+    {
+     "up_to_m": 10,
+     "people": 68602,
+     "under5": 5398,
+     "over65": 9126
+    }
+   ],
+   "scenarios": [
+    {
+     "key": "alert",
+     "label": "Nivel de alerta",
+     "level_m": 7.1,
+     "rise_m": 6.2,
+     "band_m": 10,
+     "people": 68602,
+     "under5": 5398,
+     "over65": 9126
+    },
+    {
+     "key": "evac",
+     "label": "Nivel de evacuación",
+     "level_m": 7.9,
+     "rise_m": 7.0,
+     "band_m": 10,
+     "people": 68602,
+     "under5": 5398,
+     "over65": 9126
+    }
+   ],
+   "id": "uruguay-colon",
+   "place": "Colón",
+   "river": "Uruguay",
+   "lat": -32.22,
+   "lon": -58.14,
+   "levels": {
+    "alert": 7.1,
+    "evac": 7.9,
+    "low": 0.9
+   },
+   "sources": [
+    "MERIT Hydro (Yamazaki et al., 2019) · CC BY-NC 4.0 / ODbL",
+    "WorldPop 2020 · CC BY 4.0"
+   ]
+  },
+  {
+   "radius_km": 15.0,
+   "total": 53314,
+   "under5_total": 3917,
+   "over65_total": 7404,
+   "bands": [
+    {
+     "up_to_m": 1,
+     "people": 5763,
+     "under5": 424,
+     "over65": 800
+    },
+    {
+     "up_to_m": 2,
+     "people": 8681,
+     "under5": 638,
+     "over65": 1205
+    },
+    {
+     "up_to_m": 3,
+     "people": 12193,
+     "under5": 896,
+     "over65": 1693
+    },
+    {
+     "up_to_m": 5,
+     "people": 19478,
+     "under5": 1431,
+     "over65": 2704
+    },
+    {
+     "up_to_m": 10,
+     "people": 37770,
+     "under5": 2775,
+     "over65": 5243
+    }
+   ],
+   "scenarios": [
+    {
+     "key": "alert",
+     "label": "Nivel de alerta",
+     "level_m": 5.3,
+     "rise_m": 4.5,
+     "band_m": 5,
+     "people": 19478,
+     "under5": 1431,
+     "over65": 2704
+    },
+    {
+     "key": "evac",
+     "label": "Nivel de evacuación",
+     "level_m": 6.3,
+     "rise_m": 5.5,
+     "band_m": 10,
+     "people": 37770,
+     "under5": 2775,
+     "over65": 5243
+    }
+   ],
+   "id": "uruguay-cdeluruguay",
+   "place": "Concepción del Uruguay",
+   "river": "Uruguay",
+   "lat": -32.48,
+   "lon": -58.22,
+   "levels": {
+    "alert": 5.3,
+    "evac": 6.3,
+    "low": 0.8
+   },
+   "sources": [
+    "MERIT Hydro (Yamazaki et al., 2019) · CC BY-NC 4.0 / ODbL",
+    "WorldPop 2020 · CC BY 4.0"
+   ]
+  },
+  {
+   "radius_km": 15.0,
+   "total": 26520,
+   "under5_total": 2155,
+   "over65_total": 3498,
+   "bands": [
+    {
+     "up_to_m": 1,
+     "people": 3052,
+     "under5": 247,
+     "over65": 401
+    },
+    {
+     "up_to_m": 2,
+     "people": 4256,
+     "under5": 344,
+     "over65": 559
+    },
+    {
+     "up_to_m": 3,
+     "people": 5683,
+     "under5": 460,
+     "over65": 746
+    },
+    {
+     "up_to_m": 5,
+     "people": 8925,
+     "under5": 723,
+     "over65": 1174
+    },
+    {
+     "up_to_m": 10,
+     "people": 16017,
+     "under5": 1300,
+     "over65": 2110
+    }
+   ],
+   "scenarios": [],
+   "id": "uruguay-fraybentos",
+   "place": "Fray Bentos",
+   "river": "Uruguay",
+   "lat": -33.12,
+   "lon": -58.31,
+   "levels": null,
    "sources": [
     "MERIT Hydro (Yamazaki et al., 2019) · CC BY-NC 4.0 / ODbL",
     "WorldPop 2020 · CC BY 4.0"
