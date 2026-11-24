@@ -1,21 +1,33 @@
 {
- "actualizado": "2026-11-22T20:52Z",
+ "actualizado": "2026-11-24T01:55Z",
  "fuente": "OPS/PAHO · Monitoreo de Amenazas Naturales (resume partes oficiales de cada país)",
  "nota": "Cifras tal como las informó cada organismo. DOTS no estima evacuados; un día sin parte queda sin dato.",
  "ultimo_por_pais": {
   "Brasil": {
-   "fecha_informe": "2026-11-18",
+   "fecha_informe": "2026-11-23",
    "pais": "Brasil",
-   "texto": "Brasil El 18 de noviembre del 2026, medios de comunicación informaron que las lluvias intensas, inundaciones y tormentas severas en el estado de Minas Gerais, Brasil, habían causado dos defunciones y afectado a aproximadamente 289.000 personas, de las cuales 1.500 se encontraban desplazadas y 93 alojadas en refugios.",
+   "texto": "En Rio Grande do Sul, se notificaron cinco defunciones, 265 personas heridas, 19.854 personas desplazadas y 40 personas albergadas, con 25.123 personas afectadas en 39 municipios.",
    "cifras": [
     {
-     "cantidad": 289000,
+     "cantidad": 265,
+     "unidad": "personas"
+    },
+    {
+     "cantidad": 19854,
+     "unidad": "personas"
+    },
+    {
+     "cantidad": 40,
+     "unidad": "personas"
+    },
+    {
+     "cantidad": 25123,
      "unidad": "personas"
     }
    ],
    "organismo": null,
    "fuente": "OPS · Monitoreo de Amenazas Naturales",
-   "url": "https://www.paho.org/es/monitoreo-amenazas-naturales/monitoreo-amenazas-naturales-18-noviembre-2026"
+   "url": "https://www.paho.org/es/monitoreo-amenazas-naturales/monitoreo-amenazas-naturales-23-noviembre-2026"
   },
   "Argentina": {
    "fecha_informe": "2026-11-18",
@@ -45,6 +57,55 @@
   }
  },
  "partes": [
+  {
+   "fecha_informe": "2026-11-23",
+   "pais": "Brasil",
+   "texto": "En Rio Grande do Sul, se notificaron cinco defunciones, 265 personas heridas, 19.854 personas desplazadas y 40 personas albergadas, con 25.123 personas afectadas en 39 municipios.",
+   "cifras": [
+    {
+     "cantidad": 265,
+     "unidad": "personas"
+    },
+    {
+     "cantidad": 19854,
+     "unidad": "personas"
+    },
+    {
+     "cantidad": 40,
+     "unidad": "personas"
+    },
+    {
+     "cantidad": 25123,
+     "unidad": "personas"
+    }
+   ],
+   "organismo": null,
+   "fuente": "OPS · Monitoreo de Amenazas Naturales",
+   "url": "https://www.paho.org/es/monitoreo-amenazas-naturales/monitoreo-amenazas-naturales-23-noviembre-2026"
+  },
+  {
+   "fecha_informe": "2026-11-23",
+   "pais": "Brasil",
+   "texto": "En Santa Catarina, 34 municipios resultaron afectados, con 54 personas desplazadas y dos albergadas.",
+   "cifras": [
+    {
+     "cantidad": 54,
+     "unidad": "personas"
+    }
+   ],
+   "organismo": null,
+   "fuente": "OPS · Monitoreo de Amenazas Naturales",
+   "url": "https://www.paho.org/es/monitoreo-amenazas-naturales/monitoreo-amenazas-naturales-23-noviembre-2026"
+  },
+  {
+   "fecha_informe": "2026-11-23",
+   "pais": "Brasil",
+   "texto": "En São Paulo, las tormentas afectaron a 12 municipios, dejando cinco personas heridas, 54 desplazadas y dos albergadas.",
+   "cifras": [],
+   "organismo": null,
+   "fuente": "OPS · Monitoreo de Amenazas Naturales",
+   "url": "https://www.paho.org/es/monitoreo-amenazas-naturales/monitoreo-amenazas-naturales-23-noviembre-2026"
+  },
   {
    "fecha_informe": "2026-11-18",
    "pais": "Brasil",
@@ -238,13 +299,17 @@
   }
  ],
  "dias_revisados": [
+  "2026-11-23",
   "2026-11-20",
   "2026-11-19",
   "2026-11-18",
-  "2026-11-16",
-  "2026-11-13"
+  "2026-11-16"
  ],
  "dias_sin_parte": [
+  {
+   "fecha": "2026-11-24",
+   "motivo": "HTTP 404"
+  },
   {
    "fecha": "2026-11-22",
    "motivo": "HTTP 404"
@@ -259,10 +324,6 @@
   },
   {
    "fecha": "2026-11-15",
-   "motivo": "HTTP 404"
-  },
-  {
-   "fecha": "2026-11-14",
    "motivo": "HTTP 404"
   }
  ]
