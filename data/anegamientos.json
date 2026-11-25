@@ -1,5 +1,5 @@
 {
- "generado": "2026-11-18T19:04:24.501557Z",
+ "generado": "2026-11-25T20:10:19.702928Z",
  "fuente": "Sentinel-1 RTC (ESA Copernicus, procesado por Microsoft Planetary Computer), polarización VV",
  "tipo": "medición satelital procesada; clasificación orientativa sin validar en terreno",
  "metodo": "Filtro Lee 5×5 · fondo por píxel con recorte sigma (3σ, mediana y MAD) sobre pasadas de la misma órbita, excluidos los últimos 30 días · desvío z · umbral de agua Otsu · apertura 3×3 · regiones conectadas (8 vecinos), mínimo 1 ha · Hampel sobre la serie de % de agua",
@@ -35,397 +35,61 @@
     -27.37
    ],
    "orbita": "descending/141",
-   "fecha_actual": "2026-11-06T09:20:39.641617Z",
+   "fecha_actual": "2026-11-18T09:20:39.241214Z",
    "fondo_fechas": [
     "2025-10-23",
     "2025-11-16",
     "2025-12-22",
     "2026-01-15",
     "2026-02-08",
-    "2026-03-04",
+    "2026-03-16",
     "2026-04-09",
     "2026-05-03",
-    "2026-05-16",
+    "2026-05-27",
     "2026-06-08",
-    "2026-06-21",
-    "2026-07-09",
-    "2026-08-02",
-    "2026-09-07",
-    "2026-10-01"
+    "2026-06-27",
+    "2026-07-21",
+    "2026-08-14",
+    "2026-09-19",
+    "2026-10-13"
    ],
    "cobertura": 1.0,
    "umbral_db": -18.0,
    "umbral_metodo": "fijo −18 dB (Otsu sin dos modos claros o fuera de −24 a −15 dB)",
    "resumen": {
-    "pixeles_validos": 1089149,
-    "agua_hoy_ha": 1547.2,
-    "agua_habitual_ha": 478.4,
-    "agua_nueva_ha": 140.5,
-    "manchas": 42
+    "pixeles_validos": 1089176,
+    "agua_hoy_ha": 160.0,
+    "agua_habitual_ha": 834.8,
+    "agua_nueva_ha": 3.2,
+    "manchas": 2
    },
    "manchas": [
     {
-     "id": 25,
-     "pixeles": 415,
-     "superficie_ha": 16.6,
-     "z_medio": -4.41,
-     "z_pico": -6.25,
-     "intensidad": "moderada",
-     "centroide": [
-      -58.7429,
-      -27.39692
-     ]
-    },
-    {
-     "id": 53,
-     "pixeles": 302,
-     "superficie_ha": 12.08,
-     "z_medio": -4.78,
-     "z_pico": -6.37,
-     "intensidad": "moderada",
-     "centroide": [
-      -58.81919,
-      -27.44539
-     ]
-    },
-    {
-     "id": 2,
-     "pixeles": 226,
-     "superficie_ha": 9.04,
-     "z_medio": -9.85,
-     "z_pico": -13.49,
+     "id": 4,
+     "pixeles": 49,
+     "superficie_ha": 1.96,
+     "z_medio": -11.83,
+     "z_pico": -14.45,
      "intensidad": "fuerte",
      "centroide": [
-      -58.85738,
-      -27.37296
+      -58.8537,
+      -27.41796
      ]
     },
     {
-     "id": 85,
-     "pixeles": 206,
-     "superficie_ha": 8.24,
-     "z_medio": -4.69,
-     "z_pico": -9.56,
-     "intensidad": "moderada",
-     "centroide": [
-      -58.83286,
-      -27.53492
-     ]
-    },
-    {
-     "id": 79,
-     "pixeles": 174,
-     "superficie_ha": 6.96,
-     "z_medio": -11.2,
-     "z_pico": -13.51,
-     "intensidad": "fuerte",
-     "centroide": [
-      -58.90546,
-      -27.52163
-     ]
-    },
-    {
-     "id": 88,
-     "pixeles": 142,
-     "superficie_ha": 5.68,
-     "z_medio": -10.93,
-     "z_pico": -13.34,
-     "intensidad": "fuerte",
-     "centroide": [
-      -58.86642,
-      -27.53983
-     ]
-    },
-    {
-     "id": 67,
-     "pixeles": 134,
-     "superficie_ha": 5.36,
-     "z_medio": -3.68,
-     "z_pico": -4.73,
-     "intensidad": "leve",
-     "centroide": [
-      -58.84215,
-      -27.45714
-     ]
-    },
-    {
-     "id": 55,
-     "pixeles": 132,
-     "superficie_ha": 5.28,
-     "z_medio": -4.64,
-     "z_pico": -6.7,
-     "intensidad": "moderada",
-     "centroide": [
-      -58.82479,
-      -27.44694
-     ]
-    },
-    {
-     "id": 43,
-     "pixeles": 123,
-     "superficie_ha": 4.92,
-     "z_medio": -4.03,
-     "z_pico": -5.84,
-     "intensidad": "moderada",
-     "centroide": [
-      -58.77864,
-      -27.42048
-     ]
-    },
-    {
-     "id": 19,
-     "pixeles": 107,
-     "superficie_ha": 4.28,
-     "z_medio": -8.9,
-     "z_pico": -11.18,
-     "intensidad": "fuerte",
-     "centroide": [
-      -58.83982,
-      -27.38835
-     ]
-    },
-    {
-     "id": 66,
-     "pixeles": 101,
-     "superficie_ha": 4.04,
-     "z_medio": -4.14,
-     "z_pico": -6.02,
-     "intensidad": "moderada",
-     "centroide": [
-      -58.8362,
-      -27.45551
-     ]
-    },
-    {
-     "id": 1,
-     "pixeles": 95,
-     "superficie_ha": 3.8,
-     "z_medio": -9.01,
-     "z_pico": -11.64,
-     "intensidad": "fuerte",
-     "centroide": [
-      -58.82523,
-      -27.3718
-     ]
-    },
-    {
-     "id": 39,
-     "pixeles": 84,
-     "superficie_ha": 3.36,
-     "z_medio": -13.07,
-     "z_pico": -15.49,
-     "intensidad": "fuerte",
-     "centroide": [
-      -58.85368,
-      -27.41779
-     ]
-    },
-    {
-     "id": 97,
-     "pixeles": 84,
-     "superficie_ha": 3.36,
-     "z_medio": -6.12,
-     "z_pico": -10.47,
-     "intensidad": "fuerte",
-     "centroide": [
-      -58.8012,
-      -27.55694
-     ]
-    },
-    {
-     "id": 47,
-     "pixeles": 81,
-     "superficie_ha": 3.24,
-     "z_medio": -3.73,
-     "z_pico": -4.67,
-     "intensidad": "leve",
-     "centroide": [
-      -58.78394,
-      -27.43482
-     ]
-    },
-    {
-     "id": 99,
-     "pixeles": 72,
-     "superficie_ha": 2.88,
-     "z_medio": -5.97,
-     "z_pico": -10.91,
-     "intensidad": "fuerte",
-     "centroide": [
-      -58.81209,
-      -27.5603
-     ]
-    },
-    {
-     "id": 16,
-     "pixeles": 70,
-     "superficie_ha": 2.8,
-     "z_medio": -3.61,
-     "z_pico": -4.18,
-     "intensidad": "leve",
-     "centroide": [
-      -58.73663,
-      -27.38326
-     ]
-    },
-    {
-     "id": 86,
-     "pixeles": 67,
-     "superficie_ha": 2.68,
-     "z_medio": -8.65,
-     "z_pico": -12.32,
-     "intensidad": "fuerte",
-     "centroide": [
-      -58.86833,
-      -27.53587
-     ]
-    },
-    {
-     "id": 65,
-     "pixeles": 66,
-     "superficie_ha": 2.64,
-     "z_medio": -4.38,
-     "z_pico": -5.73,
-     "intensidad": "moderada",
-     "centroide": [
-      -58.8333,
-      -27.45522
-     ]
-    },
-    {
-     "id": 95,
-     "pixeles": 64,
-     "superficie_ha": 2.56,
-     "z_medio": -7.55,
-     "z_pico": -12.25,
-     "intensidad": "fuerte",
-     "centroide": [
-      -58.86502,
-      -27.55212
-     ]
-    },
-    {
-     "id": 17,
-     "pixeles": 60,
-     "superficie_ha": 2.4,
-     "z_medio": -3.38,
-     "z_pico": -4.06,
-     "intensidad": "leve",
-     "centroide": [
-      -58.74091,
-      -27.38681
-     ]
-    },
-    {
-     "id": 56,
-     "pixeles": 58,
-     "superficie_ha": 2.32,
-     "z_medio": -4.39,
-     "z_pico": -5.47,
-     "intensidad": "moderada",
-     "centroide": [
-      -58.82061,
-      -27.44815
-     ]
-    },
-    {
-     "id": 101,
-     "pixeles": 50,
-     "superficie_ha": 2.0,
-     "z_medio": -8.68,
-     "z_pico": -11.57,
-     "intensidad": "fuerte",
-     "centroide": [
-      -58.80848,
-      -27.56093
-     ]
-    },
-    {
-     "id": 46,
-     "pixeles": 43,
-     "superficie_ha": 1.72,
-     "z_medio": -4.15,
-     "z_pico": -4.93,
-     "intensidad": "moderada",
-     "centroide": [
-      -58.79881,
-      -27.43054
-     ]
-    },
-    {
-     "id": 10,
-     "pixeles": 41,
-     "superficie_ha": 1.64,
-     "z_medio": -11.04,
-     "z_pico": -11.75,
-     "intensidad": "fuerte",
-     "centroide": [
-      -58.82375,
-      -27.37887
-     ]
-    },
-    {
-     "id": 52,
-     "pixeles": 40,
-     "superficie_ha": 1.6,
-     "z_medio": -4.06,
-     "z_pico": -5.13,
-     "intensidad": "moderada",
-     "centroide": [
-      -58.81601,
-      -27.44352
-     ]
-    },
-    {
-     "id": 61,
-     "pixeles": 40,
-     "superficie_ha": 1.6,
-     "z_medio": -4.17,
-     "z_pico": -5.6,
-     "intensidad": "moderada",
-     "centroide": [
-      -58.82533,
-      -27.4506
-     ]
-    },
-    {
-     "id": 12,
-     "pixeles": 39,
-     "superficie_ha": 1.56,
-     "z_medio": -3.72,
-     "z_pico": -4.57,
-     "intensidad": "leve",
-     "centroide": [
-      -58.73106,
-      -27.38133
-     ]
-    },
-    {
-     "id": 20,
-     "pixeles": 38,
-     "superficie_ha": 1.52,
-     "z_medio": -8.77,
-     "z_pico": -10.55,
-     "intensidad": "fuerte",
-     "centroide": [
-      -58.83742,
-      -27.39072
-     ]
-    },
-    {
-     "id": 69,
+     "id": 3,
      "pixeles": 31,
      "superficie_ha": 1.24,
-     "z_medio": -3.75,
-     "z_pico": -4.75,
-     "intensidad": "leve",
+     "z_medio": -8.62,
+     "z_pico": -10.22,
+     "intensidad": "fuerte",
      "centroide": [
-      -58.84664,
-      -27.45732
+      -58.77866,
+      -27.39761
      ]
     }
    ],
-   "manchas_total": 42,
+   "manchas_total": 2,
    "serie": [
     {
      "fecha": "2025-10-23",
@@ -453,9 +117,9 @@
      "rara": false
     },
     {
-     "fecha": "2026-03-04",
-     "agua_pct": 1.95,
-     "rara": false
+     "fecha": "2026-03-16",
+     "agua_pct": 7.71,
+     "rara": true
     },
     {
      "fecha": "2026-04-09",
@@ -468,9 +132,9 @@
      "rara": false
     },
     {
-     "fecha": "2026-05-16",
-     "agua_pct": 11.69,
-     "rara": true
+     "fecha": "2026-05-27",
+     "agua_pct": 7.6,
+     "rara": false
     },
     {
      "fecha": "2026-06-08",
@@ -478,34 +142,34 @@
      "rara": false
     },
     {
-     "fecha": "2026-06-21",
-     "agua_pct": 6.79,
-     "rara": true
-    },
-    {
-     "fecha": "2026-07-09",
-     "agua_pct": 11.99,
-     "rara": true
-    },
-    {
-     "fecha": "2026-08-02",
-     "agua_pct": 1.11,
+     "fecha": "2026-06-27",
+     "agua_pct": 10.78,
      "rara": false
     },
     {
-     "fecha": "2026-09-07",
-     "agua_pct": 1.36,
+     "fecha": "2026-07-21",
+     "agua_pct": 4.72,
      "rara": false
     },
     {
-     "fecha": "2026-10-01",
-     "agua_pct": 1.84,
+     "fecha": "2026-08-14",
+     "agua_pct": 9.92,
      "rara": false
     },
     {
-     "fecha": "2026-11-06",
-     "agua_pct": 3.55,
-     "rara": true
+     "fecha": "2026-09-19",
+     "agua_pct": 11.21,
+     "rara": false
+    },
+    {
+     "fecha": "2026-10-13",
+     "agua_pct": 0.31,
+     "rara": false
+    },
+    {
+     "fecha": "2026-11-18",
+     "agua_pct": 0.37,
+     "rara": false
     }
    ]
   },
@@ -523,272 +187,212 @@
     -28.89
    ],
    "orbita": "descending/68",
-   "fecha_actual": "2026-11-13T09:13:04.051904Z",
+   "fecha_actual": "2026-11-19T09:13:19.192082Z",
    "fondo_fechas": [
-    "2025-10-18",
-    "2025-11-11",
-    "2025-12-11",
-    "2026-01-04",
-    "2026-01-28",
-    "2026-02-21",
-    "2026-03-17",
-    "2026-04-10",
-    "2026-05-16",
-    "2026-06-04",
-    "2026-06-28",
-    "2026-07-28",
-    "2026-08-21",
-    "2026-09-14",
-    "2026-10-08"
+    "2025-10-24",
+    "2025-11-23",
+    "2025-12-17",
+    "2026-01-10",
+    "2026-02-09",
+    "2026-03-05",
+    "2026-03-29",
+    "2026-04-22",
+    "2026-05-23",
+    "2026-06-16",
+    "2026-07-10",
+    "2026-08-09",
+    "2026-09-02",
+    "2026-09-26",
+    "2026-10-20"
    ],
-   "cobertura": 0.947,
+   "cobertura": 0.948,
    "umbral_db": -18.0,
    "umbral_metodo": "fijo −18 dB (Otsu sin dos modos claros o fuera de −24 a −15 dB)",
    "resumen": {
-    "pixeles_validos": 1015065,
-    "agua_hoy_ha": 1123.4,
-    "agua_habitual_ha": 978.4,
-    "agua_nueva_ha": 34.4,
-    "manchas": 13
+    "pixeles_validos": 1015854,
+    "agua_hoy_ha": 1302.4,
+    "agua_habitual_ha": 986.2,
+    "agua_nueva_ha": 15.5,
+    "manchas": 8
    },
    "manchas": [
     {
-     "id": 5,
-     "pixeles": 147,
-     "superficie_ha": 5.88,
-     "z_medio": -5.6,
-     "z_pico": -8.2,
+     "id": 16,
+     "pixeles": 100,
+     "superficie_ha": 4.0,
+     "z_medio": -7.4,
+     "z_pico": -9.17,
      "intensidad": "fuerte",
      "centroide": [
-      -59.17774,
-      -28.95635
+      -59.18326,
+      -28.99601
      ]
     },
     {
-     "id": 9,
-     "pixeles": 129,
-     "superficie_ha": 5.16,
-     "z_medio": -7.38,
-     "z_pico": -10.49,
+     "id": 17,
+     "pixeles": 78,
+     "superficie_ha": 3.12,
+     "z_medio": -7.37,
+     "z_pico": -8.79,
      "intensidad": "fuerte",
      "centroide": [
-      -59.18559,
-      -28.96941
-     ]
-    },
-    {
-     "id": 11,
-     "pixeles": 113,
-     "superficie_ha": 4.52,
-     "z_medio": -7.95,
-     "z_pico": -10.46,
-     "intensidad": "fuerte",
-     "centroide": [
-      -59.18357,
-      -28.97535
-     ]
-    },
-    {
-     "id": 13,
-     "pixeles": 80,
-     "superficie_ha": 3.2,
-     "z_medio": -6.75,
-     "z_pico": -10.39,
-     "intensidad": "fuerte",
-     "centroide": [
-      -59.18789,
-      -28.98361
-     ]
-    },
-    {
-     "id": 10,
-     "pixeles": 58,
-     "superficie_ha": 2.32,
-     "z_medio": -6.3,
-     "z_pico": -8.41,
-     "intensidad": "fuerte",
-     "centroide": [
-      -59.17713,
-      -28.97114
+      -59.18181,
+      -28.99892
      ]
     },
     {
      "id": 4,
-     "pixeles": 57,
-     "superficie_ha": 2.28,
-     "z_medio": -5.24,
-     "z_pico": -8.35,
-     "intensidad": "fuerte",
-     "centroide": [
-      -59.17588,
-      -28.95229
-     ]
-    },
-    {
-     "id": 18,
-     "pixeles": 57,
-     "superficie_ha": 2.28,
-     "z_medio": -5.96,
-     "z_pico": -9.16,
-     "intensidad": "fuerte",
-     "centroide": [
-      -59.18286,
-      -28.99582
-     ]
-    },
-    {
-     "id": 19,
      "pixeles": 45,
      "superficie_ha": 1.8,
-     "z_medio": -6.43,
-     "z_pico": -7.94,
+     "z_medio": -5.93,
+     "z_pico": -8.25,
      "intensidad": "fuerte",
      "centroide": [
-      -59.18102,
-      -28.99765
+      -59.1782,
+      -28.95718
      ]
     },
     {
-     "id": 14,
+     "id": 3,
      "pixeles": 42,
      "superficie_ha": 1.68,
-     "z_medio": -5.21,
-     "z_pico": -8.33,
+     "z_medio": -6.18,
+     "z_pico": -8.98,
      "intensidad": "fuerte",
      "centroide": [
-      -59.18814,
-      -28.98612
+      -59.17741,
+      -28.95541
      ]
     },
     {
      "id": 15,
-     "pixeles": 38,
-     "superficie_ha": 1.52,
-     "z_medio": -5.86,
-     "z_pico": -9.01,
+     "pixeles": 34,
+     "superficie_ha": 1.36,
+     "z_medio": -5.34,
+     "z_pico": -7.05,
      "intensidad": "fuerte",
      "centroide": [
-      -59.18424,
-      -28.99143
+      -59.18836,
+      -28.99457
      ]
     },
     {
-     "id": 16,
-     "pixeles": 36,
-     "superficie_ha": 1.44,
-     "z_medio": -5.67,
-     "z_pico": -6.9,
+     "id": 10,
+     "pixeles": 33,
+     "superficie_ha": 1.32,
+     "z_medio": -7.57,
+     "z_pico": -9.26,
      "intensidad": "fuerte",
      "centroide": [
-      -59.18232,
-      -28.99352
+      -59.18586,
+      -28.97053
      ]
     },
     {
-     "id": 21,
-     "pixeles": 30,
-     "superficie_ha": 1.2,
-     "z_medio": -7.6,
-     "z_pico": -9.01,
-     "intensidad": "fuerte",
+     "id": 11,
+     "pixeles": 29,
+     "superficie_ha": 1.16,
+     "z_medio": -4.61,
+     "z_pico": -5.85,
+     "intensidad": "moderada",
      "centroide": [
-      -59.18264,
-      -28.99919
+      -59.17684,
+      -28.97136
      ]
     },
     {
-     "id": 24,
-     "pixeles": 27,
-     "superficie_ha": 1.08,
-     "z_medio": -8.95,
-     "z_pico": -13.31,
+     "id": 18,
+     "pixeles": 26,
+     "superficie_ha": 1.04,
+     "z_medio": -6.78,
+     "z_pico": -8.41,
      "intensidad": "fuerte",
      "centroide": [
-      -59.02628,
-      -29.08653
+      -59.18761,
+      -29.00481
      ]
     }
    ],
-   "manchas_total": 13,
+   "manchas_total": 8,
    "serie": [
     {
-     "fecha": "2025-10-18",
-     "agua_pct": 2.02,
+     "fecha": "2025-10-24",
+     "agua_pct": 0.38,
+     "rara": true
+    },
+    {
+     "fecha": "2025-11-23",
+     "agua_pct": 2.29,
      "rara": false
     },
     {
-     "fecha": "2025-11-11",
-     "agua_pct": 2.82,
+     "fecha": "2025-12-17",
+     "agua_pct": 3.22,
      "rara": false
     },
     {
-     "fecha": "2025-12-11",
-     "agua_pct": 2.66,
+     "fecha": "2026-01-10",
+     "agua_pct": 2.97,
      "rara": false
     },
     {
-     "fecha": "2026-01-04",
-     "agua_pct": 0.45,
+     "fecha": "2026-02-09",
+     "agua_pct": 0.86,
      "rara": false
     },
     {
-     "fecha": "2026-01-28",
-     "agua_pct": 2.63,
+     "fecha": "2026-03-05",
+     "agua_pct": 1.93,
      "rara": false
     },
     {
-     "fecha": "2026-02-21",
-     "agua_pct": 1.11,
+     "fecha": "2026-03-29",
+     "agua_pct": 2.03,
      "rara": false
     },
     {
-     "fecha": "2026-03-17",
-     "agua_pct": 1.27,
+     "fecha": "2026-04-22",
+     "agua_pct": 1.44,
      "rara": false
     },
     {
-     "fecha": "2026-04-10",
-     "agua_pct": 1.34,
+     "fecha": "2026-05-23",
+     "agua_pct": 2.17,
      "rara": false
     },
     {
-     "fecha": "2026-05-16",
-     "agua_pct": 1.8,
+     "fecha": "2026-06-16",
+     "agua_pct": 2.05,
      "rara": false
     },
     {
-     "fecha": "2026-06-04",
-     "agua_pct": 2.23,
+     "fecha": "2026-07-10",
+     "agua_pct": 3.19,
      "rara": false
     },
     {
-     "fecha": "2026-06-28",
+     "fecha": "2026-08-09",
+     "agua_pct": 1.43,
+     "rara": false
+    },
+    {
+     "fecha": "2026-09-02",
      "agua_pct": 2.77,
      "rara": false
     },
     {
-     "fecha": "2026-07-28",
-     "agua_pct": 2.55,
+     "fecha": "2026-09-26",
+     "agua_pct": 3.11,
      "rara": false
     },
     {
-     "fecha": "2026-08-21",
-     "agua_pct": 3.05,
-     "rara": false
-    },
-    {
-     "fecha": "2026-09-14",
-     "agua_pct": 2.47,
-     "rara": false
-    },
-    {
-     "fecha": "2026-10-08",
+     "fecha": "2026-10-20",
      "agua_pct": 2.63,
      "rara": false
     },
     {
-     "fecha": "2026-11-13",
-     "agua_pct": 2.81,
+     "fecha": "2026-11-19",
+     "agua_pct": 3.31,
      "rara": false
     }
    ]
@@ -807,397 +411,397 @@
     -28.41
    ],
    "orbita": "descending/141",
-   "fecha_actual": "2026-11-06T09:21:04.641226Z",
+   "fecha_actual": "2026-11-18T09:21:04.240765Z",
    "fondo_fechas": [
     "2025-10-23",
     "2025-11-16",
     "2025-12-22",
     "2026-01-15",
     "2026-02-08",
-    "2026-03-04",
+    "2026-03-16",
     "2026-04-09",
     "2026-05-03",
-    "2026-05-16",
+    "2026-05-27",
     "2026-06-08",
-    "2026-06-21",
-    "2026-07-09",
-    "2026-08-02",
-    "2026-09-07",
-    "2026-10-01"
+    "2026-06-27",
+    "2026-07-21",
+    "2026-08-14",
+    "2026-09-19",
+    "2026-10-13"
    ],
    "cobertura": 1.0,
    "umbral_db": -18.0,
    "umbral_metodo": "fijo −18 dB (Otsu sin dos modos claros o fuera de −24 a −15 dB)",
    "resumen": {
-    "pixeles_validos": 1078788,
-    "agua_hoy_ha": 1394.8,
-    "agua_habitual_ha": 468.9,
-    "agua_nueva_ha": 136.5,
-    "manchas": 36
+    "pixeles_validos": 1078749,
+    "agua_hoy_ha": 2137.4,
+    "agua_habitual_ha": 503.6,
+    "agua_nueva_ha": 299.7,
+    "manchas": 86
    },
    "manchas": [
     {
-     "id": 65,
-     "pixeles": 1506,
-     "superficie_ha": 60.24,
+     "id": 83,
+     "pixeles": 498,
+     "superficie_ha": 19.92,
+     "z_medio": -4.21,
+     "z_pico": -7.2,
+     "intensidad": "moderada",
+     "centroide": [
+      -59.11249,
+      -28.57733
+     ]
+    },
+    {
+     "id": 36,
+     "pixeles": 307,
+     "superficie_ha": 12.28,
      "z_medio": -4.85,
-     "z_pico": -10.67,
+     "z_pico": -7.79,
      "intensidad": "moderada",
      "centroide": [
-      -59.10352,
-      -28.55926
-     ]
-    },
-    {
-     "id": 2,
-     "pixeles": 109,
-     "superficie_ha": 4.36,
-     "z_medio": -4.79,
-     "z_pico": -9.72,
-     "intensidad": "moderada",
-     "centroide": [
-      -58.95491,
-      -28.41482
-     ]
-    },
-    {
-     "id": 92,
-     "pixeles": 102,
-     "superficie_ha": 4.08,
-     "z_medio": -4.62,
-     "z_pico": -6.98,
-     "intensidad": "moderada",
-     "centroide": [
-      -59.10168,
-      -28.5842
-     ]
-    },
-    {
-     "id": 3,
-     "pixeles": 101,
-     "superficie_ha": 4.04,
-     "z_medio": -5.76,
-     "z_pico": -11.18,
-     "intensidad": "fuerte",
-     "centroide": [
-      -59.12511,
-      -28.41163
-     ]
-    },
-    {
-     "id": 47,
-     "pixeles": 97,
-     "superficie_ha": 3.88,
-     "z_medio": -12.19,
-     "z_pico": -14.1,
-     "intensidad": "fuerte",
-     "centroide": [
-      -59.11868,
-      -28.51368
-     ]
-    },
-    {
-     "id": 55,
-     "pixeles": 96,
-     "superficie_ha": 3.84,
-     "z_medio": -9.21,
-     "z_pico": -13.21,
-     "intensidad": "fuerte",
-     "centroide": [
-      -59.11472,
-      -28.53251
+      -59.10219,
+      -28.55807
      ]
     },
     {
      "id": 38,
-     "pixeles": 84,
-     "superficie_ha": 3.36,
-     "z_medio": -7.42,
-     "z_pico": -10.29,
+     "pixeles": 265,
+     "superficie_ha": 10.6,
+     "z_medio": -9.08,
+     "z_pico": -13.42,
      "intensidad": "fuerte",
      "centroide": [
-      -59.11319,
-      -28.48438
+      -59.07192,
+      -28.55922
+     ]
+    },
+    {
+     "id": 80,
+     "pixeles": 227,
+     "superficie_ha": 9.08,
+     "z_medio": -9.9,
+     "z_pico": -15.9,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.07316,
+      -28.57708
+     ]
+    },
+    {
+     "id": 20,
+     "pixeles": 224,
+     "superficie_ha": 8.96,
+     "z_medio": -4.3,
+     "z_pico": -6.2,
+     "intensidad": "moderada",
+     "centroide": [
+      -58.99644,
+      -28.54688
+     ]
+    },
+    {
+     "id": 113,
+     "pixeles": 217,
+     "superficie_ha": 8.68,
+     "z_medio": -4.1,
+     "z_pico": -5.33,
+     "intensidad": "moderada",
+     "centroide": [
+      -59.10169,
+      -28.58579
      ]
     },
     {
      "id": 87,
-     "pixeles": 80,
-     "superficie_ha": 3.2,
-     "z_medio": -4.44,
-     "z_pico": -5.81,
+     "pixeles": 215,
+     "superficie_ha": 8.6,
+     "z_medio": -4.4,
+     "z_pico": -6.15,
      "intensidad": "moderada",
      "centroide": [
-      -59.09102,
+      -59.10725,
+      -28.57759
+     ]
+    },
+    {
+     "id": 101,
+     "pixeles": 208,
+     "superficie_ha": 8.32,
+     "z_medio": -8.07,
+     "z_pico": -12.37,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.06878,
+      -28.58226
+     ]
+    },
+    {
+     "id": 14,
+     "pixeles": 198,
+     "superficie_ha": 7.92,
+     "z_medio": -4.2,
+     "z_pico": -5.64,
+     "intensidad": "moderada",
+     "centroide": [
+      -58.99829,
+      -28.53839
+     ]
+    },
+    {
+     "id": 122,
+     "pixeles": 195,
+     "superficie_ha": 7.8,
+     "z_medio": -6.78,
+     "z_pico": -9.7,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.0685,
+      -28.58884
+     ]
+    },
+    {
+     "id": 77,
+     "pixeles": 186,
+     "superficie_ha": 7.44,
+     "z_medio": -5.06,
+     "z_pico": -8.07,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.09136,
+      -28.57532
+     ]
+    },
+    {
+     "id": 32,
+     "pixeles": 183,
+     "superficie_ha": 7.32,
+     "z_medio": -8.33,
+     "z_pico": -11.09,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.09491,
+      -28.55582
+     ]
+    },
+    {
+     "id": 65,
+     "pixeles": 164,
+     "superficie_ha": 6.56,
+     "z_medio": -7.48,
+     "z_pico": -10.5,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.07345,
+      -28.57099
+     ]
+    },
+    {
+     "id": 54,
+     "pixeles": 156,
+     "superficie_ha": 6.24,
+     "z_medio": -4.74,
+     "z_pico": -9.75,
+     "intensidad": "moderada",
+     "centroide": [
+      -59.09406,
+      -28.56765
+     ]
+    },
+    {
+     "id": 129,
+     "pixeles": 148,
+     "superficie_ha": 5.92,
+     "z_medio": -10.55,
+     "z_pico": -13.17,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.08474,
+      -28.59312
+     ]
+    },
+    {
+     "id": 70,
+     "pixeles": 143,
+     "superficie_ha": 5.72,
+     "z_medio": -9.01,
+     "z_pico": -11.86,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.08366,
       -28.57383
      ]
     },
     {
-     "id": 78,
-     "pixeles": 75,
-     "superficie_ha": 3.0,
-     "z_medio": -7.45,
-     "z_pico": -9.21,
+     "id": 146,
+     "pixeles": 137,
+     "superficie_ha": 5.48,
+     "z_medio": -11.47,
+     "z_pico": -14.23,
      "intensidad": "fuerte",
      "centroide": [
-      -59.13457,
-      -28.56611
+      -59.13164,
+      -28.60159
      ]
     },
     {
-     "id": 76,
-     "pixeles": 69,
-     "superficie_ha": 2.76,
-     "z_medio": -9.05,
-     "z_pico": -11.04,
+     "id": 115,
+     "pixeles": 123,
+     "superficie_ha": 4.92,
+     "z_medio": -9.27,
+     "z_pico": -12.85,
      "intensidad": "fuerte",
      "centroide": [
-      -59.12981,
-      -28.5645
+      -59.07305,
+      -28.58581
      ]
     },
     {
-     "id": 28,
-     "pixeles": 62,
-     "superficie_ha": 2.48,
-     "z_medio": -8.17,
-     "z_pico": -11.66,
+     "id": 125,
+     "pixeles": 117,
+     "superficie_ha": 4.68,
+     "z_medio": -8.53,
+     "z_pico": -12.8,
      "intensidad": "fuerte",
      "centroide": [
-      -59.11295,
-      -28.47295
+      -59.07382,
+      -28.58961
      ]
     },
     {
-     "id": 34,
-     "pixeles": 62,
-     "superficie_ha": 2.48,
-     "z_medio": -6.75,
-     "z_pico": -10.33,
+     "id": 68,
+     "pixeles": 116,
+     "superficie_ha": 4.64,
+     "z_medio": -7.75,
+     "z_pico": -10.18,
      "intensidad": "fuerte",
      "centroide": [
-      -59.12188,
-      -28.47755
+      -59.06492,
+      -28.57131
      ]
     },
     {
-     "id": 71,
-     "pixeles": 60,
-     "superficie_ha": 2.4,
-     "z_medio": -5.75,
-     "z_pico": -9.83,
+     "id": 92,
+     "pixeles": 116,
+     "superficie_ha": 4.64,
+     "z_medio": -5.38,
+     "z_pico": -13.75,
      "intensidad": "fuerte",
      "centroide": [
-      -59.0576,
-      -28.56083
+      -59.09956,
+      -28.5789
      ]
     },
     {
-     "id": 74,
-     "pixeles": 58,
-     "superficie_ha": 2.32,
-     "z_medio": -3.98,
-     "z_pico": -5.72,
-     "intensidad": "leve",
-     "centroide": [
-      -59.11203,
-      -28.56454
-     ]
-    },
-    {
-     "id": 17,
-     "pixeles": 54,
-     "superficie_ha": 2.16,
-     "z_medio": -10.57,
-     "z_pico": -12.42,
+     "id": 85,
+     "pixeles": 115,
+     "superficie_ha": 4.6,
+     "z_medio": -5.14,
+     "z_pico": -8.85,
      "intensidad": "fuerte",
      "centroide": [
-      -59.0989,
-      -28.45583
+      -59.10067,
+      -28.57666
      ]
     },
     {
-     "id": 59,
-     "pixeles": 54,
-     "superficie_ha": 2.16,
-     "z_medio": -4.04,
-     "z_pico": -5.16,
-     "intensidad": "moderada",
-     "centroide": [
-      -59.09936,
-      -28.54908
-     ]
-    },
-    {
-     "id": 89,
-     "pixeles": 54,
-     "superficie_ha": 2.16,
-     "z_medio": -7.56,
-     "z_pico": -10.47,
+     "id": 88,
+     "pixeles": 105,
+     "superficie_ha": 4.2,
+     "z_medio": -7.87,
+     "z_pico": -10.01,
      "intensidad": "fuerte",
      "centroide": [
-      -59.07829,
-      -28.57972
+      -59.07855,
+      -28.57858
      ]
     },
     {
-     "id": 82,
-     "pixeles": 51,
-     "superficie_ha": 2.04,
-     "z_medio": -3.43,
-     "z_pico": -4.29,
-     "intensidad": "leve",
-     "centroide": [
-      -59.10628,
-      -28.56918
-     ]
-    },
-    {
-     "id": 94,
-     "pixeles": 49,
-     "superficie_ha": 1.96,
-     "z_medio": -3.58,
-     "z_pico": -4.32,
-     "intensidad": "leve",
-     "centroide": [
-      -59.10112,
-      -28.58667
-     ]
-    },
-    {
-     "id": 52,
-     "pixeles": 48,
-     "superficie_ha": 1.92,
-     "z_medio": -11.51,
-     "z_pico": -13.91,
+     "id": 117,
+     "pixeles": 99,
+     "superficie_ha": 3.96,
+     "z_medio": -7.52,
+     "z_pico": -11.17,
      "intensidad": "fuerte",
      "centroide": [
-      -59.12014,
-      -28.52632
+      -59.09682,
+      -28.58539
      ]
     },
     {
-     "id": 51,
-     "pixeles": 43,
-     "superficie_ha": 1.72,
-     "z_medio": -7.68,
-     "z_pico": -10.5,
+     "id": 165,
+     "pixeles": 97,
+     "superficie_ha": 3.88,
+     "z_medio": -13.0,
+     "z_pico": -15.25,
      "intensidad": "fuerte",
      "centroide": [
-      -59.09581,
-      -28.52336
-     ]
-    },
-    {
-     "id": 50,
-     "pixeles": 42,
-     "superficie_ha": 1.68,
-     "z_medio": -6.93,
-     "z_pico": -10.58,
-     "intensidad": "fuerte",
-     "centroide": [
-      -59.09614,
-      -28.52187
-     ]
-    },
-    {
-     "id": 83,
-     "pixeles": 41,
-     "superficie_ha": 1.64,
-     "z_medio": -3.9,
-     "z_pico": -5.36,
-     "intensidad": "leve",
-     "centroide": [
-      -59.11166,
-      -28.57033
-     ]
-    },
-    {
-     "id": 81,
-     "pixeles": 38,
-     "superficie_ha": 1.52,
-     "z_medio": -4.1,
-     "z_pico": -5.74,
-     "intensidad": "moderada",
-     "centroide": [
-      -59.11088,
-      -28.56823
-     ]
-    },
-    {
-     "id": 43,
-     "pixeles": 37,
-     "superficie_ha": 1.48,
-     "z_medio": -7.99,
-     "z_pico": -10.16,
-     "intensidad": "fuerte",
-     "centroide": [
-      -59.12352,
-      -28.49646
-     ]
-    },
-    {
-     "id": 11,
-     "pixeles": 35,
-     "superficie_ha": 1.4,
-     "z_medio": -9.16,
-     "z_pico": -11.15,
-     "intensidad": "fuerte",
-     "centroide": [
-      -59.13507,
-      -28.43449
-     ]
-    },
-    {
-     "id": 37,
-     "pixeles": 35,
-     "superficie_ha": 1.4,
-     "z_medio": -8.71,
-     "z_pico": -11.7,
-     "intensidad": "fuerte",
-     "centroide": [
-      -59.1019,
-      -28.48313
-     ]
-    },
-    {
-     "id": 22,
-     "pixeles": 34,
-     "superficie_ha": 1.36,
-     "z_medio": -6.3,
-     "z_pico": -9.9,
-     "intensidad": "fuerte",
-     "centroide": [
-      -59.12452,
-      -28.46463
+      -59.13527,
+      -28.60806
      ]
     },
     {
      "id": 86,
-     "pixeles": 34,
-     "superficie_ha": 1.36,
-     "z_medio": -3.49,
-     "z_pico": -4.07,
+     "pixeles": 95,
+     "superficie_ha": 3.8,
+     "z_medio": -3.91,
+     "z_pico": -5.16,
      "intensidad": "leve",
      "centroide": [
-      -59.00464,
-      -28.57396
+      -59.11931,
+      -28.57613
      ]
     },
     {
-     "id": 13,
-     "pixeles": 32,
-     "superficie_ha": 1.28,
-     "z_medio": -6.61,
-     "z_pico": -8.22,
+     "id": 167,
+     "pixeles": 87,
+     "superficie_ha": 3.48,
+     "z_medio": -4.88,
+     "z_pico": -6.37,
+     "intensidad": "moderada",
+     "centroide": [
+      -59.06598,
+      -28.60933
+     ]
+    },
+    {
+     "id": 44,
+     "pixeles": 85,
+     "superficie_ha": 3.4,
+     "z_medio": -8.32,
+     "z_pico": -9.83,
      "intensidad": "fuerte",
      "centroide": [
-      -59.11257,
-      -28.44842
+      -59.07887,
+      -28.56026
+     ]
+    },
+    {
+     "id": 158,
+     "pixeles": 81,
+     "superficie_ha": 3.24,
+     "z_medio": -6.93,
+     "z_pico": -10.75,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.08327,
+      -28.60671
+     ]
+    },
+    {
+     "id": 51,
+     "pixeles": 80,
+     "superficie_ha": 3.2,
+     "z_medio": -5.69,
+     "z_pico": -9.2,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.10106,
+      -28.5664
      ]
     }
    ],
-   "manchas_total": 36,
+   "manchas_total": 86,
    "serie": [
     {
      "fecha": "2025-10-23",
@@ -1217,7 +821,7 @@
     {
      "fecha": "2026-01-15",
      "agua_pct": 1.15,
-     "rara": false
+     "rara": true
     },
     {
      "fecha": "2026-02-08",
@@ -1225,8 +829,8 @@
      "rara": false
     },
     {
-     "fecha": "2026-03-04",
-     "agua_pct": 2.47,
+     "fecha": "2026-03-16",
+     "agua_pct": 4.55,
      "rara": false
     },
     {
@@ -1237,11 +841,11 @@
     {
      "fecha": "2026-05-03",
      "agua_pct": 0.5,
-     "rara": false
+     "rara": true
     },
     {
-     "fecha": "2026-05-16",
-     "agua_pct": 7.5,
+     "fecha": "2026-05-27",
+     "agua_pct": 3.79,
      "rara": false
     },
     {
@@ -1250,34 +854,34 @@
      "rara": false
     },
     {
-     "fecha": "2026-06-21",
-     "agua_pct": 11.27,
+     "fecha": "2026-06-27",
+     "agua_pct": 11.28,
      "rara": false
     },
     {
-     "fecha": "2026-07-09",
-     "agua_pct": 9.02,
+     "fecha": "2026-07-21",
+     "agua_pct": 0.71,
      "rara": false
     },
     {
-     "fecha": "2026-08-02",
-     "agua_pct": 0.95,
+     "fecha": "2026-08-14",
+     "agua_pct": 5.3,
      "rara": false
     },
     {
-     "fecha": "2026-09-07",
-     "agua_pct": 0.66,
+     "fecha": "2026-09-19",
+     "agua_pct": 8.84,
      "rara": false
     },
     {
-     "fecha": "2026-10-01",
-     "agua_pct": 0.49,
+     "fecha": "2026-10-13",
+     "agua_pct": 0.11,
      "rara": false
     },
     {
-     "fecha": "2026-11-06",
-     "agua_pct": 3.23,
-     "rara": true
+     "fecha": "2026-11-18",
+     "agua_pct": 4.95,
+     "rara": false
     }
    ]
   },
@@ -1295,397 +899,397 @@
     -29.04
    ],
    "orbita": "descending/141",
-   "fecha_actual": "2026-11-06T09:21:04.641226Z",
+   "fecha_actual": "2026-11-18T09:21:04.240765Z",
    "fondo_fechas": [
     "2025-10-23",
     "2025-11-16",
     "2025-12-22",
     "2026-01-15",
     "2026-02-08",
-    "2026-03-04",
+    "2026-03-16",
     "2026-04-09",
     "2026-05-03",
-    "2026-05-16",
+    "2026-05-27",
     "2026-06-08",
-    "2026-06-21",
-    "2026-07-09",
-    "2026-08-02",
-    "2026-09-07",
-    "2026-10-01"
+    "2026-06-27",
+    "2026-07-21",
+    "2026-08-14",
+    "2026-09-19",
+    "2026-10-13"
    ],
    "cobertura": 1.0,
    "umbral_db": -18.0,
    "umbral_metodo": "fijo −18 dB (Otsu sin dos modos claros o fuera de −24 a −15 dB)",
    "resumen": {
-    "pixeles_validos": 1071525,
-    "agua_hoy_ha": 3132.6,
-    "agua_habitual_ha": 1008.0,
-    "agua_nueva_ha": 727.9,
-    "manchas": 108
+    "pixeles_validos": 1071490,
+    "agua_hoy_ha": 1387.7,
+    "agua_habitual_ha": 1589.6,
+    "agua_nueva_ha": 215.9,
+    "manchas": 61
    },
    "manchas": [
     {
-     "id": 50,
-     "pixeles": 3748,
-     "superficie_ha": 149.92,
-     "z_medio": -4.61,
-     "z_pico": -9.77,
-     "intensidad": "moderada",
-     "centroide": [
-      -59.22925,
-      -29.06174
-     ]
-    },
-    {
-     "id": 16,
-     "pixeles": 2252,
-     "superficie_ha": 90.08,
-     "z_medio": -6.98,
-     "z_pico": -14.73,
-     "intensidad": "fuerte",
-     "centroide": [
-      -59.3049,
-      -29.04712
-     ]
-    },
-    {
-     "id": 183,
-     "pixeles": 943,
-     "superficie_ha": 37.72,
-     "z_medio": -7.57,
-     "z_pico": -12.4,
-     "intensidad": "fuerte",
-     "centroide": [
-      -59.31329,
-      -29.19256
-     ]
-    },
-    {
-     "id": 169,
-     "pixeles": 887,
-     "superficie_ha": 35.48,
-     "z_medio": -5.21,
-     "z_pico": -8.19,
-     "intensidad": "fuerte",
-     "centroide": [
-      -59.34865,
-      -29.18376
-     ]
-    },
-    {
-     "id": 75,
-     "pixeles": 693,
-     "superficie_ha": 27.72,
-     "z_medio": -6.35,
-     "z_pico": -10.46,
-     "intensidad": "fuerte",
-     "centroide": [
-      -59.33424,
-      -29.0628
-     ]
-    },
-    {
-     "id": 81,
-     "pixeles": 520,
-     "superficie_ha": 20.8,
-     "z_medio": -8.25,
-     "z_pico": -13.93,
-     "intensidad": "fuerte",
-     "centroide": [
-      -59.32012,
-      -29.06743
-     ]
-    },
-    {
-     "id": 64,
-     "pixeles": 472,
-     "superficie_ha": 18.88,
-     "z_medio": -7.54,
-     "z_pico": -12.43,
-     "intensidad": "fuerte",
-     "centroide": [
-      -59.32353,
-      -29.05857
-     ]
-    },
-    {
      "id": 14,
-     "pixeles": 419,
-     "superficie_ha": 16.76,
-     "z_medio": -8.28,
-     "z_pico": -14.59,
+     "pixeles": 414,
+     "superficie_ha": 16.56,
+     "z_medio": -5.95,
+     "z_pico": -9.17,
      "intensidad": "fuerte",
      "centroide": [
-      -59.31473,
-      -29.04384
+      -59.30013,
+      -29.0451
      ]
     },
     {
-     "id": 83,
-     "pixeles": 415,
-     "superficie_ha": 16.6,
-     "z_medio": -8.08,
-     "z_pico": -14.52,
+     "id": 20,
+     "pixeles": 332,
+     "superficie_ha": 13.28,
+     "z_medio": -9.59,
+     "z_pico": -14.96,
      "intensidad": "fuerte",
      "centroide": [
-      -59.33553,
-      -29.06749
+      -59.32932,
+      -29.04769
      ]
     },
     {
-     "id": 223,
-     "pixeles": 329,
-     "superficie_ha": 13.16,
-     "z_medio": -10.01,
-     "z_pico": -13.79,
+     "id": 11,
+     "pixeles": 301,
+     "superficie_ha": 12.04,
+     "z_medio": -8.92,
+     "z_pico": -13.37,
      "intensidad": "fuerte",
      "centroide": [
-      -59.33309,
-      -29.23836
-     ]
-    },
-    {
-     "id": 184,
-     "pixeles": 292,
-     "superficie_ha": 11.68,
-     "z_medio": -9.41,
-     "z_pico": -13.78,
-     "intensidad": "fuerte",
-     "centroide": [
-      -59.33815,
-      -29.19201
-     ]
-    },
-    {
-     "id": 133,
-     "pixeles": 290,
-     "superficie_ha": 11.6,
-     "z_medio": -6.15,
-     "z_pico": -9.45,
-     "intensidad": "fuerte",
-     "centroide": [
-      -59.33846,
-      -29.09914
+      -59.31494,
+      -29.04348
      ]
     },
     {
      "id": 76,
      "pixeles": 278,
      "superficie_ha": 11.12,
-     "z_medio": -11.0,
-     "z_pico": -15.93,
+     "z_medio": -5.66,
+     "z_pico": -9.29,
      "intensidad": "fuerte",
      "centroide": [
-      -59.34959,
-      -29.06477
+      -59.3369,
+      -29.06345
      ]
     },
     {
-     "id": 103,
-     "pixeles": 263,
-     "superficie_ha": 10.52,
-     "z_medio": -4.72,
-     "z_pico": -9.27,
-     "intensidad": "moderada",
-     "centroide": [
-      -59.24727,
-      -29.07418
-     ]
-    },
-    {
-     "id": 77,
-     "pixeles": 258,
-     "superficie_ha": 10.32,
-     "z_medio": -7.87,
-     "z_pico": -11.69,
+     "id": 80,
+     "pixeles": 189,
+     "superficie_ha": 7.56,
+     "z_medio": -9.19,
+     "z_pico": -12.1,
      "intensidad": "fuerte",
      "centroide": [
-      -59.31965,
-      -29.06269
+      -59.32139,
+      -29.06711
      ]
     },
     {
-     "id": 27,
-     "pixeles": 251,
-     "superficie_ha": 10.04,
-     "z_medio": -8.94,
-     "z_pico": -14.49,
+     "id": 60,
+     "pixeles": 178,
+     "superficie_ha": 7.12,
+     "z_medio": -9.53,
+     "z_pico": -14.11,
      "intensidad": "fuerte",
      "centroide": [
-      -59.32947,
-      -29.04831
+      -59.30628,
+      -29.05743
      ]
     },
     {
-     "id": 62,
-     "pixeles": 231,
-     "superficie_ha": 9.24,
-     "z_medio": -8.87,
-     "z_pico": -11.73,
+     "id": 63,
+     "pixeles": 175,
+     "superficie_ha": 7.0,
+     "z_medio": -10.65,
+     "z_pico": -13.97,
      "intensidad": "fuerte",
      "centroide": [
-      -59.35425,
-      -29.0562
+      -59.34353,
+      -29.05916
      ]
     },
     {
-     "id": 90,
-     "pixeles": 197,
-     "superficie_ha": 7.88,
-     "z_medio": -4.25,
-     "z_pico": -6.1,
-     "intensidad": "moderada",
+     "id": 37,
+     "pixeles": 164,
+     "superficie_ha": 6.56,
+     "z_medio": -5.2,
+     "z_pico": -10.91,
+     "intensidad": "fuerte",
      "centroide": [
-      -59.24059,
-      -29.07002
+      -59.27634,
+      -29.05012
      ]
     },
     {
-     "id": 119,
-     "pixeles": 193,
-     "superficie_ha": 7.72,
-     "z_medio": -4.04,
-     "z_pico": -5.67,
-     "intensidad": "moderada",
+     "id": 70,
+     "pixeles": 154,
+     "superficie_ha": 6.16,
+     "z_medio": -7.0,
+     "z_pico": -10.69,
+     "intensidad": "fuerte",
      "centroide": [
-      -59.25334,
-      -29.08711
+      -59.33175,
+      -29.06154
+     ]
+    },
+    {
+     "id": 47,
+     "pixeles": 150,
+     "superficie_ha": 6.0,
+     "z_medio": -7.78,
+     "z_pico": -10.2,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.3256,
+      -29.05259
      ]
     },
     {
      "id": 6,
-     "pixeles": 184,
-     "superficie_ha": 7.36,
-     "z_medio": -10.18,
-     "z_pico": -13.7,
+     "pixeles": 133,
+     "superficie_ha": 5.32,
+     "z_medio": -10.87,
+     "z_pico": -13.61,
      "intensidad": "fuerte",
      "centroide": [
-      -59.26223,
-      -29.04134
+      -59.2626,
+      -29.04131
      ]
     },
     {
-     "id": 45,
-     "pixeles": 182,
-     "superficie_ha": 7.28,
-     "z_medio": -6.88,
-     "z_pico": -10.9,
+     "id": 23,
+     "pixeles": 130,
+     "superficie_ha": 5.2,
+     "z_medio": -7.34,
+     "z_pico": -13.06,
      "intensidad": "fuerte",
      "centroide": [
-      -59.32615,
-      -29.05376
+      -59.33672,
+      -29.04515
      ]
     },
     {
-     "id": 115,
-     "pixeles": 165,
-     "superficie_ha": 6.6,
-     "z_medio": -4.01,
-     "z_pico": -4.97,
+     "id": 113,
+     "pixeles": 124,
+     "superficie_ha": 4.96,
+     "z_medio": -9.42,
+     "z_pico": -12.56,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.33266,
+      -29.2391
+     ]
+    },
+    {
+     "id": 2,
+     "pixeles": 115,
+     "superficie_ha": 4.6,
+     "z_medio": -6.13,
+     "z_pico": -9.91,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.31618,
+      -29.03835
+     ]
+    },
+    {
+     "id": 19,
+     "pixeles": 114,
+     "superficie_ha": 4.56,
+     "z_medio": -7.23,
+     "z_pico": -10.06,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.30596,
+      -29.04481
+     ]
+    },
+    {
+     "id": 107,
+     "pixeles": 113,
+     "superficie_ha": 4.52,
+     "z_medio": -8.3,
+     "z_pico": -10.52,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.30769,
+      -29.19191
+     ]
+    },
+    {
+     "id": 59,
+     "pixeles": 111,
+     "superficie_ha": 4.44,
+     "z_medio": -7.03,
+     "z_pico": -11.63,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.32202,
+      -29.05711
+     ]
+    },
+    {
+     "id": 26,
+     "pixeles": 109,
+     "superficie_ha": 4.36,
+     "z_medio": -4.83,
+     "z_pico": -7.16,
      "intensidad": "moderada",
      "centroide": [
-      -59.24586,
-      -29.08214
+      -59.33299,
+      -29.04669
      ]
     },
     {
-     "id": 139,
-     "pixeles": 156,
-     "superficie_ha": 6.24,
-     "z_medio": -6.25,
+     "id": 87,
+     "pixeles": 102,
+     "superficie_ha": 4.08,
+     "z_medio": -5.44,
      "z_pico": -9.6,
      "intensidad": "fuerte",
      "centroide": [
-      -59.28797,
-      -29.11405
+      -59.21581,
+      -29.07108
      ]
     },
     {
-     "id": 38,
-     "pixeles": 146,
-     "superficie_ha": 5.84,
-     "z_medio": -7.22,
-     "z_pico": -13.62,
+     "id": 32,
+     "pixeles": 101,
+     "superficie_ha": 4.04,
+     "z_medio": -6.85,
+     "z_pico": -11.03,
      "intensidad": "fuerte",
      "centroide": [
-      -59.27651,
-      -29.05058
+      -59.31697,
+      -29.04804
      ]
     },
     {
-     "id": 43,
-     "pixeles": 144,
-     "superficie_ha": 5.76,
-     "z_medio": -8.44,
-     "z_pico": -12.41,
+     "id": 71,
+     "pixeles": 97,
+     "superficie_ha": 3.88,
+     "z_medio": -8.76,
+     "z_pico": -13.33,
      "intensidad": "fuerte",
      "centroide": [
-      -59.35056,
-      -29.05124
+      -59.3272,
+      -29.06064
      ]
     },
     {
-     "id": 186,
-     "pixeles": 138,
-     "superficie_ha": 5.52,
-     "z_medio": -8.52,
-     "z_pico": -11.95,
+     "id": 41,
+     "pixeles": 90,
+     "superficie_ha": 3.6,
+     "z_medio": -5.53,
+     "z_pico": -7.84,
      "intensidad": "fuerte",
      "centroide": [
-      -59.30744,
-      -29.19232
+      -59.31237,
+      -29.05077
+     ]
+    },
+    {
+     "id": 74,
+     "pixeles": 86,
+     "superficie_ha": 3.44,
+     "z_medio": -7.88,
+     "z_pico": -10.51,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.31892,
+      -29.06213
      ]
     },
     {
      "id": 17,
-     "pixeles": 136,
-     "superficie_ha": 5.44,
-     "z_medio": -7.98,
-     "z_pico": -11.31,
+     "pixeles": 82,
+     "superficie_ha": 3.28,
+     "z_medio": -9.52,
+     "z_pico": -11.63,
      "intensidad": "fuerte",
      "centroide": [
-      -59.29324,
-      -29.0441
+      -59.24788,
+      -29.04515
      ]
     },
     {
-     "id": 163,
-     "pixeles": 132,
-     "superficie_ha": 5.28,
-     "z_medio": -8.03,
-     "z_pico": -11.96,
+     "id": 97,
+     "pixeles": 77,
+     "superficie_ha": 3.08,
+     "z_medio": -11.86,
+     "z_pico": -14.33,
      "intensidad": "fuerte",
      "centroide": [
-      -59.3008,
-      -29.17429
+      -59.32651,
+      -29.07999
      ]
     },
     {
-     "id": 187,
-     "pixeles": 121,
-     "superficie_ha": 4.84,
-     "z_medio": -8.52,
-     "z_pico": -10.67,
+     "id": 67,
+     "pixeles": 74,
+     "superficie_ha": 2.96,
+     "z_medio": -7.2,
+     "z_pico": -10.19,
      "intensidad": "fuerte",
      "centroide": [
-      -59.3035,
-      -29.19182
+      -59.32371,
+      -29.05943
      ]
     },
     {
-     "id": 160,
-     "pixeles": 120,
-     "superficie_ha": 4.8,
-     "z_medio": -5.85,
-     "z_pico": -11.36,
+     "id": 8,
+     "pixeles": 68,
+     "superficie_ha": 2.72,
+     "z_medio": -8.48,
+     "z_pico": -11.76,
      "intensidad": "fuerte",
      "centroide": [
-      -59.32872,
-      -29.16998
+      -59.27501,
+      -29.04214
+     ]
+    },
+    {
+     "id": 109,
+     "pixeles": 65,
+     "superficie_ha": 2.6,
+     "z_medio": -8.0,
+     "z_pico": -11.02,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.31582,
+      -29.19432
+     ]
+    },
+    {
+     "id": 10,
+     "pixeles": 62,
+     "superficie_ha": 2.48,
+     "z_medio": -9.56,
+     "z_pico": -11.59,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.32737,
+      -29.04224
+     ]
+    },
+    {
+     "id": 46,
+     "pixeles": 61,
+     "superficie_ha": 2.44,
+     "z_medio": -10.6,
+     "z_pico": -13.22,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.3288,
+      -29.05123
      ]
     }
    ],
-   "manchas_total": 108,
+   "manchas_total": 61,
    "serie": [
     {
      "fecha": "2025-10-23",
@@ -1700,7 +1304,7 @@
     {
      "fecha": "2025-12-22",
      "agua_pct": 10.85,
-     "rara": true
+     "rara": false
     },
     {
      "fecha": "2026-01-15",
@@ -1713,8 +1317,8 @@
      "rara": false
     },
     {
-     "fecha": "2026-03-04",
-     "agua_pct": 1.7,
+     "fecha": "2026-03-16",
+     "agua_pct": 6.34,
      "rara": false
     },
     {
@@ -1728,8 +1332,8 @@
      "rara": false
     },
     {
-     "fecha": "2026-05-16",
-     "agua_pct": 9.75,
+     "fecha": "2026-05-27",
+     "agua_pct": 10.53,
      "rara": false
     },
     {
@@ -1738,33 +1342,33 @@
      "rara": false
     },
     {
-     "fecha": "2026-06-21",
-     "agua_pct": 8.09,
+     "fecha": "2026-06-27",
+     "agua_pct": 10.73,
      "rara": false
     },
     {
-     "fecha": "2026-07-09",
-     "agua_pct": 7.14,
+     "fecha": "2026-07-21",
+     "agua_pct": 1.51,
      "rara": false
     },
     {
-     "fecha": "2026-08-02",
-     "agua_pct": 0.87,
+     "fecha": "2026-08-14",
+     "agua_pct": 4.13,
      "rara": false
     },
     {
-     "fecha": "2026-09-07",
-     "agua_pct": 3.25,
+     "fecha": "2026-09-19",
+     "agua_pct": 11.38,
      "rara": false
     },
     {
-     "fecha": "2026-10-01",
-     "agua_pct": 1.0,
+     "fecha": "2026-10-13",
+     "agua_pct": 1.15,
      "rara": false
     },
     {
-     "fecha": "2026-11-06",
-     "agua_pct": 7.31,
+     "fecha": "2026-11-18",
+     "agua_pct": 3.24,
      "rara": false
     }
    ]
@@ -1783,466 +1387,456 @@
     -29.91
    ],
    "orbita": "descending/141",
-   "fecha_actual": "2026-11-12T09:21:53.079176Z",
+   "fecha_actual": "2026-11-24T09:21:52.787908Z",
    "fondo_fechas": [
-    "2025-10-17",
-    "2025-11-10",
-    "2025-12-10",
-    "2026-01-09",
-    "2026-02-02",
-    "2026-02-26",
-    "2026-03-28",
-    "2026-04-27",
-    "2026-05-16",
-    "2026-06-02",
-    "2026-06-27",
-    "2026-07-27",
-    "2026-08-20",
-    "2026-09-13",
-    "2026-10-13"
+    "2025-10-23",
+    "2025-11-22",
+    "2025-12-16",
+    "2026-01-15",
+    "2026-02-14",
+    "2026-03-10",
+    "2026-04-09",
+    "2026-05-03",
+    "2026-05-27",
+    "2026-06-14",
+    "2026-07-03",
+    "2026-08-02",
+    "2026-09-01",
+    "2026-09-25",
+    "2026-10-25"
    ],
    "cobertura": 1.0,
    "umbral_db": -18.0,
    "umbral_metodo": "fijo −18 dB (Otsu sin dos modos claros o fuera de −24 a −15 dB)",
    "resumen": {
-    "pixeles_validos": 1059627,
-    "agua_hoy_ha": 4570.5,
-    "agua_habitual_ha": 468.3,
-    "agua_nueva_ha": 900.9,
-    "manchas": 152
+    "pixeles_validos": 1055537,
+    "agua_hoy_ha": 3534.6,
+    "agua_habitual_ha": 91.4,
+    "agua_nueva_ha": 700.6,
+    "manchas": 198
    },
    "manchas": [
     {
-     "id": 316,
-     "pixeles": 3247,
-     "superficie_ha": 129.88,
-     "z_medio": -5.29,
-     "z_pico": -8.9,
-     "intensidad": "fuerte",
+     "id": 360,
+     "pixeles": 916,
+     "superficie_ha": 36.64,
+     "z_medio": -3.91,
+     "z_pico": -6.36,
+     "intensidad": "leve",
      "centroide": [
-      -59.61285,
-      -30.10131
+      -59.57961,
+      -30.05099
      ]
     },
     {
-     "id": 194,
-     "pixeles": 2756,
-     "superficie_ha": 110.24,
-     "z_medio": -5.66,
-     "z_pico": -14.24,
+     "id": 394,
+     "pixeles": 908,
+     "superficie_ha": 36.32,
+     "z_medio": -10.31,
+     "z_pico": -13.83,
      "intensidad": "fuerte",
      "centroide": [
-      -59.58629,
-      -30.05669
+      -59.57475,
+      -30.06848
      ]
     },
     {
-     "id": 233,
-     "pixeles": 1771,
-     "superficie_ha": 70.84,
-     "z_medio": -12.12,
-     "z_pico": -16.58,
+     "id": 317,
+     "pixeles": 885,
+     "superficie_ha": 35.4,
+     "z_medio": -10.58,
+     "z_pico": -15.75,
      "intensidad": "fuerte",
      "centroide": [
-      -59.57358,
-      -30.06956
+      -59.5527,
+      -30.03217
      ]
     },
     {
-     "id": 258,
-     "pixeles": 1502,
-     "superficie_ha": 60.08,
-     "z_medio": -5.67,
-     "z_pico": -8.76,
+     "id": 67,
+     "pixeles": 511,
+     "superficie_ha": 20.44,
+     "z_medio": -7.04,
+     "z_pico": -14.3,
      "intensidad": "fuerte",
      "centroide": [
-      -59.60959,
-      -30.08914
+      -59.50707,
+      -29.94803
      ]
     },
     {
-     "id": 176,
-     "pixeles": 1157,
-     "superficie_ha": 46.28,
-     "z_medio": -5.21,
-     "z_pico": -9.79,
-     "intensidad": "fuerte",
-     "centroide": [
-      -59.57728,
-      -30.04489
-     ]
-    },
-    {
-     "id": 250,
-     "pixeles": 775,
-     "superficie_ha": 31.0,
-     "z_medio": -8.89,
-     "z_pico": -14.61,
-     "intensidad": "fuerte",
-     "centroide": [
-      -59.5808,
-      -30.07778
-     ]
-    },
-    {
-     "id": 70,
-     "pixeles": 611,
-     "superficie_ha": 24.44,
-     "z_medio": -4.52,
-     "z_pico": -6.85,
+     "id": 300,
+     "pixeles": 415,
+     "superficie_ha": 16.6,
+     "z_medio": -4.98,
+     "z_pico": -11.58,
      "intensidad": "moderada",
      "centroide": [
-      -59.58742,
-      -29.99317
+      -59.56936,
+      -30.02464
      ]
     },
     {
-     "id": 156,
-     "pixeles": 550,
-     "superficie_ha": 22.0,
-     "z_medio": -5.02,
-     "z_pico": -9.55,
+     "id": 106,
+     "pixeles": 402,
+     "superficie_ha": 16.08,
+     "z_medio": -7.82,
+     "z_pico": -12.67,
      "intensidad": "fuerte",
      "centroide": [
-      -59.59585,
-      -30.0286
+      -59.55486,
+      -29.95781
      ]
     },
     {
-     "id": 212,
-     "pixeles": 423,
-     "superficie_ha": 16.92,
-     "z_medio": -12.21,
-     "z_pico": -16.55,
+     "id": 126,
+     "pixeles": 376,
+     "superficie_ha": 15.04,
+     "z_medio": -6.5,
+     "z_pico": -9.96,
      "intensidad": "fuerte",
      "centroide": [
-      -59.57101,
-      -30.05597
+      -59.54569,
+      -29.96684
      ]
     },
     {
-     "id": 281,
-     "pixeles": 360,
-     "superficie_ha": 14.4,
-     "z_medio": -6.96,
-     "z_pico": -13.06,
+     "id": 74,
+     "pixeles": 300,
+     "superficie_ha": 12.0,
+     "z_medio": -6.42,
+     "z_pico": -8.86,
      "intensidad": "fuerte",
      "centroide": [
-      -59.58083,
-      -30.09082
+      -59.54071,
+      -29.94678
      ]
     },
     {
-     "id": 342,
-     "pixeles": 358,
-     "superficie_ha": 14.32,
-     "z_medio": -6.2,
-     "z_pico": -9.13,
+     "id": 85,
+     "pixeles": 258,
+     "superficie_ha": 10.32,
+     "z_medio": -6.63,
+     "z_pico": -9.48,
      "intensidad": "fuerte",
      "centroide": [
-      -59.62579,
-      -30.10791
+      -59.56481,
+      -29.95073
+     ]
+    },
+    {
+     "id": 191,
+     "pixeles": 248,
+     "superficie_ha": 9.92,
+     "z_medio": -7.94,
+     "z_pico": -13.12,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.55731,
+      -29.98694
+     ]
+    },
+    {
+     "id": 192,
+     "pixeles": 242,
+     "superficie_ha": 9.68,
+     "z_medio": -7.09,
+     "z_pico": -12.48,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.54412,
+      -29.98709
+     ]
+    },
+    {
+     "id": 164,
+     "pixeles": 220,
+     "superficie_ha": 8.8,
+     "z_medio": -9.67,
+     "z_pico": -15.56,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.53188,
+      -29.97932
+     ]
+    },
+    {
+     "id": 117,
+     "pixeles": 219,
+     "superficie_ha": 8.76,
+     "z_medio": -7.79,
+     "z_pico": -12.72,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.55515,
+      -29.96268
+     ]
+    },
+    {
+     "id": 377,
+     "pixeles": 216,
+     "superficie_ha": 8.64,
+     "z_medio": -12.14,
+     "z_pico": -14.12,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.57066,
+      -30.05595
+     ]
+    },
+    {
+     "id": 350,
+     "pixeles": 212,
+     "superficie_ha": 8.48,
+     "z_medio": -12.13,
+     "z_pico": -15.31,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.55903,
+      -30.04393
      ]
     },
     {
      "id": 200,
-     "pixeles": 328,
-     "superficie_ha": 13.12,
-     "z_medio": -4.47,
-     "z_pico": -7.19,
-     "intensidad": "moderada",
-     "centroide": [
-      -59.59445,
-      -30.05018
-     ]
-    },
-    {
-     "id": 273,
-     "pixeles": 321,
-     "superficie_ha": 12.84,
-     "z_medio": -7.83,
-     "z_pico": -13.87,
+     "pixeles": 195,
+     "superficie_ha": 7.8,
+     "z_medio": -8.16,
+     "z_pico": -11.66,
      "intensidad": "fuerte",
      "centroide": [
-      -59.58738,
-      -30.08625
+      -59.53596,
+      -29.9885
      ]
     },
     {
-     "id": 201,
-     "pixeles": 200,
-     "superficie_ha": 8.0,
-     "z_medio": -4.25,
-     "z_pico": -6.84,
-     "intensidad": "moderada",
+     "id": 172,
+     "pixeles": 188,
+     "superficie_ha": 7.52,
+     "z_medio": -11.3,
+     "z_pico": -13.9,
+     "intensidad": "fuerte",
      "centroide": [
-      -59.58147,
-      -30.04979
+      -59.5272,
+      -29.98211
      ]
     },
     {
-     "id": 329,
-     "pixeles": 185,
-     "superficie_ha": 7.4,
+     "id": 248,
+     "pixeles": 180,
+     "superficie_ha": 7.2,
+     "z_medio": -3.95,
+     "z_pico": -10.73,
+     "intensidad": "leve",
+     "centroide": [
+      -59.58522,
+      -30.00521
+     ]
+    },
+    {
+     "id": 226,
+     "pixeles": 178,
+     "superficie_ha": 7.12,
+     "z_medio": -5.43,
+     "z_pico": -9.52,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.55564,
+      -29.99901
+     ]
+    },
+    {
+     "id": 247,
+     "pixeles": 175,
+     "superficie_ha": 7.0,
+     "z_medio": -9.84,
+     "z_pico": -12.18,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.57532,
+      -30.005
+     ]
+    },
+    {
+     "id": 183,
+     "pixeles": 174,
+     "superficie_ha": 6.96,
+     "z_medio": -5.62,
+     "z_pico": -11.01,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.52359,
+      -29.98598
+     ]
+    },
+    {
+     "id": 315,
+     "pixeles": 162,
+     "superficie_ha": 6.48,
+     "z_medio": -3.98,
+     "z_pico": -6.15,
+     "intensidad": "leve",
+     "centroide": [
+      -59.59553,
+      -30.02778
+     ]
+    },
+    {
+     "id": 415,
+     "pixeles": 158,
+     "superficie_ha": 6.32,
+     "z_medio": -8.38,
+     "z_pico": -12.01,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.57994,
+      -30.08
+     ]
+    },
+    {
+     "id": 43,
+     "pixeles": 154,
+     "superficie_ha": 6.16,
+     "z_medio": -6.43,
+     "z_pico": -10.99,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.55252,
+      -29.93887
+     ]
+    },
+    {
+     "id": 307,
+     "pixeles": 154,
+     "superficie_ha": 6.16,
+     "z_medio": -7.61,
+     "z_pico": -12.62,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.55354,
+      -30.02504
+     ]
+    },
+    {
+     "id": 344,
+     "pixeles": 151,
+     "superficie_ha": 6.04,
+     "z_medio": -6.51,
+     "z_pico": -12.69,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.55052,
+      -30.0408
+     ]
+    },
+    {
+     "id": 153,
+     "pixeles": 146,
+     "superficie_ha": 5.84,
      "z_medio": -6.74,
-     "z_pico": -12.65,
+     "z_pico": -10.54,
      "intensidad": "fuerte",
      "centroide": [
-      -59.5783,
-      -30.10379
+      -59.55297,
+      -29.97608
      ]
     },
     {
-     "id": 309,
-     "pixeles": 181,
-     "superficie_ha": 7.24,
-     "z_medio": -5.89,
-     "z_pico": -8.1,
-     "intensidad": "fuerte",
-     "centroide": [
-      -59.62107,
-      -30.09576
-     ]
-    },
-    {
-     "id": 252,
-     "pixeles": 172,
-     "superficie_ha": 6.88,
-     "z_medio": -7.78,
-     "z_pico": -10.51,
-     "intensidad": "fuerte",
-     "centroide": [
-      -59.61653,
-      -30.07606
-     ]
-    },
-    {
-     "id": 165,
-     "pixeles": 159,
-     "superficie_ha": 6.36,
-     "z_medio": -11.32,
-     "z_pico": -15.05,
-     "intensidad": "fuerte",
-     "centroide": [
-      -59.55275,
-      -30.03295
-     ]
-    },
-    {
-     "id": 54,
-     "pixeles": 153,
-     "superficie_ha": 6.12,
-     "z_medio": -7.25,
-     "z_pico": -12.72,
-     "intensidad": "fuerte",
-     "centroide": [
-      -59.52431,
-      -29.98686
-     ]
-    },
-    {
-     "id": 60,
-     "pixeles": 148,
-     "superficie_ha": 5.92,
-     "z_medio": -4.18,
-     "z_pico": -5.55,
-     "intensidad": "moderada",
-     "centroide": [
-      -59.59265,
-      -29.98808
-     ]
-    },
-    {
-     "id": 195,
-     "pixeles": 147,
-     "superficie_ha": 5.88,
-     "z_medio": -4.27,
-     "z_pico": -6.62,
-     "intensidad": "moderada",
-     "centroide": [
-      -59.55209,
-      -30.04887
-     ]
-    },
-    {
-     "id": 213,
-     "pixeles": 145,
-     "superficie_ha": 5.8,
-     "z_medio": -11.05,
-     "z_pico": -13.91,
-     "intensidad": "fuerte",
-     "centroide": [
-      -59.5428,
-      -30.05566
-     ]
-    },
-    {
-     "id": 144,
+     "id": 76,
      "pixeles": 140,
      "superficie_ha": 5.6,
-     "z_medio": -4.05,
-     "z_pico": -5.95,
-     "intensidad": "moderada",
-     "centroide": [
-      -59.58675,
-      -30.02335
-     ]
-    },
-    {
-     "id": 230,
-     "pixeles": 140,
-     "superficie_ha": 5.6,
-     "z_medio": -9.76,
-     "z_pico": -13.36,
+     "z_medio": -5.76,
+     "z_pico": -9.56,
      "intensidad": "fuerte",
      "centroide": [
-      -59.57954,
-      -30.0639
+      -59.54559,
+      -29.94773
      ]
     },
     {
-     "id": 336,
+     "id": 193,
+     "pixeles": 138,
+     "superficie_ha": 5.52,
+     "z_medio": -8.38,
+     "z_pico": -14.24,
+     "intensidad": "fuerte",
+     "centroide": [
+      -59.53077,
+      -29.9867
+     ]
+    },
+    {
+     "id": 330,
      "pixeles": 137,
      "superficie_ha": 5.48,
-     "z_medio": -6.25,
-     "z_pico": -8.14,
+     "z_medio": -7.72,
+     "z_pico": -10.28,
      "intensidad": "fuerte",
      "centroide": [
-      -59.62552,
-      -30.10499
-     ]
-    },
-    {
-     "id": 97,
-     "pixeles": 129,
-     "superficie_ha": 5.16,
-     "z_medio": -5.41,
-     "z_pico": -8.26,
-     "intensidad": "fuerte",
-     "centroide": [
-      -59.62197,
-      -30.00138
-     ]
-    },
-    {
-     "id": 158,
-     "pixeles": 120,
-     "superficie_ha": 4.8,
-     "z_medio": -9.3,
-     "z_pico": -14.75,
-     "intensidad": "fuerte",
-     "centroide": [
-      -59.54848,
-      -30.02782
-     ]
-    },
-    {
-     "id": 225,
-     "pixeles": 116,
-     "superficie_ha": 4.64,
-     "z_medio": -6.63,
-     "z_pico": -14.58,
-     "intensidad": "fuerte",
-     "centroide": [
-      -59.54763,
-      -30.06185
-     ]
-    },
-    {
-     "id": 23,
-     "pixeles": 115,
-     "superficie_ha": 4.6,
-     "z_medio": -6.47,
-     "z_pico": -10.09,
-     "intensidad": "fuerte",
-     "centroide": [
-      -59.55509,
-      -29.95831
-     ]
-    },
-    {
-     "id": 271,
-     "pixeles": 108,
-     "superficie_ha": 4.32,
-     "z_medio": -8.81,
-     "z_pico": -14.23,
-     "intensidad": "fuerte",
-     "centroide": [
-      -59.58306,
-      -30.08441
+      -59.56916,
+      -30.03155
      ]
     }
    ],
-   "manchas_total": 152,
+   "manchas_total": 198,
    "serie": [
     {
-     "fecha": "2025-10-17",
-     "agua_pct": 12.61,
+     "fecha": "2025-10-23",
+     "agua_pct": 0.56,
+     "rara": false
+    },
+    {
+     "fecha": "2025-11-22",
+     "agua_pct": 0.13,
+     "rara": false
+    },
+    {
+     "fecha": "2025-12-16",
+     "agua_pct": 3.05,
      "rara": true
     },
     {
-     "fecha": "2025-11-10",
-     "agua_pct": 1.1,
+     "fecha": "2026-01-15",
+     "agua_pct": 1.09,
      "rara": false
     },
     {
-     "fecha": "2025-12-10",
-     "agua_pct": 1.26,
+     "fecha": "2026-02-14",
+     "agua_pct": 0.36,
      "rara": false
     },
     {
-     "fecha": "2026-01-09",
-     "agua_pct": 0.06,
+     "fecha": "2026-03-10",
+     "agua_pct": 0.78,
      "rara": false
     },
     {
-     "fecha": "2026-02-02",
-     "agua_pct": 8.13,
-     "rara": true
-    },
-    {
-     "fecha": "2026-02-26",
-     "agua_pct": 0.28,
+     "fecha": "2026-04-09",
+     "agua_pct": 3.71,
      "rara": false
     },
     {
-     "fecha": "2026-03-28",
-     "agua_pct": 7.0,
+     "fecha": "2026-06-14",
+     "agua_pct": 0.03,
      "rara": false
     },
     {
-     "fecha": "2026-04-27",
-     "agua_pct": 1.13,
+     "fecha": "2026-07-03",
+     "agua_pct": 2.5,
      "rara": false
     },
     {
-     "fecha": "2026-05-16",
-     "agua_pct": 7.7,
+     "fecha": "2026-09-01",
+     "agua_pct": 1.84,
      "rara": false
     },
     {
-     "fecha": "2026-06-02",
-     "agua_pct": 1.73,
+     "fecha": "2026-09-25",
+     "agua_pct": 6.15,
      "rara": false
     },
     {
-     "fecha": "2026-07-27",
-     "agua_pct": 8.45,
-     "rara": false
-    },
-    {
-     "fecha": "2026-08-20",
-     "agua_pct": 2.51,
-     "rara": false
-    },
-    {
-     "fecha": "2026-09-13",
-     "agua_pct": 0.07,
-     "rara": false
-    },
-    {
-     "fecha": "2026-11-12",
-     "agua_pct": 10.8,
+     "fecha": "2026-11-24",
+     "agua_pct": 8.38,
      "rara": false
     }
    ]
@@ -2263,18 +1857,18 @@
    "orbita": "descending/68",
    "fecha_actual": "2026-11-13T09:12:39.051615Z",
    "fondo_fechas": [
-    "2025-10-18",
-    "2025-11-05",
-    "2025-11-29",
-    "2025-12-11",
-    "2025-12-29",
-    "2026-01-16",
-    "2026-02-03",
-    "2026-02-21",
-    "2026-03-11",
-    "2026-03-29",
-    "2026-05-22",
-    "2026-06-16",
+    "2025-10-24",
+    "2025-11-11",
+    "2025-12-05",
+    "2025-12-17",
+    "2026-01-04",
+    "2026-01-22",
+    "2026-02-09",
+    "2026-03-05",
+    "2026-03-17",
+    "2026-04-04",
+    "2026-05-23",
+    "2026-07-04",
     "2026-07-28",
     "2026-09-02",
     "2026-10-08"
@@ -2283,434 +1877,434 @@
    "umbral_db": -18.0,
    "umbral_metodo": "fijo −18 dB (Otsu sin dos modos claros o fuera de −24 a −15 dB)",
    "resumen": {
-    "pixeles_validos": 1092607,
-    "agua_hoy_ha": 4153.9,
-    "agua_habitual_ha": 2415.8,
-    "agua_nueva_ha": 169.6,
-    "manchas": 34
+    "pixeles_validos": 1092497,
+    "agua_hoy_ha": 4152.0,
+    "agua_habitual_ha": 1921.1,
+    "agua_nueva_ha": 303.4,
+    "manchas": 65
    },
    "manchas": [
     {
-     "id": 35,
-     "pixeles": 830,
-     "superficie_ha": 33.2,
-     "z_medio": -4.6,
-     "z_pico": -7.24,
-     "intensidad": "moderada",
-     "centroide": [
-      -56.62402,
-      -27.50118
-     ]
-    },
-    {
-     "id": 9,
-     "pixeles": 551,
-     "superficie_ha": 22.04,
-     "z_medio": -5.2,
-     "z_pico": -7.53,
+     "id": 127,
+     "pixeles": 1037,
+     "superficie_ha": 41.48,
+     "z_medio": -5.71,
+     "z_pico": -7.84,
      "intensidad": "fuerte",
      "centroide": [
-      -56.62354,
-      -27.49305
+      -56.73736,
+      -27.59567
      ]
     },
     {
-     "id": 42,
-     "pixeles": 313,
-     "superficie_ha": 12.52,
-     "z_medio": -4.54,
-     "z_pico": -6.68,
-     "intensidad": "moderada",
-     "centroide": [
-      -56.62227,
-      -27.50741
-     ]
-    },
-    {
-     "id": 45,
-     "pixeles": 299,
-     "superficie_ha": 11.96,
-     "z_medio": -4.29,
-     "z_pico": -6.96,
-     "intensidad": "moderada",
-     "centroide": [
-      -56.62605,
-      -27.51196
-     ]
-    },
-    {
-     "id": 20,
-     "pixeles": 262,
-     "superficie_ha": 10.48,
-     "z_medio": -5.01,
-     "z_pico": -10.91,
+     "id": 126,
+     "pixeles": 929,
+     "superficie_ha": 37.16,
+     "z_medio": -5.5,
+     "z_pico": -10.29,
      "intensidad": "fuerte",
      "centroide": [
-      -56.77644,
-      -27.49477
-     ]
-    },
-    {
-     "id": 51,
-     "pixeles": 180,
-     "superficie_ha": 7.2,
-     "z_medio": -5.51,
-     "z_pico": -7.61,
-     "intensidad": "fuerte",
-     "centroide": [
-      -56.61956,
-      -27.51906
-     ]
-    },
-    {
-     "id": 55,
-     "pixeles": 180,
-     "superficie_ha": 7.2,
-     "z_medio": -4.98,
-     "z_pico": -9.07,
-     "intensidad": "moderada",
-     "centroide": [
-      -56.6956,
-      -27.52476
-     ]
-    },
-    {
-     "id": 3,
-     "pixeles": 152,
-     "superficie_ha": 6.08,
-     "z_medio": -3.94,
-     "z_pico": -5.94,
-     "intensidad": "leve",
-     "centroide": [
-      -56.77061,
-      -27.4921
-     ]
-    },
-    {
-     "id": 46,
-     "pixeles": 140,
-     "superficie_ha": 5.6,
-     "z_medio": -5.12,
-     "z_pico": -6.82,
-     "intensidad": "fuerte",
-     "centroide": [
-      -56.70092,
-      -27.51297
-     ]
-    },
-    {
-     "id": 40,
-     "pixeles": 112,
-     "superficie_ha": 4.48,
-     "z_medio": -7.6,
-     "z_pico": -11.75,
-     "intensidad": "fuerte",
-     "centroide": [
-      -56.70168,
-      -27.50618
-     ]
-    },
-    {
-     "id": 7,
-     "pixeles": 107,
-     "superficie_ha": 4.28,
-     "z_medio": -4.75,
-     "z_pico": -7.03,
-     "intensidad": "moderada",
-     "centroide": [
-      -56.71633,
-      -27.49091
-     ]
-    },
-    {
-     "id": 17,
-     "pixeles": 101,
-     "superficie_ha": 4.04,
-     "z_medio": -3.79,
-     "z_pico": -6.33,
-     "intensidad": "leve",
-     "centroide": [
-      -56.76727,
-      -27.49349
-     ]
-    },
-    {
-     "id": 10,
-     "pixeles": 94,
-     "superficie_ha": 3.76,
-     "z_medio": -4.11,
-     "z_pico": -5.84,
-     "intensidad": "moderada",
-     "centroide": [
-      -56.77721,
-      -27.49202
-     ]
-    },
-    {
-     "id": 5,
-     "pixeles": 92,
-     "superficie_ha": 3.68,
-     "z_medio": -3.7,
-     "z_pico": -5.06,
-     "intensidad": "leve",
-     "centroide": [
-      -56.76316,
-      -27.49153
-     ]
-    },
-    {
-     "id": 61,
-     "pixeles": 88,
-     "superficie_ha": 3.52,
-     "z_medio": -5.63,
-     "z_pico": -7.91,
-     "intensidad": "fuerte",
-     "centroide": [
-      -56.73173,
-      -27.53381
-     ]
-    },
-    {
-     "id": 80,
-     "pixeles": 86,
-     "superficie_ha": 3.44,
-     "z_medio": -5.3,
-     "z_pico": -10.12,
-     "intensidad": "fuerte",
-     "centroide": [
-      -56.75521,
-      -27.58279
-     ]
-    },
-    {
-     "id": 25,
-     "pixeles": 48,
-     "superficie_ha": 1.92,
-     "z_medio": -3.58,
-     "z_pico": -4.23,
-     "intensidad": "leve",
-     "centroide": [
-      -56.77138,
-      -27.49529
-     ]
-    },
-    {
-     "id": 36,
-     "pixeles": 48,
-     "superficie_ha": 1.92,
-     "z_medio": -4.51,
-     "z_pico": -6.52,
-     "intensidad": "moderada",
-     "centroide": [
-      -56.76372,
-      -27.50132
-     ]
-    },
-    {
-     "id": 43,
-     "pixeles": 47,
-     "superficie_ha": 1.88,
-     "z_medio": -4.81,
-     "z_pico": -6.14,
-     "intensidad": "moderada",
-     "centroide": [
-      -56.70384,
-      -27.50694
-     ]
-    },
-    {
-     "id": 24,
-     "pixeles": 42,
-     "superficie_ha": 1.68,
-     "z_medio": -4.11,
-     "z_pico": -5.45,
-     "intensidad": "moderada",
-     "centroide": [
-      -56.75522,
-      -27.49457
-     ]
-    },
-    {
-     "id": 16,
-     "pixeles": 39,
-     "superficie_ha": 1.56,
-     "z_medio": -4.45,
-     "z_pico": -6.38,
-     "intensidad": "moderada",
-     "centroide": [
-      -56.78202,
-      -27.49295
+      -56.74713,
+      -27.59512
      ]
     },
     {
      "id": 23,
-     "pixeles": 39,
-     "superficie_ha": 1.56,
-     "z_medio": -3.58,
-     "z_pico": -4.59,
-     "intensidad": "leve",
-     "centroide": [
-      -56.75705,
-      -27.49474
-     ]
-    },
-    {
-     "id": 88,
-     "pixeles": 39,
-     "superficie_ha": 1.56,
-     "z_medio": -4.44,
-     "z_pico": -9.05,
+     "pixeles": 553,
+     "superficie_ha": 22.12,
+     "z_medio": -4.63,
+     "z_pico": -7.01,
      "intensidad": "moderada",
      "centroide": [
-      -56.75148,
-      -27.59685
+      -56.62605,
+      -27.50169
      ]
     },
     {
-     "id": 33,
-     "pixeles": 38,
-     "superficie_ha": 1.52,
+     "id": 8,
+     "pixeles": 499,
+     "superficie_ha": 19.96,
+     "z_medio": -4.97,
+     "z_pico": -7.3,
+     "intensidad": "moderada",
+     "centroide": [
+      -56.62406,
+      -27.49338
+     ]
+    },
+    {
+     "id": 11,
+     "pixeles": 429,
+     "superficie_ha": 17.16,
+     "z_medio": -5.18,
+     "z_pico": -11.61,
+     "intensidad": "fuerte",
+     "centroide": [
+      -56.77632,
+      -27.49388
+     ]
+    },
+    {
+     "id": 29,
+     "pixeles": 318,
+     "superficie_ha": 12.72,
+     "z_medio": -5.52,
+     "z_pico": -10.0,
+     "intensidad": "fuerte",
+     "centroide": [
+      -56.70288,
+      -27.50652
+     ]
+    },
+    {
+     "id": 106,
+     "pixeles": 219,
+     "superficie_ha": 8.76,
+     "z_medio": -5.92,
+     "z_pico": -11.83,
+     "intensidad": "fuerte",
+     "centroide": [
+      -56.71228,
+      -27.57902
+     ]
+    },
+    {
+     "id": 32,
+     "pixeles": 202,
+     "superficie_ha": 8.08,
+     "z_medio": -4.13,
+     "z_pico": -6.09,
+     "intensidad": "moderada",
+     "centroide": [
+      -56.62264,
+      -27.50756
+     ]
+    },
+    {
+     "id": 7,
+     "pixeles": 186,
+     "superficie_ha": 7.44,
+     "z_medio": -4.79,
+     "z_pico": -7.49,
+     "intensidad": "moderada",
+     "centroide": [
+      -56.717,
+      -27.49156
+     ]
+    },
+    {
+     "id": 55,
+     "pixeles": 164,
+     "superficie_ha": 6.56,
+     "z_medio": -5.01,
+     "z_pico": -8.37,
+     "intensidad": "fuerte",
+     "centroide": [
+      -56.69572,
+      -27.52427
+     ]
+    },
+    {
+     "id": 68,
+     "pixeles": 131,
+     "superficie_ha": 5.24,
+     "z_medio": -7.57,
+     "z_pico": -12.2,
+     "intensidad": "fuerte",
+     "centroide": [
+      -56.73328,
+      -27.54281
+     ]
+    },
+    {
+     "id": 116,
+     "pixeles": 126,
+     "superficie_ha": 5.04,
+     "z_medio": -5.82,
+     "z_pico": -8.67,
+     "intensidad": "fuerte",
+     "centroide": [
+      -56.71709,
+      -27.58388
+     ]
+    },
+    {
+     "id": 120,
+     "pixeles": 113,
+     "superficie_ha": 4.52,
+     "z_medio": -5.61,
+     "z_pico": -10.13,
+     "intensidad": "fuerte",
+     "centroide": [
+      -56.77749,
+      -27.58718
+     ]
+    },
+    {
+     "id": 25,
+     "pixeles": 110,
+     "superficie_ha": 4.4,
+     "z_medio": -3.93,
+     "z_pico": -5.51,
+     "intensidad": "leve",
+     "centroide": [
+      -56.61903,
+      -27.50152
+     ]
+    },
+    {
+     "id": 124,
+     "pixeles": 110,
+     "superficie_ha": 4.4,
+     "z_medio": -4.81,
+     "z_pico": -7.65,
+     "intensidad": "moderada",
+     "centroide": [
+      -56.76981,
+      -27.59039
+     ]
+    },
+    {
+     "id": 119,
+     "pixeles": 104,
+     "superficie_ha": 4.16,
+     "z_medio": -6.52,
+     "z_pico": -9.91,
+     "intensidad": "fuerte",
+     "centroide": [
+      -56.78102,
+      -27.58441
+     ]
+    },
+    {
+     "id": 37,
+     "pixeles": 100,
+     "superficie_ha": 4.0,
      "z_medio": -4.38,
-     "z_pico": -5.6,
+     "z_pico": -6.77,
      "intensidad": "moderada",
      "centroide": [
-      -56.62091,
-      -27.49802
+      -56.62725,
+      -27.51123
      ]
     },
     {
-     "id": 58,
-     "pixeles": 38,
-     "superficie_ha": 1.52,
-     "z_medio": -3.54,
-     "z_pico": -4.16,
+     "id": 19,
+     "pixeles": 98,
+     "superficie_ha": 3.92,
+     "z_medio": -3.82,
+     "z_pico": -5.65,
      "intensidad": "leve",
      "centroide": [
-      -56.69626,
-      -27.52945
-     ]
-    },
-    {
-     "id": 49,
-     "pixeles": 36,
-     "superficie_ha": 1.44,
-     "z_medio": -4.1,
-     "z_pico": -5.62,
-     "intensidad": "moderada",
-     "centroide": [
-      -56.61938,
-      -27.51677
+      -56.75607,
+      -27.49473
      ]
     },
     {
      "id": 15,
-     "pixeles": 35,
-     "superficie_ha": 1.4,
-     "z_medio": -4.74,
-     "z_pico": -6.0,
+     "pixeles": 97,
+     "superficie_ha": 3.88,
+     "z_medio": -4.81,
+     "z_pico": -6.98,
      "intensidad": "moderada",
      "centroide": [
-      -56.71663,
-      -27.4926
+      -56.7682,
+      -27.49451
      ]
     },
     {
-     "id": 75,
-     "pixeles": 35,
-     "superficie_ha": 1.4,
-     "z_medio": -4.97,
-     "z_pico": -5.97,
+     "id": 35,
+     "pixeles": 88,
+     "superficie_ha": 3.52,
+     "z_medio": -4.77,
+     "z_pico": -6.71,
      "intensidad": "moderada",
      "centroide": [
-      -56.71321,
-      -27.58108
+      -56.70148,
+      -27.5105
+     ]
+    },
+    {
+     "id": 74,
+     "pixeles": 77,
+     "superficie_ha": 3.08,
+     "z_medio": -3.56,
+     "z_pico": -4.35,
+     "intensidad": "leve",
+     "centroide": [
+      -56.68514,
+      -27.5455
+     ]
+    },
+    {
+     "id": 13,
+     "pixeles": 74,
+     "superficie_ha": 2.96,
+     "z_medio": -4.74,
+     "z_pico": -7.47,
+     "intensidad": "moderada",
+     "centroide": [
+      -56.76421,
+      -27.49226
+     ]
+    },
+    {
+     "id": 114,
+     "pixeles": 68,
+     "superficie_ha": 2.72,
+     "z_medio": -5.31,
+     "z_pico": -10.54,
+     "intensidad": "fuerte",
+     "centroide": [
+      -56.75544,
+      -27.58281
+     ]
+    },
+    {
+     "id": 17,
+     "pixeles": 66,
+     "superficie_ha": 2.64,
+     "z_medio": -5.4,
+     "z_pico": -8.44,
+     "intensidad": "fuerte",
+     "centroide": [
+      -56.76522,
+      -27.49459
+     ]
+    },
+    {
+     "id": 2,
+     "pixeles": 63,
+     "superficie_ha": 2.52,
+     "z_medio": -3.61,
+     "z_pico": -5.0,
+     "intensidad": "leve",
+     "centroide": [
+      -56.77085,
+      -27.49158
+     ]
+    },
+    {
+     "id": 30,
+     "pixeles": 62,
+     "superficie_ha": 2.48,
+     "z_medio": -4.21,
+     "z_pico": -5.99,
+     "intensidad": "moderada",
+     "centroide": [
+      -56.62393,
+      -27.50554
+     ]
+    },
+    {
+     "id": 44,
+     "pixeles": 60,
+     "superficie_ha": 2.4,
+     "z_medio": -4.15,
+     "z_pico": -6.15,
+     "intensidad": "moderada",
+     "centroide": [
+      -56.62531,
+      -27.51395
+     ]
+    },
+    {
+     "id": 49,
+     "pixeles": 60,
+     "superficie_ha": 2.4,
+     "z_medio": -3.95,
+     "z_pico": -6.37,
+     "intensidad": "leve",
+     "centroide": [
+      -56.70403,
+      -27.51676
      ]
     },
     {
      "id": 71,
-     "pixeles": 33,
-     "superficie_ha": 1.32,
-     "z_medio": -4.51,
-     "z_pico": -6.8,
+     "pixeles": 60,
+     "superficie_ha": 2.4,
+     "z_medio": -4.64,
+     "z_pico": -6.58,
      "intensidad": "moderada",
      "centroide": [
-      -56.69805,
-      -27.56891
+      -56.69983,
+      -27.54386
      ]
     },
     {
-     "id": 59,
-     "pixeles": 30,
-     "superficie_ha": 1.2,
-     "z_medio": -4.02,
-     "z_pico": -4.9,
-     "intensidad": "moderada",
+     "id": 75,
+     "pixeles": 60,
+     "superficie_ha": 2.4,
+     "z_medio": -5.38,
+     "z_pico": -8.34,
+     "intensidad": "fuerte",
      "centroide": [
-      -56.69824,
-      -27.52973
+      -56.7356,
+      -27.54689
      ]
     }
    ],
-   "manchas_total": 34,
+   "manchas_total": 65,
    "serie": [
     {
-     "fecha": "2025-10-18",
-     "agua_pct": 2.21,
+     "fecha": "2025-10-24",
+     "agua_pct": 0.46,
      "rara": false
     },
     {
-     "fecha": "2025-11-05",
-     "agua_pct": 0.59,
+     "fecha": "2025-11-11",
+     "agua_pct": 4.42,
      "rara": false
     },
     {
-     "fecha": "2025-11-29",
-     "agua_pct": 10.57,
+     "fecha": "2025-12-05",
+     "agua_pct": 8.62,
      "rara": false
     },
     {
-     "fecha": "2025-12-11",
-     "agua_pct": 10.88,
+     "fecha": "2025-12-17",
+     "agua_pct": 4.72,
      "rara": false
     },
     {
-     "fecha": "2025-12-29",
-     "agua_pct": 13.1,
+     "fecha": "2026-01-04",
+     "agua_pct": 3.21,
      "rara": false
     },
     {
-     "fecha": "2026-01-16",
-     "agua_pct": 5.36,
+     "fecha": "2026-01-22",
+     "agua_pct": 5.83,
      "rara": false
     },
     {
-     "fecha": "2026-02-03",
-     "agua_pct": 7.54,
+     "fecha": "2026-02-09",
+     "agua_pct": 6.18,
      "rara": false
     },
     {
-     "fecha": "2026-02-21",
-     "agua_pct": 0.48,
+     "fecha": "2026-03-05",
+     "agua_pct": 9.47,
      "rara": false
     },
     {
-     "fecha": "2026-03-11",
-     "agua_pct": 1.48,
+     "fecha": "2026-03-17",
+     "agua_pct": 0.02,
      "rara": false
     },
     {
-     "fecha": "2026-03-29",
-     "agua_pct": 8.53,
+     "fecha": "2026-04-04",
+     "agua_pct": 11.59,
      "rara": false
     },
     {
-     "fecha": "2026-05-22",
-     "agua_pct": 2.3,
+     "fecha": "2026-05-23",
+     "agua_pct": 4.57,
      "rara": false
     },
     {
-     "fecha": "2026-06-16",
-     "agua_pct": 7.29,
+     "fecha": "2026-07-04",
+     "agua_pct": 1.25,
      "rara": false
     },
     {
@@ -2748,141 +2342,141 @@
     -56.99,
     -29.61
    ],
-   "orbita": "descending/68",
-   "fecha_actual": "2026-11-13T09:13:04.051904Z",
+   "orbita": "descending/170",
+   "fecha_actual": "2026-11-20T09:05:13.411530Z",
    "fondo_fechas": [
-    "2025-10-18",
-    "2025-11-11",
-    "2025-12-11",
-    "2026-01-04",
-    "2026-01-28",
-    "2026-02-21",
-    "2026-03-17",
-    "2026-04-10",
-    "2026-05-16",
-    "2026-06-04",
-    "2026-06-28",
-    "2026-07-28",
-    "2026-08-21",
-    "2026-09-14",
-    "2026-10-08"
+    "2025-10-25",
+    "2025-11-18",
+    "2025-12-12",
+    "2026-01-05",
+    "2026-01-29",
+    "2026-02-22",
+    "2026-03-18",
+    "2026-04-17",
+    "2026-05-17",
+    "2026-05-30",
+    "2026-06-23",
+    "2026-07-17",
+    "2026-08-16",
+    "2026-09-09",
+    "2026-10-15"
    ],
    "cobertura": 1.0,
    "umbral_db": -18.0,
    "umbral_metodo": "fijo −18 dB (Otsu sin dos modos claros o fuera de −24 a −15 dB)",
    "resumen": {
-    "pixeles_validos": 1070026,
-    "agua_hoy_ha": 400.5,
-    "agua_habitual_ha": 2847.8,
-    "agua_nueva_ha": 8.9,
+    "pixeles_validos": 1070038,
+    "agua_hoy_ha": 3513.1,
+    "agua_habitual_ha": 3580.0,
+    "agua_nueva_ha": 6.3,
     "manchas": 2
    },
    "manchas": [
     {
-     "id": 2,
-     "pixeles": 156,
-     "superficie_ha": 6.24,
-     "z_medio": -5.51,
-     "z_pico": -8.17,
+     "id": 1,
+     "pixeles": 90,
+     "superficie_ha": 3.6,
+     "z_medio": -6.98,
+     "z_pico": -8.4,
      "intensidad": "fuerte",
      "centroide": [
-      -57.07525,
-      -29.655
+      -57.01071,
+      -29.63243
      ]
     },
     {
-     "id": 5,
-     "pixeles": 66,
-     "superficie_ha": 2.64,
-     "z_medio": -5.05,
-     "z_pico": -6.92,
+     "id": 2,
+     "pixeles": 68,
+     "superficie_ha": 2.72,
+     "z_medio": -7.36,
+     "z_pico": -9.79,
      "intensidad": "fuerte",
      "centroide": [
-      -57.07738,
-      -29.65645
+      -57.01218,
+      -29.63575
      ]
     }
    ],
    "manchas_total": 2,
    "serie": [
     {
-     "fecha": "2025-10-18",
-     "agua_pct": 0.29,
-     "rara": false
-    },
-    {
-     "fecha": "2025-11-11",
-     "agua_pct": 1.89,
-     "rara": false
-    },
-    {
-     "fecha": "2025-12-11",
-     "agua_pct": 5.4,
-     "rara": false
-    },
-    {
-     "fecha": "2026-01-04",
-     "agua_pct": 2.48,
-     "rara": false
-    },
-    {
-     "fecha": "2026-01-28",
-     "agua_pct": 6.68,
-     "rara": false
-    },
-    {
-     "fecha": "2026-02-21",
-     "agua_pct": 4.46,
-     "rara": false
-    },
-    {
-     "fecha": "2026-03-17",
-     "agua_pct": 0.0,
+     "fecha": "2025-10-25",
+     "agua_pct": 0.01,
      "rara": true
     },
     {
-     "fecha": "2026-04-10",
-     "agua_pct": 7.54,
+     "fecha": "2025-11-18",
+     "agua_pct": 8.6,
      "rara": false
     },
     {
-     "fecha": "2026-05-16",
-     "agua_pct": 7.74,
+     "fecha": "2025-12-12",
+     "agua_pct": 8.45,
      "rara": false
     },
     {
-     "fecha": "2026-06-04",
-     "agua_pct": 8.16,
+     "fecha": "2026-01-05",
+     "agua_pct": 9.02,
      "rara": false
     },
     {
-     "fecha": "2026-06-28",
-     "agua_pct": 7.99,
+     "fecha": "2026-01-29",
+     "agua_pct": 8.36,
      "rara": false
     },
     {
-     "fecha": "2026-07-28",
-     "agua_pct": 15.08,
+     "fecha": "2026-02-22",
+     "agua_pct": 8.22,
+     "rara": false
+    },
+    {
+     "fecha": "2026-03-18",
+     "agua_pct": 7.95,
+     "rara": false
+    },
+    {
+     "fecha": "2026-04-17",
+     "agua_pct": 6.89,
      "rara": true
     },
     {
-     "fecha": "2026-08-21",
-     "agua_pct": 8.55,
+     "fecha": "2026-05-17",
+     "agua_pct": 8.42,
      "rara": false
     },
     {
-     "fecha": "2026-09-14",
-     "agua_pct": 5.52,
+     "fecha": "2026-05-30",
+     "agua_pct": 8.04,
      "rara": false
     },
     {
-     "fecha": "2026-10-08",
-     "agua_pct": 0.0,
+     "fecha": "2026-06-23",
+     "agua_pct": 8.21,
      "rara": false
     },
     {
-     "fecha": "2026-11-13",
-     "agua_pct": 0.94,
+     "fecha": "2026-07-17",
+     "agua_pct": 4.21,
+     "rara": true
+    },
+    {
+     "fecha": "2026-08-16",
+     "agua_pct": 9.43,
+     "rara": false
+    },
+    {
+     "fecha": "2026-09-09",
+     "agua_pct": 8.71,
+     "rara": false
+    },
+    {
+     "fecha": "2026-10-15",
+     "agua_pct": 18.61,
+     "rara": true
+    },
+    {
+     "fecha": "2026-11-20",
+     "agua_pct": 8.21,
      "rara": false
     }
    ]
@@ -2901,31 +2495,31 @@
     -29.08
    ],
    "orbita": "descending/68",
-   "fecha_actual": "2026-11-13T09:13:04.051904Z",
+   "fecha_actual": "2026-11-19T09:13:19.192082Z",
    "fondo_fechas": [
-    "2025-10-18",
-    "2025-11-11",
-    "2025-12-11",
-    "2026-01-04",
-    "2026-01-28",
-    "2026-02-21",
-    "2026-03-17",
-    "2026-04-10",
-    "2026-05-16",
-    "2026-06-04",
-    "2026-06-28",
-    "2026-07-28",
-    "2026-08-21",
-    "2026-09-14",
-    "2026-10-08"
+    "2025-10-24",
+    "2025-11-23",
+    "2025-12-17",
+    "2026-01-10",
+    "2026-02-09",
+    "2026-03-05",
+    "2026-03-29",
+    "2026-04-22",
+    "2026-05-23",
+    "2026-06-16",
+    "2026-07-10",
+    "2026-08-09",
+    "2026-09-02",
+    "2026-09-26",
+    "2026-10-20"
    ],
    "cobertura": 1.0,
    "umbral_db": -18.0,
    "umbral_metodo": "fijo −18 dB (Otsu sin dos modos claros o fuera de −24 a −15 dB)",
    "resumen": {
-    "pixeles_validos": 1073442,
-    "agua_hoy_ha": 1.8,
-    "agua_habitual_ha": 2.1,
+    "pixeles_validos": 1073364,
+    "agua_hoy_ha": 0.8,
+    "agua_habitual_ha": 2.5,
     "agua_nueva_ha": 0,
     "manchas": 0
    },
@@ -2933,82 +2527,82 @@
    "manchas_total": 0,
    "serie": [
     {
-     "fecha": "2025-10-18",
+     "fecha": "2025-10-24",
      "agua_pct": 0.0,
      "rara": false
     },
     {
-     "fecha": "2025-11-11",
+     "fecha": "2025-11-23",
      "agua_pct": 0.0,
      "rara": false
     },
     {
-     "fecha": "2025-12-11",
+     "fecha": "2025-12-17",
      "agua_pct": 0.01,
      "rara": false
     },
     {
-     "fecha": "2026-01-04",
+     "fecha": "2026-01-10",
+     "agua_pct": 0.01,
+     "rara": false
+    },
+    {
+     "fecha": "2026-02-09",
+     "agua_pct": 0.07,
+     "rara": false
+    },
+    {
+     "fecha": "2026-03-05",
+     "agua_pct": 0.01,
+     "rara": false
+    },
+    {
+     "fecha": "2026-03-29",
+     "agua_pct": 0.01,
+     "rara": false
+    },
+    {
+     "fecha": "2026-04-22",
      "agua_pct": 0.0,
      "rara": false
     },
     {
-     "fecha": "2026-01-28",
+     "fecha": "2026-05-23",
      "agua_pct": 0.02,
      "rara": false
     },
     {
-     "fecha": "2026-02-21",
-     "agua_pct": 0.0,
-     "rara": false
-    },
-    {
-     "fecha": "2026-03-17",
-     "agua_pct": 0.03,
-     "rara": false
-    },
-    {
-     "fecha": "2026-04-10",
-     "agua_pct": 0.01,
-     "rara": false
-    },
-    {
-     "fecha": "2026-05-16",
-     "agua_pct": 0.01,
-     "rara": false
-    },
-    {
-     "fecha": "2026-06-04",
-     "agua_pct": 0.0,
-     "rara": false
-    },
-    {
-     "fecha": "2026-06-28",
+     "fecha": "2026-06-16",
      "agua_pct": 0.02,
      "rara": false
     },
     {
-     "fecha": "2026-07-28",
+     "fecha": "2026-07-10",
+     "agua_pct": 0.02,
+     "rara": false
+    },
+    {
+     "fecha": "2026-08-09",
      "agua_pct": 0.01,
      "rara": false
     },
     {
-     "fecha": "2026-08-21",
-     "agua_pct": 0.03,
+     "fecha": "2026-09-02",
+     "agua_pct": 0.02,
      "rara": false
     },
     {
-     "fecha": "2026-09-14",
+     "fecha": "2026-09-26",
      "agua_pct": 0.01,
      "rara": false
     },
     {
-     "fecha": "2026-10-08",
+     "fecha": "2026-10-20",
      "agua_pct": 0.0,
      "rara": false
     },
     {
-     "fecha": "2026-11-13",
+     "fecha": "2026-11-19",
      "agua_pct": 0.0,
      "rara": false
     }

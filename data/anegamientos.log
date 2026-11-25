@@ -1,31 +1,31 @@
 Zona Corrientes (capital)…
 /home/runner/work/observatorio-agro/observatorio-agro/scripts/anegamientos.py:231: DeprecationWarning: The 'shapely.ops.transform()' function is deprecated. Use 'shapely.transform()' or 'shapely.transform_coordseq()' instead. See https://shapely.readthedocs.io/en/latest/manual.html#shapely.ops.transform for more details.
   g = stransform(a_wgs_xy, shape(geom)).simplify(0.0002, preserve_topology=True)
-  ok: {'pixeles_validos': 1089149, 'agua_hoy_ha': 1547.2, 'agua_habitual_ha': 478.4, 'agua_nueva_ha': 140.5, 'manchas': 42}
+  ok: {'pixeles_validos': 1089176, 'agua_hoy_ha': 160.0, 'agua_habitual_ha': 834.8, 'agua_nueva_ha': 3.2, 'manchas': 2}
 Zona Santa Lucía…
 /home/runner/work/observatorio-agro/observatorio-agro/scripts/anegamientos.py:231: DeprecationWarning: The 'shapely.ops.transform()' function is deprecated. Use 'shapely.transform()' or 'shapely.transform_coordseq()' instead. See https://shapely.readthedocs.io/en/latest/manual.html#shapely.ops.transform for more details.
   g = stransform(a_wgs_xy, shape(geom)).simplify(0.0002, preserve_topology=True)
-  ok: {'pixeles_validos': 1015065, 'agua_hoy_ha': 1123.4, 'agua_habitual_ha': 978.4, 'agua_nueva_ha': 34.4, 'manchas': 13}
+  ok: {'pixeles_validos': 1015854, 'agua_hoy_ha': 1302.4, 'agua_habitual_ha': 986.2, 'agua_nueva_ha': 15.5, 'manchas': 8}
 Zona Bella Vista…
 /home/runner/work/observatorio-agro/observatorio-agro/scripts/anegamientos.py:231: DeprecationWarning: The 'shapely.ops.transform()' function is deprecated. Use 'shapely.transform()' or 'shapely.transform_coordseq()' instead. See https://shapely.readthedocs.io/en/latest/manual.html#shapely.ops.transform for more details.
   g = stransform(a_wgs_xy, shape(geom)).simplify(0.0002, preserve_topology=True)
-  ok: {'pixeles_validos': 1078788, 'agua_hoy_ha': 1394.8, 'agua_habitual_ha': 468.9, 'agua_nueva_ha': 136.5, 'manchas': 36}
+  ok: {'pixeles_validos': 1078749, 'agua_hoy_ha': 2137.4, 'agua_habitual_ha': 503.6, 'agua_nueva_ha': 299.7, 'manchas': 86}
 Zona Goya…
 /home/runner/work/observatorio-agro/observatorio-agro/scripts/anegamientos.py:231: DeprecationWarning: The 'shapely.ops.transform()' function is deprecated. Use 'shapely.transform()' or 'shapely.transform_coordseq()' instead. See https://shapely.readthedocs.io/en/latest/manual.html#shapely.ops.transform for more details.
   g = stransform(a_wgs_xy, shape(geom)).simplify(0.0002, preserve_topology=True)
-  ok: {'pixeles_validos': 1071525, 'agua_hoy_ha': 3132.6, 'agua_habitual_ha': 1008.0, 'agua_nueva_ha': 727.9, 'manchas': 108}
+  ok: {'pixeles_validos': 1071490, 'agua_hoy_ha': 1387.7, 'agua_habitual_ha': 1589.6, 'agua_nueva_ha': 215.9, 'manchas': 61}
 Zona Esquina…
 /home/runner/work/observatorio-agro/observatorio-agro/scripts/anegamientos.py:231: DeprecationWarning: The 'shapely.ops.transform()' function is deprecated. Use 'shapely.transform()' or 'shapely.transform_coordseq()' instead. See https://shapely.readthedocs.io/en/latest/manual.html#shapely.ops.transform for more details.
   g = stransform(a_wgs_xy, shape(geom)).simplify(0.0002, preserve_topology=True)
-  ok: {'pixeles_validos': 1059627, 'agua_hoy_ha': 4570.5, 'agua_habitual_ha': 468.3, 'agua_nueva_ha': 900.9, 'manchas': 152}
+  ok: {'pixeles_validos': 1055537, 'agua_hoy_ha': 3534.6, 'agua_habitual_ha': 91.4, 'agua_nueva_ha': 700.6, 'manchas': 198}
 Zona Ituzaingó…
 /home/runner/work/observatorio-agro/observatorio-agro/scripts/anegamientos.py:231: DeprecationWarning: The 'shapely.ops.transform()' function is deprecated. Use 'shapely.transform()' or 'shapely.transform_coordseq()' instead. See https://shapely.readthedocs.io/en/latest/manual.html#shapely.ops.transform for more details.
   g = stransform(a_wgs_xy, shape(geom)).simplify(0.0002, preserve_topology=True)
-  ok: {'pixeles_validos': 1092607, 'agua_hoy_ha': 4153.9, 'agua_habitual_ha': 2415.8, 'agua_nueva_ha': 169.6, 'manchas': 34}
+  ok: {'pixeles_validos': 1092497, 'agua_hoy_ha': 4152.0, 'agua_habitual_ha': 1921.1, 'agua_nueva_ha': 303.4, 'manchas': 65}
 Zona Paso de los Libres…
 /home/runner/work/observatorio-agro/observatorio-agro/scripts/anegamientos.py:231: DeprecationWarning: The 'shapely.ops.transform()' function is deprecated. Use 'shapely.transform()' or 'shapely.transform_coordseq()' instead. See https://shapely.readthedocs.io/en/latest/manual.html#shapely.ops.transform for more details.
   g = stransform(a_wgs_xy, shape(geom)).simplify(0.0002, preserve_topology=True)
-  ok: {'pixeles_validos': 1070026, 'agua_hoy_ha': 400.5, 'agua_habitual_ha': 2847.8, 'agua_nueva_ha': 8.9, 'manchas': 2}
+  ok: {'pixeles_validos': 1070038, 'agua_hoy_ha': 3513.1, 'agua_habitual_ha': 3580.0, 'agua_nueva_ha': 6.3, 'manchas': 2}
 Zona Mercedes…
-  ok: {'pixeles_validos': 1073442, 'agua_hoy_ha': 1.8, 'agua_habitual_ha': 2.1, 'agua_nueva_ha': 0, 'manchas': 0}
-Listo: 8/8 zonas, 165 manchas en el mapa.
+  ok: {'pixeles_validos': 1073364, 'agua_hoy_ha': 0.8, 'agua_habitual_ha': 2.5, 'agua_nueva_ha': 0, 'manchas': 0}
+Listo: 8/8 zonas, 132 manchas en el mapa.
