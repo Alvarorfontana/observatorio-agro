@@ -1,19 +1,19 @@
 {
- "updated": "2026-11-25T02:38+00:00",
+ "updated": "2026-11-25T14:39+00:00",
  "version": 1,
  "fuente": "https://observatorio-agro.vercel.app",
  "niveles": {
-  "Normal": 15,
-  "Atención": 5,
-  "Alerta": 3,
-  "Evacuación": 3
+  "Normal": 13,
+  "Atención": 7,
+  "Alerta": 4,
+  "Evacuación": 2
  },
  "peor": {
   "id": "parana-santafe",
   "place": "Santa Fe · Paraná",
   "river": "Paraná",
   "level": "Evacuación",
-  "height": 5.59
+  "height": 5.55
  },
  "alertas": [
   {
@@ -25,12 +25,6 @@
   {
    "id": "parana-diamante",
    "place": "Diamante",
-   "river": "Paraná",
-   "level": "Evacuación"
-  },
-  {
-   "id": "parana-reconquista",
-   "place": "Reconquista",
    "river": "Paraná",
    "level": "Evacuación"
   },
@@ -51,6 +45,12 @@
    "place": "La Paz",
    "river": "Paraná",
    "level": "Alerta"
+  },
+  {
+   "id": "parana-reconquista",
+   "place": "Reconquista",
+   "river": "Paraná",
+   "level": "Alerta"
   }
  ],
  "enso": {
@@ -59,9 +59,9 @@
   "oni": 2.46
  },
  "enviado_el": null,
- "pdf_el": "2026-11-24T17:58+00:00",
+ "pdf_el": "2026-11-25T14:39+00:00",
  "newsletter": {
-  "subject": "DOTS · El Niño y crecidas · 25/11/2026 02:38 UTC",
-  "bytes": 6558
+  "subject": "DOTS · El Niño y crecidas · 25/11/2026 14:39 UTC",
+  "bytes": 6549
  }
 }
