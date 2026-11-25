@@ -1,5 +1,5 @@
 {
- "actualizado": "2026-11-24T23:40Z",
+ "actualizado": "2026-11-25T23:23Z",
  "fuente": "OPS/PAHO · Monitoreo de Amenazas Naturales (resume partes oficiales de cada país)",
  "nota": "Cifras tal como las informó cada organismo. DOTS no estima evacuados; un día sin parte queda sin dato.",
  "ultimo_por_pais": {
@@ -299,6 +299,7 @@
   }
  ],
  "dias_revisados": [
+  "2026-11-25",
   "2026-11-24",
   "2026-11-23",
   "2026-11-20",
@@ -317,10 +318,6 @@
   },
   {
    "fecha": "2026-11-17",
-   "motivo": "HTTP 404"
-  },
-  {
-   "fecha": "2026-11-15",
    "motivo": "HTTP 404"
   }
  ]
