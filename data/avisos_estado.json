@@ -29,10 +29,16 @@
  "parana-corrientes": {
   "level": "Atención"
  },
+ "parana-ituzaingo": {
+  "level": "Atención"
+ },
  "parana-sannicolas": {
   "level": "Atención"
  },
  "parana-sanpedro": {
+  "level": "Atención"
+ },
+ "uruguay-libres": {
   "level": "Atención"
  },
  "parana-zarate": {
@@ -41,34 +47,28 @@
  "iguazu-cataratas": {
   "level": "Normal"
  },
- "paraguay-humaita": {
+ "uruguay-santotome": {
   "level": "Normal"
  },
  "parana-eldorado": {
   "level": "Normal"
  },
- "uruguay-santotome": {
-  "level": "Normal"
- },
- "parana-ituzaingo": {
-  "level": "Normal"
- },
- "uruguay-libres": {
+ "paraguay-humaita": {
   "level": "Normal"
  },
  "uruguay-concordia": {
   "level": "Normal"
  },
- "paraguay-formosa": {
-  "level": "Normal"
- },
  "paraguay-asuncion": {
   "level": "Normal"
  },
- "uruguay-montecaseros": {
+ "paraguay-formosa": {
   "level": "Normal"
  },
  "uruguay-cdeluruguay": {
+  "level": "Normal"
+ },
+ "uruguay-montecaseros": {
   "level": "Normal"
  },
  "uruguay-colon": {
