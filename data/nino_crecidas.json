@@ -1,10 +1,10 @@
 {
- "updated": "2026-11-26T11:09+00:00",
+ "updated": "2026-11-26T21:44+00:00",
  "version": 1,
  "fuente": "https://observatorio-agro.vercel.app",
  "niveles": {
-  "Normal": 13,
-  "Atención": 7,
+  "Normal": 11,
+  "Atención": 9,
   "Alerta": 4,
   "Evacuación": 2
  },
@@ -13,7 +13,7 @@
   "place": "Santa Fe · Paraná",
   "river": "Paraná",
   "level": "Evacuación",
-  "height": 5.55
+  "height": 5.52
  },
  "alertas": [
   {
@@ -61,7 +61,7 @@
  "enviado_el": null,
  "pdf_el": "2026-11-26T11:09+00:00",
  "newsletter": {
-  "subject": "DOTS · El Niño y crecidas · 26/11/2026 11:09 UTC",
-  "bytes": 6557
+  "subject": "DOTS · El Niño y crecidas · 26/11/2026 21:44 UTC",
+  "bytes": 6558
  }
 }
