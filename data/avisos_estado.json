@@ -20,35 +20,38 @@
  "parana-rosario": {
   "level": "Atención"
  },
+ "iguazu-cataratas": {
+  "level": "Atención"
+ },
  "parana-bellavista": {
   "level": "Atención"
  },
  "parana-posadas": {
   "level": "Atención"
  },
- "parana-corrientes": {
+ "parana-ituzaingo": {
   "level": "Atención"
  },
- "parana-ituzaingo": {
+ "uruguay-santotome": {
   "level": "Atención"
  },
  "parana-sannicolas": {
   "level": "Atención"
  },
- "parana-sanpedro": {
-  "level": "Atención"
- },
- "uruguay-libres": {
+ "parana-corrientes": {
   "level": "Atención"
  },
  "parana-zarate": {
   "level": "Atención"
  },
- "iguazu-cataratas": {
-  "level": "Normal"
+ "uruguay-libres": {
+  "level": "Atención"
  },
- "uruguay-santotome": {
-  "level": "Normal"
+ "parana-sanpedro": {
+  "level": "Atención"
+ },
+ "uruguay-cdeluruguay": {
+  "level": "Atención"
  },
  "parana-eldorado": {
   "level": "Normal"
@@ -65,13 +68,10 @@
  "paraguay-formosa": {
   "level": "Normal"
  },
- "uruguay-cdeluruguay": {
+ "uruguay-colon": {
   "level": "Normal"
  },
  "uruguay-montecaseros": {
-  "level": "Normal"
- },
- "uruguay-colon": {
   "level": "Normal"
  },
  "iguazu-andresito": {
